@@ -1,0 +1,301 @@
+# Boolean network model of the T-cell receptor signalling pathway from
+# "A methodology for the structural and functional analysis of signaling and  
+# regulatory networks", S. Klamt, J. Saez-Rodriguez, J. A. Lindquist, L. Simeoni, E. D. Gilles,
+# JBMC Bioinformatics 7: 56, 2006.
+
+# total number of nodes 
+.v 40
+
+# labels of nodes and names of corresponding components
+# 1 = CD45
+# 2 = CD8
+# 3 = TCRlig
+# 4 = TCbind
+# 5 = PAGCsk
+# 6 = LCK
+# 7 = Fyn
+# 8 = Rlk
+# 9 = TCRphos
+# 10 = ZAP70
+# 11 = cCbl
+# 12 = Itk
+# 13 = LAT
+# 14 = Gads
+# 15 = Slp76
+# 16 = PLCg_b
+# 17 = Grb2Sos
+# 18 = DAG
+# 19 = PLCg_a
+# 20 = Ras
+# 21 = RasGRP1
+# 22 = PKCth
+# 23 = IP3
+# 24 = Raf
+# 25 = MEK
+# 26 = Ca
+# 27 = ERK
+# 28 = SEK
+# 29 = IKK
+# 30 = Calcin
+# 31 = Rsk
+# 32 = Fos
+# 33 = JNK
+# 34 = IkB
+# 35 = CREB
+# 36 = Jun
+# 37 = CRE
+# 38 = AP1
+# 39 = NFkB
+# 40 = NFAT
+
+# As a result of simulation, we get the following 9 attractors:
+# 
+# 1111101010101000000000000000001101000000
+# 1110101010000101100000000000000001100000
+# 1111100010000010000100000000000001001000
+# 1111001000000000000000010000000001000000
+# 1111111010000000000000001000000001000000
+# 1111101111000000000000000010000001000000
+# Attractor 1 is of length 6
+# 
+# 1111101010000000000000000000000001000000
+# Attractor 2 is of length 1
+#  
+# 1100100000000000000000000000000001000000
+# Attractor 3 is of length 1
+#  
+# 1011101010000000000000000000000001000000
+# Attractor 4 is of length 1
+# 
+# 0000100000000000000000000000000001000000
+# Attractor 5 is of length 1
+# 
+# 0011000000000000000000000000000001000000
+# Attractor 6 is of length 1
+# 
+# 1000100000000000000000000000000001000000
+# Attractor 7 is of length 1
+# 
+# 0100100000000000000000000000000001000000
+# Attractor 8 is of length 1
+# 
+# 0111000000000000000000000000000001000000
+# Attractor 9 is of length 1
+ 
+# 1 = CD45
+.n 1 1 1
+1 1
+0 0
+
+# 2 = CD8
+.n 2 1 2
+1 1
+0 0
+
+# 3 = TCRlig
+.n 3 1 3
+1 1
+0 0
+
+# 4 = TCRbind
+.n 4 2 3 11
+10 1
+0- 0
+-1 0
+
+# 5 = PAGCsk
+.n 5 2 7 4
+-0 1
+1- 1
+01 0
+
+# 6 = LCK
+.n 6 3 1 2 5
+110 1
+0-- 0
+-0- 0
+--1 0
+
+# 7 = Fyn
+.n 7 3 1 4 6
+1-1 1
+11- 1
+-00 0
+0-- 0
+
+# 8 = Rlk
+.n 8 1 6
+1 1
+0 0
+
+# 9 = TCRphos
+.n 9 3 4 6 7
+11- 1
+--1 1
+0-0 0
+-00 0
+
+# 10 = ZAP70
+.n 10 3 6 9 11
+110 1
+0-- 0
+-0- 0
+--1 0
+
+# 11 = cCbl
+.n 11 1 10
+1 1
+0 0
+
+# 12 = Itk
+.n 12 2 10 15
+11 1
+0- 0
+-0 0
+
+# 13 = LAT
+.n 13 1 10
+1 1
+0 0
+
+# 14 = Gads
+.n 14 1 13
+1 1
+0 0
+
+# 15 = Slp76
+.n 15 1 14
+1 1
+0 0
+
+# 16 = PLCg_b
+.n 16 1 13
+1 1
+0 0
+
+# 17 = Grb2Sos
+.n 17 1 13
+1 1
+0 0
+
+# 18 = DAG
+.n 18 1 19
+1 1
+0 0
+
+# 19 = PLCg_a
+.n 19 5 8 10 12 15 16
+-1111 1
+11-11 1
+0-0-- 0
+-0--- 0
+---0- 0
+----0 0
+
+# 20 = Ras
+.n 20 2 17 21
+-1 1
+1- 1
+00 0
+
+# 21 = RasGRP1
+.n 21 2 18 22
+11 1
+0- 0
+-0 0
+
+# 22 = PKCth
+.n 22 1 18
+1 1
+0 0
+
+# 23 = IP3
+.n 23 1 19
+1 1
+0 0
+
+# 24 = Raf
+.n 24 1 20
+1 1
+0 0
+
+# 25 = MEK
+.n 25 1 24
+1 1
+0 0
+
+# 26 = Ca
+.n 26 1 23
+1 1
+0 0
+
+# 27 = ERK
+.n 27 1 25
+1 1
+0 0
+
+# 28 = SEK
+.n 28 1 22
+1 1
+0 0
+
+# 29 = IKK
+.n 29 1 22
+1 1
+0 0
+
+# 30 = Calcin
+.n 30 1 26
+1 1
+0 0
+
+# 31 = Rsk
+.n 31 1 27
+1 1
+0 0
+
+# 32 = Fos
+.n 32 1 27
+1 1
+0 0
+
+# 33 = JNK
+.n 33 1 28
+1 1
+0 0
+
+# 34 = Ikb
+.n 34 1 29
+0 1
+1 0
+
+# 35 = CREB
+.n 35 1 31
+1 1
+0 0
+
+# 36 = Jun
+.n 36 1 33
+1 1
+0 0
+
+# 37 = CRE
+.n 37 1 35
+1 1
+0 0
+
+# 38 = AP1
+.n 38 2 32 36
+11 1
+0- 0
+-0 0
+
+# 39 = NFkB
+.n 39 1 34
+0 1
+1 0
+
+# 40 = NFAT
+.n 40 1 30
+1 1
+0 0

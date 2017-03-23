@@ -1,0 +1,111 @@
+# Boolean network model of the control of the mammalian cell cycle from
+# "Dynamical Analysis of a Generic Boolean Model for the Control of the 
+# Mammalian Cell Cycle", A. Faure, A. Naldi, C. Chaouiya, D. Thieffry,
+# Bioinformatics, 2006, vol. 22, no. 14, pp. e124-e131.
+
+#total number of nodes 
+.v 10
+
+# labels of nodes and names of corresponding components
+# 1 = CycD
+# 2 = CycE
+# 3 = Rb
+# 4 = E2F
+# 5 = CycA
+# 6 = p27
+# 7 = Cdc20
+# 8 = UbcH10
+# 9 = Cdh1
+# 10 = CycB
+
+# As a result of simulation, we get the following 2 attractors:
+# 
+# 1101100010
+# 1100100000
+# 1000100101
+# 1000101101
+# 1000001110
+# 1001000110
+# 1101000010
+# Attractor 1 is of length 7
+# 
+# 0010010010
+# Attractor 2 is of length 1
+
+# 1 = CycD
+.n 1 1 1
+1 1
+0 0
+
+# 2 = CycE
+.n 2 2 3 4
+01 1
+1- 0
+-0 0
+
+# 3 = Rb
+.n 3 5 1 2 5 6 10
+000-0 1
+0--10 1
+-1-0- 0
+--10- 0
+1---- 0
+----1 0
+
+# 4 = E2F
+.n 4 4 3 5 6 10
+0-10 1
+00-0 1
+-10- 0
+1--- 0
+---1 0
+
+# 5 = CycA
+.n 5 6 3 4 5 7 8 9
+0-10-0 1
+01-0-0 1
+0-100- 1
+01-00- 1
+-00--- 0
+----11 0
+1----- 0
+---1-- 0
+
+# 6 = p27
+.n 6 5 1 2 5 6 10
+0-010 1
+00-10 1
+000-0 1
+-11-- 0
+-1-0- 0
+--10- 0
+1---- 0
+----1 0
+
+# 7 = Cdc20
+.n 7 1 10
+1 1
+0 0
+
+# 8 = UbcH10
+.n 8 5 5 7 8 9 10
+--1-1 1
+-11-- 1
+1-1-- 1
+---0- 1
+--01- 0
+00-10 0
+ 
+# 9 = Cdh1
+.n 9 4 5 6 7 10
+-1-0 1
+0--0 1
+--1- 1
+--01 0
+100- 0
+
+# 10 = CycB
+.n 10 2 7 9
+00 1
+1- 0
+-1 0
