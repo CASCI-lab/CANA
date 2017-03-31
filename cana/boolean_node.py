@@ -17,13 +17,9 @@ import numpy as np
 import pandas as pd
 import itertools
 from collections import defaultdict
-import boolean_canalization as BC
+from canalization import boolean_canalization as BCanalization
 from base import deprecated
 import warnings
-try:
-	import graphviz
-except:
-	warnings.warn("'Graphviz' could not be loaded, you won't be able to plot graphs. Try installing it first.")
 from utils import *
 #
 #
@@ -52,11 +48,11 @@ class BooleanNode(object):
 			self.constant = False
 
 		# Canalization Variables
-		self.transition_density_tuple = None 	# A tuple of transition tables used in the first step of the QM algorithm.
-		self.prime_implicants = None 			# A tuple of negative and positive prime implicants.
-		self.two_symbols = None 				# The Two Symbol (TS) Schemata
-		self.pi_coverage = None 				# The Coverage of inputs by Prime Implicants schemata
-		self.ts_coverage = None 				# The Coverage of inputs by Two Symbol schemata
+		self._transition_density_tuple = None 	# A tuple of transition tables used in the first step of the QM algorithm.
+		self._prime_implicants = None 			# A tuple of negative and positive prime implicants.
+		self._two_symbols = None 				# The Two Symbol (TS) Schemata
+		self._pi_coverage = None 				# The Coverage of inputs by Prime Implicants schemata
+		self._ts_coverage = None 				# The Coverage of inputs by Two Symbol schemata
 
 	def __str__(self):
 		if len(self.outputs) > 10 :
@@ -121,8 +117,16 @@ class BooleanNode(object):
 		See also:
 			:func:`effective_connectivity`, :func:`input_symmetry`.
 		"""
+		# Canalization can only occur when k>= 2
+		if self.k < 2:
+			if mode == 'node':
+				return 0.0
+			elif mode == 'input':
+				return [0.0]
+			else:
+				raise AttributeError('The mode you selected does not exist. Try "node" or "input".')
 
-		self._check_compute_cannalization_variables(pi_coverage=True)
+		self._check_compute_canalization_variables(pi_coverage=True)
 
 		# Per Node
 		if mode == 'node':
@@ -132,9 +136,9 @@ class BooleanNode(object):
 			elif bound == 'lower':
 				minmax = min
 			else:
-				raise TypeError('The bound you selected does not exist. Try "upper", or "lower"')		
+				raise AttributeError('The bound you selected does not exist. Try "upper", or "lower"')		
 
-			redundancy = [minmax([pi.count('2') for pi in self.pi_coverage[binstate]]) for binstate in self.pi_coverage]
+			redundancy = [minmax([pi.count('2') for pi in self._pi_coverage[binstate]]) for binstate in self._pi_coverage]
 			
 			k_r = sum(redundancy) / 2**self.k
 
@@ -150,7 +154,7 @@ class BooleanNode(object):
 			redundancies = []
 			# Generate a per input coverage
 			# ex: {0: {'11': [], '10': [], '00': [], '01': []}, 1: {'11': [], '10': [], '00': [], '01': []}}
-			pi_input_coverage = { input : { binstate: [ pi[input] for pi in pis ] for binstate,pis in self.pi_coverage.items() } for input in xrange(self.k) }
+			pi_input_coverage = { input : { binstate: [ pi[input] for pi in pis ] for binstate,pis in self._pi_coverage.items() } for input in xrange(self.k) }
 
 			# Loop ever input node
 			for input,binstates in pi_input_coverage.items():
@@ -166,14 +170,14 @@ class BooleanNode(object):
 				elif bound == 'tuple':
 					redundancy = ( sum([all(pi) for pi in countslenghts.values()]) / 2**self.k , sum([any(pi) for pi in countslenghts.values()]) / 2**self.k ) # (min,max)
 				else:
-					raise TypeError('The bound you selected does not exist. Try "upper", "mean", "lower" or "tuple".')
+					raise AttributeError('The bound you selected does not exist. Try "upper", "mean", "lower" or "tuple".')
 				
 				redundancies.append(redundancy)
 
 			return redundancies # r_i
 		
 		else:
-			raise TypeError('The mode you selected does not exist. Try "node" or "input".')
+			raise AttributeError('The mode you selected does not exist. Try "node" or "input".')
 
 	def effective_connectivity(self, mode='node', bound='upper', norm=True):
 		r"""The Effective Connectiviy is the mean number of input nodes needed to determine the transition of the node.
@@ -201,6 +205,15 @@ class BooleanNode(object):
 		See Also:
 			:func:`input_redundancy`, :func:`input_symmetry`, :func:`~boolnets.boolean_network.BooleanNetwork.effective_graph`.
 		"""
+		# Canalization can only occur when k>= 2
+		if self.k < 2:
+			if mode == 'node':
+				return 1.0
+			elif mode == 'input':
+				return [1.0]
+			else:
+				raise AttributeError('The mode you selected does not exist. Try "node" or "input".')
+
 		if mode == 'node':
 			
 			k_r = self.input_redundancy(mode=mode, bound=bound, norm=False)
@@ -213,7 +226,7 @@ class BooleanNode(object):
 			e_i = [1 - x_i for x_i in self.input_redundancy(mode=mode, bound=bound, norm=False)]
 			return e_i
 		else:
-			raise TypeError('The mode you selected does not exist. Try "node" or "input".')
+			raise AttributeError('The mode you selected does not exist. Try "node" or "input".')
 
 	def input_symmetry(self, mode='node', bound='upper', norm=True):
 		r"""The Input Symmetry is a measure of permutation redundancy.
@@ -246,7 +259,16 @@ class BooleanNode(object):
 		See also:
 			:func:`input_redundancy`, :func:`effective_connectivity`
 		"""
-		self._check_compute_cannalization_variables(ts_coverage=True)
+		# Canalization can only occur when k>= 2
+		if self.k < 2:
+			if mode == 'node':
+				return 0.0
+			elif mode == 'input':
+				return [0.0]
+			else:
+				raise AttributeError('The mode you selected does not exist. Try "node" or "input".')
+
+		self._check_compute_canalization_variables(ts_coverage=True)
 
 		if mode == 'node':
 			if bound == 'upper':
@@ -255,11 +277,11 @@ class BooleanNode(object):
 				minmax = min
 
 			symmetry = []
-			for binstate in self.ts_coverage:
+			for binstate in self._ts_coverage:
 				# Every binary state can have multiple schemata covering it
 				values = []
 				# TwoSymbol , permutation_groups , same-symbols
-				for schema,perms,sms in self.ts_coverage[binstate]:
+				for schema,perms,sms in self._ts_coverage[binstate]:
 					
 					# NEW VERSION
 					# For every input, sum the length of each permutable groups it belongs. Then divide by k
@@ -285,7 +307,7 @@ class BooleanNode(object):
 			symmetries = []
 			# Generate a per input coverage
 			# ex: {0: {'11': [], '10': [], '00': [], '01': []}, 1: {'11': [], '10': [], '00': [], '01': []}}
-			ts_input_coverage = { input : { binstate: [ idxs.count(input) for schema,reps,sms in tss for idxs in reps+sms ] for binstate,tss in self.ts_coverage.items() } for input in xrange(self.k) }
+			ts_input_coverage = { input : { binstate: [ idxs.count(input) for schema,reps,sms in tss for idxs in reps+sms ] for binstate,tss in self._ts_coverage.items() } for input in xrange(self.k) }
 			# Loop ever input node
 			for input,binstates in ts_input_coverage.items():
 				# {'numstate': [number-of-ts's for each match], '10': [0, 2] ...}
@@ -306,12 +328,12 @@ class BooleanNode(object):
 					# tuple (min,max) per input, per state
 					symmetry = [ ( min(permuts) , max(permuts) ) if len(permuts) else (0,0) for permuts in numstates.values() ] # (min,max)
 				else:
-					raise TypeError('The bound you selected does not exist. Try "upper", "mean", "lower" or "tuple".')
+					raise AttributeError('The bound you selected does not exist. Try "upper", "mean", "lower" or "tuple".')
 				symmetries.append(symmetry)
 			return symmetries # r_i
 
 		else:
-			raise TypeError('The mode you selected does not exist. Try "node" or "input".')
+			raise AttributeError('The mode you selected does not exist. Try "node" or "input".')
 
 	def look_up_table(self):
 		""" Returns the Look Up Table (LUT)
@@ -334,17 +356,18 @@ class BooleanNode(object):
 		df = pd.DataFrame(d, columns=['In:','Out:'])
 		return df
 	
-	def schemata_look_up_table(self, type='pi', pi_symbol=u'#', ts_symbol_unicode=u"\u030A", ts_symbol_latex=u"\circ", format='html'):
+	def schemata_look_up_table(self, type='pi', pi_symbol=u'#', ts_symbol_unicode=u"\u030A", ts_symbol_latex=u"\circ", format='pandas'):
 		""" Returns the simplified schemata Look Up Table (LUT)
 		
 		Args:
 			type (string) : The type of schemata to return, either Prime Implicants ``pi`` or Two-Symbol ``ts``. Defaults to 'pi'.
 			pi_symbol (unicode) : The Prime Implicant don't care symbol. Default is ``#``.
-			ts_symbols (list) : A list of Two Symbol permutable symbols. Default is ``[u"\u030A",u"\u032F"]``.
-			format (string) : The text format inside the cells. Possible values are ``html`` (default) and ``latex``.
+			ts_symbol_unicode (unicode) : A unicode string for the Two Symbol permutable symbol. Default is ``u"\u030A"``.
+			ts_symbol_latex (unicode) : The latex string for Two Symbol permutable symbol. Default is ``\circ``.
+			format (string) : The format to return. Possible values are ``pandas`` (default) and ``latex``.
 		
 		Returns:
-			df (pandas.DataFrame): the schemata LUT
+			(pandas.DataFrame or Latex): the schemata LUT
 
 		Examples:
 			>>> AND = BooleanNode.from_output_list([0,0,0,1])
@@ -359,9 +382,9 @@ class BooleanNode(object):
 		r = []
 		# Prime Implicant LUT
 		if type == 'pi':
-			self._check_compute_cannalization_variables(prime_implicants=True)
+			self._check_compute_canalization_variables(prime_implicants=True)
 			
-			pi0s,pi1s = self.prime_implicants
+			pi0s,pi1s = self._prime_implicants
 			
 			for output, pi in zip([0,1], [pi0s,pi1s]):
 				for schemata in pi:
@@ -369,9 +392,9 @@ class BooleanNode(object):
 		
 		# Two Symbol LUT
 		elif type == 'ts':
-			self._check_compute_cannalization_variables(two_symbols=True)
+			self._check_compute_canalization_variables(two_symbols=True)
 
-			ts0s, ts1s = self.two_symbols
+			ts0s, ts1s = self._two_symbols
 
 			for output, ts in zip([0,1], [ts0s,ts1s]):
 				for i,(schemata,permutables,samesymbols) in enumerate(ts):
@@ -401,7 +424,7 @@ class BooleanNode(object):
 					"""
 					r.append( (string, output) )
 		else:
-			raise TypeError('The schemata type could not be found. Try "PI" (Prime Implicants) or "TS" (Two-Symbol).')
+			raise AttributeError('The schemata type could not be found. Try "PI" (Prime Implicants) or "TS" (Two-Symbol).')
 
 		# Output Format (Latex Table or Pandas DataFrame)
 		if format == 'latex':
@@ -422,7 +445,7 @@ class BooleanNode(object):
 			return pd.DataFrame(r, columns=['In:','Out:'])
 
 		else:
-			TypeError('The format type could not be found. Try "pandas" "latex".')
+			AttributeError('The format type could not be found. Try "pandas" "latex".')
 
 
 	def step(self, input):
@@ -443,172 +466,169 @@ class BooleanNode(object):
 
 			return self.outputs[binstate_to_statenum(input)]
 
-	def draw_full_canalizing_map(self):
-		""" Draws the node complete canalizing map.
 
+	def canalizing_map(self, output=None):
+		""" Computes the node Canalizing Map (CM).
+	
+		Args:
+			output (int) : The output CM to return. Default is ``None``, retuning both [0,1].
 		Returns:
-			G (dot) : a graphviz representation of the node.
+			CM (networkx.DiGraph) : a directed graph representation of the CM.
+		See Also:
+			:method:`boolean_network.dynamics_canalization_map` for the DCM and :method:`drawing.draw_canalizing_map_graphviz` for plotting.
 		"""
-		self._check_compute_cannalization_variables(two_symbols=True)
+		self._check_compute_canalization_variables(two_symbols=True)
 
-		ts0s, ts1s = self.two_symbols
-		
-		nr_ts = len(ts0s) + len(ts1s)
+		ts0s, ts1s = self._two_symbols
 
-		G = graphviz.Digraph(engine='dot')
-
-		G.graph_attr.update(splines='curved',overlap='false')
-		G.node_attr.update(fontname='helvetica', shape='circle', fontcolor='black', fontsize='12', width='.4', fixedsize='true', style='filled', color='gray', penwidth='3')
-		G.edge_attr.update(arrowhead='dot', color='gray', arrowsize='1')
-
-		# Input Used
-		input_used = set()
+		G = nx.DiGraph(name='CM: %s' % self.name)
 
 		# Outputs
-		G.node(name='x0', label=self.name, fontcolor='black', fillcolor='white')
-		G.node(name='x1', label=self.name, fontcolor='white', fillcolor='black')
+		if output is None or output == 0:
+			G.add_node('%s-0' % (self.name) , {'label':self.name, 'type':'variable', 'mode':'output', 'value':0, 'constant':self.constant, 'group':self.name})
 
-		# Thresholds
-		for output, tspsss in zip( [0,1] , self.two_symbols ):
+		if output is None or output == 1:
+			G.add_node('%s-1' % (self.name) , {'label':self.name, 'type':'variable', 'mode':'output', 'value':1, 'constant':self.constant, 'group':self.name})
 
-			if not len(tspsss):
+		tid = 0
+		for out, tspsss in zip( [0,1] , self._two_symbols ):
+			
+			# Only return the requested output
+			if ( (not len(tspsss)) or ((output!=None) and (output != out)) ):
 				continue
 
-			for t,(ts, ps, ss) in enumerate(tspsss, start=0):
-
-				
+			for ts, ps, ss in tspsss:
 				lits = []
 				group0 = []
 				group1 = []
 				group2 = []
 				nlit, ngrp0, ngrp1, ngrp2 = 0,0,0,0 # Tau is the threshold, counted as the sum of (0's and 1's literals; 0's in permutation group; 1's in permutation group)
 				
-				for i in xrange(self.k):			
+				for j in xrange(self.k):			
 					# Is this input in any permutation group?
-					input = ts[i]
-					if not any([i in group for group in ps]):
-						if ts[i] in ['0','1']:
+					input = ts[j]
+					if not any([j in group for group in ps]):
+						if ts[j] in ['0','1']:
 							nlit += 1
-							source = i
+							source = j
 							lits.append( source )
 					else:
-						if ts[i] == '0':
+						if ts[j] == '0':
 							ngrp0 += 1
-							group0.append( i )
-						elif ts[i] == '1':
+							group0.append( j )
+						elif ts[j] == '1':
 							ngrp1 += 1
-							group1.append( i )
+							group1.append( j )
 
 				tau = nlit + ngrp0 + ngrp1
 
 				# Threshold Node
-				tname = 't%s o%s' % (t,output)
-				label = "%d\l" % (tau)
-				G.node(name=tname, label=label, shape='circle', fillcolor='white;.5:blue', width='.6')
+				tname = 'T-%s_%s-%s' % (tid,self.name,out)
+				label = "%d" % (tau)
+				G.add_node(tname , {'label':label, 'type':'threshold', 'tau':tau, 'group':self.name})
 
 				# Add Edges from Threshold node to output
-				xname = 'x%s' % (output)
-				G.edge(tname, xname, label='')
+				xname = '%s-%s' % (self.name,out)
+				G.add_edge(tname,xname, {'type':'out'})
 
 				# Literal Edges
 				for lit in lits:
-					lname = 'i%s o%s' % (lit,ts[lit])
-					input_used.add(lname)
-					G.edge(lname, tname, label='')
+					iname = '%s-%s' % (self.inputs[lit], ts[lit])
+					if iname not in G.nodes():
+						ilabel = self.inputs[lit]
+						iout = int(ts[lit])
+						G.add_node(iname , {'label':ilabel, 'type':'variable', 'mode':'input', 'value':iout, 'group':self.name})
+					G.add_edge(iname, tname, {'type':'literal'})
 
 				# Group0
 				for fusion in xrange(ngrp0):
-					fname = 'f%s t%s' % (fusion, 0)
-					G.node(name=fname, label='', shape='none',width='0',height='0',margin='0')
+					fname = 'F-%s_T-%s_%s-%s' % (fusion, tid, self.name, 0)
+					G.add_node(fname, {'type':'fusion','group':self.name})
 					for input in ps[0]:
-						name = 'i%s o%s' % (input,0)
-						input_used.add(name)
-						G.edge(name,fname, arrowhead='none')
-					G.edge(fname,tname, arrowhead='dot')
+						iname = '%s-%s' % (self.inputs[input], 0)
+						if iname not in G.nodes():
+							ilabel = self.inputs[input]
+							G.add_node(iname , {'label':ilabel, 'type':'variable', 'mode':'input', 'value':0, 'group':self.name})
+						G.add_edge(iname,fname, {'type':'fusing'})
+					G.add_edge(fname,tname, {'type':'fused'})
 					
 				# Group1
 				for fusion in xrange(ngrp1):
-					fname = 'f%s t%s' % (fusion, 1)
-					G.node(name=fname, label='', shape='none',width='0',height='0',margin='0')
+					fname = 'F-%s_T-%s_%s-%s' % (fusion, tid, self.name, 1)
+					G.add_node(fname, {'type':'fusion', 'group':self.name})
 					for input in ps[0]:
-						name = 'i%s o%s' % (input,1)
-						input_used.add(name)
-						G.edge(name,fname, arrowhead='none')
-					G.edge(fname,tname)
+						iname = '%s-%s' % (self.inputs[input], 1)
+						if iname not in G.nodes():
+							ilabel = self.inputs[input]
+							iout = ts[input]
+							G.add_node(iname , {'label':ilabel, 'type':'variable', 'mode':'input', 'value':1, 'group':self.name})
+						G.add_edge(iname,fname, {'type':'fusing'})
+					G.add_edge(fname,tname, {'type':'fused'})
 
-				#break
-		# Draw Input better
-		for input in xrange(self.k):
-			for transition, fillcolor, fontcolor in zip([0,1], ['white','black'],['black','white']):
-				iname = 'i%s o%s' % (input,transition)
-				if iname in input_used:
-					style = 'filled,solid'
-				else:
-					style = 'filled,dashed'
-				#label = "<i<SUB>%s</SUB>>" % (input+1)
-				label = self.inputs[input]
-				G.node(name=iname, label=label, shape='circle', fontcolor=fontcolor, style=style, fillcolor=fillcolor)
-		#
+				tid += 1
+
 		return G
 
-	def get_pi_coverage(self):
+
+	def pi_coverage(self):
 		""" 
 		#TODO DOCSTRING 
 		"""
-		self._check_compute_cannalization_variables(pi_coverage=True)
+		self._check_compute_canalization_variables(pi_coverage=True)
 		#
-		return self.pi_coverage
+		return self._pi_coverage
 
-	def get_ts_coverage(self):
+	def ts_coverage(self):
 		"""
 		#TODO DOCSTRING 
 		"""
-		self._check_compute_cannalization_variables(ts_coverage=True)
+		self._check_compute_canalization_variables(ts_coverage=True)
 		#
-		return self.ts_coverage
+		return self._ts_coverage
 
-	def _check_compute_cannalization_variables(self, **kwargs):
+	def _check_compute_canalization_variables(self, **kwargs):
 		""" Recursevely check if the requested canalization variables are instantiated/computed, otherwise computes them in order.
-		For example: to compute `two_symbols` we need `prime_implicants` first. Likewise, to compute `prime_implicants` we need `transition_density_tuple` first.
+		For example: to compute `two_symbols` we need `prime_implicants` first.
+		Likewise, to compute `prime_implicants` we need the `transition_density_tuple` first.
 		"""
 		if 'transition_density_tuple' in kwargs:
-			if self.transition_density_tuple is None:
+			if self._transition_density_tuple is None:
 				if self.verbose: print "Computing: Transition Density Tuple Table"
-				self.transition_density_tuple = BC.make_transition_density_tables(self.k, self.outputs)
+				self._transition_density_tuple = BCanalization.make_transition_density_tables(self.k, self.outputs)
 		
 		elif 'prime_implicants' in kwargs:
-			self._check_compute_cannalization_variables(transition_density_tuple=True)
-			if self.prime_implicants is None:
+			self._check_compute_canalization_variables(transition_density_tuple=True)
+			if self._prime_implicants is None:
 				if self.verbose: print "Computing: Prime Implicants"
-				self.prime_implicants = \
+				self._prime_implicants = \
 					(
-						BC.find_implicants_qm(column=self.transition_density_tuple[0]),
-						BC.find_implicants_qm(column=self.transition_density_tuple[1])
+						BCanalization.find_implicants_qm(column=self._transition_density_tuple[0]),
+						BCanalization.find_implicants_qm(column=self._transition_density_tuple[1])
 					)
 
 		elif 'pi_coverage' in kwargs:
-			self._check_compute_cannalization_variables(prime_implicants=True)
-			if self.pi_coverage is None:
+			self._check_compute_canalization_variables(prime_implicants=True)
+			if self._pi_coverage is None:
 				if self.verbose: print "Computing: Coverage of Prime Implicants"
-				self.pi_coverage = BC.computes_pi_coverage(self.k, self.outputs, self.prime_implicants)
+				self._pi_coverage = BCanalization.computes_pi_coverage(self.k, self.outputs, self._prime_implicants)
 
 		elif 'two_symbols' in kwargs:
-			self._check_compute_cannalization_variables(prime_implicants=True)
-			if self.two_symbols is None:
+			self._check_compute_canalization_variables(prime_implicants=True)
+			if self._two_symbols is None:
 				if self.verbose: print "Computing: Two Symbols"
-				self.two_symbols = \
+				self._two_symbols = \
 					(
-						BC.find_two_symbols_v2(k=self.k, prime_implicants=self.prime_implicants[0]),
-						BC.find_two_symbols_v2(k=self.k, prime_implicants=self.prime_implicants[1])
+						BCanalization.find_two_symbols_v2(k=self.k, prime_implicants=self._prime_implicants[0]),
+						BCanalization.find_two_symbols_v2(k=self.k, prime_implicants=self._prime_implicants[1])
 					)
 		elif 'ts_coverage' in kwargs:
-			self._check_compute_cannalization_variables(two_symbols=True)
-			if self.ts_coverage is None:
+			self._check_compute_canalization_variables(two_symbols=True)
+			if self._ts_coverage is None:
 				if self.verbose: print "Computing: Coverage of Two Symbols"
-				self.ts_coverage = BC.computes_ts_coverage(self.k, self.outputs, self.two_symbols)
+				self._ts_coverage = BCanalization.computes_ts_coverage(self.k, self.outputs, self._two_symbols)
 
 		else:
-			pass
+			raise Exception('Canalization variable name not found. %s' % kwargs)
 		return True
 
 	def bias(self):

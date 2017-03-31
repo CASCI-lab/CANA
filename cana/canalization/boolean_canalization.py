@@ -15,7 +15,7 @@ Description...
 import networkx as nx
 import numpy as np
 import itertools
-from utils import *
+from .. utils import *
 from Queue import Queue, PriorityQueue
 from collections import deque
 
@@ -210,7 +210,7 @@ def find_two_symbols_v2(k=1, prime_implicants=None, verbose=False):
 		
 		n_schematas = schematas.shape[0]
 		if verbose:
-			print '\n== Partitions =='
+			print '\n== Partitions (v2) =='
 			print '>>> A (m=%d):' % (len(schematas))
 			print schematas
 		
@@ -440,7 +440,7 @@ def _can_swap_v2(schemata_subset, verbose=False):
 	return can_switch
 
 def _check_column_counts_v2(column_counts, count_fixed_variables=False, verbose=False):
-	if verbose: print ' -- Check Column Counts --'
+	if verbose: print ' -- Check Column Counts (v2) --'
 	
 	n = column_counts.shape[0] 	# The number of Prime Implicants (or rows)
 	#c_counts = {} 		# Constant Counts [ [indexes of 0],[indexes of 1],[indexes of 2] ]
@@ -478,8 +478,8 @@ def _check_column_counts_v2(column_counts, count_fixed_variables=False, verbose=
 		if verbose: print col,':',idxs
 		# If there is a singleton group, with only one, return -1
 		if len(idxs) == 1:
-			#return -1
-			pass
+			return -1
+			#pass
 		elif len(idxs) >= 2:
 			perm_groups.append( idxs )
 
@@ -499,7 +499,7 @@ def _column_counts_v2(pi_matrix=None, verbose=False):
 	Returns:
 		counts (numpy.ndarray) : a matrix ``n \times 3`` where the entries are counts.
 	"""
-	if verbose: print ' -- Column Counts --'
+	if verbose: print ' -- Column Counts (v2) --'
 	# How many PI?
 	n = pi_matrix.shape[1]
 	# Instanciate count matrix
@@ -521,6 +521,10 @@ def find_two_symbols_v1(k=1, prime_implicants=None, verbose=False):
 	while len(Partition_Options) > 0:
 		# take first partition out of the set
 		schemata_list = np.array(map(list, Partition_Options.pop()))
+		if verbose:
+			print '== Partitions (v1) =='
+			print '>>> A (m=%d)' % schemata_list.shape[0]
+			print schemata_list
 
 		# count the number of [0's, 1's, 2's] in each column
 		column_counts = _three_symbol_column_counts_v1(k=k, transition_list=schemata_list)
@@ -529,26 +533,37 @@ def find_two_symbols_v1(k=1, prime_implicants=None, verbose=False):
 		permutation_groups = _check_column_counts_v1(column_counts)
 		
 		if (permutation_groups != -1):
+			if verbose: print '>>> There are permutable groups! Lets loop them'
 			for x_group in permutation_groups:
 
 				# find the row counts by taking the transpose of the truncated schemata list
 				row_counts = _three_symbol_column_counts_v1(k=schemata_list.shape[0], transition_list=schemata_list[:,x_group].T)
-
+				if verbose:
+					print '>>> ROW Schema Counts:'
+					print row_counts
 				# make sure all row counts are the same
 				if len(row_counts) != row_counts.count(row_counts[0]):
 					permutation_groups = -1
-
+		if verbose:
+			print ">>> Permutation groups:",(permutation_groups != -1),permutation_groups
+			print ">>> Permuted groups already in F'':",((schemata_list.tolist(), permutation_groups) in two_symbol_schemata_list)
 		if (permutation_groups != -1) and not ((schemata_list.tolist(), permutation_groups) in two_symbol_schemata_list):
 			# do some weird permutation group testing
 			allowed_permutation_groups = _check_schemata_permutations_v1(schemata_list, permutation_groups)
 			if allowed_permutation_groups != []:
+				if verbose:
+					print 'ADDING to TS:',schemata_subset
 				two_symbol_schemata_list.append((schemata_list.tolist(), allowed_permutation_groups))
 
 		else:
 			if schemata_list.shape[0] > 2:
 				for schemata_subset in itertools.combinations(schemata_list, (schemata_list.shape[0] - 1)):
+					if verbose:
+						print 'ADDING to Queue:',schemata_subset
 					Partition_Options.append(np.array(schemata_subset))
 
+	if verbose:
+		print 'Partition_Options:',Partition_Options
 	final_list = []
 	prime_accounted = []
 
@@ -600,10 +615,13 @@ def _can_swap_v1(schemata_subset):
 	return can_switch
 
 def _check_column_counts_v1(column_counts = []):
+	print '-- Column Counts (v1) --'
+	print column_counts
 	unique_col_counts = []
 	permutation_groups = []
 
 	for i_col_count, x_col_count in enumerate(column_counts):
+		print 'Col: %d : %s' % (i_col_count, x_col_count)
 		if x_col_count.count(0) >= 2:
 			# this is a constant column so skip it
 			pass
@@ -619,8 +637,10 @@ def _check_column_counts_v1(column_counts = []):
 
 	# check if a singleton permutation group exists
 	if [len(x_group) for x_group in permutation_groups].count(1) > 0:
+		print 'counts:',permutation_groups
 		return -1
 	else:
+		print 'counts:',permutation_groups
 		return permutation_groups
 
 def _three_symbol_column_counts_v1(k=1, transition_list = None):
@@ -717,7 +737,7 @@ if __name__ == '__main__':
 	print '\n---\n'
 
 
-	
+	"""
 	# MARQUES-PITA
 	k = 6
 	outputs = [0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
@@ -727,6 +747,7 @@ if __name__ == '__main__':
 	#pi0s = set(['11'])
 	print pi0s
 	print pi1s
+	"""
 
 	#print _check_ts_inside_ts(ts0,ts1)
 

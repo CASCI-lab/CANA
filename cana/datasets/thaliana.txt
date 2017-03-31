@@ -1,0 +1,132 @@
+# Boolean network model of the control of flower morphogenesis in Arabidobis thaliana 
+# "From Genes to Flower Patterns and Evolution: Dynamic Models of Gene Regulatory Networks"
+# A. Chaos, M. Aldana, C. Espinosa-Soto, B. G. P. de Leon, A. G. Arroyo, E. R. Alvarez-Buylla,
+# Journal of Plant Growth Regulation, vol. 25, n. 4, 2006, pp. 278-289
+# The functions associated to nodes are minimized
+
+#total number of nodes 
+.v 15
+
+# labels of nodes and name of corresponding genes
+# 1 = AP3
+# 2 = UFO
+# 3 = FUL
+# 4 = FT
+# 5 = AP1
+# 6 = EMF1
+# 7 = LFY
+# 8 = AP2
+# 9 = WUS
+# 10 = AG
+# 11 = LUG
+# 12 = CLF
+# 13 = TFL1
+# 14 = PI
+# 15 = SEP
+
+.l 1 AP3 
+.l 2 UFO 
+.l 3 FUL 
+.l 4 FT 
+.l 5 AP1 
+.l 6 EMF1 
+.l 7 LFY 
+.l 8 AP2 
+.l 9 WUS 
+.l 10 AG 
+.l 11 LUG 
+.l 12 CLF 
+.l 13 TFL1 
+.l 14 PI 
+.l 15 SEP 
+
+
+# As a result of simulation, we get the following 10 single-point attractors:
+# 101100110111011 
+# 110110110011011 
+# 100110110011011 
+# 111100110111011 
+# 010001000011100 
+# 010001001011100 
+# 001100110111011 
+# 000110110011001 
+# 000001000011100 
+# 000001001011100 
+
+# 1 = AP3
+.n 1 7 1 2 5 7 10 14 15
+1-1--11 1
+1---111 1
+-1-1--- 1
+
+# 2 = UFO
+.n 2 1 2
+1 1
+
+# 3 = FUL
+.n 3 2 5 13
+00 1
+
+# 4 = FT
+.n 4 1 6
+0 1 
+
+# 5 = AP1
+.n 5 4 4 7 10 13
+--00 1
+1-0- 1
+-10- 1
+
+# 6 = EMF1
+.n 6 1 7
+0 1
+
+# 7 = LFY
+.n 7 4 3 5 6 13
+---0 1
+--0- 1
+
+# 8 = AP2
+.n 8 1 13
+0 1
+ 
+# 9 = WUS
+.n 9 3 9 10 15
+1-0 1
+10- 1
+
+# 10 = AG
+.n 10 9 5 7 8 9 10 11 12 13 15
+--0----0- 1
+-1--1---1 1
+-1----0-- 1
+-1---0--- 1
+01------- 1
+-1-1----- 1
+-10------ 1
+
+# 11 = LUG
+.n 11 0
+1
+
+# 12 = CLF
+.n 12 0
+1
+
+# 13 = TFL1
+.n 13 4 5 6 7 8
+010- 1 
+
+# 14 = PI
+.n 14 6 1 5 7 10 14 15
+11--11 1
+1--111 1
+--11-- 1
+1-1--- 1
+
+# 15 = SEP
+.n 15 1 7
+1 1
+
+.e end of file
+ 

@@ -61,12 +61,48 @@ def flip_bit(bit):
 	Returns:
 		same as input: The flipped bit
 	"""
-	if isinstance(bit, string):
+	if isinstance(bit, str):
 		return '0' if (bit=='1') else '1'
 	elif isinstance(bit, int) or isintance(bit, bool):
 		return 0 if (bit == 1) else 1
 	else:
 		raise TypeError("'bit' type format must be either 'string', 'int' or 'boolean'")
+
+def flip_binstate_bit(binstate, idx):
+	"""Flips the binary value of a bit in a binary state.
+
+	Args:
+		binstate (string) : The binary state.
+		idx (int) : The index of the bit to flip.
+	Returns:
+		(string) : New binary state.
+
+	"""
+	if idx > len(binstate):
+		raise TypeError('Binary state (%s) length and index position (%d) mismatch for.' % (binstate, idx))
+
+	_binstate = list(binstate)
+	_binstate[idx] = flip_bit(_binstate[idx])
+	return ''.join(_binstate)
+
+def flip_binstate_bit_set(binstate, idxs):
+	"""Flips the binary value for a set of bits in a binary state.
+	
+	Args:
+		binstate (string) : The binary state to flip.
+		idxs (int) : The indexes of the bits to flip.
+	
+	Returns:
+		(list) : The flipped states
+	"""
+	flipset = []
+	if (len(idxs) != 0):
+		fb = idxs.pop()
+		flipset.extend(flip_binstate_bit_set(binstate, copy.copy(idxs) ) )
+		flipset.extend(flip_binstate_bit_set(flip_binstate_bit(binstate, fb), copy.copy(idxs) ) )
+	else:
+		flipset.append(binstate)
+	return flipset
 
 def statenum_to_density(statenum):
 	"""Converts from state number to density
