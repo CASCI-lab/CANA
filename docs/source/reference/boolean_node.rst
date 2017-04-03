@@ -1,7 +1,7 @@
-.. currentmodule:: cana
+.. currentmodule:: cana.boolean_node
 
-Boolean Node
-=================================
+Node
+=====
 
 .. automodule:: cana.boolean_node
 .. autoclass:: BooleanNode

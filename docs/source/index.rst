@@ -28,12 +28,14 @@ Documentation:
 ---------------
 
 .. toctree::
-	:maxdepth: 2
+	:maxdepth: 3
 
 	install
+	notation
 	tutorial
 	reference/index
-	notes
+	development
+	appendix/index
 	references
 
 

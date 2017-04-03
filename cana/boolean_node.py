@@ -71,7 +71,7 @@ class BooleanNode(object):
 		Returns:
 			(BooleanNode) : the instanciated object.
 		Example:
-			>>> node = BooleanNode.from_output_list(name="AND", outputs=[0,0,0,1])
+			>>> BooleanNode.from_output_list(outputs=[0,0,0,1], name="AND")
 		"""
 		name = kwargs.pop('name') if 'name' in kwargs else 'x'
 		k = int(np.log2(len(outputs)))
@@ -92,7 +92,7 @@ class BooleanNode(object):
 
 		.. math::
 
-			r_i(x_i) = \frac{ \sum_{f_{\alpha} \in F} \Phi_{\theta:f_{\alpha} \in \Theta_{\theta}} (X^{\#}_{\theta i} ) }{ |F| }
+			r_i(x_i) = \frac{ \sum_{f_{\alpha} \in F} \Phi_{\theta:f_{\alpha} \in \Theta_{\theta}} (X^{\#}_{\theta_i} ) }{ |F| }
 	
 		where :math:`\Phi` is a function (:math:`min` or :math:`max`) and :math:`F` is the node LUT.
 
@@ -112,7 +112,7 @@ class BooleanNode(object):
 			(float / list) : The :math:`k_r` value or a list of :math:`r_i`.
 		
 		Note:
-			The complete mathematical description can be found in Marques-Pita & Rocha [2013].
+			The complete mathematical description can be found in :cite:`Marques-Pita:2013`.
 
 		See also:
 			:func:`effective_connectivity`, :func:`input_symmetry`.
@@ -339,7 +339,7 @@ class BooleanNode(object):
 		""" Returns the Look Up Table (LUT)
 		
 		Returns:
-			df (pandas.DataFrame): the LUT
+			(pandas.DataFrame): the LUT
 
 		Examples:
 			>>> AND = BooleanNode.from_output_list([0,0,0,1])
@@ -374,7 +374,7 @@ class BooleanNode(object):
 			>>> AND.schemata_look_up_table(type='pi')
 	
 		Note:
-			See the full list of `combining characters <https://en.wikipedia.org/wiki/Combining_character>`_.
+			See the full list of `combining characters <https://en.wikipedia.org/wiki/Combining_character>`_ to use other symbols as the permutation symbol.
 
 		See also:
 			:func:`look_up_table`
@@ -475,7 +475,7 @@ class BooleanNode(object):
 		Returns:
 			CM (networkx.DiGraph) : a directed graph representation of the CM.
 		See Also:
-			:method:`boolean_network.dynamics_canalization_map` for the DCM and :method:`drawing.draw_canalizing_map_graphviz` for plotting.
+			:func:`boolean_network.dynamics_canalization_map` for the DCM and :func:`drawing.draw_canalizing_map_graphviz` for plotting.
 		"""
 		self._check_compute_canalization_variables(two_symbols=True)
 
@@ -571,19 +571,25 @@ class BooleanNode(object):
 
 
 	def pi_coverage(self):
-		""" 
-		#TODO DOCSTRING 
+		""" Returns the :math:`F'` (Prime Implicants) binary state coverage.
+		
+		Returns:
+			(list)
+		See also:
+			:func:`ts_coverage`
 		"""
 		self._check_compute_canalization_variables(pi_coverage=True)
-		#
 		return self._pi_coverage
 
 	def ts_coverage(self):
-		"""
-		#TODO DOCSTRING 
+		""" Returns the :math:`F''` (Two-Symbol schematas) binary state coverage.
+		
+		Returns:
+			(list)
+		See also:
+			:func:`pi_coverage`
 		"""
 		self._check_compute_canalization_variables(ts_coverage=True)
-		#
 		return self._ts_coverage
 
 	def _check_compute_canalization_variables(self, **kwargs):

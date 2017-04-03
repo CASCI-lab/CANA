@@ -3,7 +3,7 @@ Notation
 ==========
 
 
-This notation follows the initial notation in Marques-Pita & Rocha [2013] from where all subsequent paper derive.
+This notation follows the initial notation in :cite:`Marques-Pita:2013` from where all subsequent papers derive.
 
 
 Node (automata)
@@ -42,7 +42,7 @@ Node (automata)
 +--------+-------------------------------------------------------------------------------+
 | |s_a|	 | transition in a LUT entry |f_a|                                               |                      
 |        |                                                                               |
-|        |Boolean state prescribed as the transition in |f_a|                            |
+|        | Boolean state prescribed as the transition in |f_a|                           |
 +--------+-------------------------------------------------------------------------------+
 
 Network
@@ -145,5 +145,93 @@ Wildcard
 Two-Symbol
 -----------
 
-# TODO
+.. |o_m| replace:: :math:`\circ_m`
+.. |b| replace:: :math:`\beta`
+.. |F''| replace:: :math:`F''`
+.. |f''th| replace:: :math:`f''_{\theta}`
+.. |Tht| replace:: :math:`\Theta_{\theta}`
+.. |Thtp| replace:: :math:`\Theta'_{\theta}`
+.. |Xl| replace:: :math:`X_l`
+.. |etal| replace:: :math:`\eta_l`
+.. |Xls| replace:: :math:`X_l^s`
+.. |Xg| replace:: :math:`X_g`
+.. |Xgs| replace:: :math:`X_g^s`
+.. |eta| replace:: :math:`\eta`
+.. |ng| replace:: :math:`n_g`
+.. |ngs| replace:: :math:`n_g^s`
+
+.. |thetao| replace:: :math:`\Theta'_{\theta} = \{ f'_{\alpha} : f_{\alpha} \rightarrow f''_{\theta} \}`
+.. |thetinha| replace:: :math:`\Theta'_{\theta} = \{ f'_v : f_v \rightarrow f''_{\theta} \}`
+
++--------+-------------------------------------------------------------------------------+
+| symbol | description                                                                   |
++--------+-------------------------------------------------------------------------------+
+| |o_m|  | Position-free symbol                                                          |
+|        |                                                                               |
+|        | If a variable in the condition part of a schema is marked with this symbol, it|
+|        | can exchange places with any other variable in the same schema marked with the|
+|        | same symbol. Index :math:`m` is used to distinguish subsets of identically-   |
+|        | marked inputs.                                                                |
++--------+-------------------------------------------------------------------------------+
+| |b|    | Depth of search for two-symbol schemata                                       |
+|        |                                                                               |
+|        | Defines the minimum number of wildcard schemata in a two-symbol redescription.|
++--------+-------------------------------------------------------------------------------+
+| |F''|  | 2-Symbol redescription of |F|.                                                |
+|        |                                                                               |
+|        | LUT where entries are two-symbol schemata.                                    |
++--------+-------------------------------------------------------------------------------+
+| |f''th|| a 2-Symbol schema in |F''|                                                    |
+|        |                                                                               |
+|        | An entry in |F''| is like an entry in :math:`|F|` but its condition part can  |
+|        | have wildcard and position-free symbols.                                      |
++--------+-------------------------------------------------------------------------------+
+| |Tht|  | Entries :math:`f_{\alpha} \in F : f'_v \rightarrow F''_{\theta}`              |
+|        |                                                                               |
+|        | The set of original LUT entries in :math:`F` redescribed by a single 2-symbol |
+|        | schema |thetao|                                                               |
++--------+-------------------------------------------------------------------------------+
+| |Thtp| | Schemata :math:`f'_v \in F' : f'_v \rightarrow f''_{\theta}`                  |
+|        |                                                                               |
+|        | The set of wildcard schemata in F' redescribed by a single 2-symbol schema    |
+|        | |thetinha|.                                                                   |
++--------+-------------------------------------------------------------------------------+
+| |Xl|   | set of liberals enputs in a schema :math:`f''`                                |
+|        |                                                                               |
+|        | The variables in the condition part of schema :math:`f''` that are specified  |
+|        | in a Boolean state (not wildcard)                                             |
++--------+-------------------------------------------------------------------------------+
+| |etal| | size of literal-emput set in schema :math:`f''`.                              |
+|        |                                                                               |
+|        | :math:`\eta_{l} = |X_{l}|`                                                    |
++--------+-------------------------------------------------------------------------------+
+| |Xls|  | :math:`\text{state-}s` literal enputs in :math:`f''`                          |
+|        |                                                                               |
+|        | Subset :math:`X_l^s \subset X_l` of literal enput in a scpecific state        |
+|        | :math:`s : s \in {0,1}`.                                                      |
++--------+-------------------------------------------------------------------------------+
+| |Xg|   | group invariant enput in a schema :math:`f''`                                 |
+|        |                                                                               |
+|        | The set variables in the condition part of schema :math:`f''` that are marked |
+|        | with an identical position-free symbol, in every state they can take.         |
++--------+-------------------------------------------------------------------------------+
+| |Xgs|  | elements of |Xg| in state :math:`s`                                           |
+|        |                                                                               |
+|        | This notation is used to refer to the members of a group-invariant enput      |
+|        | instantiated in a specific state :math:`s`, that is                           |
+|        | :math:`X_g^s = { \forall x_i \in X_g \land x_i = s}`.                         |
++--------+-------------------------------------------------------------------------------+
+| |eta|  | number of group-invariant enputs in :math:`f''`                               |
+|        |                                                                               |
+|        | Number of subsets of inputs marked with a distinct position-free symbol.      |
++--------+-------------------------------------------------------------------------------+
+| |ng|   | size of a single group-invariant enput :math:`g` in :math:`f''`               |
+|        |                                                                               |
+|        | Number of inputs marked with the position-free symbol in :math:`g`.           |
++--------+-------------------------------------------------------------------------------+
+| |ngs|  | a sub-constraint in :math:`X_g` on state :math:`s \in {0,1}`                  |
+|        |                                                                               |
+|        | specifies a group-invariant constraint in the set :math:`X_g`, at least       |
+|        | :math:`n_g^s` variables must be in state :math:`s`.                           |
++--------+-------------------------------------------------------------------------------+
 

@@ -25,7 +25,7 @@ def sc(directed_graph, keep_self_loops=True):
 		(list) : A list of sets with the driver nodes.
 
 	See also:
-		If you only need the size of the set, see :method:`sc_min_size`.
+		If you only need the size of the set, see :func:`sc_min_size`.
 	"""
 	# get the bipartite represenation of the directed graph
 	bipartite_graph, vertex_out, vertex_in = _directed_to_bipartite(directed_graph, keep_self_loops=keep_self_loops)
@@ -60,7 +60,7 @@ def sc_min_size(directed_graph, keep_self_loops = True):
 		(int) : The number of driver variables necessary to render the graph structurally controlled.
 	
 	See also:
-		:method:`sc`
+		:func:`sc`
 	"""
 	# get the bipartite represenation of the directed graph
 	bipartite_graph, vertex_out, vertex_in = _directed_to_bipartite(directed_graph, keep_self_loops = keep_self_loops)

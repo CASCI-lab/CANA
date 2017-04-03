@@ -28,16 +28,18 @@ def draw_dynamics_canalization_map_graphviz(DG, engine='neato', overlap='false',
 		controlled_node_bordercolor='green',
 		constant_node_bordercolor='pink',
 		
-		literal_edge_color='#208120', output_edge_color='#812020', fusing_edge_color='#a5a5cc', fused_edge_color='#202081',
+		literal_edge_color='#208120', output_edge_color='#812020',
+		fusing_edge_color='#a5a5cc', fused_edge_color='#202081',
+		simplified_edge_color='#cca37a',
 		
 		fusing_edge_arrowhead='none',
 		fused_edge_arrowhead='dot',
 		literal_edge_arrowhead='dot',
-		out_edge_arrowhead='dot',
-		simplified_edge_color='#208181',
-
-	*args, **kwargs):
+		out_edge_arrowhead='normal',
+		simplified_edge_arrowhead='normal',
+		*args, **kwargs):
 	""" Draws the Dynamics Canalization Map (DCM) using the GraphViz plotting engine.
+	
 	Args:
 		DG (networkx.DiGraph) : The node Canalizing Map (DCM).
 		simpily (bool) : Attemps to simpify the DCM by removing thresholds nodes with :math:`\tao=1`
@@ -119,10 +121,10 @@ def draw_dynamics_canalization_map_graphviz(DG, engine='neato', overlap='false',
 			
 			elif d['type'] == 'simplified':
 				if d['mode'] == 'selfloop':
-					arrowhead = 'dot'
+					arrowhead = simplified_edge_arrowhead
 					color = simplified_edge_color
 				elif d['mode'] == 'direct':
-					arrowhead = 'dot'
+					arrowhead = simplified_edge_arrowhead
 					color = simplified_edge_color
 			else:
 				raise AttributeError("Node type could not be found. Must be either 'out', 'literal', 'fusing' or 'fused'.")

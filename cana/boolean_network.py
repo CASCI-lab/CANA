@@ -256,31 +256,34 @@ class BooleanNetwork:
 		return self._sg
 
 	def number_interactions(self):
-		"""
-		TODO
+		""" Returns the number of interactions in the Structural Graph (SG).
+		Practically, it returns the number of edges of the SG.
+		
+		Returns:
+			int
 		"""
 		self._check_compute_variables(sg=True)
 		return nx.number_of_edges(self._sg)
 
 	def structural_indegrees(self):
-		"""The number of in-degrees in the structural graph.
+		""" Returns the in-degrees of the Structural Graph. Sorted.
 		
 		Returns:
 			(int) : the number of in-degrees.
 		See also:
-			:func:`structural_outdegree`
+			:func:`structural_outdegrees`, :func:`effective_indegrees`, :func:`effective_outdegrees`
 		"""
 		self._check_compute_variables(sg=True)
 		return sorted(self._sg.in_degree().values(), reverse=True)
 
 	def structural_outdegrees(self):
-		"""The number of out-degrees in the structural graph.
+		""" Returns the out-degrees of the Structural Graph. Sorted.
 
 		Returns:
-			(int) : the number of out-degrees.
+			(list)
 
 		See also:
-			:func:`structural_indegree`
+			:func:`structural_indegrees`, :func:`effective_indegrees`, :func:`effective_outdegrees`
 		"""
 		self._check_compute_variables(sg=True)
 		return sorted(self._sg.out_degree().values(), reverse=True)
@@ -325,15 +328,23 @@ class BooleanNetwork:
 		return self._eg
 
 	def effective_indegrees():
-		"""
-		TODO
+		""" Returns the in-degrees of the Effective Graph. Sorted.
+
+		Returns:
+			(list)
+		See also:
+			:func:`effective_outdegrees`, :func:`structural_indegrees`, :func:`structural_outdegrees`
 		"""
 		self._check_compute_variables(eg=True)
 		return sorted(self._eg.in_degree().values(), reverse=True)
 
 	def effective_outdegrees(self):
-		"""
-		TODO
+		""" Returns the out-degrees of the Effective Graph. Sorted.
+		
+		Returns:
+			(list)
+		See also:
+			:func:`effective_indegrees`, :func:`structural_indegrees`, :func:`structural_outdegrees`
 		"""
 		self._check_compute_variables(eg=True)
 		return sorted(self._eg.out_degree().values(), reverse=True)
@@ -343,7 +354,6 @@ class BooleanNetwork:
 
 		Returns:
 			(networkx.DiGraph) : The state transition graph for the Boolean Network.
-			
 		"""
 		self._stg = nx.DiGraph(name='STG: '+self.name)
 		self._stg.add_nodes_from( (i, {'label':self.num2bin(i)}) for i in xrange(self.Nstates) )
@@ -354,11 +364,12 @@ class BooleanNetwork:
 		return self._stg
 
 	def stg_indegree(self):
-		"""
-
+		""" Returns the In-degrees of the State-Transition-Graph (STG). Sorted.
+		
+		Returns:
+			list
 		"""
 		self._check_compute_variables('stg')
-
 		return sorted(self._stg.in_degree().values(), reverse=True)
 
 	def step(self, initial, n=1):
@@ -378,8 +389,6 @@ class BooleanNetwork:
 
 	def trajectory(self, initial, length=2):
 		""" Computes the trajectory of ``length`` steps without the State Transition Graph (STG).
-
-		@ TODO CONVERT STEP_ONE AND TEST THIS @
 		"""
 		trajectory = [initial]
 		for istep in xrange(length):
@@ -388,10 +397,11 @@ class BooleanNetwork:
 
 	def trajectory_to_attractor(self, initial):
 		""" Computes the trajectory starting at ``initial`` until it reaches an attracor (this is garanteed)
+
 		Args:
 			initial (string): the initial state.
 		Returns:
-			trajectory (list): the state trajectory between initial and the final attractor state.
+			(list): the state trajectory between initial and the final attractor state.
 		"""
 		self._check_compute_variables(attractors=True)
 		attractor_states = [s for att in self._attractors for s in att]
@@ -422,11 +432,12 @@ class BooleanNetwork:
 
 		Args:
 			mode (string) : ``stg`` or ``sat``. Defaults to ``stg``.
-					``stg``: Uses the full State Transition Graph (STG) and identifies the attractors as strongly connected components.
-					``bns``: Uses the SAT-based `BNS<https://people.kth.se/~dubrova/bns.html>_` to find all attractors.
-
+				``stg``: Uses the full State Transition Graph (STG) and identifies the attractors as strongly connected components.
+				``bns``: Uses the SAT-based :mod:`cana.bns` to find all attractors.
 		Returns:
 			attractors (list) : A list containing all attractors for the boolean network.
+		See also:
+			:mod:`cana.bns`
 		"""
 		self._check_compute_variables(stg=True)
 
@@ -538,12 +549,14 @@ class BooleanNetwork:
 		"""Get the minimum necessary driver nodes by iterating the combination of all possible driver nodes of length :math:`min <= x <= max`.
 		
 		Args:
-			min_dvs (int) : Mininum number of driver nodes to search. Defaults to ``1``.
-			max_dvs (int) : Maximum number of driver nodes to search. Defaults to ``4``.
+			min_dvs (int) : Mininum number of driver nodes to search.
+			max_dvs (int) : Maximum number of driver nodes to search.
 		Returns:
 			(list) : The list of driver nodes found in the search.
 		Note:
 			This is an inefficient bruit force search, maybe we can think of better ways to do this?
+		See also:
+			:func:`controlled_state_transition_graph`, :func:`controlled_attractor_graph`.
 		"""
 		nodeids = range(self.Nnodes)
 		if self.keep_constants:
@@ -571,13 +584,15 @@ class BooleanNetwork:
 
 
 	def controlled_state_transition_graph(self, driver_nodes=[]):
-		"""Returns the Controlled State-Transition-Graph (C-STG).
-		In practice, it copied the original STG, flips driver nodes (variables), and updates the C-STG.
+		"""Returns the Controlled State-Transition-Graph (CSTG).
+		In practice, it copied the original STG, flips driver nodes (variables), and updates the CSTG.
 		
 		Args:
 			driver_nodes (list) : The list of driver nodes.
 		Returns:
 			(networkx.DiGraph) : The Controlled State-Transition-Graph.
+		See also:
+			:func:`attractor_driver_nodes`, :func:`controlled_attractor_graph`.
 		"""
 		self._check_compute_variables(attractors=True)
 
@@ -616,9 +631,11 @@ class BooleanNetwork:
 	def controlled_attractor_graph(self, cstg):
 		"""
 		Args:
-			cstg (networkx.DiGraph) : The Controlled State-Transition-Graph (C-STG)
+			cstg (networkx.DiGraph) : A Controlled State-Transition-Graph (CSTG)
 		Returns:
-			cag (networkx.DiGraph) : The Controlled Attractor Graph (CAG)
+			(networkx.DiGraph) : The Controlled Attractor Graph (CAG)
+		See also:
+			:func:`attractor_driver_nodes`, :func:`controlled_state_transition_graph`.
 		"""
 		self._check_compute_variables(attractors=True)
 
@@ -645,9 +662,6 @@ class BooleanNetwork:
 			cstg (networkx.DiGraph) : The Controlled State-Transition-Graph.
 		Returns:
 			(float) : Mean Fraction of Reachable Configurations
-
-		TODO:
-			Not sure that are the reachable_from and control_from measures
 		"""
 		reachable_from = []
 		
@@ -660,7 +674,7 @@ class BooleanNetwork:
 
 		return reachable_from
 
-	def mean_controlable_configuratios(self, cstg):
+	def mean_controlable_configurations(self, cstg):
 		"""The Mean Fraction of Controlable Configurations
 
 		Args:
@@ -726,7 +740,7 @@ class BooleanNetwork:
 		Note:
 			When computing FVS on the structural graph, you might want to use ``remove_constants=True``
 			to make sure the resulting set is minimal – since constants are not controlabled by definition.
-			Also, when computing on the effective graph, you can define the desired``threshold`` level.
+			Also, when computing on the effective graph, you can define the desired ``threshold`` level.
 		"""
 		self._check_compute_variables(sg=True)
 
@@ -793,7 +807,7 @@ class BooleanNetwork:
 		Returns:
 			DCM (networkx.DiGraph) : a directed graph representation of the DCM.
 		See Also:
-			:method:`boolean_node.canalizing_map` for the CM and :method:`drawing.draw_dynamics_canalizing_map_graphviz` for plotting.
+			:func:`boolean_node.canalizing_map` for the CM and :func:`drawing.draw_dynamics_canalizing_map_graphviz` for plotting.
 		"""
 		CMs = []
 		for node in self.nodes:
@@ -866,11 +880,16 @@ class BooleanNetwork:
 	#
 	# Plotting Methods
 	#
-	def derrida_curve(self, nsamples=10, random_state=None):
-		"""
+	def derrida_curve(self, nsamples=10, random_seed=None):
+		""" The Derrida Curva (also reffered as criticality measure :math:`D_s`).
 		
+		Args:
+			nsamples (int) : The number of samples per hammimg distance to get.
+			random_seed (int) : The random state seed.
+		Returns:
+			(dx,dy) (tuple) : The dx and dy of the curve.
 		"""
-		random.seed(random_state)
+		random.seed(random_seed)
 
 		dx = np.linspace(0,1,self.Nnodes)
 		dy = np.zeros(self.Nnodes)

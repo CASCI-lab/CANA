@@ -24,6 +24,7 @@ import copy
 #
 def fvs_grasp(directed_graph, max_iter=100, keep_self_loops=True):
 	"""The Feedback Vertex Set GRASP implementation.
+	This implementation is not exact but it is recommended for very large graphs.
 
 	Args:
 		directed_graph (networkx.DiGraph) : The structure graph.
@@ -31,10 +32,8 @@ def fvs_grasp(directed_graph, max_iter=100, keep_self_loops=True):
 		keep_self_loops (bool) : If self-loops are used in the computation. By FVS theory, all self-loop nodes are needed for control.
 	Returns:
 		(list) : A list of sets with the driver nodes.
-	Warning:
-		Use the GRASP method for large graphs.
 	See also:
-		:method:`fvs_bruteforce`.
+		:func:`fvs_bruteforce`.
 	"""
 	if keep_self_loops:
 		S = set(directed_graph.nodes_with_selfloops())
@@ -78,7 +77,7 @@ def fvs_bruteforce(directed_graph, max_search=5, keep_self_loops=True):
 	Warning:
 		Use the GRASP method for large graphs.
 	See also:
-		:method:`fvs_grasp`.
+		:func:`fvs_grasp`.
 
 	"""
 	N = len(directed_graph)
@@ -94,7 +93,7 @@ def fvs_bruteforce(directed_graph, max_search=5, keep_self_loops=True):
 	root_var = _root_variables(directed_graph, keep_self_loops=keep_self_loops)
 	minfvc = minfvc.union(root_var)
 
-	if is_acyclic(directed_graph):
+	if _is_acyclic(directed_graph):
 		return [minfvc]
 
 	else:
@@ -106,7 +105,7 @@ def fvs_bruteforce(directed_graph, max_search=5, keep_self_loops=True):
 			for an_combo in itertools.combinations(nonfvc_variables, num_additional_var):
 				possible_fvs = minfvc.union(an_combo)
 
-				if is_acyclic(_graph_minus(directed_graph, possible_fvs)): 
+				if _is_acyclic(_graph_minus(directed_graph, possible_fvs)): 
 					FVC_sets.append(possible_fvs)
 			
 			num_additional_var += 1
@@ -127,7 +126,7 @@ def _graph_minus(graph, nodeset):
 
 	return newgraph
 
-def is_acyclic(graph):
+def _is_acyclic(graph):
 	"""
 	"""
 	return nx.is_directed_acyclic_graph(graph)

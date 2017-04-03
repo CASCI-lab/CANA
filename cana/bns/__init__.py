@@ -5,17 +5,20 @@ BNS Attractors Interface
 
 This module interfaces CANA with the [B]oolean [N]etworks with [S]ynchronous update (BNS) :cite:`Dubrova:2011` to compute attractors.
 
-> BNS is a software tool for computing attractors in Boolean Networks with Synchronous update.
-> Synchronous Boolean networks [1] are used for the modeling of genetic regulatory networks. 
+	BNS is a software tool for computing attractors in Boolean Networks with Synchronous update.
+	Synchronous Boolean networks are used for the modeling of genetic regulatory networks. 
 
-> BNS implements the algorithm presented in [2] which is based on a SAT-based bounded model checking.
-> BNS uses much less space compared to BooleNet or other BDD-based approaches for computing attractors.
-> It can handle several orders of magnitude larger networks. 
+	BNS implements the algorithm presented in which is based on a SAT-based bounded model checking.
+	BNS uses much less space compared to BooleNet or other BDD-based approaches for computing attractors.
+	It can handle several orders of magnitude larger networks. 
 
-Last updated: March 2017.
 
-See More:
-	https://people.kth.se/~dubrova/bns.html
+
+.. Note::
+
+	You must have ``bns`` compiled for you system. Alternatively, you can download the binary from the `bns website <https://people.kth.se/~dubrova/bns.html>`_ directly.
+	Last updated: March 2017.
+
 """
 #	Copyright (C) 2017 by
 #	Rion Brattig Correia <rionbr@gmail.com>
@@ -35,10 +38,11 @@ def get_attractors(cnet, bnspath=_path, cleanup=True):
 
 	Args:
 		cnet (file,string) : A .cnet formated string or file.
+		bnspath (string) : The path to the bns binary.
+		cleanup (bool) : If cnet is a string, this function creates a temporary file.
+			This forces the removal of this temp file.
 	Returns:
-
-	Note:
-		You must have ``bns`` compiled for you system. Alternatively, you can download the binary from the `bns<https://people.kth.se/~dubrova/bns.html>_` website directly.
+		list : the list of attractors
 	"""
 	
 	# If is file, open the file

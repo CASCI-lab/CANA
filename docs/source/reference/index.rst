@@ -7,10 +7,13 @@ API Reference
 
 
 .. toctree::
+	:caption: Table of Contents
+	:name: mastertoc
 	:maxdepth: 2
 	
-	notation
 	boolean_node
 	boolean_network
-	networks/index
+	canalization/index
+	control/index
+	datasets/index
 	utils

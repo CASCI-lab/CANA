@@ -33,10 +33,11 @@ def draw_canalizing_map_graphviz(DG=None,
 		fusing_edge_arrowhead='none',
 		fused_edge_arrowhead='dot',
 		literal_edge_arrowhead='dot',
-		out_edge_arrowhead='dot',
+		out_edge_arrowhead='normal',
 
 		*args, **kwargs):
 	""" Draws the Canalizing Map (CM) using the GraphViz plotting engine.
+	
 	Args:
 		DG (networkx.DiGraph) : The node Canalizing Map (CM).
 	Returns:

@@ -14,12 +14,10 @@ __copyright__ = u'2017, Gates, A., Correia, R. B., Rocha, L. M.'
 __version__ = '0.0.1'
 __release__ = '0.0.1a'
 #
-__all__ = ['boolean_network','boolean_node','boolean_canalization']
+__all__ = ['boolean_network','boolean_node']
 
 #
 from boolean_network import BooleanNetwork
 from boolean_node import BooleanNode
-#
-from boolean_canalization import *
 from utils import *
 #

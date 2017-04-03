@@ -8,10 +8,10 @@ Download
 ---------
 
 The source is available on GitHub at
-https://github.com/@@/@@
+https://github.com/rionbr/cana
 
 You can also download it from the Python Package Index (Pypi) at
-https://pypi.python.org/pypi/@@
+https://pypi.python.org/pypi/cana
 
 Quick Install
 --------------
@@ -21,7 +21,7 @@ Just run the following command on terminal to install.
 
 .. code-block:: bash
 
-	$pip install @@
+	$pip install cana
 
 Requirements
 -------------
