@@ -1,0 +1,228 @@
+.v 34
+
+.l 1 Acetoacetyl_CoA
+.l 2 Acetyl_CoA
+.l 3 Acetyl_CoA_acetyltransferase
+.l 4 Acetyl_CoA_acetyltransferase_gene
+.l 5 Acetyl_CoA_acetyltransferase_RNA
+.l 6 Cholesterol
+.l 7 Cyp51
+.l 8 Cyp51_gene
+.l 9 Cyp51_RNA
+.l 10 Desmosterol
+.l 11 Dimethyl_allyl_pyrophosphate
+.l 12 Farnesyl_pyrophosphate
+.l 13 FPP_Synthase
+.l 14 FPP_Synthase_gene
+.l 15 FPP_Synthase_RNA
+.l 16 Geranyl_pyrophosphate
+.l 17 HMG_CoA
+.l 18 HMG_CoA_Reductase
+.l 19 HMG_CoA_Reductase_gene
+.l 20 HMG_CoA_Reductase_RNA
+.l 21 HMG_CoA_Synthase
+.l 22 HMG_CoA_Synthase_gene
+.l 23 HMG_CoA_Synthase_RNA
+.l 24 Insig_SREBP_SCAP
+.l 25 Isopentenyl_pyrophosphate
+.l 26 Lanosterol
+.l 27 Mevalonic_Acid
+.l 28 Mevalonyl_pyrophosphate
+.l 29 mSREBP
+.l 30 pSREBP
+.l 31 Septdehydrocholesterol
+.l 32 Squaline
+.l 33 SREBP_SCAP
+.l 34 Statins
+
+# 1 Acetoacetyl_CoA 
+.n 1 2 2 3
+00 0
+01 0
+10 0
+11 1
+
+# 2 Acetyl_CoA 
+.n 2 1 2
+0 0
+1 1
+
+# 3 Acetyl_CoA_acetyltransferase 
+.n 3 1 5
+0 0
+1 1
+
+# 4 Acetyl_CoA_acetyltransferase_gene 
+.n 4 1 29
+0 0
+1 1
+
+# 5 Acetyl_CoA_acetyltransferase_RNA 
+.n 5 1 4
+0 0
+1 1
+
+# 6 Cholesterol 
+.n 6 2 10 31
+00 0
+01 1
+10 1
+11 1
+
+# 7 Cyp51 
+.n 7 1 9
+0 0
+1 1
+
+# 8 Cyp51_gene 
+.n 8 1 29
+0 0
+1 1
+
+# 9 Cyp51_RNA 
+.n 9 1 8
+0 0
+1 1
+
+# 10 Desmosterol 
+.n 10 1 26
+0 0
+1 1
+
+# 11 Dimethyl_allyl_pyrophosphate 
+.n 11 1 25
+0 0
+1 1
+
+# 12 Farnesyl_pyrophosphate 
+.n 12 2 13 16
+00 0
+01 1
+10 0
+11 0
+
+# 13 FPP_Synthase 
+.n 13 1 15
+0 0
+1 1
+
+# 14 FPP_Synthase_gene 
+.n 14 1 29
+0 0
+1 1
+
+# 15 FPP_Synthase_RNA 
+.n 15 1 14
+0 0
+1 1
+
+# 16 Geranyl_pyrophosphate 
+.n 16 2 11 25
+00 0
+01 1
+10 1
+11 1
+
+# 17 HMG_CoA 
+.n 17 3 1 2 21
+000 0
+001 0
+010 0
+011 0
+100 0
+101 0
+110 0
+111 1
+
+# 18 HMG_CoA_Reductase 
+.n 18 2 20 34
+00 0
+01 0
+10 1
+11 0
+
+# 19 HMG_CoA_Reductase_gene 
+.n 19 1 29
+0 0
+1 1
+
+# 20 HMG_CoA_Reductase_RNA 
+.n 20 1 19
+0 0
+1 1
+
+# 21 HMG_CoA_Synthase 
+.n 21 1 23
+0 0
+1 1
+
+# 22 HMG_CoA_Synthase_gene 
+.n 22 1 29
+0 0
+1 1
+
+# 23 HMG_CoA_Synthase_RNA 
+.n 23 1 22
+0 0
+1 1
+
+# 24 Insig_SREBP_SCAP 
+.n 24 1 6
+0 1
+1 0
+
+# 25 Isopentenyl_pyrophosphate 
+.n 25 1 28
+0 0
+1 1
+
+# 26 Lanosterol 
+.n 26 1 32
+0 0
+1 1
+
+# 27 Mevalonic_Acid 
+.n 27 2 17 18
+00 0
+01 0
+10 0
+11 1
+
+# 28 Mevalonyl_pyrophosphate 
+.n 28 1 27
+0 0
+1 1
+
+# 29 mSREBP 
+.n 29 1 30
+0 0
+1 1
+
+# 30 pSREBP 
+.n 30 1 33
+0 0
+1 1
+
+# 31 Septdehydrocholesterol 
+.n 31 1 26
+0 0
+1 1
+
+# 32 Squaline 
+.n 32 1 12
+0 0
+1 1
+
+# 33 SREBP_SCAP 
+.n 33 2 24 34
+00 0
+01 0
+10 1
+11 0
+
+# 34 Statins 
+.n 34 1 34
+0 0
+1 1
+
+.e End of file
