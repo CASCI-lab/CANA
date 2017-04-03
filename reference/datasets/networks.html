@@ -1,0 +1,312 @@
+
+
+<!DOCTYPE html>
+<!--[if IE 8]><html class="no-js lt-ie9" lang="en" > <![endif]-->
+<!--[if gt IE 8]><!--> <html class="no-js" lang="en" > <!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  <script type="text/javascript">
+
+      var _gaq = _gaq || [];
+      _gaq.push(['_setAccount', 'UA-71404006-4']);
+      _gaq.push(['_trackPageview']);
+
+      (function() {
+        var ga = document.createElement('script'); ga.type = 'text/javascript'; ga.async = true;
+        ga.src = ('https:' == document.location.protocol ? 'https://ssl' : 'http://www') + '.google-analytics.com/ga.js';
+        var s = document.getElementsByTagName('script')[0]; s.parentNode.insertBefore(ga, s);
+      })();
+    </script>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  
+  <title>Biological Boolean Networks &mdash; CANA 0.0.1a documentation</title>
+  
+
+  
+  
+
+  
+
+  
+  
+    
+
+  
+
+  
+  
+    <link rel="stylesheet" href="../../_static/css/theme.css" type="text/css" />
+  
+
+  
+
+  
+        <link rel="index" title="Index"
+              href="../../genindex.html"/>
+        <link rel="search" title="Search" href="../../search.html"/>
+    <link rel="top" title="CANA 0.0.1a documentation" href="../../index.html"/>
+        <link rel="up" title="Common Nodes &amp; Networks" href="index.html"/>
+        <link rel="next" title="Utilities" href="../utils.html"/>
+        <link rel="prev" title="Boolean Nodes" href="nodes.html"/> 
+
+  
+  <script src="../../_static/js/modernizr.min.js"></script>
+
+</head>
+
+<body class="wy-body-for-nav" role="document">
+
+  <div class="wy-grid-for-nav">
+
+    
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search">
+          
+
+          
+            <a href="../../index.html" class="icon icon-home"> CANA
+          
+
+          
+          </a>
+
+          
+            
+            
+              <div class="version">
+                0.0.1
+              </div>
+            
+          
+
+          
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+
+          
+        </div>
+
+        <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+          
+            
+            
+                <ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="../../install.html">Installation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../notation.html">Notation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../tutorial.html">Tutorials</a></li>
+<li class="toctree-l1 current"><a class="reference internal" href="../index.html">API Reference</a><ul class="current">
+<li class="toctree-l2"><a class="reference internal" href="../boolean_node.html">Node</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../boolean_network.html">Network</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../canalization/index.html">Canalization</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../control/index.html">Control</a></li>
+<li class="toctree-l2 current"><a class="reference internal" href="index.html">Common Nodes &amp; Networks</a><ul class="current">
+<li class="toctree-l3"><a class="reference internal" href="nodes.html">Boolean Nodes</a></li>
+<li class="toctree-l3 current"><a class="current reference internal" href="#">Biological Boolean Networks</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#network-motifs">Network Motifs</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="../utils.html">Utilities</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="../../development.html">Development</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../appendix/index.html">Appendix</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../references.html">References</a></li>
+</ul>
+
+            
+          
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+
+      
+      <nav class="wy-nav-top" role="navigation" aria-label="top navigation">
+        <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+        <a href="../../index.html">CANA</a>
+      </nav>
+
+
+      
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          
+
+ 
+
+
+
+<div role="navigation" aria-label="breadcrumbs navigation">
+  <ul class="wy-breadcrumbs">
+    <li><a href="../../index.html">Docs</a> &raquo;</li>
+      
+          <li><a href="../index.html">API Reference</a> &raquo;</li>
+      
+          <li><a href="index.html">Common Nodes &amp; Networks</a> &raquo;</li>
+      
+    <li>Biological Boolean Networks</li>
+      <li class="wy-breadcrumbs-aside">
+        
+          
+            <a href="../../_sources/reference/datasets/networks.rst.txt" rel="nofollow"> View page source</a>
+          
+        
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+            
+  <span class="target" id="module-cana.datasets.bio"></span><div class="section" id="biological-boolean-networks">
+<h1>Biological Boolean Networks<a class="headerlink" href="#biological-boolean-networks" title="Permalink to this headline">¶</a></h1>
+<p>Some of the commonly used biological boolean networks</p>
+<dl class="function">
+<dt id="cana.datasets.bio.THALIANA">
+<code class="descclassname">cana.datasets.bio.</code><code class="descname">THALIANA</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/cana/datasets/bio.html#THALIANA"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#cana.datasets.bio.THALIANA" title="Permalink to this definition">¶</a></dt>
+<dd><p>Boolean network model of the control of flower morphogenesis in Arabidopsis thaliana</p>
+<p>The network is defined in <a class="reference internal" href="../../references.html#chaos-2006" id="id1">[CAES+06]</a>.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Returns:</th><td class="field-body">(BooleanNetwork)</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="function">
+<dt id="cana.datasets.bio.DROSOPHILA">
+<code class="descclassname">cana.datasets.bio.</code><code class="descname">DROSOPHILA</code><span class="sig-paren">(</span><em>cells=1</em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/cana/datasets/bio.html#DROSOPHILA"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#cana.datasets.bio.DROSOPHILA" title="Permalink to this definition">¶</a></dt>
+<dd><p>Drosophila Melanogaster boolean model.
+This is a simplification of the original network defined in <a class="reference internal" href="../../references.html#albert-2008" id="id2">[AO03]</a>.
+In the original model, some nodes receive inputs from neighboring cells.
+In this single cell network, they are condensed (nhhnHH) and treated as constants.</p>
+<p>There is currently only one model available, where the original neighboring cell signals are treated as constants.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>cells</strong> (<em>int</em>) &#8211; Which model to return.</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="function">
+<dt id="cana.datasets.bio.BUDDING_YEAST">
+<code class="descclassname">cana.datasets.bio.</code><code class="descname">BUDDING_YEAST</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/cana/datasets/bio.html#BUDDING_YEAST"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#cana.datasets.bio.BUDDING_YEAST" title="Permalink to this definition">¶</a></dt>
+<dd><p>The network is defined in <a class="reference internal" href="../../references.html#fangting-2004" id="id3">[LLL+04]</a>.</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="cana.datasets.bio.MARQUESPITA">
+<code class="descclassname">cana.datasets.bio.</code><code class="descname">MARQUESPITA</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/cana/datasets/bio.html#MARQUESPITA"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#cana.datasets.bio.MARQUESPITA" title="Permalink to this definition">¶</a></dt>
+<dd><p>Boolean network used for the Two-Symbol schemata example.</p>
+<p>The network is defined in <a class="reference internal" href="../../references.html#marques-pita-2013" id="id4">[MPR13]</a>.</p>
+</dd></dl>
+
+</div>
+<span class="target" id="module-cana.datasets.motifs"></span><div class="section" id="network-motifs">
+<h1>Network Motifs<a class="headerlink" href="#network-motifs" title="Permalink to this headline">¶</a></h1>
+<p>Description...</p>
+<dl class="function">
+<dt id="cana.datasets.motifs.network_motif">
+<code class="descclassname">cana.datasets.motifs.</code><code class="descname">network_motif</code><span class="sig-paren">(</span><em>name=None</em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/cana/datasets/motifs.html#network_motif"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#cana.datasets.motifs.network_motif" title="Permalink to this definition">¶</a></dt>
+<dd><p>Graph motifs from <a class="reference internal" href="../../references.html#milo-2012" id="id5">[MSOI+02]</a>.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>name</strong> (<em>string</em>) &#8211; The name of the motif.
+Possible values are : <code class="docutils literal"><span class="pre">FeedForward</span></code>, <code class="docutils literal"><span class="pre">Fan</span></code>, <code class="docutils literal"><span class="pre">FeedForwardSelf1</span></code>, <code class="docutils literal"><span class="pre">FeedForwardSelf2</span></code>, <code class="docutils literal"><span class="pre">FeedForwardSelf3</span></code>, <code class="docutils literal"><span class="pre">FeedForwardSelf123</span></code>, <code class="docutils literal"><span class="pre">BiFan</span></code>, <code class="docutils literal"><span class="pre">CoRegulated</span></code>, <code class="docutils literal"><span class="pre">CoRegulating</span></code>, <code class="docutils literal"><span class="pre">BiParallel</span></code>, <code class="docutils literal"><span class="pre">TriParallel</span></code>, <code class="docutils literal"><span class="pre">Dominating4</span></code>, <code class="docutils literal"><span class="pre">Dominating4Undir</span></code>, <code class="docutils literal"><span class="pre">3Loop</span></code>, <code class="docutils literal"><span class="pre">4Loop</span></code>, <code class="docutils literal"><span class="pre">3LoopSelf123</span></code>, <code class="docutils literal"><span class="pre">FourLoop</span></code>, <code class="docutils literal"><span class="pre">FourCoLoop</span></code>, <code class="docutils literal"><span class="pre">DirectedTwoLoop</span></code>, <code class="docutils literal"><span class="pre">BiParallelLoop</span></code>, <code class="docutils literal"><span class="pre">5Chain</span></code>, <code class="docutils literal"><span class="pre">3Chain</span></code>, <code class="docutils literal"><span class="pre">KeffStudy3</span></code>, <code class="docutils literal"><span class="pre">KeffStudy4</span></code>, <code class="docutils literal"><span class="pre">CoRegulatedSelf</span></code>, <code class="docutils literal"><span class="pre">KeffLine4</span></code>, <code class="docutils literal"><span class="pre">KeffLineLoop4</span></code>, <code class="docutils literal"><span class="pre">3Full</span></code>, <code class="docutils literal"><span class="pre">6Pyramid</span></code>, <code class="docutils literal"><span class="pre">4Split</span></code>, <code class="docutils literal"><span class="pre">5BiParallel</span></code>, <code class="docutils literal"><span class="pre">6BiParallelDilation</span></code>, <code class="docutils literal"><span class="pre">6BiParallelDilationLoop</span></code>, <code class="docutils literal"><span class="pre">5combine</span></code>, <code class="docutils literal"><span class="pre">4tree</span></code>.</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body">The directed graph motif.</td>
+</tr>
+<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body">(networkx.DiGraph)</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+</div>
+
+
+           </div>
+          </div>
+          <footer>
+  
+    <div class="rst-footer-buttons" role="navigation" aria-label="footer navigation">
+      
+        <a href="../utils.html" class="btn btn-neutral float-right" title="Utilities" accesskey="n">Next <span class="fa fa-arrow-circle-right"></span></a>
+      
+      
+        <a href="nodes.html" class="btn btn-neutral" title="Boolean Nodes" accesskey="p"><span class="fa fa-arrow-circle-left"></span> Previous</a>
+      
+    </div>
+  
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>
+        &copy; Copyright 2017, Gates, A., Correia, R. B., Rocha, L. M..
+      Last updated on Apr 03, 2017.
+
+    </p>
+  </div>
+  Built with <a href="http://sphinx-doc.org/">Sphinx</a> using a <a href="https://github.com/snide/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>. 
+
+</footer>
+
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+  
+
+
+  
+
+    <script type="text/javascript">
+        var DOCUMENTATION_OPTIONS = {
+            URL_ROOT:'../../',
+            VERSION:'0.0.1a',
+            COLLAPSE_INDEX:false,
+            FILE_SUFFIX:'.html',
+            HAS_SOURCE:  true
+        };
+    </script>
+      <script type="text/javascript" src="../../_static/jquery.js"></script>
+      <script type="text/javascript" src="../../_static/underscore.js"></script>
+      <script type="text/javascript" src="../../_static/doctools.js"></script>
+      <script type="text/javascript" src="https://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+
+  
+
+  
+  
+    <script type="text/javascript" src="../../_static/js/theme.js"></script>
+  
+
+  
+  
+  <script type="text/javascript">
+      jQuery(function () {
+          SphinxRtdTheme.StickyNav.enable();
+      });
+  </script>
+   
+
+</body>
+</html>
