@@ -1,0 +1,3 @@
+include cana/datasets/*.txt
+include cana/datasets/bns/*.cnet
+include cana/datasets/cell_collective/*.txt
