@@ -1,15 +1,16 @@
-from setuptools import setup
-from boolnets import *
+from setuptools import setup, find_packages
+import cana
+from cana import __package__, __title__, __description__, __version__
 
 def readme():
 	with open('README.md') as f:
 		return f.read()
 
 setup(
-	name=__package__.title(),
+	name=__package__,
 	version=__version__,
-	description="CANalization: Control & Redundancy in Boolean Networks",
-	long_description="",
+	description=__description__,
+	long_description=__description__,
 	classifiers=[
 		'Development Status :: 4 - Beta',
 		'License :: OSI Approved :: MIT License',
@@ -22,7 +23,14 @@ setup(
 	author="Alex Gates & Rion Brattig Correia",
 	author_email="rionbr@gmail.com",
 	license="MIT",
-	packages=['can'],
+	packages=find_packages(),
+	package_data={
+		'datasets': [
+			'cana.datasets/*.txt',
+			'cana.datasets/bns/*.cnet',
+			'cana.datasets/cell_collective/*.txt'
+		],
+	},
 	install_requires=[
 		'numpy',
 		'scipy',
