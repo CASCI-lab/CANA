@@ -311,7 +311,7 @@ def find_two_symbols_v2(k=1, prime_implicants=None, verbose=False):
 		print '>>> TS (simplified):'
 		for i,tss in TSs.items():
 			print i,tss
-	
+
 	# Final List (from simplified)
 	TSf = [ (tss['tss'][0], tss['perms'], [] ) for tss in TSs.values()]
 
@@ -319,11 +319,12 @@ def find_two_symbols_v2(k=1, prime_implicants=None, verbose=False):
 	if verbose:
 		print '-- Check all PI are accounted for in the TS --'
 	for pi in prime_implicants:
+		if verbose: print 'PI:',pi
 		if not any([_check_schema_within_schema( [pi.tolist()] , tss['xl'], dir='a', verbose=False)[0] for tss in TSs.values()]):
 			if verbose:
-				'PI %s not in TS list. ADDING' % (pi)
+				print 'PI %s not in TS list. ADDING' % (pi)
 			TSf.append( (pi.tolist(),[],[]) )
-	
+
 	# Step to include same-symbol permutables
 	for ts, perms, sames in TSf:
 		column_counts = _column_counts_v2(pi_matrix=np.array([ts]), verbose=verbose)
@@ -331,7 +332,7 @@ def find_two_symbols_v2(k=1, prime_implicants=None, verbose=False):
 		# Include in the final list
 		if perm_groups != -1:
 			sames.extend(perm_groups)
-	
+
 	# Step to convert the pi list to string
 	for i,(ts,perms,sames) in enumerate(TSf, start=0):
 		ts = ''.join(map(str, ts))
@@ -375,26 +376,34 @@ def _check_schema_within_schema(la, lb, dir=None, verbose=False):
 	#
 	return a_in_b, b_in_a
 		
-def _expand_ts_logic(tss,perms):
+def _expand_ts_logic(two_symbols, permut_indexes):
 	""" Expands the Two-Symbol logic to all possible prime-implicants variations being covered.
 	
 	Args:
-		ts (tuple) : A Two-Symbol schemata tuple of lists.
+		two_symbols (list) : Two-Symbol schematas list-of-lists.
 	Returns:
 		(list) : a list of :math:`F'` covered by this Two-Symbol.
 	"""
-	_tss = np.array(tss)
+	# If receiving a binary string, convert to list of lists
+	if isinstance(two_symbols, str):
+		two_symbols = [list(two_symbols)]
+	# Queue
+	Q = deque()
+	Q.extend(two_symbols)
 	logics = []
 	#
-	for ts in _tss:
-		for per in perms:
+	while Q:
+		implicant = np.array( Q.pop() )
+		for idxs in permut_indexes:
 			# Permutation of all possible combinations of the values that are permutable.
-			for vals in itertools.permutations(ts[per], len(per)):
+			for vals in itertools.permutations(implicant[idxs], len(idxs)):
 				# Generate a new schema
-				ts[per] = vals
+				_implicant = copy.copy(implicant)
+				_implicant[idxs] = vals
 				# Insert to list of logics if not already there
-				if not(ts.tolist() in logics):
-					logics.append(ts.tolist())
+				if not(_implicant.tolist() in logics):
+					logics.append(_implicant.tolist())
+					Q.append(_implicant.tolist())
 	return logics
 
 def _check_schemata_permutations_v2(schematas, perm_groups, verbose=False):
@@ -658,11 +667,11 @@ def _three_symbol_column_counts_v1(k=1, transition_list = None):
 
 ############ END OF TWO SYMBOL v.1 ############
 
-def __ts_covers(implicant, permut_indexes, input, verbose=False):
+def __ts_covers(two_symbol, permut_indexes, input, verbose=False):
 	"""Helper method to test if an input is being covered by a two symbol permuted implicant
 
 	Args:
-		implicant (string): the implicant.
+		two_symbol (string): the two_symbol implicant.
 		permut_indexes (list): a list-of-lists of the implicant indexes that are permutables.
 		input (string): the input string to be checked.
 	Returns:
@@ -670,10 +679,16 @@ def __ts_covers(implicant, permut_indexes, input, verbose=False):
 	"""
 	# No permutation, just plain implicant coverage?
 	if not len(permut_indexes):
-		if __pi_covers(implicant, input):
+		if __pi_covers(two_symbol, input):
 			return True
 	# There are permutations to generate and check
 	else:
+		# NEW METHOD: Generates the expanded logic of the Two-Symbol Schema
+		for gen_implicant in _expand_ts_logic(two_symbol, permut_indexes):
+			if __pi_covers(gen_implicant, input):
+				return True
+		"""
+		# OLD METHOD
 		for idxs in permut_indexes:
 			# Extract the charactes that can be permuted
 			chars = [implicant[idx] for idx in idxs]
@@ -687,6 +702,7 @@ def __ts_covers(implicant, permut_indexes, input, verbose=False):
 				# The new permuted implicate is covered?
 				if __pi_covers(tmp, input):
 					return True
+		"""
 	return False
 
 def computes_ts_coverage(k, outputs, two_symbols):
@@ -699,7 +715,7 @@ def computes_ts_coverage(k, outputs, two_symbols):
 			This is returned by `find_two_symbols`.
 	Returns:
 		coverage (dict): a dictionary of coverage where keys are inputs states and values are lists of the Two Symbols covering that input.
-	"""	
+	"""
 	ts_coverage = {}
 	for statenum in xrange(2**k):
 		binstate = statenum_to_binstate(statenum, base=k)
@@ -715,87 +731,4 @@ def computes_ts_coverage(k, outputs, two_symbols):
 					covering_twosymbols.append( (implicant, permut_indxs, same_symbols_indxs) )
 	#
 	return ts_coverage
-
-
-
-if __name__ == '__main__':
-	from utils import *
-	#
-	"""
-	tt0s,tt1s = make_transition_density_tables(k=3, outputs=[0, 1, 1, 1, 0, 1, 1, 0] )
-	print tt0s
-	print tt1s
-	#s1 = np.array([['1','2','0'],['0','2','1']])
-	#s2 = np.array([['0', '1', '0'], ['0', '1', '0']])
-	pi0s, pi1s = find_implicants_qm(column=tt0s) , find_implicants_qm(column=tt1s)
-	print pi0s
-	print pi1s
-	c = _three_symbol_column_counts(k=3, transition_list=pi0s, verbose=True)
-	cnts = _check_column_counts(c, verbose=True)
-	print cnts
-	"""
-	print '\n---\n'
-
-
-	"""
-	# MARQUES-PITA
-	k = 6
-	outputs = [0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
-	tdt = make_transition_density_tables(k=k, outputs=outputs)
-	print tdt
-	pi0s,pi1s = find_implicants_qm(tdt[0], verbose=True) , find_implicants_qm(tdt[1], verbose=False)
-	#pi0s = set(['11'])
-	print pi0s
-	print pi1s
-	"""
-
-	#print _check_ts_inside_ts(ts0,ts1)
-
-	#k = 5
-	#pi0s = set(['12202','21202','12220','21220','22210'])
-
-	"""
-	print ' === TS v.1 : [0] =='
-	ts0s = find_two_symbols_v1(k=k, prime_implicants=pi0s, verbose=False)
-	print ts0s
-	print ' === TS v.1 : [1] =='
-	ts1s = find_two_symbols_v1(k=k, prime_implicants=pi1s, verbose=False)
-	print ts1s
-	"""
-	#print ts1s
-	print ' === TS v.2 : [0] =='
-	ts0s = find_two_symbols_v2(k=k, prime_implicants=pi0s, verbose=False)
-	#print ts0s
-	print ' === TS v.2 : [1] =='
-	ts1s = find_two_symbols_v2(k=k, prime_implicants=pi1s, verbose=False)
-	#print ts1s
-
-	
-	print '== LUT =='
-	for i,output in zip(xrange(2**k), outputs):
-		binstate = statenum_to_binstate(i,base=k)
-		picovering = []
-		tscovering = []
-		if output == 0:
-			for pi in pi0s:
-				if __pi_covers(pi,binstate):
-					picovering.append(pi)
-			for (ts,perms,sms) in ts0s:
-				if __ts_covers(ts,perms,binstate):
-					tscovering.append((ts,perms))
-		else:
-			for pi in pi1s:
-				if __pi_covers(pi,binstate):
-					picovering.append(pi)
-			for (ts,perms,sms) in ts1s:
-				if __ts_covers(ts,perms,binstate):
-					tscovering.append((ts,perms,sms))
-		print '%s : %s -> %s -> %s' % (binstate,output,picovering,tscovering)
-	print '== end LUT =='
-	
-	C = computes_ts_coverage(k=k, outputs=outputs, two_symbols=(ts0s,ts1s))
-	for i,d in C.items():
-		print i,d
-	
-
 
