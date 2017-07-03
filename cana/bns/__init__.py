@@ -33,7 +33,7 @@ from .. utils import binstate_to_statenum
 _path = os.path.dirname(os.path.realpath(__file__))
 """ Make sure we know what the current directory is """
 
-def get_attractors(cnet, bnspath=_path, cleanup=True):
+def attractors(cnet, bnspath=_path, cleanup=True):
 	"""Makes a subprocess call to ``bns`` supplying a temporary file with the boolean logic.
 
 	Args:
@@ -59,7 +59,7 @@ def get_attractors(cnet, bnspath=_path, cleanup=True):
 	else:
 		raise TypeError('The cnet input should be either a file to a .cnet file or a string containing the .cnet content')
 		
-	cmd = [_path + "/./bns", file]
+	cmd = [os.path.join(_path,'bns'), file]
 	attractors = list()
 
 	try:
@@ -80,7 +80,7 @@ def get_attractors(cnet, bnspath=_path, cleanup=True):
 				pass
 			elif 'Depth' in cleanline:
 				pass
-			elif 'average' in cleanline:
+			elif 'Average' in cleanline:
 				break
 			elif len(cleanline) > 0: 
 				current_attractor.append( binstate_to_statenum(cleanline) )
