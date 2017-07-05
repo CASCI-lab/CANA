@@ -4,6 +4,15 @@ from itertools import product
 import copy
 import math
 
+def recursive_map(f,d):
+	""" Normal python map, but recursive
+
+	Args:
+		f (function) : a function to be applied to every item of the iterable
+		d (iterable) : the iterable to which f will be applied itemwise.
+	"""
+	return [ not hasattr(x, "__iter__") and f(x) or recursive_map(f, x) for x in d ]
+
 def binstate_to_statenum(binstate):
 	""" Converts from binary state to state number.
 	
@@ -51,6 +60,8 @@ def statenum_to_binstate(statenum, base):
 	bstate = bin(statenum)[2::]
 	# 0 padding
 	bstate = "".join(['0' for n in xrange(base - len(bstate))]) + bstate
+	### Consider, and test, changing this function to just
+	# bstate = bin(statenum)[2:].zfill(base)
 	return bstate
 
 def flip_bit(bit):
