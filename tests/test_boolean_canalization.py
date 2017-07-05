@@ -4,7 +4,7 @@
 # These tests were hand calculated by Luis M. Rocha and implemented by Rion B. Correia.
 # Checks were made with the online tool: http://www.mathematik.uni-marburg.de/~thormae/lectures/ti1/code/qmc/
 #
-from cana.boolean_canalization import *
+from cana.canalization.boolean_canalization import *
 
 #
 # 
@@ -35,7 +35,7 @@ def test_OR():
 	k, outputs = 2, [0,1,1,1]
 	# Prime Implicants
 	true_pi0s = set(['00'])
-	true_pi1s = set(['21','12'])
+	true_pi1s = set(['12','21'])
 
 	tdt0, tdt1 = make_transition_density_tables(k=k, outputs=outputs)
 	pi0s, pi1s = find_implicants_qm(tdt0) , find_implicants_qm(tdt1)

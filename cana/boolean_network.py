@@ -468,14 +468,14 @@ class BooleanNetwork:
 		"""
 		return sum([node.bias() for node in self.nodes]) / self.Nnodes
 
-	def basin_entropy(self, base = 2):
+	def basin_entropy(self, base=2):
 		"""
 
 		"""
 		self._check_compute_variables(stg=True)
 
 		prob_vec = np.array([len(wcc) for wcc in nx.weakly_connected_components(self._stg)])/2.0**self.Nnodes
-		return entropy(prob_vec, base = base)
+		return entropy(prob_vec, base=base)
 				
 	def set_constant(self, node, value=None):
 		""" Sets or unsets a node as a constant.
@@ -559,6 +559,8 @@ class BooleanNetwork:
 			(list) : The list of driver nodes found in the search.
 		Note:
 			This is an inefficient bruit force search, maybe we can think of better ways to do this?
+		TODO:
+			Parallelize the search on each combination. Each CSTG is independent and can be searched in parallel.
 		See also:
 			:func:`controlled_state_transition_graph`, :func:`controlled_attractor_graph`.
 		"""
@@ -570,6 +572,7 @@ class BooleanNetwork:
 		attractor_controllers_found = []
 		nr_dvs = min_dvs
 		while (len(attractor_controllers_found) == 0) and (nr_dvs <= max_dvs):
+			if verbose: print "Trying with %d Driver Nodes" % (nr_dvs)
 			for dvs in itertools.combinations(nodeids, nr_dvs):
 				dvs = list(dvs)
 				cstg = self.controlled_state_transition_graph(dvs)
@@ -578,7 +581,7 @@ class BooleanNetwork:
 				
 				if att_reachable_from == 1.0: 
 					attractor_controllers_found.append(dvs)
-
+			# Add another driver node
 			nr_dvs += 1
 
 		if len(attractor_controllers_found) == 0:
@@ -589,7 +592,7 @@ class BooleanNetwork:
 
 	def controlled_state_transition_graph(self, driver_nodes=[]):
 		"""Returns the Controlled State-Transition-Graph (CSTG).
-		In practice, it copied the original STG, flips driver nodes (variables), and updates the CSTG.
+		In practice, it copies the original STG, flips driver nodes (variables), and updates the CSTG.
 		
 		Args:
 			driver_nodes (list) : The list of driver nodes.
@@ -881,6 +884,41 @@ class BooleanNetwork:
 			raise Exception('Control variable name not found. %s' % kwargs)
 		return True
 
+	#
+	# Get Node Names from Ids
+	#
+	def _get_node_name(self, id):
+		""" Return the name of the node based on its id.
+
+		Args:
+			id (int): id of the node.
+		Returns:
+			name (string): name of the node.
+		"""
+		try:
+			node = self.nodes[id]
+		except:
+			raise AttributeError("Node with id '%d' does not exist." % (id))
+		else:
+			return node.name
+
+	def get_node_name(self, iterable=[]):
+		""" Return node names. Optionally, it returns only the names of the ids requested.
+
+		Args:
+			iterable (int,list, optional) : The id (or list of ids) of nodes to which return their names.
+		Returns:
+			names (list) : The name of the nodes.
+		"""
+		# If only one id is passed, make it a list
+		if not isinstance(iterable, list):
+			iterable = [iterable]
+		# No ids requested, return all the names
+		if not len(iterable):
+			return [n.name for n in self.nodes]
+		# otherwise, use the recursive map to change ids to names
+		else:
+			return recursive_map(self._get_node_name, iterable)
 	#
 	# Plotting Methods
 	#

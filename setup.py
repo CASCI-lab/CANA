@@ -19,7 +19,7 @@ setup(
 		'Topic :: Scientific/Engineering :: Information Analysis',
 	],
 	keywords="boolean networks canalization redundancy dynamical systems computational biology",
-	url="http://github.com/rionbr/CAN",
+	url="http://github.com/rionbr/CANA",
 	author="Alex Gates & Rion Brattig Correia",
 	author_email="rionbr@gmail.com",
 	license="MIT",

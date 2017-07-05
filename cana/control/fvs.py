@@ -60,7 +60,7 @@ def fvs_grasp(directed_graph, max_iter=100, keep_self_loops=True):
 		elif len(S) < len(compare_set):
 			minfvc = set([frozenset(S)])
 	
-	return minfvc
+	return list(minfvc)
 
 #
 # Bruteforce method

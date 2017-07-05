@@ -14,6 +14,7 @@ Description...
 #   MIT license.
 import networkx as nx
 import numpy as np
+import pandas as pd
 import itertools
 from .. utils import *
 from Queue import Queue, PriorityQueue
@@ -174,7 +175,7 @@ def computes_pi_coverage(k, outputs, prime_implicants):
 #
 # Two Symbols Functions
 #
-def find_two_symbols_v2(k=1, prime_implicants=None, verbose=False):
+def find_two_symbols_v2(k=1, prime_implicants=None, verbose=False, verbose_level=0):
 	"""This function calculates the permutation, two-symbol (TS), list of schematas.
 	This implementation considers '11' and '00' as a possible input permutation.
 
@@ -185,12 +186,21 @@ def find_two_symbols_v2(k=1, prime_implicants=None, verbose=False):
 	Returns:
 		final_list (list) : The list of two-symbol schematas.
 	
-	Note: This is a modification of the original algoritm that can be found in Marques-Pita & Rocha [2013].
+	Note: This is a modification of the original algorithm that can be found in Marques-Pita & Rocha [2013].
 	"""
 	if not len(prime_implicants):
 		return []
 	
-	prime_implicants = np.array(map(list, prime_implicants), dtype=int)
+	# If this node has no input, yet it affects other nodes (fixed variable)
+	if k==0:
+		TSf = []
+		for pi in prime_implicants:
+			TSf.append( (pi,[],[]) )
+		return TSf
+	
+	# Init
+	n_pi = len(prime_implicants)
+	pi_matrix = np.array(map(tuple, prime_implicants), dtype=int)
 
 	# List of the Two-Symbol Schematas
 	TS = []
@@ -200,88 +210,96 @@ def find_two_symbols_v2(k=1, prime_implicants=None, verbose=False):
 	#Qpi = Queue()
 	Q = deque()
 	Q_history = set()
-	Q.append( prime_implicants )
+	Q.append( pi_matrix )
+	i = 0
 
 	while len(Q):
-	
-		# Convert the list into a numpy ndarray
+
 		schematas = Q.popleft()
-		schematas = np.array(map(list, schematas), dtype=int)
-		
 		n_schematas = schematas.shape[0]
+		i += 1
+		
 		if verbose:
-			print '\n== Partitions (v2) =='
-			print '>>> A (m=%d):' % (len(schematas))
-			print schematas
+			if verbose_level == 1:
+				if i%500==0:
+					print '>>> QUEUE: pop | A (m=%d) | Queue size: %d' % (n_schematas, len(Q) )					
+			elif verbose_level > 5:
+				print '>>> QUEUE: pop | A (m=%d) | Queue size: %d' % (n_schematas, len(Q) )
+			if verbose_level>10:
+				print schematas
 		
 		# count the number of [0's, 1's, 2's] in each column
-		column_counts = _column_counts_v2(pi_matrix=schematas, verbose=verbose)
-		if verbose:
+		column_counts = _count_cols_symbols_v2(pi_matrix=schematas, verbose=verbose, verbose_level=verbose_level)
+		if verbose and verbose_level>10:
 			print '>>> COLUMN Schema Counts:'
-			print column_counts
 		# find the permutation groups based on column counts
-		perm_groups = _check_column_counts_v2(column_counts=column_counts, verbose=verbose)
+		perm_groups = _check_col_counts_v3(counts_matrix=column_counts, verbose=verbose, verbose_level=verbose_level)
 		
 		if (perm_groups != -1):
-			if verbose: print '>>> There are permutable groups! Lets loop them'
+			if verbose and verbose_level>10: print '>>> There are permutable groups! Lets loop them'
 			for x_group in perm_groups:
-				if verbose:
+				if verbose and verbose_level>20:
 					print '>>> x_group:',x_group
 					print '>>> Truncated schemata matrix:'
 					print schematas[:,x_group].T
-
 				# find the row counts by taking the transpose of the truncated schemata list
-				row_counts = _column_counts_v2(pi_matrix=schematas[:,x_group].T, verbose=False)
-				if verbose:
+				row_counts = _count_cols_symbols_v2(pi_matrix=schematas[:,x_group].T, verbose=verbose, verbose_level=verbose_level)
+				if verbose and verbose_level>20:
 					print '>>> ROW Schema Counts:'
 					print row_counts
 				# make sure all row counts are the same
-				#if len(row_counts) != row_counts.count(row_counts[0]):
 				if not (row_counts==row_counts[0]).all():
-					if verbose: print '>>> row_counts are NOT the same (-1)'
+					if verbose and verbose_level>20: print '>>> row_counts are NOT the same (-1)'
 					perm_groups = -1
 
-		if verbose:
-			print ">>> Permutation groups:",(perm_groups != -1)
-			print ">>> Permuted groups already in F'':",((schematas.tolist(), perm_groups) in TS)
+		if verbose and verbose_level>10:
+			print ">>> Exists permutation groups?:" , (perm_groups != -1)
+			print ">>> Are groups already in F''?:" , ((schematas.tolist(), perm_groups) in TS)
 		if (perm_groups != -1) and not ((schematas.tolist(), perm_groups) in TS):
 			# do some weird permutation group testing
-			allowed_perm_groups = _check_schemata_permutations_v2(schematas, perm_groups, verbose=verbose)
-			if verbose:
+			allowed_perm_groups = _check_schemata_permutations_v2(schematas, perm_groups, verbose=verbose, verbose_level=verbose_level)
+			if verbose and verbose_level>15:
 				print '>>> Permutation testing result:',allowed_perm_groups
 			if allowed_perm_groups is not None:
-				if verbose:
-					print '>>> ADDING:',(schematas.tolist(), allowed_perm_groups)
+				if verbose and verbose_level>15:
+					print ">>> RESULTS: adding F'': %s , Idxs: %s" % (schematas.tolist(), allowed_perm_groups)
 				TS.append( (schematas.tolist(), allowed_perm_groups) )
 
 		else:
-			if verbose: print '>>> Generate combinations of schematas (m-1) and add to Queue'
+			if verbose and verbose_level>10: print '>>> Generate combinations of schematas (m-1) and add to Queue'
 			if schematas.shape[0] > 2:
-				for schemata_subset in itertools.combinations(schematas, (n_schematas - 1)):
-					schemata_subset = np.array(schemata_subset)
-
+				for idxs_subset in itertools.combinations(np.arange(0,n_schematas), (n_schematas - 1)):					
+					idxs_subset = list(idxs_subset)
+					schemata_subset = schematas[ idxs_subset , : ]
 					# This schemata has already been inserted onto the Queue before?
 					if schemata_subset.tostring() not in Q_history:
-						if verbose:
-							print '>>> QUEUE: appending:'
+						if verbose and verbose_level>25:
+							print '>>> QUEUE: appending (idxs: %s)' % (idxs_subset)
 							print schemata_subset
 						Q.append( schemata_subset )
 						Q_history.add(schemata_subset.tostring())
 					else:
-						if verbose:
-							print '>>> QUEUE: duplicate (skip)'
+						if verbose and verbose_level>25:
+							print '>>> QUEUE: duplicate, skip (idxs: %s)' % (idxs_subset)
 
 	if verbose:
-		print '>>> TS:'
+		print '>>> TWO-SYMBOLS:'
 		for i,(tss,perms) in enumerate(TS):
-			print i,'tss:',tss,'Perms:',perms
+			print "F''-%d: %s | Perms: %s" % (i, tss, perms)
 
 	# Simplification. Check if there are TSs that are completely contained within others.
 	# 'ts' = Two-Symbol
 	# 'cx' = Complexity
 	# 'xs' = Expanded Logic
-	#TSs = {i : {'ts':ts,'cx':_calc_ts_complexity(ts),'xl':_expand_ts_logic(ts)} for i,ts in enumerate(TS)}
-	TSs = {i : {'tss':tss,'perms':perms,'cx':_calc_ts_complexity(tss,perms),'xl':_expand_ts_logic(tss,perms)} for i,(tss,perms) in enumerate(TS)}
+	TSs = { 
+		i : {
+				'tss':tss,
+				'perms':perms,
+				'cx':_calc_ts_complexity(tss,perms),
+				'xl':_expand_ts_logic(tss,perms)
+			} 
+			for i, (tss,perms) in enumerate(TS)
+		}
 
 	# Loops all combinations (2) of TS
 	for (i,j) in itertools.combinations(TSs.keys(), 2):
@@ -308,30 +326,54 @@ def find_two_symbols_v2(k=1, prime_implicants=None, verbose=False):
 					del TSs[i] 
 
 	if verbose:
-		print '>>> TS (simplified):'
-		for i,tss in TSs.items():
-			print i,tss
+		print '>>> TWO-SYMBOLS (simplified):'
+		for i,(tss) in TSs.items():
+			print "F''-%d: %s | Perms: %s | CX: %s" % (i, tss['tss'], tss['perms'], tss['cx'])
 
 	# Final List (from simplified)
 	TSf = [ (tss['tss'][0], tss['perms'], [] ) for tss in TSs.values()]
 
 	# Check if all PI are being covered. If not, include the PI on the TS list
 	if verbose:
-		print '-- Check all PI are accounted for in the TS --'
-	for pi in prime_implicants:
-		if verbose: print 'PI:',pi
-		if not any([_check_schema_within_schema( [pi.tolist()] , tss['xl'], dir='a', verbose=False)[0] for tss in TSs.values()]):
-			if verbose:
-				print 'PI %s not in TS list. ADDING' % (pi)
+		print '>>> Check all PI are accounted for in the TS'
+	for i, pi in enumerate(pi_matrix, start=0):
+		if not any([_check_schema_within_schema( [pi.tolist()] , tss['xl'], dir='a', verbose=verbose)[0] for tss in TSs.values()]):
+			if verbose: print "PI-%d '%s' Not in list, ADDING." % (i, pi.tolist())
 			TSf.append( (pi.tolist(),[],[]) )
+		else:
+			if verbose: print "PI-%d '%s' OK." % (i, pi.tolist())
 
-	# Step to include same-symbol permutables
+
+	if verbose:
+		print '>>> Check for Same-Symbol permutables'
+
+	# NEW: Step to include same-symbol permutables
 	for ts, perms, sames in TSf:
-		column_counts = _column_counts_v2(pi_matrix=np.array([ts]), verbose=verbose)
-		perm_groups = _check_column_counts_v2(column_counts=column_counts, count_fixed_variables=True, verbose=verbose)
-		# Include in the final list
-		if perm_groups != -1:
-			sames.extend(perm_groups)
+		# Indices of permutables inputs
+		idxs = list(set([idx for idxs in perms for idx in idxs]))
+
+		# Makes the F'' into a Collum Array so it can be used by '_count_cols_symbols_vX'
+		ts_matrix = np.array([ts]).T
+		
+		# Remove Inputs (columns) that already have permutable symbols. Only if there are permutables
+		if len(idxs):
+			rmask = np.array(idxs)
+			ts_matrix_left = ts_matrix[ ~rmask, :]
+		else:
+			ts_matrix_left = ts_matrix
+
+		
+		if verbose and verbose_level>10:
+			print "> F'' Original:"
+			print ts_matrix
+			print "> Permutables: %s" % (perms)
+			print "> F'' without permutables:"
+			print ts_matrix_left
+		
+
+		counts_matrix = _count_cols_symbols_v2(pi_matrix=ts_matrix_left.T, verbose=False, verbose_level=verbose_level)
+		perm_groups = _check_identical_cols_count_symbols_v2(counts_matrix=counts_matrix, verbose=verbose, verbose_level=verbose_level)
+		sames.extend(perm_groups)
 
 	# Step to convert the pi list to string
 	for i,(ts,perms,sames) in enumerate(TSf, start=0):
@@ -342,7 +384,7 @@ def find_two_symbols_v2(k=1, prime_implicants=None, verbose=False):
 	if verbose:
 		print '>>> TS (final list):'
 		for i,tss,sms in TSf:
-			print i,tss,sms
+			print "TS: '%s' | Perm Idx: %s | Sms Idx: %s" % (i,tss,sms)
 
 	return TSf
 
@@ -406,93 +448,89 @@ def _expand_ts_logic(two_symbols, permut_indexes):
 					Q.append(_implicant.tolist())
 	return logics
 
-def _check_schemata_permutations_v2(schematas, perm_groups, verbose=False):
+def _check_schemata_permutations_v2(schematas, perm_groups, verbose=False, verbose_level=0):
 	""" Checks if the permutations are possible
 
 	Note:
 		Not sure if this is really needed.
 	"""
-	if verbose: print "-- Check Schemata Permutations : g(H',L) --"
+	if verbose and verbose_level>20:
+		print "-- Check Schemata Permutations (v2) : g(H',L) --"
 	allowed_perm_groups = []
 	all_indices = set([i_index for x_group in perm_groups for i_index in x_group])
-
 	for x_group in perm_groups:
 		sofar = []
-
 		for i_index in xrange(len(x_group) - 1):
 			x_index = x_group[i_index]
 			small_group = [x_index]
-		
 			if not (x_index in sofar):
 				sofar.append(x_index)
 
 				for y_index in x_group[(i_index+1)::]:
-					if (not(y_index in sofar)) and _can_swap_v2(schematas[:, [x_index, y_index]], verbose=verbose):
+
+					if (not(y_index in sofar)) and _can_swap_v2(schematas[:, [x_index, y_index]], verbose=verbose, verbose_level=verbose_level):
 						small_group.append(y_index)
 						sofar.append(y_index)
 				if len(small_group) > 1:
 					allowed_perm_groups.append(small_group)
 
-		if verbose: print '> allowed_perm_groups',allowed_perm_groups
+		if verbose and verbose_level>30:
+			print '> allowed_perm_groups',allowed_perm_groups
 		if set([i_index for x_group in allowed_perm_groups for i_index in x_group]) == all_indices:
 			return allowed_perm_groups
 	return None
 
 
-def _can_swap_v2(schemata_subset, verbose=False):
+def _can_swap_v2(schemata_subset, verbose=False, verbose_level=0):
 	"""Determines if two schemata subsets can be swapped"""
-	if verbose: print '> Can Swap?:',
+	if verbose and verbose_level>40:
+		print '> Can Swap?:',
 	can_switch = 1
 	for row in schemata_subset[:,[1,0]]:
 		can_switch *= np.any(np.all(schemata_subset==row, axis=1))
-	if verbose: print can_switch
+	if verbose and verbose_level>40:
+		print can_switch
 	return can_switch
 
-def _check_column_counts_v2(column_counts, count_fixed_variables=False, verbose=False):
-	if verbose: print ' -- Check Column Counts (v2) --'
+
+def _check_col_counts_v3(counts_matrix, verbose=False, verbose_level=0):
+	""" This function is used to find permutable symbols.
+	Args:
+		counts_matrix (numpy.ndarray) : a matrix where rows are inputs and columns are possible input types (0,1 or #)
+	Returns:
+		perm_groups (list) : a list of the indexes that can be permuted.
+	"""
+	if verbose and verbose_level>30:
+		print '-- Check Col Counts (v3) --'
 	
-	n = column_counts.shape[0] 	# The number of Prime Implicants (or rows)
-	#c_counts = {} 		# Constant Counts [ [indexes of 0],[indexes of 1],[indexes of 2] ]
-	counts = {} 				# Multi Counts
+	counts = {} 		# Multi Counts
 	perm_groups = [] 	# A list of groups of Permutable Indexes
 
-	for i, c in enumerate(column_counts, start=0):
-		# a hashable version of the row counts
-		c_hash = str(c)
-		if verbose: print 'Col: %d : %s' % (i,c)
+	for i, row in enumerate(counts_matrix, start=0):
+		# a tuple (hashable) version of the row counts
+		row_tuple = tuple(row)
 
-		# Fixed variable counts are used in the latter step of the algorithm. To find same-symbol permutables.
-		if count_fixed_variables:
-		
-			if c_hash in counts:
-				# we have seen this one before, so add it to the permutation group
-				counts[c_hash].append(i)
-			else:
-				# we have not seen this count before, so create a new entry for it
-				counts[c_hash] = [i]	
+		if row_tuple in counts:
+			# we have seen this one before, so add it to the permutation group
+			counts[row_tuple].append(i)
+		elif np.count_nonzero(row) >= 2:
+			# we have not seen this count before, it is not a fixed variable, so create a new entry for it
+			counts[row_tuple] = [i]
 		else:
-			
-			if c_hash in counts:
-				# we have seen this one before, so add it to the permutation group
-				counts[c_hash].append(i)
-			elif np.count_nonzero(c) >= 2:
-				# we have not seen this count before, it is not a fixed variable, so create a new entry for it
-				counts[c_hash] = [i]
-			else:
-				# we will skip fixed variables
-				pass
+			# we will skip fixed variables
+			pass
 
 	# Append non-constants that have permutable positions
 	for col,idxs in counts.items():
-		if verbose: print col,':',idxs
-		# If there is a singleton group, with only one, return -1
+		if verbose and verbose_level>40:
+			print col,':',idxs
+
 		if len(idxs) == 1:
 			return -1
-			#pass
-		elif len(idxs) >= 2:
+		elif len(idxs) >= 1:
 			perm_groups.append( idxs )
 
-	if verbose:
+	if verbose and verbose_level>40:
 		print 'counts:',counts
 		print 'perm_groups:',perm_groups
 
@@ -501,14 +539,57 @@ def _check_column_counts_v2(column_counts, count_fixed_variables=False, verbose=
 	else:
 		return -1
 
-def _column_counts_v2(pi_matrix=None, verbose=False):
-	""" Given a matrix, where each row is a prime implicant, counts how many 0's, 1's and 2's are found in each row.
+def _check_identical_cols_count_symbols_v2(counts_matrix, verbose=False, verbose_level=0):
+	""" This function is used to find same symbol permutables. In practice it is a variance of `_check_cols_symbols_vX`
+	Args:
+		counts_matrix (numpy.ndarray) : a matrix where rows are inputs and columns are possible input types (0,1 or #)
+	Returns:
+		perm_groups (list) : a list of the indexes that can be permuted
+	"""
+	if verbose and verbose_level>20:
+		print '-- Check Identical Col Counts (v2) --'
+	
+	counts = {} 		# Multi Counts
+	perm_groups = [] 	# A list of groups of Permutable Indexes
+
+	for i, row in enumerate(counts_matrix, start=0):
+		# a tuple (hashable) version of the row counts
+		row = row.tolist()
+		row_tuple = tuple(row)
+
+		if verbose and verbose_level>30: print 'RC: %s : %s' % (i,row_tuple)
+
+		if row_tuple in counts:
+			# we have seen this one before, so add it to the permutation group
+			counts[row_tuple].append(i)
+		else:
+			# we have not seen this count before, so create a new entry for it
+			counts[row_tuple] = [i]
+
+	# Append non-constants that have permutable positions
+	for col,idxs in counts.items():
+		if verbose and verbose_level>30: print col,':',idxs
+
+		if len(idxs) >= 2:
+			perm_groups.append( idxs )
+
+	if verbose and verbose_level>30:
+		print 'counts:',counts
+		print 'sames_groups:',perm_groups
+
+	if len(perm_groups):
+		return perm_groups
+	else:
+		return []
+
+def _count_cols_symbols_v2(pi_matrix=None, verbose=False, verbose_level=0):
+	""" Given a matrix, where each row is a prime implicant, counts how many 0's, 1's and 2's are found in each column.
 	Args:
 		pi_matrix (numpy.ndarray) : a matrix ``n \times k`` of ``n`` prime implicants.
 	Returns:
 		counts (numpy.ndarray) : a matrix ``n \times 3`` where the entries are counts.
 	"""
-	if verbose: print ' -- Column Counts (v2) --'
+	if verbose and verbose_level>20: print ' -- Count Cols (v2) --'
 	# How many PI?
 	n = pi_matrix.shape[1]
 	# Instanciate count matrix
@@ -522,7 +603,7 @@ def _column_counts_v2(pi_matrix=None, verbose=False):
 
 
 ############ START OF TWO SYMBOL v.1 ############
-# This version does not conside '11' and '00' as permutable symbols
+# This version does not conside '11' and '00' as permutable symbols and had other bugs solved by v2
 def find_two_symbols_v1(k=1, prime_implicants=None, verbose=False):	
 	two_symbol_schemata_list = []
 
@@ -536,17 +617,17 @@ def find_two_symbols_v1(k=1, prime_implicants=None, verbose=False):
 			print schemata_list
 
 		# count the number of [0's, 1's, 2's] in each column
-		column_counts = _three_symbol_column_counts_v1(k=k, transition_list=schemata_list)
+		column_counts = _three_symbol_count_cols_symbols_v1(k=k, transition_list=schemata_list)
 
 		# find the permutation groups based on column counts
-		permutation_groups = _check_column_counts_v1(column_counts)
+		permutation_groups = _check_counts_v1(column_counts)
 		
 		if (permutation_groups != -1):
 			if verbose: print '>>> There are permutable groups! Lets loop them'
 			for x_group in permutation_groups:
 
 				# find the row counts by taking the transpose of the truncated schemata list
-				row_counts = _three_symbol_column_counts_v1(k=schemata_list.shape[0], transition_list=schemata_list[:,x_group].T)
+				row_counts = _three_symbol_count_cols_symbols_v1(k=schemata_list.shape[0], transition_list=schemata_list[:,x_group].T)
 				if verbose:
 					print '>>> ROW Schema Counts:'
 					print row_counts
@@ -561,7 +642,7 @@ def find_two_symbols_v1(k=1, prime_implicants=None, verbose=False):
 			allowed_permutation_groups = _check_schemata_permutations_v1(schemata_list, permutation_groups)
 			if allowed_permutation_groups != []:
 				if verbose:
-					print 'ADDING to TS:',schemata_subset
+					print "ADDING to F'':",schemata_subset
 				two_symbol_schemata_list.append((schemata_list.tolist(), allowed_permutation_groups))
 
 		else:
@@ -623,14 +704,14 @@ def _can_swap_v1(schemata_subset):
 		can_switch *= np.any(np.all(schemata_subset == row, axis = 1))
 	return can_switch
 
-def _check_column_counts_v1(column_counts = []):
+def _check_counts_v1(column_counts = []):
 	print '-- Column Counts (v1) --'
 	print column_counts
 	unique_col_counts = []
 	permutation_groups = []
 
 	for i_col_count, x_col_count in enumerate(column_counts):
-		print 'Col: %d : %s' % (i_col_count, x_col_count)
+		print 'RC: %d : %s' % (i_col_count, x_col_count)
 		if x_col_count.count(0) >= 2:
 			# this is a constant column so skip it
 			pass
@@ -652,7 +733,7 @@ def _check_column_counts_v1(column_counts = []):
 		print 'counts:',permutation_groups
 		return permutation_groups
 
-def _three_symbol_column_counts_v1(k=1, transition_list = None):
+def _three_symbol_count_cols_symbols_v1(k=1, transition_list = None):
 	column_counts = [[0, 0, 0] for i_col in xrange(k)]
 	for x_col in transition_list:
 		for i_entry, x_entry in enumerate(x_col):

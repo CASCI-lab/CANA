@@ -49,6 +49,7 @@ extensions = [
     'sphinx.ext.autosummary',
     'sphinxcontrib.googleanalytics',
     'sphinxcontrib.bibtex',
+    'sphinxtogithub',
 ]
 
 # Google Analytcis
