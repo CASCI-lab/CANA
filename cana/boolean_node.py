@@ -238,7 +238,7 @@ class BooleanNode(object):
 		
 		.. math::
 
-			r_i = \frac{ \sum_{f_{\alpha} \in F} \Phi_{\theta:f_{\alpha} \in \Theta_{\theta}} (n^{\circ}_i)}{ |F| }
+			s_i = \frac{ \sum_{f_{\alpha} \in F} \Phi_{\theta:f_{\alpha} \in \Theta_{\theta}} (n^{\circ}_i)}{ |F| }
 
 		where :math:`\Phi` is the function :math:`min` or :math:`max` and :math:`F` is the node LUT.
 
@@ -276,29 +276,8 @@ class BooleanNode(object):
 			elif bound == 'lower':
 				minmax = min
 
-			symmetry = []
-			for binstate in self._ts_coverage:
-				# Every binary state can have multiple schemata covering it
-				values = []
-				# TwoSymbol , permutation_groups , same-symbols
-				for schema,perms,sms in self._ts_coverage[binstate]:
-					
-					# NEW VERSION
-					# For every input, sum the length of each permutable groups it belongs. Then divide by k
-					values.append( 
-						sum( [ sum([len(x) for x in perms+sms if i in x]) for i in xrange(self.k)] ) / self.k
-					)
-					
-					# OLD VERSION
-					"""
-					# If there are permutation_groups, get their lenghts
-					if len(perms) or len(sms):
-						value += minmax([len(idx) for idx in perms+sms])
-					"""
-				symmetry.append(
-					minmax(values)
-					)
-			k_s = sum(symmetry) / 2**self.k # k_s
+			k_s = sum( self.input_symmetry(mode='input', bound=bound, norm=norm) ) / self.k
+			
 			if (norm):
 				k_s = k_s / self.k
 			return k_s
@@ -307,11 +286,16 @@ class BooleanNode(object):
 			symmetries = []
 			# Generate a per input coverage
 			# ex: {0: {'11': [], '10': [], '00': [], '01': []}, 1: {'11': [], '10': [], '00': [], '01': []}}
-			ts_input_coverage = { input : { binstate: [ idxs.count(input) for schema,reps,sms in tss for idxs in reps+sms ] for binstate,tss in self._ts_coverage.items() } for input in xrange(self.k) }
+			#ts_input_coverage = { input : { binstate: [ idxs.count(input) for schema,reps,sms in tss for idxs in reps+sms ] for binstate,tss in self._ts_coverage.items() } for input in xrange(self.k) }
+			ts_input_coverage = { input : { binstate: [ len(idxs) if input in idxs else 0 for schema,reps,sms in tss for idxs in reps+sms ] for binstate,tss in self._ts_coverage.items() } for input in xrange(self.k) }
 			# Loop ever input node
 			for input,binstates in ts_input_coverage.items():
 				# {'numstate': [number-of-ts's for each match], '10': [0, 2] ...}
 				numstates = {binstate_to_statenum(binstate): permuts for binstate,permuts in binstates.items() }
+
+				#print 'input',input
+				#print binstates
+				#print numstates
 				# A triplet of (min, mean, max) values
 				if bound in ['lower','mean','upper']:
 					# Min, Mean or Max
@@ -322,15 +306,15 @@ class BooleanNode(object):
 					elif bound == 'lower':
 						minmax = min
 
-					symmetry = sum(minmax(permuts) if len(permuts) else 0 for permuts in numstates.values() ) / 2**self.k  # min(r_s)
+					s_i = sum(minmax(permuts) if len(permuts) else 0 for permuts in numstates.values() ) / 2**self.k  # min(r_s)
 
 				elif bound == 'tuple':
 					# tuple (min,max) per input, per state
-					symmetry = [ ( min(permuts) , max(permuts) ) if len(permuts) else (0,0) for permuts in numstates.values() ] # (min,max)
+					s_i = [ ( min(permuts) , max(permuts) ) if len(permuts) else (0,0) for permuts in numstates.values() ] # (min,max)
 				else:
 					raise AttributeError('The bound you selected does not exist. Try "upper", "mean", "lower" or "tuple".')
-				symmetries.append(symmetry)
-			return symmetries # r_i
+				symmetries.append(s_i)
+			return symmetries # s_i
 
 		else:
 			raise AttributeError('The mode you selected does not exist. Try "node" or "input".')
