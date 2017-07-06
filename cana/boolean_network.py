@@ -75,7 +75,7 @@ class BooleanNetwork:
 	# I/O Methods
 	#
 	@classmethod
-	def from_file(self, input_file, keep_constants=True, **kwargs):
+	def from_file(cls, input_file, keep_constants=True, **kwargs):
 		"""
 		Load the Boolean Network from a file.
 
@@ -89,10 +89,10 @@ class BooleanNetwork:
 			:func:`from_string` :func:`from_dict`
 		"""
 		with open(input_file, 'r') as infile:
-			return self.from_string(infile.read(), keep_constants=keep_constants, **kwargs)
+			return cls.from_string(infile.read(), keep_constants=keep_constants, **kwargs)
 
 	@classmethod
-	def from_string(self, input_string, keep_constants=True, **kwargs):
+	def from_string(cls, input_string, keep_constants=True, **kwargs):
 		"""
 		Load the Boolean Network from a string.
 
@@ -115,8 +115,8 @@ class BooleanNetwork:
 			if line[0] != '#' and line != '\n':
 				# .v <#-nodes>
 				if '.v' in line:
-					self.Nnodes = int(line.split()[1])
-					for inode in xrange(self.Nnodes):
+					Nnodes = int(line.split()[1])
+					for inode in xrange(Nnodes):
 						logic[inode] = {'name':'','in':[],'out':[]}
 				# .l <node-id> <node-name>
 				elif '.l' in line:
@@ -149,10 +149,10 @@ class BooleanNetwork:
 					break
 			line = network_file.readline()
 
-		return self.from_dict(logic, keep_constants=keep_constants, **kwargs)
+		return cls.from_dict(logic, keep_constants=keep_constants, **kwargs)
 
 	@classmethod
-	def from_dict(self, logic, keep_constants=True, **kwargs):
+	def from_dict(cls, logic, keep_constants=True, **kwargs):
 		"""Instanciaets a BoolleanNetwork from a logic dictionary.
 
 		Args:
@@ -304,7 +304,10 @@ class BooleanNetwork:
 		See Also:
 			:func:`~boolnets.boolean_node.BooleanNode.effective_connectivity`
 		"""
-		self._eg = nx.DiGraph(name="Effective Graph: " + self.name + "(Threshold: %.2f)" % threshold)
+		if threshold is not None:
+			self._eg = nx.DiGraph(name="Effective Graph: " + self.name + "(Threshold: %.2f)" % threshold)
+		else:
+			self._eg = nx.DiGraph(name="Effective Graph: " + self.name + "(Threshold: None)")
 
 		# Add Nodes
 		for i, node in enumerate(self.nodes, start=0):
@@ -327,7 +330,7 @@ class BooleanNetwork:
 
 		return self._eg
 
-	def effective_indegrees():
+	def effective_indegrees(self):
 		""" Returns the in-degrees of the Effective Graph. Sorted.
 
 		Returns:
@@ -369,7 +372,7 @@ class BooleanNetwork:
 		Returns:
 			list
 		"""
-		self._check_compute_variables('stg')
+		self._check_compute_variables(stg=True)
 		return sorted(self._stg.in_degree().values(), reverse=True)
 
 	def step(self, initial, n=1):
@@ -385,6 +388,7 @@ class BooleanNetwork:
 		#   asks node to step with the input
 		#   append output to list
 		# joins the results from each node output
+		assert len(initial) == self.Nnodes
 		return ''.join( [ str(node.step( ''.join(initial[j] for j in self.logic[i]['in']) ) ) for i,node in enumerate(self.nodes, start=0) ] )
 
 	def trajectory(self, initial, length=2):
@@ -392,7 +396,7 @@ class BooleanNetwork:
 		"""
 		trajectory = [initial]
 		for istep in xrange(length):
-			trajectory.append(step(trajectory[-1]))
+			trajectory.append(self.step(trajectory[-1]))
 		return trajectory
 
 	def trajectory_to_attractor(self, initial):
@@ -408,7 +412,7 @@ class BooleanNetwork:
 		
 		trajectory = [initial]
 		while (trajectory[-1] not in attractor_states):
-			trajectory.append(step(trajectory[-1]))
+			trajectory.append(self.step(trajectory[-1]))
 
 		return trajectory
 
@@ -422,7 +426,7 @@ class BooleanNetwork:
 		"""
 		self._check_compute_variables(attractors=True)
 
-		trajectory = trajectory_to_attractor(initial)
+		trajectory = self.trajectory_to_attractor(initial)
 		for attractor in self._attractors:
 			if trajectory[-1] in attractor:
 				return attractor
