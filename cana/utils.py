@@ -3,6 +3,7 @@ import numpy as np
 from itertools import product
 import copy
 import math
+import operator as op
 
 def recursive_map(f,d):
 	""" Normal python map, but recursive
@@ -63,6 +64,18 @@ def statenum_to_binstate(statenum, base):
 	### Consider, and test, changing this function to just
 	# bstate = bin(statenum)[2:].zfill(base)
 	return bstate
+
+
+def statenum_to_output_list(statenum, base):
+	'''
+	Converts an interger into a list of 0 and 1, thus can feed to BooleanNode.from_output_list()
+	:param statenum: state number
+	:param base: the length of output list
+	:type statenum: int
+	:type base: int
+	:return:
+	'''
+	return [int(i) for i in statenum_to_binstate(statenum, base)]
 
 def flip_bit(bit):
 	"""Flips the binary value of a state.
@@ -236,3 +249,17 @@ def hamming_distance(s1, s2):
 	return sum([s1[i] != s2[i] for i in xrange(len(s1))])
 
 
+def ncr(n, r):
+	"""return the combination of r combination of n elements
+
+	Args:
+	    n (int): number of elements
+	    r (int): length of combiation
+	Returns:
+	    int
+	"""
+	r = min(r, n - r)
+	if r == 0: return 1
+	numer = reduce(op.mul, xrange(n, n - r, -1))
+	denom = reduce(op.mul, xrange(1, r + 1))
+	return numer // denom

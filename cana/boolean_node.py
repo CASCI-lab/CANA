@@ -636,6 +636,43 @@ class BooleanNode(object):
 		"""
 		return sum(self.outputs) / 2**self.k
 
+	def c_sensitivity(self, c, mode="default", max_k=0):
+		"""give the c-sensitivity of this node's Boolean function
+		c-sensitivity is defined as:
+			the mean probability that changing exactly c variables in the input variables would change output value
+		There is another mode "forceK", which will be used to calculate Derrida value.
+			That mode would assume the number of input variables is specified as max_k
 
+		:param c:
+		:param mode: when figure as 'forceK', will assume the input variables number to be max instead of the actual number
+		:param max_k: you must specify max_k when you set mode as 'forceK'
+		:return:
+		"""
+		S_c_f = 0
+		ic = min(c, self.k)
 
-
+		if mode != 'forceK':
+			for j in product('01', repeat=self.k):
+				origin_config = list(j)
+				for mut in itertools.combinations(xrange(self.k), ic):
+					mut_config = origin_config[:]
+					for i_mut in mut:
+						mut_config[i_mut] = flip_bit(mut_config[i_mut])
+					if self.step(''.join(origin_config)) != self.step(''.join(mut_config)):
+						S_c_f += 1
+			if S_c_f == 0:
+				return 0.
+			return S_c_f / float(ncr(self.k, c)) / float(2 ** self.k)
+		else:
+			assert max_k >= self.k
+			for ic in xrange(max(1, c + self.k - max_k), min(c, self.k) + 1):
+				for j in product('01', repeat=self.k):
+					origin_config = list(j)
+					for mut in itertools.combinations(xrange(self.k), ic):
+						mut_config = origin_config[:]
+						for i_mut in mut:
+							mut_config[i_mut] = flip_bit(mut_config[i_mut])
+						if self.step(''.join(origin_config)) != self.step(
+								''.join(mut_config)):
+							S_c_f += ncr(max_k - self.k, c - ic)
+			return S_c_f / float(ncr(max_k, c)) / float(2 ** self.k)
