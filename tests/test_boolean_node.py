@@ -6,6 +6,7 @@
 from __future__ import division
 from cana.boolean_node import BooleanNode
 from cana.datasets.bools import CONTRADICTION,AND,OR,XOR,COPYx1,RULE90,RULE110
+from cana.utils import *
 
 #
 # Test Input Redundancy
@@ -485,13 +486,24 @@ def test_input_symmetry_RULE110():
 	assert (k_s ==  true_k_s) , ('Input Redundancy (input,tuples) for RULE110 node does not match. %s != %s' % (k_s,true_k_s))
 
 
+def test_sensitivity_AND():
+	n = AND()
+	s, true_s = n.c_sensitivity(1), 1 / 2
+	assert isclose(s, true_s), ('c-sensitivity(1) for AND does not match, %s != %s' % (s, true_s))
+	s, true_s = n.c_sensitivity(2), 1 / 2
+	assert isclose(s, true_s), ('c-sensitivity(2) for AND does not match, %s != %s' % (s, true_s))
+	s, true_s = n.c_sensitivity(1,'forceK',3), 1 / 3
+	assert isclose(s, true_s), ("c-sensitivity(1,'forceK',3) for AND does not match, %s != %s" % (s, true_s))
+	s, true_s = n.c_sensitivity(2, 'forceK', 3), 1 / 2
+	assert isclose(s, true_s), ("c-sensitivity(2,'forceK',3) for AND does not match, %s != %s" % (s, true_s))
 
-
-
-
-
-
-
-
-
-
+def test_sensitivity_XOR():
+	n = XOR()
+	s, true_s = n.c_sensitivity(1), 1.
+	assert isclose(s, true_s), ('c-sensitivity(1) for XOR does not match, %s != %s' % (s, true_s))
+	s, true_s = n.c_sensitivity(2), 0.
+	assert isclose(s, true_s), ('c-sensitivity(2) for XOR does not match, %s != %s' % (s, true_s))
+	s, true_s = n.c_sensitivity(1,'forceK',3), 2 / 3
+	assert isclose(s, true_s), ("c-sensitivity(1,'forceK',3) for XOR does not match, %s != %s" % (s, true_s))
+	s, true_s = n.c_sensitivity(2, 'forceK', 3), 2 / 3
+	assert isclose(s, true_s), ("c-sensitivity(2,'forceK',3) for XOR does not match, %s != %s" % (s, true_s))

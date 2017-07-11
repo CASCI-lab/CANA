@@ -923,12 +923,14 @@ class BooleanNetwork:
 	# Plotting Methods
 	#
 	def derrida_curve(self, nsamples=10, random_seed=None, method='random'):
-		""" The Derrida Curva (also reffered as criticality measure :math:`D_s`).
-		
+		""" The Derrida Curve (also reffered as criticality measure :math:`D_s`).
+		When "mode" is set as "random" (default), it would use random sampling to estimate Derrida value
+		If "mode" is set as "sensitivity", it would use c-sensitivity to calculate Derrida value (slower)
+		You can refer to :cite:'kadelka2017influence' about why c-sensitivity can be used to caculate Derrida value
 		Args:
 			nsamples (int) : The number of samples per hammimg distance to get.
 			random_seed (int) : The random state seed.
-			methods (string) : specify the method you want. either 'randhom' or 'sensitivity'
+			method (string) : specify the method you want. either 'random' or 'sensitivity'
 		Returns:
 			(dx,dy) (tuple) : The dx and dy of the curve.
 		"""

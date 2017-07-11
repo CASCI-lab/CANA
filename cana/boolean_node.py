@@ -639,14 +639,21 @@ class BooleanNode(object):
 	def c_sensitivity(self, c, mode="default", max_k=0):
 		"""give the c-sensitivity of this node's Boolean function
 		c-sensitivity is defined as:
-			the mean probability that changing exactly c variables in the input variables would change output value
+			the mean probability that changing exactly c variables in input variables would change output value
 		There is another mode "forceK", which will be used to calculate Derrida value.
-			That mode would assume the number of input variables is specified as max_k
+			In that mode, it would assume the number of input variables is specified as max_k
+			this methods is equvalent to Derrida value in :cite:'kadelka2017influence', only move a normalization
+			coefficient from expression of Derrida value to c-sensitivity to simplify it
 
-		:param c:
-		:param mode: when figure as 'forceK', will assume the input variables number to be max instead of the actual number
-		:param max_k: you must specify max_k when you set mode as 'forceK'
-		:return:
+		Args:
+			c (int) : the "c" in the definition of c-senstivity above
+			mode (string) : either "default" or "forceK"
+			max_k (int) : you must specify max_k when you set mode as 'forceK'
+
+		Returns:
+		    (float)
+		See Also:
+		    :func:`~boolnets.boolean_network.derrida_curve
 		"""
 		S_c_f = 0
 		ic = min(c, self.k)

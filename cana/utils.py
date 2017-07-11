@@ -69,11 +69,13 @@ def statenum_to_binstate(statenum, base):
 def statenum_to_output_list(statenum, base):
 	'''
 	Converts an interger into a list of 0 and 1, thus can feed to BooleanNode.from_output_list()
-	:param statenum: state number
-	:param base: the length of output list
-	:type statenum: int
-	:type base: int
-	:return:
+	Args:
+		statenum (int) : the state number
+		base (int) : the length of output list
+	Returns:
+		list : a list of length base, consisting of 0 and 1
+	See also:
+	    :attr:'statenum_to_binstate'
 	'''
 	return [int(i) for i in statenum_to_binstate(statenum, base)]
 
@@ -250,11 +252,12 @@ def hamming_distance(s1, s2):
 
 
 def ncr(n, r):
-	"""return the combination of r combination of n elements
+	"""return the combination number
+	the combination of selecting r items from n iterms, order doesn't matter
 
 	Args:
-	    n (int): number of elements
-	    r (int): length of combiation
+	    n (int): number of elements in collection
+	    r (int): length of combination
 	Returns:
 	    int
 	"""
@@ -263,3 +266,22 @@ def ncr(n, r):
 	numer = reduce(op.mul, xrange(n, n - r, -1))
 	denom = reduce(op.mul, xrange(1, r + 1))
 	return numer // denom
+
+
+def isclose(a, b, rel_tol=1e-09, abs_tol=0.0):
+	'''
+	Python 2 doesn't have math.isclose()
+	Here is an equivalent function 
+	Use this to tell whether two float numbers are close enough
+		considering using == to compare floats is dangerous! 
+		2.0*3.3 != 3.0*2.2 in python!
+	Args:
+	    a (float) : the first float number
+	    b (float) : the second float number
+	    rel_tol (float) : the relative difference threshold between a and b
+	    abs_tol (float) : absolute difference threshold. not recommended for float
+
+	Returns:
+		bool
+	'''
+	return abs(a - b) <= max(rel_tol * max(abs(a), abs(b)), abs_tol)
