@@ -922,12 +922,15 @@ class BooleanNetwork:
 	#
 	# Plotting Methods
 	#
-	def derrida_curve(self, nsamples=10, random_seed=None):
-		""" The Derrida Curva (also reffered as criticality measure :math:`D_s`).
-		
+	def derrida_curve(self, nsamples=10, random_seed=None, method='random'):
+		""" The Derrida Curve (also reffered as criticality measure :math:`D_s`).
+		When "mode" is set as "random" (default), it would use random sampling to estimate Derrida value
+		If "mode" is set as "sensitivity", it would use c-sensitivity to calculate Derrida value (slower)
+		You can refer to :cite:'kadelka2017influence' about why c-sensitivity can be used to caculate Derrida value
 		Args:
 			nsamples (int) : The number of samples per hammimg distance to get.
 			random_seed (int) : The random state seed.
+			method (string) : specify the method you want. either 'random' or 'sensitivity'
 		Returns:
 			(dx,dy) (tuple) : The dx and dy of the curve.
 		"""
@@ -936,17 +939,21 @@ class BooleanNetwork:
 		dx = np.linspace(0,1,self.Nnodes)
 		dy = np.zeros(self.Nnodes)
 
-		# for each possible hamming distance between the starting states
-		for hamm_dist in xrange(1, self.Nnodes + 1):
-			
-			# sample nsample times
-			for isample in xrange(nsamples):
-				rnd_config = [random.choice(['0', '1']) for b in xrange(self.Nnodes)]
-				perturbed_var = random.sample(range(self.Nnodes), hamm_dist)
-				perturbed_config = [flip_bit(rnd_config[ivar]) if ivar in perturbed_var else rnd_config[ivar] for ivar in xrange(self.Nnodes)]
-				dy[hamm_dist-1] += hamming_distance(self.step(rnd_config), self.step(perturbed_config))
-		
-		dy /= float(self.Nnodes * nsamples)
+		if method == 'random':
+			# for each possible hamming distance between the starting states
+			for hamm_dist in xrange(1, self.Nnodes + 1):
+
+				# sample nsample times
+				for isample in xrange(nsamples):
+					rnd_config = [random.choice(['0', '1']) for b in xrange(self.Nnodes)]
+					perturbed_var = random.sample(range(self.Nnodes), hamm_dist)
+					perturbed_config = [flip_bit(rnd_config[ivar]) if ivar in perturbed_var else rnd_config[ivar] for ivar in xrange(self.Nnodes)]
+					dy[hamm_dist-1] += hamming_distance(self.step(rnd_config), self.step(perturbed_config))
+
+			dy /= float(self.Nnodes * nsamples)
+		elif method == 'sensitivity':
+			for hamm_dist in xrange(1,self.Nnodes +1):
+				dy[hamm_dist-1] = sum([node.c_sensitivity(hamm_dist,mode='forceK',max_k=self.Nnodes) for node in self.nodes])/self.Nnodes
 
 		return dx, dy
 
