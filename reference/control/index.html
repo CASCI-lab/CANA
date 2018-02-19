@@ -5,23 +5,14 @@
 <!--[if gt IE 8]><!--> <html class="no-js" lang="en" > <!--<![endif]-->
 <head>
   <meta charset="utf-8">
-  <script type="text/javascript">
-
-      var _gaq = _gaq || [];
-      _gaq.push(['_setAccount', 'UA-71404006-4']);
-      _gaq.push(['_trackPageview']);
-
-      (function() {
-        var ga = document.createElement('script'); ga.type = 'text/javascript'; ga.async = true;
-        ga.src = ('https:' == document.location.protocol ? 'https://ssl' : 'http://www') + '.google-analytics.com/ga.js';
-        var s = document.getElementsByTagName('script')[0]; s.parentNode.insertBefore(ga, s);
-      })();
-    </script>
+  
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   
-  <title>Control &mdash; CANA 0.0.1a documentation</title>
+  <title>Control &mdash; CANA 0.0.2-alpha documentation</title>
   
 
+  
+  
   
   
 
@@ -35,7 +26,7 @@
 
   
   
-    <link rel="stylesheet" href="../../_static/css/theme.css" type="text/css" />
+    <link rel="stylesheet" href="../../static/css/theme.css" type="text/css" />
   
 
   
@@ -44,18 +35,19 @@
         <link rel="index" title="Index"
               href="../../genindex.html"/>
         <link rel="search" title="Search" href="../../search.html"/>
-    <link rel="top" title="CANA 0.0.1a documentation" href="../../index.html"/>
+    <link rel="top" title="CANA 0.0.2-alpha documentation" href="../../index.html"/>
         <link rel="up" title="API Reference" href="../index.html"/>
         <link rel="next" title="Common Nodes &amp; Networks" href="../datasets/index.html"/>
         <link rel="prev" title="Canalization" href="../canalization/index.html"/> 
 
   
-  <script src="../../_static/js/modernizr.min.js"></script>
+  <script src="../../static/js/modernizr.min.js"></script>
 
 </head>
 
 <body class="wy-body-for-nav" role="document">
 
+   
   <div class="wy-grid-for-nav">
 
     
@@ -75,7 +67,7 @@
             
             
               <div class="version">
-                0.0.1
+                0.0.2
               </div>
             
           
@@ -96,7 +88,10 @@
           
             
             
-                <ul class="current">
+              
+            
+            
+              <ul class="current">
 <li class="toctree-l1"><a class="reference internal" href="../../install.html">Installation</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../notation.html">Notation</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../tutorial.html">Tutorials</a></li>
@@ -136,8 +131,10 @@
 
       
       <nav class="wy-nav-top" role="navigation" aria-label="top navigation">
-        <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
-        <a href="../../index.html">CANA</a>
+        
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../index.html">CANA</a>
+        
       </nav>
 
 
@@ -146,25 +143,42 @@
         <div class="rst-content">
           
 
- 
+
+
+
+
+
+
+
+
+
+
+
 
 
 
 <div role="navigation" aria-label="breadcrumbs navigation">
+
   <ul class="wy-breadcrumbs">
-    <li><a href="../../index.html">Docs</a> &raquo;</li>
-      
+    
+      <li><a href="../../index.html">Docs</a> &raquo;</li>
+        
           <li><a href="../index.html">API Reference</a> &raquo;</li>
-      
-    <li>Control</li>
+        
+      <li>Control</li>
+    
+    
       <li class="wy-breadcrumbs-aside">
         
-          
-            <a href="../../_sources/reference/control/index.rst.txt" rel="nofollow"> View page source</a>
+            
+            <a href="../../sources/reference/control/index.rst.txt" rel="nofollow"> View page source</a>
           
         
       </li>
+    
   </ul>
+
+  
   <hr/>
 </div>
           <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
@@ -173,7 +187,7 @@
   <div class="section" id="control">
 <h1><a class="toc-backref" href="#id4">Control</a><a class="headerlink" href="#control" title="Permalink to this headline">¶</a></h1>
 <p>These are methods and modules used to calculate control in Boolean Networks. They are divided in dynamics- and structure-based methods.</p>
-<p>Note that these methods do not need to be called directly, as <a class="reference internal" href="../boolean_network.html#cana.boolean_network.BooleanNetwork" title="cana.boolean_network.BooleanNetwork"><code class="xref py py-class docutils literal"><span class="pre">cana.boolean_network.BooleanNetwork</span></code></a> provides the appropriate methods.</p>
+<p>Note that these methods do not need to be called directly, as <a class="reference internal" href="../boolean_network.html#cana.boolean_network.BooleanNetwork" title="cana.boolean_network.BooleanNetwork"><code class="xref py py-class docutils literal notranslate"><span class="pre">cana.boolean_network.BooleanNetwork</span></code></a> provides the appropriate methods.</p>
 <div class="contents topic" id="contents">
 <p class="topic-title first">Contents</p>
 <ul class="simple">
@@ -194,20 +208,20 @@
 </div>
 <div class="section" id="dynamics-based-control">
 <h2><a class="toc-backref" href="#id5">Dynamics based control</a><a class="headerlink" href="#dynamics-based-control" title="Permalink to this headline">¶</a></h2>
-<p>The control methods used here are implemented directly on the base class <a class="reference internal" href="../boolean_network.html#cana.boolean_network.BooleanNetwork" title="cana.boolean_network.BooleanNetwork"><code class="xref py py-class docutils literal"><span class="pre">BooleanNetwork</span></code></a> and <a class="reference internal" href="../boolean_node.html#cana.boolean_node.BooleanNode" title="cana.boolean_node.BooleanNode"><code class="xref py py-class docutils literal"><span class="pre">BooleanNode</span></code></a>. That is because the Network class can ask its nodes directly to step into a specific trajectory, thus compartmentalizing the logic.</p>
+<p>The control methods used here are implemented directly on the base class <a class="reference internal" href="../boolean_network.html#cana.boolean_network.BooleanNetwork" title="cana.boolean_network.BooleanNetwork"><code class="xref py py-class docutils literal notranslate"><span class="pre">BooleanNetwork</span></code></a> and <a class="reference internal" href="../boolean_node.html#cana.boolean_node.BooleanNode" title="cana.boolean_node.BooleanNode"><code class="xref py py-class docutils literal notranslate"><span class="pre">BooleanNode</span></code></a>. That is because the Network class can ask its nodes directly to step into a specific trajectory, thus compartmentalizing the logic.</p>
 <div class="section" id="attractor-control">
 <h3><a class="toc-backref" href="#id6">Attractor Control</a><a class="headerlink" href="#attractor-control" title="Permalink to this headline">¶</a></h3>
 <dl class="method">
 <dt>
-<code class="descclassname">BooleanNetwork.</code><code class="descname">attractor_driver_nodes</code><span class="sig-paren">(</span><em>min_dvs=1</em>, <em>max_dvs=4</em>, <em>verbose=False</em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/cana/boolean_network.html#BooleanNetwork.attractor_driver_nodes"><span class="viewcode-link">[source]</span></a></dt>
-<dd><p>Get the minimum necessary driver nodes by iterating the combination of all possible driver nodes of length <span class="math">\(min &lt;= x &lt;= max\)</span>.</p>
+<code class="descclassname">BooleanNetwork.</code><code class="descname">attractor_driver_nodes</code><span class="sig-paren">(</span><em>min_dvs=1</em>, <em>max_dvs=4</em>, <em>verbose=False</em><span class="sig-paren">)</span><a class="reference internal" href="../../modules/cana/boolean_network.html#BooleanNetwork.attractor_driver_nodes"><span class="viewcode-link">[source]</span></a></dt>
+<dd><p>Get the minimum necessary driver nodes by iterating the combination of all possible driver nodes of length <span class="math notranslate">\(min &lt;= x &lt;= max\)</span>.</p>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
 <col class="field-body" />
 <tbody valign="top">
 <tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
-<li><strong>min_dvs</strong> (<em>int</em>) &#8211; Mininum number of driver nodes to search.</li>
-<li><strong>max_dvs</strong> (<em>int</em>) &#8211; Maximum number of driver nodes to search.</li>
+<li><strong>min_dvs</strong> (<em>int</em>) – Mininum number of driver nodes to search.</li>
+<li><strong>max_dvs</strong> (<em>int</em>) – Maximum number of driver nodes to search.</li>
 </ul>
 </td>
 </tr>
@@ -223,22 +237,26 @@
 <p class="first admonition-title">Note</p>
 <p class="last">This is an inefficient bruit force search, maybe we can think of better ways to do this?</p>
 </div>
+<div class="admonition-todo admonition" id="index-0">
+<p class="first admonition-title">Todo</p>
+<p class="last">Parallelize the search on each combination. Each CSTG is independent and can be searched in parallel.</p>
+</div>
 <div class="admonition seealso">
 <p class="first admonition-title">See also</p>
-<p class="last"><a class="reference internal" href="../boolean_network.html#cana.boolean_network.BooleanNetwork.controlled_state_transition_graph" title="cana.boolean_network.BooleanNetwork.controlled_state_transition_graph"><code class="xref py py-func docutils literal"><span class="pre">controlled_state_transition_graph()</span></code></a>, <a class="reference internal" href="../boolean_network.html#cana.boolean_network.BooleanNetwork.controlled_attractor_graph" title="cana.boolean_network.BooleanNetwork.controlled_attractor_graph"><code class="xref py py-func docutils literal"><span class="pre">controlled_attractor_graph()</span></code></a>.</p>
+<p class="last"><a class="reference internal" href="../boolean_network.html#cana.boolean_network.BooleanNetwork.controlled_state_transition_graph" title="cana.boolean_network.BooleanNetwork.controlled_state_transition_graph"><code class="xref py py-func docutils literal notranslate"><span class="pre">controlled_state_transition_graph()</span></code></a>, <a class="reference internal" href="../boolean_network.html#cana.boolean_network.BooleanNetwork.controlled_attractor_graph" title="cana.boolean_network.BooleanNetwork.controlled_attractor_graph"><code class="xref py py-func docutils literal notranslate"><span class="pre">controlled_attractor_graph()</span></code></a>.</p>
 </div>
 </dd></dl>
 
 <dl class="method">
 <dt>
-<code class="descclassname">BooleanNetwork.</code><code class="descname">controlled_state_transition_graph</code><span class="sig-paren">(</span><em>driver_nodes=[]</em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/cana/boolean_network.html#BooleanNetwork.controlled_state_transition_graph"><span class="viewcode-link">[source]</span></a></dt>
+<code class="descclassname">BooleanNetwork.</code><code class="descname">controlled_state_transition_graph</code><span class="sig-paren">(</span><em>driver_nodes=[]</em><span class="sig-paren">)</span><a class="reference internal" href="../../modules/cana/boolean_network.html#BooleanNetwork.controlled_state_transition_graph"><span class="viewcode-link">[source]</span></a></dt>
 <dd><p>Returns the Controlled State-Transition-Graph (CSTG).
-In practice, it copied the original STG, flips driver nodes (variables), and updates the CSTG.</p>
+In practice, it copies the original STG, flips driver nodes (variables), and updates the CSTG.</p>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
 <col class="field-body" />
 <tbody valign="top">
-<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>driver_nodes</strong> (<em>list</em>) &#8211; The list of driver nodes.</td>
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>driver_nodes</strong> (<em>list</em>) – The list of driver nodes.</td>
 </tr>
 <tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body">The Controlled State-Transition-Graph.</td>
 </tr>
@@ -248,18 +266,18 @@ In practice, it copied the original STG, flips driver nodes (variables), and upd
 </table>
 <div class="admonition seealso">
 <p class="first admonition-title">See also</p>
-<p class="last"><a class="reference internal" href="../boolean_network.html#cana.boolean_network.BooleanNetwork.attractor_driver_nodes" title="cana.boolean_network.BooleanNetwork.attractor_driver_nodes"><code class="xref py py-func docutils literal"><span class="pre">attractor_driver_nodes()</span></code></a>, <a class="reference internal" href="../boolean_network.html#cana.boolean_network.BooleanNetwork.controlled_attractor_graph" title="cana.boolean_network.BooleanNetwork.controlled_attractor_graph"><code class="xref py py-func docutils literal"><span class="pre">controlled_attractor_graph()</span></code></a>.</p>
+<p class="last"><a class="reference internal" href="../boolean_network.html#cana.boolean_network.BooleanNetwork.attractor_driver_nodes" title="cana.boolean_network.BooleanNetwork.attractor_driver_nodes"><code class="xref py py-func docutils literal notranslate"><span class="pre">attractor_driver_nodes()</span></code></a>, <a class="reference internal" href="../boolean_network.html#cana.boolean_network.BooleanNetwork.controlled_attractor_graph" title="cana.boolean_network.BooleanNetwork.controlled_attractor_graph"><code class="xref py py-func docutils literal notranslate"><span class="pre">controlled_attractor_graph()</span></code></a>.</p>
 </div>
 </dd></dl>
 
 <dl class="method">
 <dt>
-<code class="descclassname">BooleanNetwork.</code><code class="descname">controlled_attractor_graph</code><span class="sig-paren">(</span><em>cstg</em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/cana/boolean_network.html#BooleanNetwork.controlled_attractor_graph"><span class="viewcode-link">[source]</span></a></dt>
+<code class="descclassname">BooleanNetwork.</code><code class="descname">controlled_attractor_graph</code><span class="sig-paren">(</span><em>cstg</em><span class="sig-paren">)</span><a class="reference internal" href="../../modules/cana/boolean_network.html#BooleanNetwork.controlled_attractor_graph"><span class="viewcode-link">[source]</span></a></dt>
 <dd><table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
 <col class="field-body" />
 <tbody valign="top">
-<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>cstg</strong> (<em>networkx.DiGraph</em>) &#8211; A Controlled State-Transition-Graph (CSTG)</td>
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>cstg</strong> (<em>networkx.DiGraph</em>) – A Controlled State-Transition-Graph (CSTG)</td>
 </tr>
 <tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body">The Controlled Attractor Graph (CAG)</td>
 </tr>
@@ -269,7 +287,7 @@ In practice, it copied the original STG, flips driver nodes (variables), and upd
 </table>
 <div class="admonition seealso">
 <p class="first admonition-title">See also</p>
-<p class="last"><a class="reference internal" href="../boolean_network.html#cana.boolean_network.BooleanNetwork.attractor_driver_nodes" title="cana.boolean_network.BooleanNetwork.attractor_driver_nodes"><code class="xref py py-func docutils literal"><span class="pre">attractor_driver_nodes()</span></code></a>, <a class="reference internal" href="../boolean_network.html#cana.boolean_network.BooleanNetwork.controlled_state_transition_graph" title="cana.boolean_network.BooleanNetwork.controlled_state_transition_graph"><code class="xref py py-func docutils literal"><span class="pre">controlled_state_transition_graph()</span></code></a>.</p>
+<p class="last"><a class="reference internal" href="../boolean_network.html#cana.boolean_network.BooleanNetwork.attractor_driver_nodes" title="cana.boolean_network.BooleanNetwork.attractor_driver_nodes"><code class="xref py py-func docutils literal notranslate"><span class="pre">attractor_driver_nodes()</span></code></a>, <a class="reference internal" href="../boolean_network.html#cana.boolean_network.BooleanNetwork.controlled_state_transition_graph" title="cana.boolean_network.BooleanNetwork.controlled_state_transition_graph"><code class="xref py py-func docutils literal notranslate"><span class="pre">controlled_state_transition_graph()</span></code></a>.</p>
 </div>
 </dd></dl>
 
@@ -285,7 +303,7 @@ that need to be removed from a directed graph so that the resulting graph has no
 <p>Two methods are implemented here. A bruteforce and the Greedy Randomized Adaptive Search Procedure (GRASP) method by <a class="reference internal" href="../../references.html#pardalos-1998" id="id3">[PQR98]</a>.</p>
 <dl class="function">
 <dt id="cana.control.fvs.fvs_grasp">
-<code class="descclassname">cana.control.fvs.</code><code class="descname">fvs_grasp</code><span class="sig-paren">(</span><em>directed_graph</em>, <em>max_iter=100</em>, <em>keep_self_loops=True</em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/cana/control/fvs.html#fvs_grasp"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#cana.control.fvs.fvs_grasp" title="Permalink to this definition">¶</a></dt>
+<code class="descclassname">cana.control.fvs.</code><code class="descname">fvs_grasp</code><span class="sig-paren">(</span><em>directed_graph</em>, <em>max_iter=100</em>, <em>keep_self_loops=True</em><span class="sig-paren">)</span><a class="reference internal" href="../../modules/cana/control/fvs.html#fvs_grasp"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#cana.control.fvs.fvs_grasp" title="Permalink to this definition">¶</a></dt>
 <dd><p>The Feedback Vertex Set GRASP implementation.
 This implementation is not exact but it is recommended for very large graphs.</p>
 <table class="docutils field-list" frame="void" rules="none">
@@ -293,9 +311,9 @@ This implementation is not exact but it is recommended for very large graphs.</p
 <col class="field-body" />
 <tbody valign="top">
 <tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
-<li><strong>directed_graph</strong> (<em>networkx.DiGraph</em>) &#8211; The structure graph.</li>
-<li><strong>max_iter</strong> (<em>int</em>) &#8211; Maximum number of iterations for the search.</li>
-<li><strong>keep_self_loops</strong> (<em>bool</em>) &#8211; If self-loops are used in the computation. By FVS theory, all self-loop nodes are needed for control.</li>
+<li><strong>directed_graph</strong> (<em>networkx.DiGraph</em>) – The structure graph.</li>
+<li><strong>max_iter</strong> (<em>int</em>) – Maximum number of iterations for the search.</li>
+<li><strong>keep_self_loops</strong> (<em>bool</em>) – If self-loops are used in the computation. By FVS theory, all self-loop nodes are needed for control.</li>
 </ul>
 </td>
 </tr>
@@ -309,22 +327,22 @@ This implementation is not exact but it is recommended for very large graphs.</p
 </table>
 <div class="admonition seealso">
 <p class="first admonition-title">See also</p>
-<p class="last"><a class="reference internal" href="#cana.control.fvs.fvs_bruteforce" title="cana.control.fvs.fvs_bruteforce"><code class="xref py py-func docutils literal"><span class="pre">fvs_bruteforce()</span></code></a>.</p>
+<p class="last"><a class="reference internal" href="#cana.control.fvs.fvs_bruteforce" title="cana.control.fvs.fvs_bruteforce"><code class="xref py py-func docutils literal notranslate"><span class="pre">fvs_bruteforce()</span></code></a>.</p>
 </div>
 </dd></dl>
 
 <dl class="function">
 <dt id="cana.control.fvs.fvs_bruteforce">
-<code class="descclassname">cana.control.fvs.</code><code class="descname">fvs_bruteforce</code><span class="sig-paren">(</span><em>directed_graph</em>, <em>max_search=5</em>, <em>keep_self_loops=True</em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/cana/control/fvs.html#fvs_bruteforce"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#cana.control.fvs.fvs_bruteforce" title="Permalink to this definition">¶</a></dt>
+<code class="descclassname">cana.control.fvs.</code><code class="descname">fvs_bruteforce</code><span class="sig-paren">(</span><em>directed_graph</em>, <em>max_search=5</em>, <em>keep_self_loops=True</em><span class="sig-paren">)</span><a class="reference internal" href="../../modules/cana/control/fvs.html#fvs_bruteforce"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#cana.control.fvs.fvs_bruteforce" title="Permalink to this definition">¶</a></dt>
 <dd><p>The Feedback Vertex Set bruteforce implementation.</p>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
 <col class="field-body" />
 <tbody valign="top">
 <tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
-<li><strong>directed_graph</strong> (<em>networkx.DiGraph</em>) &#8211; The structure graph.</li>
-<li><strong>max_search</strong> (<em>int</em>) &#8211; Maximum number of additional variables to include in the search.</li>
-<li><strong>keep_self_loops</strong> (<em>bool</em>) &#8211; If self-loops are used in the computation. By FVS theory, all self-loop nodes are needed for control.</li>
+<li><strong>directed_graph</strong> (<em>networkx.DiGraph</em>) – The structure graph.</li>
+<li><strong>max_search</strong> (<em>int</em>) – Maximum number of additional variables to include in the search.</li>
+<li><strong>keep_self_loops</strong> (<em>bool</em>) – If self-loops are used in the computation. By FVS theory, all self-loop nodes are needed for control.</li>
 </ul>
 </td>
 </tr>
@@ -342,7 +360,7 @@ This implementation is not exact but it is recommended for very large graphs.</p
 </div>
 <div class="admonition seealso">
 <p class="first admonition-title">See also</p>
-<p class="last"><a class="reference internal" href="#cana.control.fvs.fvs_grasp" title="cana.control.fvs.fvs_grasp"><code class="xref py py-func docutils literal"><span class="pre">fvs_grasp()</span></code></a>.</p>
+<p class="last"><a class="reference internal" href="#cana.control.fvs.fvs_grasp" title="cana.control.fvs.fvs_grasp"><code class="xref py py-func docutils literal notranslate"><span class="pre">fvs_grasp()</span></code></a>.</p>
 </div>
 </dd></dl>
 
@@ -351,16 +369,16 @@ This implementation is not exact but it is recommended for very large graphs.</p
 <h3><a class="toc-backref" href="#id9">Minimum Dominating Set</a><a class="headerlink" href="#minimum-dominating-set" title="Permalink to this headline">¶</a></h3>
 <dl class="function">
 <dt id="cana.control.mds.mds">
-<code class="descclassname">cana.control.mds.</code><code class="descname">mds</code><span class="sig-paren">(</span><em>directed_graph</em>, <em>max_search=5</em>, <em>keep_self_loops=True</em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/cana/control/mds.html#mds"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#cana.control.mds.mds" title="Permalink to this definition">¶</a></dt>
+<code class="descclassname">cana.control.mds.</code><code class="descname">mds</code><span class="sig-paren">(</span><em>directed_graph</em>, <em>max_search=5</em>, <em>keep_self_loops=True</em><span class="sig-paren">)</span><a class="reference internal" href="../../modules/cana/control/mds.html#mds"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#cana.control.mds.mds" title="Permalink to this definition">¶</a></dt>
 <dd><p>The minimum dominating set method.</p>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
 <col class="field-body" />
 <tbody valign="top">
 <tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
-<li><strong>directed_graph</strong> (<em>networkx.DiGraph</em>) &#8211; The structural graph.</li>
-<li><strong>max_search</strong> (<em>int</em>) &#8211; Maximum search of additional variables. Defaults to 5.</li>
-<li><strong>keep_self_loops</strong> (<em>bool</em>) &#8211; If self-loops are used in the computation.</li>
+<li><strong>directed_graph</strong> (<em>networkx.DiGraph</em>) – The structural graph.</li>
+<li><strong>max_search</strong> (<em>int</em>) – Maximum search of additional variables. Defaults to 5.</li>
+<li><strong>keep_self_loops</strong> (<em>bool</em>) – If self-loops are used in the computation.</li>
 </ul>
 </td>
 </tr>
@@ -379,15 +397,15 @@ This implementation is not exact but it is recommended for very large graphs.</p
 <h3><a class="toc-backref" href="#id10">Structural Controllability</a><a class="headerlink" href="#structural-controllability" title="Permalink to this headline">¶</a></h3>
 <dl class="function">
 <dt id="cana.control.sc.sc">
-<code class="descclassname">cana.control.sc.</code><code class="descname">sc</code><span class="sig-paren">(</span><em>directed_graph</em>, <em>keep_self_loops=True</em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/cana/control/sc.html#sc"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#cana.control.sc.sc" title="Permalink to this definition">¶</a></dt>
+<code class="descclassname">cana.control.sc.</code><code class="descname">sc</code><span class="sig-paren">(</span><em>directed_graph</em>, <em>keep_self_loops=True</em><span class="sig-paren">)</span><a class="reference internal" href="../../modules/cana/control/sc.html#sc"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#cana.control.sc.sc" title="Permalink to this definition">¶</a></dt>
 <dd><p>The Structural Contolability driver sets.</p>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
 <col class="field-body" />
 <tbody valign="top">
 <tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
-<li><strong>directed_graph</strong> (<em>networkx.DiGraph</em>) &#8211; The directed graph capturing the network structure.</li>
-<li><strong>keep_self_loops</strong> (<em>bool</em>) &#8211; Determines if the self loops are kept in the determination of structural control.</li>
+<li><strong>directed_graph</strong> (<em>networkx.DiGraph</em>) – The directed graph capturing the network structure.</li>
+<li><strong>keep_self_loops</strong> (<em>bool</em>) – Determines if the self loops are kept in the determination of structural control.</li>
 </ul>
 </td>
 </tr>
@@ -401,27 +419,27 @@ This implementation is not exact but it is recommended for very large graphs.</p
 </table>
 <div class="admonition seealso">
 <p class="first admonition-title">See also</p>
-<p class="last">If you only need the size of the set, see <a class="reference internal" href="#cana.control.sc.sc_min_size" title="cana.control.sc.sc_min_size"><code class="xref py py-func docutils literal"><span class="pre">sc_min_size()</span></code></a>.</p>
+<p class="last">If you only need the size of the set, see <a class="reference internal" href="#cana.control.sc.sc_min_size" title="cana.control.sc.sc_min_size"><code class="xref py py-func docutils literal notranslate"><span class="pre">sc_min_size()</span></code></a>.</p>
 </div>
 </dd></dl>
 
 <dl class="function">
 <dt id="cana.control.sc.sc_min_size">
-<code class="descclassname">cana.control.sc.</code><code class="descname">sc_min_size</code><span class="sig-paren">(</span><em>directed_graph</em>, <em>keep_self_loops=True</em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/cana/control/sc.html#sc_min_size"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#cana.control.sc.sc_min_size" title="Permalink to this definition">¶</a></dt>
+<code class="descclassname">cana.control.sc.</code><code class="descname">sc_min_size</code><span class="sig-paren">(</span><em>directed_graph</em>, <em>keep_self_loops=True</em><span class="sig-paren">)</span><a class="reference internal" href="../../modules/cana/control/sc.html#sc_min_size"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#cana.control.sc.sc_min_size" title="Permalink to this definition">¶</a></dt>
 <dd><p>The minimum number of driver variables required by structural controllability.</p>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
 <col class="field-body" />
 <tbody valign="top">
 <tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
-<li><strong>directed_graph</strong> (<em>networkx.DiGraph</em>) &#8211; The directed graph capturing the network structure.</li>
-<li><strong>keep_self_loops</strong> (<em>bool</em>) &#8211; Determines if the self loops are kept in the determination of structural control.</li>
+<li><strong>directed_graph</strong> (<em>networkx.DiGraph</em>) – The directed graph capturing the network structure.</li>
+<li><strong>keep_self_loops</strong> (<em>bool</em>) – Determines if the self loops are kept in the determination of structural control.</li>
 </ul>
 </td>
 </tr>
 </tbody>
 </table>
-<div class="admonition-todo admonition" id="index-0">
+<div class="admonition-todo admonition" id="index-1">
 <p class="first admonition-title">Todo</p>
 <p class="last">Implement the removal of self loops</p>
 </div>
@@ -437,7 +455,7 @@ This implementation is not exact but it is recommended for very large graphs.</p
 </table>
 <div class="admonition seealso">
 <p class="first admonition-title">See also</p>
-<p class="last"><a class="reference internal" href="#cana.control.sc.sc" title="cana.control.sc.sc"><code class="xref py py-func docutils literal"><span class="pre">sc()</span></code></a></p>
+<p class="last"><a class="reference internal" href="#cana.control.sc.sc" title="cana.control.sc.sc"><code class="xref py py-func docutils literal notranslate"><span class="pre">sc()</span></code></a></p>
 </div>
 </dd></dl>
 
@@ -447,15 +465,18 @@ This implementation is not exact but it is recommended for very large graphs.</p
 
 
            </div>
+           <div class="articleComments">
+            
+           </div>
           </div>
           <footer>
   
     <div class="rst-footer-buttons" role="navigation" aria-label="footer navigation">
       
-        <a href="../datasets/index.html" class="btn btn-neutral float-right" title="Common Nodes &amp; Networks" accesskey="n">Next <span class="fa fa-arrow-circle-right"></span></a>
+        <a href="../datasets/index.html" class="btn btn-neutral float-right" title="Common Nodes &amp; Networks" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right"></span></a>
       
       
-        <a href="../canalization/index.html" class="btn btn-neutral" title="Canalization" accesskey="p"><span class="fa fa-arrow-circle-left"></span> Previous</a>
+        <a href="../canalization/index.html" class="btn btn-neutral" title="Canalization" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left"></span> Previous</a>
       
     </div>
   
@@ -464,8 +485,8 @@ This implementation is not exact but it is recommended for very large graphs.</p
 
   <div role="contentinfo">
     <p>
-        &copy; Copyright 2017, Gates, A., Correia, R. B., Rocha, L. M..
-      Last updated on Apr 03, 2017.
+        &copy; Copyright 2017, Correia, R. B., Gates, A., Rocha, L. M..
+      Last updated on Feb 19, 2018.
 
     </p>
   </div>
@@ -487,22 +508,23 @@ This implementation is not exact but it is recommended for very large graphs.</p
     <script type="text/javascript">
         var DOCUMENTATION_OPTIONS = {
             URL_ROOT:'../../',
-            VERSION:'0.0.1a',
+            VERSION:'0.0.2-alpha',
             COLLAPSE_INDEX:false,
             FILE_SUFFIX:'.html',
-            HAS_SOURCE:  true
+            HAS_SOURCE:  true,
+            SOURCELINK_SUFFIX: '.txt'
         };
     </script>
-      <script type="text/javascript" src="../../_static/jquery.js"></script>
-      <script type="text/javascript" src="../../_static/underscore.js"></script>
-      <script type="text/javascript" src="../../_static/doctools.js"></script>
-      <script type="text/javascript" src="https://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+      <script type="text/javascript" src="../../static/jquery.js"></script>
+      <script type="text/javascript" src="../../static/underscore.js"></script>
+      <script type="text/javascript" src="../../static/doctools.js"></script>
+      <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.1/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
 
   
 
   
   
-    <script type="text/javascript" src="../../_static/js/theme.js"></script>
+    <script type="text/javascript" src="../../static/js/theme.js"></script>
   
 
   

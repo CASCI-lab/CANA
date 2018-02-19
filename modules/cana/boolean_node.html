@@ -1,0 +1,916 @@
+
+
+<!DOCTYPE html>
+<!--[if IE 8]><html class="no-js lt-ie9" lang="en" > <![endif]-->
+<!--[if gt IE 8]><!--> <html class="no-js" lang="en" > <!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  
+  <title>cana.boolean_node &mdash; CANA 0.0.2-alpha documentation</title>
+  
+
+  
+  
+  
+  
+
+  
+
+  
+  
+    
+
+  
+
+  
+  
+    <link rel="stylesheet" href="../../static/css/theme.css" type="text/css" />
+  
+
+  
+
+  
+        <link rel="index" title="Index"
+              href="../../genindex.html"/>
+        <link rel="search" title="Search" href="../../search.html"/>
+    <link rel="top" title="CANA 0.0.2-alpha documentation" href="../../index.html"/>
+        <link rel="up" title="Module code" href="../index.html"/> 
+
+  
+  <script src="../../static/js/modernizr.min.js"></script>
+
+</head>
+
+<body class="wy-body-for-nav" role="document">
+
+   
+  <div class="wy-grid-for-nav">
+
+    
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search">
+          
+
+          
+            <a href="../../index.html" class="icon icon-home"> CANA
+          
+
+          
+          </a>
+
+          
+            
+            
+              <div class="version">
+                0.0.2
+              </div>
+            
+          
+
+          
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+
+          
+        </div>
+
+        <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+          
+            
+            
+              
+            
+            
+              <ul>
+<li class="toctree-l1"><a class="reference internal" href="../../install.html">Installation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../notation.html">Notation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../tutorial.html">Tutorials</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../reference/index.html">API Reference</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../development.html">Development</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../appendix/index.html">Appendix</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../references.html">References</a></li>
+</ul>
+
+            
+          
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+
+      
+      <nav class="wy-nav-top" role="navigation" aria-label="top navigation">
+        
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../index.html">CANA</a>
+        
+      </nav>
+
+
+      
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div role="navigation" aria-label="breadcrumbs navigation">
+
+  <ul class="wy-breadcrumbs">
+    
+      <li><a href="../../index.html">Docs</a> &raquo;</li>
+        
+          <li><a href="../index.html">Module code</a> &raquo;</li>
+        
+      <li>cana.boolean_node</li>
+    
+    
+      <li class="wy-breadcrumbs-aside">
+        
+            
+        
+      </li>
+    
+  </ul>
+
+  
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+            
+  <h1>Source code for cana.boolean_node</h1><div class="highlight"><pre>
+<span></span><span class="c1"># -*- coding: utf-8 -*-</span>
+<span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">Boolean Node</span>
+<span class="sd">=============</span>
+
+
+
+<span class="sd">&quot;&quot;&quot;</span>
+<span class="c1">#   Copyright (C) 2017 by</span>
+<span class="c1">#   Rion Brattig Correia &lt;rionbr@gmail.com&gt;</span>
+<span class="c1">#   Alex Gates &lt;ajgates@gmail.com&gt;</span>
+<span class="c1">#	Etienne Nzabarushimana &lt;enzabaru@indiana.edu&gt;</span>
+<span class="c1">#   All rights reserved.</span>
+<span class="c1">#   MIT license.</span>
+<span class="kn">from</span> <span class="nn">__future__</span> <span class="k">import</span> <span class="n">division</span>
+<span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
+<span class="kn">import</span> <span class="nn">pandas</span> <span class="k">as</span> <span class="nn">pd</span>
+<span class="kn">import</span> <span class="nn">itertools</span>
+<span class="kn">from</span> <span class="nn">collections</span> <span class="k">import</span> <span class="n">defaultdict</span>
+<span class="kn">from</span> <span class="nn">canalization</span> <span class="k">import</span> <span class="n">boolean_canalization</span> <span class="k">as</span> <span class="n">BCanalization</span>
+<span class="kn">from</span> <span class="nn">base</span> <span class="k">import</span> <span class="n">deprecated</span>
+<span class="kn">import</span> <span class="nn">warnings</span>
+<span class="kn">from</span> <span class="nn">utils</span> <span class="k">import</span> <span class="o">*</span>
+<span class="c1">#</span>
+<span class="c1">#</span>
+<span class="c1">#</span>
+<div class="viewcode-block" id="BooleanNode"><a class="viewcode-back" href="../../reference/boolean_node.html#cana.boolean_node.BooleanNode">[docs]</a><span class="k">class</span> <span class="nc">BooleanNode</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
+	<span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">	</span>
+<span class="sd">	</span>
+<span class="sd">	&quot;&quot;&quot;</span>
+	<span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">name</span><span class="o">=</span><span class="s1">&#39;x&#39;</span><span class="p">,</span> <span class="n">k</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">inputs</span><span class="o">=</span><span class="p">[</span><span class="s1">&#39;i_0&#39;</span><span class="p">],</span> <span class="n">state</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">outputs</span><span class="o">=</span><span class="p">[</span><span class="mi">0</span><span class="p">,</span><span class="mi">1</span><span class="p">],</span> <span class="n">constant</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">verbose</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+		<span class="bp">self</span><span class="o">.</span><span class="n">name</span> <span class="o">=</span> <span class="n">name</span> 				<span class="c1"># the name of the node</span>
+		<span class="bp">self</span><span class="o">.</span><span class="n">k</span> <span class="o">=</span> <span class="n">k</span> 						<span class="c1"># k is the number of inputs</span>
+		<span class="bp">self</span><span class="o">.</span><span class="n">inputs</span> <span class="o">=</span> <span class="n">inputs</span> 			<span class="c1"># the name of the input variables</span>
+		<span class="bp">self</span><span class="o">.</span><span class="n">state</span> <span class="o">=</span> <span class="n">state</span> 				<span class="c1"># the initial state of the node</span>
+		<span class="bp">self</span><span class="o">.</span><span class="n">outputs</span> <span class="o">=</span> <span class="n">outputs</span> 			<span class="c1"># the list of transition outputs</span>
+		<span class="bp">self</span><span class="o">.</span><span class="n">verbose</span> <span class="o">=</span> <span class="n">verbose</span> 			<span class="c1"># verbose mode</span>
+
+		<span class="c1"># Consistency</span>
+		<span class="k">if</span> <span class="p">(</span><span class="n">k</span> <span class="o">!=</span> <span class="mi">0</span><span class="p">)</span> <span class="ow">and</span> <span class="p">(</span><span class="n">k</span> <span class="o">!=</span> <span class="nb">int</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">log2</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">outputs</span><span class="p">)))):</span>
+			<span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s1">&#39;Number of k (inputs) do not match the number of output transitions&#39;</span><span class="p">)</span>
+
+		<span class="c1"># If all outputs are either positive or negative, this node can be treated as a constant.</span>
+		<span class="k">if</span> <span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="nb">set</span><span class="p">(</span><span class="n">outputs</span><span class="p">))</span><span class="o">==</span><span class="mi">1</span><span class="p">)</span> <span class="ow">or</span> <span class="p">(</span><span class="n">constant</span><span class="p">):</span>
+			<span class="bp">self</span><span class="o">.</span><span class="n">constant</span> <span class="o">=</span> <span class="kc">True</span>
+		<span class="k">else</span><span class="p">:</span>
+			<span class="bp">self</span><span class="o">.</span><span class="n">constant</span> <span class="o">=</span> <span class="kc">False</span>
+
+		<span class="c1"># Canalization Variables</span>
+		<span class="bp">self</span><span class="o">.</span><span class="n">_transition_density_tuple</span> <span class="o">=</span> <span class="kc">None</span> 	<span class="c1"># A tuple of transition tables used in the first step of the QM algorithm.</span>
+		<span class="bp">self</span><span class="o">.</span><span class="n">_prime_implicants</span> <span class="o">=</span> <span class="kc">None</span> 			<span class="c1"># A tuple of negative and positive prime implicants.</span>
+		<span class="bp">self</span><span class="o">.</span><span class="n">_two_symbols</span> <span class="o">=</span> <span class="kc">None</span> 				<span class="c1"># The Two Symbol (TS) Schemata</span>
+		<span class="bp">self</span><span class="o">.</span><span class="n">_pi_coverage</span> <span class="o">=</span> <span class="kc">None</span> 				<span class="c1"># The Coverage of inputs by Prime Implicants schemata</span>
+		<span class="bp">self</span><span class="o">.</span><span class="n">_ts_coverage</span> <span class="o">=</span> <span class="kc">None</span> 				<span class="c1"># The Coverage of inputs by Two Symbol schemata</span>
+
+	<span class="k">def</span> <span class="nf">__str__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+		<span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">outputs</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">10</span> <span class="p">:</span>
+			<span class="n">outputs</span> <span class="o">=</span> <span class="s1">&#39;[&#39;</span> <span class="o">+</span> <span class="s1">&#39;,&#39;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="nb">map</span><span class="p">(</span><span class="nb">str</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">outputs</span><span class="p">[:</span><span class="mi">4</span><span class="p">]))</span> <span class="o">+</span> <span class="s1">&#39;...&#39;</span> <span class="o">+</span> <span class="s1">&#39;,&#39;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="nb">map</span><span class="p">(</span><span class="nb">str</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">outputs</span><span class="p">[</span><span class="o">-</span><span class="mi">4</span><span class="p">:]))</span> <span class="o">+</span> <span class="s1">&#39;]&#39;</span>
+		<span class="k">else</span><span class="p">:</span>
+			<span class="n">outputs</span> <span class="o">=</span> <span class="s1">&#39;[&#39;</span> <span class="o">+</span> <span class="s1">&#39;,&#39;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="nb">map</span><span class="p">(</span><span class="nb">str</span><span class="p">,</span><span class="bp">self</span><span class="o">.</span><span class="n">outputs</span><span class="p">))</span> <span class="o">+</span> <span class="s1">&#39;]&#39;</span>
+		<span class="n">inputs</span> <span class="o">=</span> <span class="s1">&#39;[&#39;</span> <span class="o">+</span> <span class="s1">&#39;,&#39;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">inputs</span><span class="p">)</span> <span class="o">+</span> <span class="s1">&#39;]&#39;</span>
+		<span class="k">return</span> <span class="s2">&quot;&lt;BNode(name=&#39;</span><span class="si">%s</span><span class="s2">&#39;, k=</span><span class="si">%s</span><span class="s2">, inputs=</span><span class="si">%s</span><span class="s2">, state=</span><span class="si">%d</span><span class="s2">, outputs=&#39;</span><span class="si">%s</span><span class="s2">&#39; constant=</span><span class="si">%s</span><span class="s2">)&gt;&quot;</span> <span class="o">%</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">name</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">k</span><span class="p">,</span> <span class="n">inputs</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">state</span><span class="p">,</span> <span class="n">outputs</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">constant</span><span class="p">)</span>
+
+<div class="viewcode-block" id="BooleanNode.from_output_list"><a class="viewcode-back" href="../../reference/boolean_node.html#cana.boolean_node.BooleanNode.from_output_list">[docs]</a>	<span class="nd">@classmethod</span>
+	<span class="k">def</span> <span class="nf">from_output_list</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">outputs</span><span class="o">=</span><span class="nb">list</span><span class="p">(),</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+		<span class="sd">&quot;&quot;&quot;Instanciate a Boolean Node from a output transition list.</span>
+
+<span class="sd">		Args:</span>
+<span class="sd">			outputs (list) : The transition outputs of the node.</span>
+<span class="sd">		Returns:</span>
+<span class="sd">			(BooleanNode) : the instanciated object.</span>
+<span class="sd">		Example:</span>
+<span class="sd">			&gt;&gt;&gt; BooleanNode.from_output_list(outputs=[0,0,0,1], name=&quot;AND&quot;)</span>
+<span class="sd">		&quot;&quot;&quot;</span>
+		<span class="n">name</span> <span class="o">=</span> <span class="n">kwargs</span><span class="o">.</span><span class="n">pop</span><span class="p">(</span><span class="s1">&#39;name&#39;</span><span class="p">)</span> <span class="k">if</span> <span class="s1">&#39;name&#39;</span> <span class="ow">in</span> <span class="n">kwargs</span> <span class="k">else</span> <span class="s1">&#39;x&#39;</span>
+		<span class="n">k</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">log2</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">outputs</span><span class="p">)))</span>
+		<span class="n">inputs</span> <span class="o">=</span> <span class="n">kwargs</span><span class="o">.</span><span class="n">pop</span><span class="p">(</span><span class="s1">&#39;inputs&#39;</span><span class="p">)</span> <span class="k">if</span> <span class="s1">&#39;inputs&#39;</span> <span class="ow">in</span> <span class="n">kwargs</span> <span class="k">else</span> <span class="p">[</span><span class="s1">&#39;i</span><span class="si">%d</span><span class="s1">&#39;</span> <span class="o">%</span> <span class="p">(</span><span class="n">x</span><span class="o">+</span><span class="mi">1</span><span class="p">)</span> <span class="k">for</span> <span class="n">x</span> <span class="ow">in</span> <span class="n">xrange</span><span class="p">(</span><span class="n">k</span><span class="p">)]</span>
+		<span class="n">state</span> <span class="o">=</span> <span class="n">kwargs</span><span class="o">.</span><span class="n">pop</span><span class="p">(</span><span class="s1">&#39;state&#39;</span><span class="p">)</span> <span class="k">if</span> <span class="s1">&#39;state&#39;</span> <span class="ow">in</span> <span class="n">kwargs</span> <span class="k">else</span> <span class="kc">False</span>
+</div>
+		<span class="k">return</span> <span class="n">BooleanNode</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="n">name</span><span class="p">,</span> <span class="n">k</span><span class="o">=</span><span class="n">k</span><span class="p">,</span> <span class="n">inputs</span><span class="o">=</span><span class="n">inputs</span><span class="p">,</span> <span class="n">state</span><span class="o">=</span><span class="n">state</span><span class="p">,</span> <span class="n">outputs</span><span class="o">=</span><span class="n">outputs</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+
+<div class="viewcode-block" id="BooleanNode.input_redundancy"><a class="viewcode-back" href="../../reference/boolean_node.html#cana.boolean_node.BooleanNode.input_redundancy">[docs]</a>	<span class="k">def</span> <span class="nf">input_redundancy</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">mode</span><span class="o">=</span><span class="s1">&#39;node&#39;</span><span class="p">,</span> <span class="n">bound</span><span class="o">=</span><span class="s1">&#39;upper&#39;</span><span class="p">,</span> <span class="n">norm</span><span class="o">=</span><span class="kc">True</span><span class="p">):</span>
+		<span class="sa">r</span><span class="sd">&quot;&quot;&quot; The Input Redundancy :math:`k_{r}` is the mean number of unnecessary inputs (or ``#``) in the Prime Implicants Look Up Table (LUT).</span>
+<span class="sd">		Since there may be more than one redescription schema for each input entry, the input redundancy is bounded by an upper and lower limit.</span>
+<span class="sd">		It can also be computed per input :math:`r_i`.</span>
+<span class="sd">	</span>
+
+<span class="sd">		.. math::</span>
+
+<span class="sd">			k_{r}(x) = \frac{ \sum_{f_{\alpha} \in F} \Phi_{\theta:f_{\alpha} \in \Theta_{\theta}} (n^{\#}_{\theta} ) }{ |F| }</span>
+
+<span class="sd">		.. math::</span>
+
+<span class="sd">			r_i(x_i) = \frac{ \sum_{f_{\alpha} \in F} \Phi_{\theta:f_{\alpha} \in \Theta_{\theta}} (X^{\#}_{\theta_i} ) }{ |F| }</span>
+<span class="sd">	</span>
+<span class="sd">		where :math:`\Phi` is a function (:math:`min` or :math:`max`) and :math:`F` is the node LUT.</span>
+
+<span class="sd">		Args:</span>
+<span class="sd">			mode (string) : Per &quot;input&quot; or per &quot;node&quot;. Defaults to &quot;node&quot;.</span>
+<span class="sd">			bound (string) : The bound to which compute input redundancy.</span>
+<span class="sd">				Mode &quot;node&quot; accepts: [&quot;lower&quot;, &quot;upper&quot;].</span>
+<span class="sd">				Mode &quot;input&quot; accepts: [&quot;lower&quot;, &quot;mean&quot;, &quot;upper&quot;, &quot;tuple&quot;].</span>
+<span class="sd">				Defaults to &quot;upper&quot;.</span>
+<span class="sd">			norm (bool) : Normalized between [0,1].</span>
+<span class="sd">				Use this value when comparing nodes with different input sizes. (Defaults to &quot;True&quot;.)</span>
+
+<span class="sd">				:math:`k^{*}_r(x) = \frac{ k_r(x) }{ k(x) }`. </span>
+
+
+<span class="sd">		Returns:</span>
+<span class="sd">			(float / list) : The :math:`k_r` value or a list of :math:`r_i`.</span>
+<span class="sd">		</span>
+<span class="sd">		Note:</span>
+<span class="sd">			The complete mathematical description can be found in :cite:`Marques-Pita:2013`.</span>
+
+<span class="sd">		See also:</span>
+<span class="sd">			:func:`effective_connectivity`, :func:`input_symmetry`.</span>
+<span class="sd">		&quot;&quot;&quot;</span>
+		<span class="c1"># Canalization can only occur when k&gt;= 2</span>
+		<span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">k</span> <span class="o">&lt;</span> <span class="mi">2</span><span class="p">:</span>
+			<span class="k">if</span> <span class="n">mode</span> <span class="o">==</span> <span class="s1">&#39;node&#39;</span><span class="p">:</span>
+				<span class="k">return</span> <span class="mf">0.0</span>
+			<span class="k">elif</span> <span class="n">mode</span> <span class="o">==</span> <span class="s1">&#39;input&#39;</span><span class="p">:</span>
+				<span class="k">return</span> <span class="p">[</span><span class="mf">0.0</span><span class="p">]</span>
+			<span class="k">else</span><span class="p">:</span>
+				<span class="k">raise</span> <span class="ne">AttributeError</span><span class="p">(</span><span class="s1">&#39;The mode you selected does not exist. Try &quot;node&quot; or &quot;input&quot;.&#39;</span><span class="p">)</span>
+
+		<span class="bp">self</span><span class="o">.</span><span class="n">_check_compute_canalization_variables</span><span class="p">(</span><span class="n">pi_coverage</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+
+		<span class="c1"># Per Node</span>
+		<span class="k">if</span> <span class="n">mode</span> <span class="o">==</span> <span class="s1">&#39;node&#39;</span><span class="p">:</span>
+
+			<span class="k">if</span> <span class="n">bound</span> <span class="o">==</span> <span class="s1">&#39;upper&#39;</span><span class="p">:</span>
+				<span class="n">minmax</span> <span class="o">=</span> <span class="nb">max</span>
+			<span class="k">elif</span> <span class="n">bound</span> <span class="o">==</span> <span class="s1">&#39;lower&#39;</span><span class="p">:</span>
+				<span class="n">minmax</span> <span class="o">=</span> <span class="nb">min</span>
+			<span class="k">else</span><span class="p">:</span>
+				<span class="k">raise</span> <span class="ne">AttributeError</span><span class="p">(</span><span class="s1">&#39;The bound you selected does not exist. Try &quot;upper&quot;, or &quot;lower&quot;&#39;</span><span class="p">)</span>		
+
+			<span class="n">redundancy</span> <span class="o">=</span> <span class="p">[</span><span class="n">minmax</span><span class="p">([</span><span class="n">pi</span><span class="o">.</span><span class="n">count</span><span class="p">(</span><span class="s1">&#39;2&#39;</span><span class="p">)</span> <span class="k">for</span> <span class="n">pi</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_pi_coverage</span><span class="p">[</span><span class="n">binstate</span><span class="p">]])</span> <span class="k">for</span> <span class="n">binstate</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_pi_coverage</span><span class="p">]</span>
+			
+			<span class="n">k_r</span> <span class="o">=</span> <span class="nb">sum</span><span class="p">(</span><span class="n">redundancy</span><span class="p">)</span> <span class="o">/</span> <span class="mi">2</span><span class="o">**</span><span class="bp">self</span><span class="o">.</span><span class="n">k</span>
+
+			<span class="k">if</span> <span class="p">(</span><span class="n">norm</span><span class="p">):</span>
+				<span class="c1"># Normalizes</span>
+				<span class="n">k_r</span> <span class="o">=</span> <span class="n">k_r</span> <span class="o">/</span> <span class="bp">self</span><span class="o">.</span><span class="n">k</span>
+
+			<span class="k">return</span> <span class="n">k_r</span>
+
+		<span class="c1"># Per Input</span>
+		<span class="k">elif</span> <span class="n">mode</span> <span class="o">==</span> <span class="s1">&#39;input&#39;</span><span class="p">:</span>
+
+			<span class="n">redundancies</span> <span class="o">=</span> <span class="p">[]</span>
+			<span class="c1"># Generate a per input coverage</span>
+			<span class="c1"># ex: {0: {&#39;11&#39;: [], &#39;10&#39;: [], &#39;00&#39;: [], &#39;01&#39;: []}, 1: {&#39;11&#39;: [], &#39;10&#39;: [], &#39;00&#39;: [], &#39;01&#39;: []}}</span>
+			<span class="n">pi_input_coverage</span> <span class="o">=</span> <span class="p">{</span> <span class="nb">input</span> <span class="p">:</span> <span class="p">{</span> <span class="n">binstate</span><span class="p">:</span> <span class="p">[</span> <span class="n">pi</span><span class="p">[</span><span class="nb">input</span><span class="p">]</span> <span class="k">for</span> <span class="n">pi</span> <span class="ow">in</span> <span class="n">pis</span> <span class="p">]</span> <span class="k">for</span> <span class="n">binstate</span><span class="p">,</span><span class="n">pis</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_pi_coverage</span><span class="o">.</span><span class="n">items</span><span class="p">()</span> <span class="p">}</span> <span class="k">for</span> <span class="nb">input</span> <span class="ow">in</span> <span class="n">xrange</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">k</span><span class="p">)</span> <span class="p">}</span>
+
+			<span class="c1"># Loop ever input node</span>
+			<span class="k">for</span> <span class="nb">input</span><span class="p">,</span><span class="n">binstates</span> <span class="ow">in</span> <span class="n">pi_input_coverage</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+				<span class="c1"># {&#39;numstate&#39;: [matches], &#39;10&#39;: [True,False,True,...] ...}</span>
+				<span class="n">countslenghts</span> <span class="o">=</span> <span class="p">{</span><span class="n">binstate_to_statenum</span><span class="p">(</span><span class="n">binstate</span><span class="p">):</span> <span class="p">([</span><span class="n">pi</span><span class="o">==</span><span class="s1">&#39;2&#39;</span> <span class="k">for</span> <span class="n">pi</span> <span class="ow">in</span> <span class="n">pis</span><span class="p">])</span> <span class="k">for</span> <span class="n">binstate</span><span class="p">,</span><span class="n">pis</span> <span class="ow">in</span> <span class="n">binstates</span><span class="o">.</span><span class="n">items</span><span class="p">()</span> <span class="p">}</span>
+				<span class="c1"># A triplet of (min, mean, max) values</span>
+				<span class="k">if</span> <span class="n">bound</span> <span class="o">==</span> <span class="s1">&#39;lower&#39;</span><span class="p">:</span>
+					<span class="n">redundancy</span> <span class="o">=</span> <span class="nb">sum</span><span class="p">(</span> <span class="p">[</span><span class="nb">all</span><span class="p">(</span><span class="n">pi</span><span class="p">)</span> <span class="k">for</span> <span class="n">pi</span> <span class="ow">in</span> <span class="n">countslenghts</span><span class="o">.</span><span class="n">values</span><span class="p">()]</span> <span class="p">)</span> <span class="o">/</span> <span class="mi">2</span><span class="o">**</span><span class="bp">self</span><span class="o">.</span><span class="n">k</span>  <span class="c1"># min(r_i)</span>
+				<span class="k">elif</span> <span class="n">bound</span> <span class="o">==</span> <span class="s1">&#39;mean&#39;</span><span class="p">:</span>
+					<span class="n">redundancy</span> <span class="o">=</span> <span class="nb">sum</span><span class="p">(</span> <span class="p">[</span><span class="nb">sum</span><span class="p">(</span><span class="n">pi</span><span class="p">)</span><span class="o">/</span><span class="nb">len</span><span class="p">(</span><span class="n">pi</span><span class="p">)</span> <span class="k">for</span> <span class="n">pi</span> <span class="ow">in</span> <span class="n">countslenghts</span><span class="o">.</span><span class="n">values</span><span class="p">()]</span> <span class="p">)</span> <span class="o">/</span> <span class="mi">2</span><span class="o">**</span><span class="bp">self</span><span class="o">.</span><span class="n">k</span>  <span class="c1"># &lt;r_i&gt;</span>
+				<span class="k">elif</span> <span class="n">bound</span> <span class="o">==</span> <span class="s1">&#39;upper&#39;</span><span class="p">:</span>
+					<span class="n">redundancy</span> <span class="o">=</span> <span class="nb">sum</span><span class="p">(</span> <span class="p">[</span><span class="nb">any</span><span class="p">(</span><span class="n">pi</span><span class="p">)</span> <span class="k">for</span> <span class="n">pi</span> <span class="ow">in</span> <span class="n">countslenghts</span><span class="o">.</span><span class="n">values</span><span class="p">()]</span> <span class="p">)</span> <span class="o">/</span> <span class="mi">2</span><span class="o">**</span><span class="bp">self</span><span class="o">.</span><span class="n">k</span> <span class="c1"># max(r_i)</span>
+				<span class="k">elif</span> <span class="n">bound</span> <span class="o">==</span> <span class="s1">&#39;tuple&#39;</span><span class="p">:</span>
+					<span class="n">redundancy</span> <span class="o">=</span> <span class="p">(</span> <span class="nb">sum</span><span class="p">([</span><span class="nb">all</span><span class="p">(</span><span class="n">pi</span><span class="p">)</span> <span class="k">for</span> <span class="n">pi</span> <span class="ow">in</span> <span class="n">countslenghts</span><span class="o">.</span><span class="n">values</span><span class="p">()])</span> <span class="o">/</span> <span class="mi">2</span><span class="o">**</span><span class="bp">self</span><span class="o">.</span><span class="n">k</span> <span class="p">,</span> <span class="nb">sum</span><span class="p">([</span><span class="nb">any</span><span class="p">(</span><span class="n">pi</span><span class="p">)</span> <span class="k">for</span> <span class="n">pi</span> <span class="ow">in</span> <span class="n">countslenghts</span><span class="o">.</span><span class="n">values</span><span class="p">()])</span> <span class="o">/</span> <span class="mi">2</span><span class="o">**</span><span class="bp">self</span><span class="o">.</span><span class="n">k</span> <span class="p">)</span> <span class="c1"># (min,max)</span>
+				<span class="k">else</span><span class="p">:</span>
+					<span class="k">raise</span> <span class="ne">AttributeError</span><span class="p">(</span><span class="s1">&#39;The bound you selected does not exist. Try &quot;upper&quot;, &quot;mean&quot;, &quot;lower&quot; or &quot;tuple&quot;.&#39;</span><span class="p">)</span>
+				
+				<span class="n">redundancies</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">redundancy</span><span class="p">)</span>
+
+			<span class="k">return</span> <span class="n">redundancies</span> <span class="c1"># r_i</span>
+		
+		<span class="k">else</span><span class="p">:</span></div>
+			<span class="k">raise</span> <span class="ne">AttributeError</span><span class="p">(</span><span class="s1">&#39;The mode you selected does not exist. Try &quot;node&quot; or &quot;input&quot;.&#39;</span><span class="p">)</span>
+
+<div class="viewcode-block" id="BooleanNode.effective_connectivity"><a class="viewcode-back" href="../../reference/boolean_node.html#cana.boolean_node.BooleanNode.effective_connectivity">[docs]</a>	<span class="k">def</span> <span class="nf">effective_connectivity</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">mode</span><span class="o">=</span><span class="s1">&#39;node&#39;</span><span class="p">,</span> <span class="n">bound</span><span class="o">=</span><span class="s1">&#39;upper&#39;</span><span class="p">,</span> <span class="n">norm</span><span class="o">=</span><span class="kc">True</span><span class="p">):</span>
+		<span class="sa">r</span><span class="sd">&quot;&quot;&quot;The Effective Connectiviy is the mean number of input nodes needed to determine the transition of the node.</span>
+
+<span class="sd">		.. math::</span>
+
+<span class="sd">			k_e(x) = k(x) - k_r(x)</span>
+<span class="sd">		</span>
+<span class="sd">		.. math::</span>
+
+<span class="sd">			e_i(x_i) = k(x_i) - k_r(x_i)</span>
+
+<span class="sd">		Args:</span>
+<span class="sd">			mode (string) : Per &quot;input&quot; or per &quot;node&quot;. Default is &quot;node&quot;.</span>
+<span class="sd">			bound (string) : The bound for the :math:`k_r` Input Redundancy</span>
+<span class="sd">			norm (bool) : Normalized between [0,1].</span>
+<span class="sd">				Use this value when comparing nodes with different input sizes. (Defaults to &quot;True&quot;.)</span>
+
+<span class="sd">				:math:`k^{*}_e(x) = \frac{ k_e(x) }{ k(x) }`. </span>
+
+<span class="sd">		</span>
+<span class="sd">		Returns:</span>
+<span class="sd">			(float/list) : The :math:`k_e` value or a list of :math:`e_r`.</span>
+
+<span class="sd">		See Also:</span>
+<span class="sd">			:func:`input_redundancy`, :func:`input_symmetry`, :func:`~boolnets.boolean_network.BooleanNetwork.effective_graph`.</span>
+<span class="sd">		&quot;&quot;&quot;</span>
+		<span class="c1"># Canalization can only occur when k&gt;= 2</span>
+		<span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">k</span> <span class="o">&lt;</span> <span class="mi">2</span><span class="p">:</span>
+			<span class="k">if</span> <span class="n">mode</span> <span class="o">==</span> <span class="s1">&#39;node&#39;</span><span class="p">:</span>
+				<span class="k">return</span> <span class="mf">1.0</span>
+			<span class="k">elif</span> <span class="n">mode</span> <span class="o">==</span> <span class="s1">&#39;input&#39;</span><span class="p">:</span>
+				<span class="k">return</span> <span class="p">[</span><span class="mf">1.0</span><span class="p">]</span>
+			<span class="k">else</span><span class="p">:</span>
+				<span class="k">raise</span> <span class="ne">AttributeError</span><span class="p">(</span><span class="s1">&#39;The mode you selected does not exist. Try &quot;node&quot; or &quot;input&quot;.&#39;</span><span class="p">)</span>
+
+		<span class="k">if</span> <span class="n">mode</span> <span class="o">==</span> <span class="s1">&#39;node&#39;</span><span class="p">:</span>
+			
+			<span class="n">k_r</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">input_redundancy</span><span class="p">(</span><span class="n">mode</span><span class="o">=</span><span class="n">mode</span><span class="p">,</span> <span class="n">bound</span><span class="o">=</span><span class="n">bound</span><span class="p">,</span> <span class="n">norm</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+			<span class="n">k_e</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">k</span> <span class="o">-</span> <span class="n">k_r</span>
+			<span class="k">if</span> <span class="p">(</span><span class="n">norm</span><span class="p">):</span>
+				<span class="n">k_e</span> <span class="o">=</span> <span class="n">k_e</span> <span class="o">/</span> <span class="bp">self</span><span class="o">.</span><span class="n">k</span>
+			<span class="k">return</span> <span class="n">k_e</span>
+
+		<span class="k">elif</span> <span class="n">mode</span> <span class="o">==</span> <span class="s1">&#39;input&#39;</span><span class="p">:</span>
+			<span class="n">e_i</span> <span class="o">=</span> <span class="p">[</span><span class="mi">1</span> <span class="o">-</span> <span class="n">x_i</span> <span class="k">for</span> <span class="n">x_i</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">input_redundancy</span><span class="p">(</span><span class="n">mode</span><span class="o">=</span><span class="n">mode</span><span class="p">,</span> <span class="n">bound</span><span class="o">=</span><span class="n">bound</span><span class="p">,</span> <span class="n">norm</span><span class="o">=</span><span class="kc">False</span><span class="p">)]</span>
+			<span class="k">return</span> <span class="n">e_i</span>
+		<span class="k">else</span><span class="p">:</span></div>
+			<span class="k">raise</span> <span class="ne">AttributeError</span><span class="p">(</span><span class="s1">&#39;The mode you selected does not exist. Try &quot;node&quot; or &quot;input&quot;.&#39;</span><span class="p">)</span>
+
+<div class="viewcode-block" id="BooleanNode.input_symmetry"><a class="viewcode-back" href="../../reference/boolean_node.html#cana.boolean_node.BooleanNode.input_symmetry">[docs]</a>	<span class="k">def</span> <span class="nf">input_symmetry</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">mode</span><span class="o">=</span><span class="s1">&#39;node&#39;</span><span class="p">,</span> <span class="n">bound</span><span class="o">=</span><span class="s1">&#39;upper&#39;</span><span class="p">,</span> <span class="n">norm</span><span class="o">=</span><span class="kc">True</span><span class="p">):</span>
+		<span class="sa">r</span><span class="sd">&quot;&quot;&quot;The Input Symmetry is a measure of permutation redundancy.</span>
+<span class="sd">		Similar to the computation of Input Redundancy but using the Two-Symbol instead of the Prime Implicant schemata.</span>
+<span class="sd">	</span>
+<span class="sd">		.. math::</span>
+
+<span class="sd">			k_s = \frac{ \sum_{f_{\alpha} \in F} \Phi_{\theta:f_{\alpha} \in \Theta_{\theta}} (n^{\circ}) }{ |F| }</span>
+<span class="sd">		</span>
+<span class="sd">		.. math::</span>
+
+<span class="sd">			s_i = \frac{ \sum_{f_{\alpha} \in F} \Phi_{\theta:f_{\alpha} \in \Theta_{\theta}} (n^{\circ}_i)}{ |F| }</span>
+
+<span class="sd">		where :math:`\Phi` is the function :math:`min` or :math:`max` and :math:`F` is the node LUT.</span>
+
+<span class="sd">		Args:</span>
+<span class="sd">			mode (string) : Per &quot;input&quot; or per &quot;node&quot;. Default is &quot;node&quot;.</span>
+<span class="sd">			bound (string) : The bound to which compute input symmetry.</span>
+<span class="sd">				Mode &quot;node&quot; accepts: [&quot;lower&quot;, &quot;upper&quot;].</span>
+<span class="sd">				Mode &quot;input&quot; accepts: [&quot;lower&quot;, &quot;mean&quot;, &quot;upper&quot;, &quot;tuple&quot;].</span>
+<span class="sd">				Defaults to &quot;upper&quot;.</span>
+<span class="sd">			norm (bool) : Normalized between [0,1].</span>
+<span class="sd">				Use this value when comparing nodes with different input sizes. (Defaults to &quot;True&quot;.)</span>
+
+<span class="sd">				:math:`k^{*}_s(x) = \frac{ k_s(x) }{ k(x) }`. </span>
+
+<span class="sd">		Returns:</span>
+<span class="sd">			(float/list) : The :math:`k_s` or a list of :math:`r_i`.</span>
+<span class="sd">		</span>
+<span class="sd">		See also:</span>
+<span class="sd">			:func:`input_redundancy`, :func:`effective_connectivity`</span>
+<span class="sd">		&quot;&quot;&quot;</span>
+		<span class="c1"># Canalization can only occur when k&gt;= 2</span>
+		<span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">k</span> <span class="o">&lt;</span> <span class="mi">2</span><span class="p">:</span>
+			<span class="k">if</span> <span class="n">mode</span> <span class="o">==</span> <span class="s1">&#39;node&#39;</span><span class="p">:</span>
+				<span class="k">return</span> <span class="mf">0.0</span>
+			<span class="k">elif</span> <span class="n">mode</span> <span class="o">==</span> <span class="s1">&#39;input&#39;</span><span class="p">:</span>
+				<span class="k">return</span> <span class="p">[</span><span class="mf">0.0</span><span class="p">]</span>
+			<span class="k">else</span><span class="p">:</span>
+				<span class="k">raise</span> <span class="ne">AttributeError</span><span class="p">(</span><span class="s1">&#39;The mode you selected does not exist. Try &quot;node&quot; or &quot;input&quot;.&#39;</span><span class="p">)</span>
+
+		<span class="bp">self</span><span class="o">.</span><span class="n">_check_compute_canalization_variables</span><span class="p">(</span><span class="n">ts_coverage</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+
+		<span class="k">if</span> <span class="n">mode</span> <span class="o">==</span> <span class="s1">&#39;node&#39;</span><span class="p">:</span>
+			<span class="k">if</span> <span class="n">bound</span> <span class="o">==</span> <span class="s1">&#39;upper&#39;</span><span class="p">:</span>
+				<span class="n">minmax</span> <span class="o">=</span> <span class="nb">max</span>
+			<span class="k">elif</span> <span class="n">bound</span> <span class="o">==</span> <span class="s1">&#39;lower&#39;</span><span class="p">:</span>
+				<span class="n">minmax</span> <span class="o">=</span> <span class="nb">min</span>
+
+			<span class="n">k_s</span> <span class="o">=</span> <span class="nb">sum</span><span class="p">(</span> <span class="bp">self</span><span class="o">.</span><span class="n">input_symmetry</span><span class="p">(</span><span class="n">mode</span><span class="o">=</span><span class="s1">&#39;input&#39;</span><span class="p">,</span> <span class="n">bound</span><span class="o">=</span><span class="n">bound</span><span class="p">,</span> <span class="n">norm</span><span class="o">=</span><span class="n">norm</span><span class="p">)</span> <span class="p">)</span> <span class="o">/</span> <span class="bp">self</span><span class="o">.</span><span class="n">k</span>
+			
+			<span class="k">if</span> <span class="p">(</span><span class="n">norm</span><span class="p">):</span>
+				<span class="n">k_s</span> <span class="o">=</span> <span class="n">k_s</span> <span class="o">/</span> <span class="bp">self</span><span class="o">.</span><span class="n">k</span>
+			<span class="k">return</span> <span class="n">k_s</span>
+
+		<span class="k">elif</span> <span class="n">mode</span> <span class="o">==</span> <span class="s1">&#39;input&#39;</span><span class="p">:</span>
+			<span class="n">symmetries</span> <span class="o">=</span> <span class="p">[]</span>
+			<span class="c1"># Generate a per input coverage</span>
+			<span class="c1"># ex: {0: {&#39;11&#39;: [], &#39;10&#39;: [], &#39;00&#39;: [], &#39;01&#39;: []}, 1: {&#39;11&#39;: [], &#39;10&#39;: [], &#39;00&#39;: [], &#39;01&#39;: []}}</span>
+			<span class="c1">#ts_input_coverage = { input : { binstate: [ idxs.count(input) for schema,reps,sms in tss for idxs in reps+sms ] for binstate,tss in self._ts_coverage.items() } for input in xrange(self.k) }</span>
+			<span class="n">ts_input_coverage</span> <span class="o">=</span> <span class="p">{</span> <span class="nb">input</span> <span class="p">:</span> <span class="p">{</span> <span class="n">binstate</span><span class="p">:</span> <span class="p">[</span> <span class="nb">len</span><span class="p">(</span><span class="n">idxs</span><span class="p">)</span> <span class="k">if</span> <span class="nb">input</span> <span class="ow">in</span> <span class="n">idxs</span> <span class="k">else</span> <span class="mi">0</span> <span class="k">for</span> <span class="n">schema</span><span class="p">,</span><span class="n">reps</span><span class="p">,</span><span class="n">sms</span> <span class="ow">in</span> <span class="n">tss</span> <span class="k">for</span> <span class="n">idxs</span> <span class="ow">in</span> <span class="n">reps</span><span class="o">+</span><span class="n">sms</span> <span class="p">]</span> <span class="k">for</span> <span class="n">binstate</span><span class="p">,</span><span class="n">tss</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_ts_coverage</span><span class="o">.</span><span class="n">items</span><span class="p">()</span> <span class="p">}</span> <span class="k">for</span> <span class="nb">input</span> <span class="ow">in</span> <span class="n">xrange</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">k</span><span class="p">)</span> <span class="p">}</span>
+			<span class="c1"># Loop ever input node</span>
+			<span class="k">for</span> <span class="nb">input</span><span class="p">,</span><span class="n">binstates</span> <span class="ow">in</span> <span class="n">ts_input_coverage</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+				<span class="c1"># {&#39;numstate&#39;: [number-of-ts&#39;s for each match], &#39;10&#39;: [0, 2] ...}</span>
+				<span class="n">numstates</span> <span class="o">=</span> <span class="p">{</span><span class="n">binstate_to_statenum</span><span class="p">(</span><span class="n">binstate</span><span class="p">):</span> <span class="n">permuts</span> <span class="k">for</span> <span class="n">binstate</span><span class="p">,</span><span class="n">permuts</span> <span class="ow">in</span> <span class="n">binstates</span><span class="o">.</span><span class="n">items</span><span class="p">()</span> <span class="p">}</span>
+
+				<span class="c1">#print &#39;input&#39;,input</span>
+				<span class="c1">#print binstates</span>
+				<span class="c1">#print numstates</span>
+				<span class="c1"># A triplet of (min, mean, max) values</span>
+				<span class="k">if</span> <span class="n">bound</span> <span class="ow">in</span> <span class="p">[</span><span class="s1">&#39;lower&#39;</span><span class="p">,</span><span class="s1">&#39;mean&#39;</span><span class="p">,</span><span class="s1">&#39;upper&#39;</span><span class="p">]:</span>
+					<span class="c1"># Min, Mean or Max</span>
+					<span class="k">if</span> <span class="n">bound</span> <span class="o">==</span> <span class="s1">&#39;upper&#39;</span><span class="p">:</span>
+						<span class="n">minmax</span> <span class="o">=</span> <span class="nb">max</span>
+					<span class="k">elif</span> <span class="n">bound</span> <span class="o">==</span> <span class="s1">&#39;mean&#39;</span><span class="p">:</span>
+						<span class="n">minmax</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">mean</span>
+					<span class="k">elif</span> <span class="n">bound</span> <span class="o">==</span> <span class="s1">&#39;lower&#39;</span><span class="p">:</span>
+						<span class="n">minmax</span> <span class="o">=</span> <span class="nb">min</span>
+
+					<span class="n">s_i</span> <span class="o">=</span> <span class="nb">sum</span><span class="p">(</span><span class="n">minmax</span><span class="p">(</span><span class="n">permuts</span><span class="p">)</span> <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">permuts</span><span class="p">)</span> <span class="k">else</span> <span class="mi">0</span> <span class="k">for</span> <span class="n">permuts</span> <span class="ow">in</span> <span class="n">numstates</span><span class="o">.</span><span class="n">values</span><span class="p">()</span> <span class="p">)</span> <span class="o">/</span> <span class="mi">2</span><span class="o">**</span><span class="bp">self</span><span class="o">.</span><span class="n">k</span>  <span class="c1"># min(r_s)</span>
+
+				<span class="k">elif</span> <span class="n">bound</span> <span class="o">==</span> <span class="s1">&#39;tuple&#39;</span><span class="p">:</span>
+					<span class="c1"># tuple (min,max) per input, per state</span>
+					<span class="n">s_i</span> <span class="o">=</span> <span class="p">[</span> <span class="p">(</span> <span class="nb">min</span><span class="p">(</span><span class="n">permuts</span><span class="p">)</span> <span class="p">,</span> <span class="nb">max</span><span class="p">(</span><span class="n">permuts</span><span class="p">)</span> <span class="p">)</span> <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">permuts</span><span class="p">)</span> <span class="k">else</span> <span class="p">(</span><span class="mi">0</span><span class="p">,</span><span class="mi">0</span><span class="p">)</span> <span class="k">for</span> <span class="n">permuts</span> <span class="ow">in</span> <span class="n">numstates</span><span class="o">.</span><span class="n">values</span><span class="p">()</span> <span class="p">]</span> <span class="c1"># (min,max)</span>
+				<span class="k">else</span><span class="p">:</span>
+					<span class="k">raise</span> <span class="ne">AttributeError</span><span class="p">(</span><span class="s1">&#39;The bound you selected does not exist. Try &quot;upper&quot;, &quot;mean&quot;, &quot;lower&quot; or &quot;tuple&quot;.&#39;</span><span class="p">)</span>
+				<span class="n">symmetries</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">s_i</span><span class="p">)</span>
+			<span class="k">return</span> <span class="n">symmetries</span> <span class="c1"># s_i</span>
+
+		<span class="k">else</span><span class="p">:</span></div>
+			<span class="k">raise</span> <span class="ne">AttributeError</span><span class="p">(</span><span class="s1">&#39;The mode you selected does not exist. Try &quot;node&quot; or &quot;input&quot;.&#39;</span><span class="p">)</span>
+
+<div class="viewcode-block" id="BooleanNode.look_up_table"><a class="viewcode-back" href="../../reference/boolean_node.html#cana.boolean_node.BooleanNode.look_up_table">[docs]</a>	<span class="k">def</span> <span class="nf">look_up_table</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+		<span class="sd">&quot;&quot;&quot; Returns the Look Up Table (LUT)</span>
+<span class="sd">		</span>
+<span class="sd">		Returns:</span>
+<span class="sd">			(pandas.DataFrame): the LUT</span>
+
+<span class="sd">		Examples:</span>
+<span class="sd">			&gt;&gt;&gt; AND = BooleanNode.from_output_list([0,0,0,1])</span>
+<span class="sd">			&gt;&gt;&gt; AND.look_up_table()</span>
+
+<span class="sd">		See also:</span>
+<span class="sd">			:func:`schemata_look_up_table`</span>
+
+<span class="sd">		&quot;&quot;&quot;</span>
+		<span class="n">d</span> <span class="o">=</span> <span class="p">[]</span>
+		<span class="k">for</span> <span class="n">statenum</span><span class="p">,</span> <span class="n">output</span> <span class="ow">in</span> <span class="nb">zip</span><span class="p">(</span> <span class="n">xrange</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">k</span><span class="o">**</span><span class="mi">2</span><span class="p">),</span> <span class="bp">self</span><span class="o">.</span><span class="n">outputs</span><span class="p">):</span>
+			<span class="c1"># Binary State, Transition</span>
+			<span class="n">d</span><span class="o">.</span><span class="n">append</span><span class="p">(</span> <span class="p">(</span><span class="n">statenum_to_binstate</span><span class="p">(</span><span class="n">statenum</span><span class="p">,</span> <span class="n">base</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">k</span><span class="p">),</span> <span class="n">output</span><span class="p">)</span> <span class="p">)</span>
+		<span class="n">df</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">(</span><span class="n">d</span><span class="p">,</span> <span class="n">columns</span><span class="o">=</span><span class="p">[</span><span class="s1">&#39;In:&#39;</span><span class="p">,</span><span class="s1">&#39;Out:&#39;</span><span class="p">])</span></div>
+		<span class="k">return</span> <span class="n">df</span>
+	
+<div class="viewcode-block" id="BooleanNode.schemata_look_up_table"><a class="viewcode-back" href="../../reference/boolean_node.html#cana.boolean_node.BooleanNode.schemata_look_up_table">[docs]</a>	<span class="k">def</span> <span class="nf">schemata_look_up_table</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="nb">type</span><span class="o">=</span><span class="s1">&#39;pi&#39;</span><span class="p">,</span> <span class="n">pi_symbol</span><span class="o">=</span><span class="sa">u</span><span class="s1">&#39;#&#39;</span><span class="p">,</span> <span class="n">ts_symbol_unicode</span><span class="o">=</span><span class="sa">u</span><span class="s2">&quot;</span><span class="se">\u030A</span><span class="s2">&quot;</span><span class="p">,</span> <span class="n">ts_symbol_latex</span><span class="o">=</span><span class="sa">u</span><span class="s2">&quot;\circ&quot;</span><span class="p">,</span> <span class="nb">format</span><span class="o">=</span><span class="s1">&#39;pandas&#39;</span><span class="p">):</span>
+		<span class="sd">&quot;&quot;&quot; Returns the simplified schemata Look Up Table (LUT)</span>
+<span class="sd">		</span>
+<span class="sd">		Args:</span>
+<span class="sd">			type (string) : The type of schemata to return, either Prime Implicants ``pi`` or Two-Symbol ``ts``. Defaults to &#39;pi&#39;.</span>
+<span class="sd">			pi_symbol (unicode) : The Prime Implicant don&#39;t care symbol. Default is ``#``.</span>
+<span class="sd">			ts_symbol_unicode (unicode) : A unicode string for the Two Symbol permutable symbol. Default is ``u&quot;\u030A&quot;``.</span>
+<span class="sd">			ts_symbol_latex (unicode) : The latex string for Two Symbol permutable symbol. Default is ``\circ``.</span>
+<span class="sd">			format (string) : The format to return. Possible values are ``pandas`` (default) and ``latex``.</span>
+<span class="sd">		</span>
+<span class="sd">		Returns:</span>
+<span class="sd">			(pandas.DataFrame or Latex): the schemata LUT</span>
+
+<span class="sd">		Examples:</span>
+<span class="sd">			&gt;&gt;&gt; AND = BooleanNode.from_output_list([0,0,0,1])</span>
+<span class="sd">			&gt;&gt;&gt; AND.schemata_look_up_table(type=&#39;pi&#39;)</span>
+<span class="sd">	</span>
+<span class="sd">		Note:</span>
+<span class="sd">			See the full list of `combining characters &lt;https://en.wikipedia.org/wiki/Combining_character&gt;`_ to use other symbols as the permutation symbol.</span>
+
+<span class="sd">		See also:</span>
+<span class="sd">			:func:`look_up_table`</span>
+<span class="sd">		&quot;&quot;&quot;</span>
+		<span class="n">r</span> <span class="o">=</span> <span class="p">[]</span>
+		<span class="c1"># Prime Implicant LUT</span>
+		<span class="k">if</span> <span class="nb">type</span> <span class="o">==</span> <span class="s1">&#39;pi&#39;</span><span class="p">:</span>
+			<span class="bp">self</span><span class="o">.</span><span class="n">_check_compute_canalization_variables</span><span class="p">(</span><span class="n">prime_implicants</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+			
+			<span class="n">pi0s</span><span class="p">,</span><span class="n">pi1s</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_prime_implicants</span>
+			
+			<span class="k">for</span> <span class="n">output</span><span class="p">,</span> <span class="n">pi</span> <span class="ow">in</span> <span class="nb">zip</span><span class="p">([</span><span class="mi">0</span><span class="p">,</span><span class="mi">1</span><span class="p">],</span> <span class="p">[</span><span class="n">pi0s</span><span class="p">,</span><span class="n">pi1s</span><span class="p">]):</span>
+				<span class="k">for</span> <span class="n">schemata</span> <span class="ow">in</span> <span class="n">pi</span><span class="p">:</span>
+					<span class="n">r</span><span class="o">.</span><span class="n">append</span><span class="p">(</span> <span class="p">(</span><span class="n">schemata</span><span class="p">,</span> <span class="n">output</span><span class="p">)</span> <span class="p">)</span>
+		
+		<span class="c1"># Two Symbol LUT</span>
+		<span class="k">elif</span> <span class="nb">type</span> <span class="o">==</span> <span class="s1">&#39;ts&#39;</span><span class="p">:</span>
+			<span class="bp">self</span><span class="o">.</span><span class="n">_check_compute_canalization_variables</span><span class="p">(</span><span class="n">two_symbols</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+
+			<span class="n">ts0s</span><span class="p">,</span> <span class="n">ts1s</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_two_symbols</span>
+
+			<span class="k">for</span> <span class="n">output</span><span class="p">,</span> <span class="n">ts</span> <span class="ow">in</span> <span class="nb">zip</span><span class="p">([</span><span class="mi">0</span><span class="p">,</span><span class="mi">1</span><span class="p">],</span> <span class="p">[</span><span class="n">ts0s</span><span class="p">,</span><span class="n">ts1s</span><span class="p">]):</span>
+				<span class="k">for</span> <span class="n">i</span><span class="p">,(</span><span class="n">schemata</span><span class="p">,</span><span class="n">permutables</span><span class="p">,</span><span class="n">samesymbols</span><span class="p">)</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">ts</span><span class="p">):</span>
+					<span class="n">string</span> <span class="o">=</span> <span class="sa">u</span><span class="s1">&#39;&#39;</span>
+					<span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">permutables</span><span class="p">):</span>
+						<span class="c1"># Permutable</span>
+						<span class="k">for</span> <span class="n">j</span><span class="p">,</span> <span class="n">permutable</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">permutables</span><span class="p">):</span>
+
+							<span class="k">if</span> <span class="nb">format</span> <span class="o">==</span> <span class="s1">&#39;latex&#39;</span><span class="p">:</span>
+								<span class="k">if</span> <span class="n">j</span><span class="o">&gt;</span><span class="mi">0</span><span class="p">:</span>
+									<span class="n">string</span> <span class="o">+=</span> <span class="sa">u</span><span class="s1">&#39; \,  | \, &#39;</span>
+								<span class="n">string</span> <span class="o">+=</span> <span class="sa">r</span><span class="s1">&#39; &#39;</span><span class="o">.</span><span class="n">join</span><span class="p">([</span><span class="n">x</span> <span class="k">if</span> <span class="p">(</span><span class="n">k</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">permutable</span><span class="p">)</span> <span class="k">else</span> <span class="s1">&#39;\overset{</span><span class="si">%s</span><span class="s1">}{</span><span class="si">%s</span><span class="s1">}&#39;</span> <span class="o">%</span> <span class="p">(</span><span class="n">ts_symbol_latex</span><span class="p">,</span><span class="n">unicode</span><span class="p">(</span><span class="n">x</span><span class="p">))</span> <span class="k">for</span> <span class="n">k</span><span class="p">,</span><span class="n">x</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">schemata</span><span class="p">,</span> <span class="n">start</span><span class="o">=</span><span class="mi">0</span><span class="p">)])</span>
+							<span class="k">else</span><span class="p">:</span>
+								<span class="k">if</span> <span class="n">j</span><span class="o">&gt;</span><span class="mi">0</span><span class="p">:</span>
+									<span class="n">string</span> <span class="o">+=</span> <span class="sa">u</span><span class="s1">&#39; | &#39;</span>
+								<span class="n">string</span> <span class="o">+=</span> <span class="sa">u</span><span class="s1">&#39;&#39;</span><span class="o">.</span><span class="n">join</span><span class="p">([</span><span class="n">x</span> <span class="k">if</span> <span class="p">(</span><span class="n">k</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">permutable</span><span class="p">)</span> <span class="k">else</span> <span class="sa">u</span><span class="s1">&#39;</span><span class="si">%s%s</span><span class="s1">&#39;</span> <span class="o">%</span> <span class="p">(</span><span class="n">x</span><span class="p">,</span><span class="n">ts_symbol_unicode</span><span class="p">)</span> <span class="k">for</span> <span class="n">k</span><span class="p">,</span><span class="n">x</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">schemata</span><span class="p">,</span> <span class="n">start</span><span class="o">=</span><span class="mi">0</span><span class="p">)])</span>
+
+					<span class="k">else</span><span class="p">:</span>
+						<span class="n">string</span> <span class="o">+=</span> <span class="n">schemata</span>
+					<span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">					if len(samesymbols):</span>
+<span class="sd">						# Same Symbol</span>
+<span class="sd">						for j,samesymbol in enumerate(samesymbols):</span>
+<span class="sd">							if j&gt;0:</span>
+<span class="sd">								sstring+= &#39; | &#39;</span>
+<span class="sd">							sstring += &#39;&#39;.join([x if (k not in samesymbol) else unicode(x)+ts_symbols[-1] for k,x in enumerate(schemata, start=0)])</span>
+<span class="sd">					&quot;&quot;&quot;</span>
+					<span class="n">r</span><span class="o">.</span><span class="n">append</span><span class="p">(</span> <span class="p">(</span><span class="n">string</span><span class="p">,</span> <span class="n">output</span><span class="p">)</span> <span class="p">)</span>
+		<span class="k">else</span><span class="p">:</span>
+			<span class="k">raise</span> <span class="ne">AttributeError</span><span class="p">(</span><span class="s1">&#39;The schemata type could not be found. Try &quot;PI&quot; (Prime Implicants) or &quot;TS&quot; (Two-Symbol).&#39;</span><span class="p">)</span>
+
+		<span class="c1"># Output Format (Latex Table or Pandas DataFrame)</span>
+		<span class="k">if</span> <span class="nb">format</span> <span class="o">==</span> <span class="s1">&#39;latex&#39;</span><span class="p">:</span>
+			<span class="n">out</span> <span class="o">=</span> <span class="sa">r</span><span class="s2">&quot;\begin</span><span class="si">{array}</span><span class="s2">{ | c | r | l }&quot;</span> <span class="o">+</span> <span class="s2">&quot;</span><span class="se">\n</span><span class="s2">&quot;</span>
+			<span class="n">out</span> <span class="o">+=</span> <span class="sa">r</span><span class="s2">&quot;\hline&quot;</span> <span class="o">+</span> <span class="s2">&quot;</span><span class="se">\n</span><span class="s2">&quot;</span>
+			<span class="n">out</span> <span class="o">+=</span> <span class="sa">r</span><span class="s2">&quot; &amp; In: &amp; Out: </span><span class="se">\\</span><span class="s2">&quot;</span> <span class="o">+</span> <span class="s2">&quot;</span><span class="se">\n</span><span class="s2">&quot;</span>
+			<span class="n">out</span> <span class="o">+=</span> <span class="sa">r</span><span class="s2">&quot;\hline&quot;</span> <span class="o">+</span> <span class="s2">&quot;</span><span class="se">\n</span><span class="s2">&quot;</span>
+			<span class="k">for</span> <span class="n">i</span><span class="p">,(</span><span class="n">string</span><span class="p">,</span><span class="n">output</span><span class="p">)</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">r</span><span class="p">):</span>
+				<span class="n">string</span> <span class="o">=</span> <span class="n">string</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s1">&#39;2&#39;</span><span class="p">,</span><span class="s1">&#39;\</span><span class="si">%s</span><span class="s1">&#39;</span> <span class="o">%</span> <span class="p">(</span><span class="n">pi_symbol</span><span class="p">))</span>
+				<span class="n">out</span> <span class="o">+=</span> <span class="sa">r</span><span class="s2">&quot;</span><span class="si">%d</span><span class="s2"> &amp; </span><span class="si">%s</span><span class="s2"> &amp; </span><span class="si">%s</span><span class="s2"> </span><span class="se">\\</span><span class="s2">&quot;</span> <span class="o">%</span> <span class="p">(</span><span class="n">i</span><span class="p">,</span> <span class="n">string</span><span class="p">,</span><span class="n">output</span><span class="p">)</span> <span class="o">+</span> <span class="sa">r</span><span class="s2">&quot;\hline&quot;</span> <span class="o">+</span> <span class="s2">&quot;</span><span class="se">\n</span><span class="s2">&quot;</span>
+			<span class="n">out</span> <span class="o">+=</span> <span class="sa">r</span><span class="s2">&quot;\hline&quot;</span> <span class="o">+</span> <span class="s2">&quot;</span><span class="se">\n</span><span class="s2">&quot;</span>
+			<span class="n">out</span> <span class="o">+=</span> <span class="sa">r</span><span class="s2">&quot;\end</span><span class="si">{array}</span><span class="s2">&quot;</span> <span class="o">+</span> <span class="s2">&quot;</span><span class="se">\n</span><span class="s2">&quot;</span>
+			<span class="k">return</span> <span class="n">out</span>
+		
+		<span class="k">elif</span> <span class="nb">format</span> <span class="o">==</span> <span class="s1">&#39;pandas&#39;</span><span class="p">:</span>
+			
+			<span class="n">r</span> <span class="o">=</span> <span class="p">[(</span><span class="n">schemata</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s1">&#39;2&#39;</span><span class="p">,</span><span class="n">pi_symbol</span><span class="p">),</span><span class="n">output</span><span class="p">)</span> <span class="k">for</span> <span class="n">schemata</span><span class="p">,</span><span class="n">output</span> <span class="ow">in</span> <span class="n">r</span><span class="p">]</span>
+			<span class="k">return</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">(</span><span class="n">r</span><span class="p">,</span> <span class="n">columns</span><span class="o">=</span><span class="p">[</span><span class="s1">&#39;In:&#39;</span><span class="p">,</span><span class="s1">&#39;Out:&#39;</span><span class="p">])</span>
+
+		<span class="k">else</span><span class="p">:</span></div>
+			<span class="ne">AttributeError</span><span class="p">(</span><span class="s1">&#39;The format type could not be found. Try &quot;pandas&quot; &quot;latex&quot;.&#39;</span><span class="p">)</span>
+
+
+<div class="viewcode-block" id="BooleanNode.step"><a class="viewcode-back" href="../../reference/boolean_node.html#cana.boolean_node.BooleanNode.step">[docs]</a>	<span class="k">def</span> <span class="nf">step</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="nb">input</span><span class="p">):</span>
+		<span class="sd">&quot;&quot;&quot; Returns the output of the node based on a specific input</span>
+<span class="sd">		Args:</span>
+<span class="sd">			input (list) : an input to the node.</span>
+<span class="sd">		</span>
+<span class="sd">		Returns:</span>
+<span class="sd">			output (bool) : the output value.</span>
+<span class="sd">		&quot;&quot;&quot;</span>
+		<span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">constant</span><span class="p">:</span>
+			<span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">outputs</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+		<span class="k">else</span><span class="p">:</span>
+			<span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="nb">input</span><span class="p">,</span> <span class="nb">str</span><span class="p">):</span>
+				<span class="nb">input</span> <span class="o">=</span> <span class="s1">&#39;&#39;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="nb">input</span><span class="p">)</span>
+			<span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="nb">input</span><span class="p">)</span> <span class="o">!=</span> <span class="bp">self</span><span class="o">.</span><span class="n">k</span><span class="p">:</span>
+				<span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s1">&#39;Input length do not match number of k inputs&#39;</span><span class="p">)</span>
+</div>
+			<span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">outputs</span><span class="p">[</span><span class="n">binstate_to_statenum</span><span class="p">(</span><span class="nb">input</span><span class="p">)]</span>
+
+
+<div class="viewcode-block" id="BooleanNode.canalizing_map"><a class="viewcode-back" href="../../reference/boolean_node.html#cana.boolean_node.BooleanNode.canalizing_map">[docs]</a>	<span class="k">def</span> <span class="nf">canalizing_map</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">output</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+		<span class="sd">&quot;&quot;&quot; Computes the node Canalizing Map (CM).</span>
+<span class="sd">	</span>
+<span class="sd">		Args:</span>
+<span class="sd">			output (int) : The output CM to return. Default is ``None``, retuning both [0,1].</span>
+<span class="sd">		Returns:</span>
+<span class="sd">			CM (networkx.DiGraph) : a directed graph representation of the CM.</span>
+<span class="sd">		See Also:</span>
+<span class="sd">			:func:`boolean_network.dynamics_canalization_map` for the DCM and :func:`drawing.draw_canalizing_map_graphviz` for plotting.</span>
+<span class="sd">		&quot;&quot;&quot;</span>
+		<span class="bp">self</span><span class="o">.</span><span class="n">_check_compute_canalization_variables</span><span class="p">(</span><span class="n">two_symbols</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+
+		<span class="n">ts0s</span><span class="p">,</span> <span class="n">ts1s</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_two_symbols</span>
+
+		<span class="n">G</span> <span class="o">=</span> <span class="n">nx</span><span class="o">.</span><span class="n">DiGraph</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="s1">&#39;CM: </span><span class="si">%s</span><span class="s1">&#39;</span> <span class="o">%</span> <span class="bp">self</span><span class="o">.</span><span class="n">name</span><span class="p">)</span>
+
+		<span class="c1"># Outputs</span>
+		<span class="k">if</span> <span class="n">output</span> <span class="ow">is</span> <span class="kc">None</span> <span class="ow">or</span> <span class="n">output</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+			<span class="n">G</span><span class="o">.</span><span class="n">add_node</span><span class="p">(</span><span class="s1">&#39;</span><span class="si">%s</span><span class="s1">-0&#39;</span> <span class="o">%</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">name</span><span class="p">)</span> <span class="p">,</span> <span class="p">{</span><span class="s1">&#39;label&#39;</span><span class="p">:</span><span class="bp">self</span><span class="o">.</span><span class="n">name</span><span class="p">,</span> <span class="s1">&#39;type&#39;</span><span class="p">:</span><span class="s1">&#39;variable&#39;</span><span class="p">,</span> <span class="s1">&#39;mode&#39;</span><span class="p">:</span><span class="s1">&#39;output&#39;</span><span class="p">,</span> <span class="s1">&#39;value&#39;</span><span class="p">:</span><span class="mi">0</span><span class="p">,</span> <span class="s1">&#39;constant&#39;</span><span class="p">:</span><span class="bp">self</span><span class="o">.</span><span class="n">constant</span><span class="p">,</span> <span class="s1">&#39;group&#39;</span><span class="p">:</span><span class="bp">self</span><span class="o">.</span><span class="n">name</span><span class="p">})</span>
+
+		<span class="k">if</span> <span class="n">output</span> <span class="ow">is</span> <span class="kc">None</span> <span class="ow">or</span> <span class="n">output</span> <span class="o">==</span> <span class="mi">1</span><span class="p">:</span>
+			<span class="n">G</span><span class="o">.</span><span class="n">add_node</span><span class="p">(</span><span class="s1">&#39;</span><span class="si">%s</span><span class="s1">-1&#39;</span> <span class="o">%</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">name</span><span class="p">)</span> <span class="p">,</span> <span class="p">{</span><span class="s1">&#39;label&#39;</span><span class="p">:</span><span class="bp">self</span><span class="o">.</span><span class="n">name</span><span class="p">,</span> <span class="s1">&#39;type&#39;</span><span class="p">:</span><span class="s1">&#39;variable&#39;</span><span class="p">,</span> <span class="s1">&#39;mode&#39;</span><span class="p">:</span><span class="s1">&#39;output&#39;</span><span class="p">,</span> <span class="s1">&#39;value&#39;</span><span class="p">:</span><span class="mi">1</span><span class="p">,</span> <span class="s1">&#39;constant&#39;</span><span class="p">:</span><span class="bp">self</span><span class="o">.</span><span class="n">constant</span><span class="p">,</span> <span class="s1">&#39;group&#39;</span><span class="p">:</span><span class="bp">self</span><span class="o">.</span><span class="n">name</span><span class="p">})</span>
+
+		<span class="n">tid</span> <span class="o">=</span> <span class="mi">0</span>
+		<span class="k">for</span> <span class="n">out</span><span class="p">,</span> <span class="n">tspsss</span> <span class="ow">in</span> <span class="nb">zip</span><span class="p">(</span> <span class="p">[</span><span class="mi">0</span><span class="p">,</span><span class="mi">1</span><span class="p">]</span> <span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_two_symbols</span> <span class="p">):</span>
+			
+			<span class="c1"># Only return the requested output</span>
+			<span class="k">if</span> <span class="p">(</span> <span class="p">(</span><span class="ow">not</span> <span class="nb">len</span><span class="p">(</span><span class="n">tspsss</span><span class="p">))</span> <span class="ow">or</span> <span class="p">((</span><span class="n">output</span><span class="o">!=</span><span class="kc">None</span><span class="p">)</span> <span class="ow">and</span> <span class="p">(</span><span class="n">output</span> <span class="o">!=</span> <span class="n">out</span><span class="p">))</span> <span class="p">):</span>
+				<span class="k">continue</span>
+
+			<span class="k">for</span> <span class="n">ts</span><span class="p">,</span> <span class="n">ps</span><span class="p">,</span> <span class="n">ss</span> <span class="ow">in</span> <span class="n">tspsss</span><span class="p">:</span>
+				<span class="n">lits</span> <span class="o">=</span> <span class="p">[]</span>
+				<span class="n">group0</span> <span class="o">=</span> <span class="p">[]</span>
+				<span class="n">group1</span> <span class="o">=</span> <span class="p">[]</span>
+				<span class="n">group2</span> <span class="o">=</span> <span class="p">[]</span>
+				<span class="n">nlit</span><span class="p">,</span> <span class="n">ngrp0</span><span class="p">,</span> <span class="n">ngrp1</span><span class="p">,</span> <span class="n">ngrp2</span> <span class="o">=</span> <span class="mi">0</span><span class="p">,</span><span class="mi">0</span><span class="p">,</span><span class="mi">0</span><span class="p">,</span><span class="mi">0</span> <span class="c1"># Tau is the threshold, counted as the sum of (0&#39;s and 1&#39;s literals; 0&#39;s in permutation group; 1&#39;s in permutation group)</span>
+				
+				<span class="k">for</span> <span class="n">j</span> <span class="ow">in</span> <span class="n">xrange</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">k</span><span class="p">):</span>			
+					<span class="c1"># Is this input in any permutation group?</span>
+					<span class="nb">input</span> <span class="o">=</span> <span class="n">ts</span><span class="p">[</span><span class="n">j</span><span class="p">]</span>
+					<span class="k">if</span> <span class="ow">not</span> <span class="nb">any</span><span class="p">([</span><span class="n">j</span> <span class="ow">in</span> <span class="n">group</span> <span class="k">for</span> <span class="n">group</span> <span class="ow">in</span> <span class="n">ps</span><span class="p">]):</span>
+						<span class="k">if</span> <span class="n">ts</span><span class="p">[</span><span class="n">j</span><span class="p">]</span> <span class="ow">in</span> <span class="p">[</span><span class="s1">&#39;0&#39;</span><span class="p">,</span><span class="s1">&#39;1&#39;</span><span class="p">]:</span>
+							<span class="n">nlit</span> <span class="o">+=</span> <span class="mi">1</span>
+							<span class="n">source</span> <span class="o">=</span> <span class="n">j</span>
+							<span class="n">lits</span><span class="o">.</span><span class="n">append</span><span class="p">(</span> <span class="n">source</span> <span class="p">)</span>
+					<span class="k">else</span><span class="p">:</span>
+						<span class="k">if</span> <span class="n">ts</span><span class="p">[</span><span class="n">j</span><span class="p">]</span> <span class="o">==</span> <span class="s1">&#39;0&#39;</span><span class="p">:</span>
+							<span class="n">ngrp0</span> <span class="o">+=</span> <span class="mi">1</span>
+							<span class="n">group0</span><span class="o">.</span><span class="n">append</span><span class="p">(</span> <span class="n">j</span> <span class="p">)</span>
+						<span class="k">elif</span> <span class="n">ts</span><span class="p">[</span><span class="n">j</span><span class="p">]</span> <span class="o">==</span> <span class="s1">&#39;1&#39;</span><span class="p">:</span>
+							<span class="n">ngrp1</span> <span class="o">+=</span> <span class="mi">1</span>
+							<span class="n">group1</span><span class="o">.</span><span class="n">append</span><span class="p">(</span> <span class="n">j</span> <span class="p">)</span>
+
+				<span class="n">tau</span> <span class="o">=</span> <span class="n">nlit</span> <span class="o">+</span> <span class="n">ngrp0</span> <span class="o">+</span> <span class="n">ngrp1</span>
+
+				<span class="c1"># Threshold Node</span>
+				<span class="n">tname</span> <span class="o">=</span> <span class="s1">&#39;T-</span><span class="si">%s</span><span class="s1">_</span><span class="si">%s</span><span class="s1">-</span><span class="si">%s</span><span class="s1">&#39;</span> <span class="o">%</span> <span class="p">(</span><span class="n">tid</span><span class="p">,</span><span class="bp">self</span><span class="o">.</span><span class="n">name</span><span class="p">,</span><span class="n">out</span><span class="p">)</span>
+				<span class="n">label</span> <span class="o">=</span> <span class="s2">&quot;</span><span class="si">%d</span><span class="s2">&quot;</span> <span class="o">%</span> <span class="p">(</span><span class="n">tau</span><span class="p">)</span>
+				<span class="n">G</span><span class="o">.</span><span class="n">add_node</span><span class="p">(</span><span class="n">tname</span> <span class="p">,</span> <span class="p">{</span><span class="s1">&#39;label&#39;</span><span class="p">:</span><span class="n">label</span><span class="p">,</span> <span class="s1">&#39;type&#39;</span><span class="p">:</span><span class="s1">&#39;threshold&#39;</span><span class="p">,</span> <span class="s1">&#39;tau&#39;</span><span class="p">:</span><span class="n">tau</span><span class="p">,</span> <span class="s1">&#39;group&#39;</span><span class="p">:</span><span class="bp">self</span><span class="o">.</span><span class="n">name</span><span class="p">})</span>
+
+				<span class="c1"># Add Edges from Threshold node to output</span>
+				<span class="n">xname</span> <span class="o">=</span> <span class="s1">&#39;</span><span class="si">%s</span><span class="s1">-</span><span class="si">%s</span><span class="s1">&#39;</span> <span class="o">%</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">name</span><span class="p">,</span><span class="n">out</span><span class="p">)</span>
+				<span class="n">G</span><span class="o">.</span><span class="n">add_edge</span><span class="p">(</span><span class="n">tname</span><span class="p">,</span><span class="n">xname</span><span class="p">,</span> <span class="p">{</span><span class="s1">&#39;type&#39;</span><span class="p">:</span><span class="s1">&#39;out&#39;</span><span class="p">})</span>
+
+				<span class="c1"># Literal Edges</span>
+				<span class="k">for</span> <span class="n">lit</span> <span class="ow">in</span> <span class="n">lits</span><span class="p">:</span>
+					<span class="n">iname</span> <span class="o">=</span> <span class="s1">&#39;</span><span class="si">%s</span><span class="s1">-</span><span class="si">%s</span><span class="s1">&#39;</span> <span class="o">%</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">inputs</span><span class="p">[</span><span class="n">lit</span><span class="p">],</span> <span class="n">ts</span><span class="p">[</span><span class="n">lit</span><span class="p">])</span>
+					<span class="k">if</span> <span class="n">iname</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">G</span><span class="o">.</span><span class="n">nodes</span><span class="p">():</span>
+						<span class="n">ilabel</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">inputs</span><span class="p">[</span><span class="n">lit</span><span class="p">]</span>
+						<span class="n">iout</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">ts</span><span class="p">[</span><span class="n">lit</span><span class="p">])</span>
+						<span class="n">G</span><span class="o">.</span><span class="n">add_node</span><span class="p">(</span><span class="n">iname</span> <span class="p">,</span> <span class="p">{</span><span class="s1">&#39;label&#39;</span><span class="p">:</span><span class="n">ilabel</span><span class="p">,</span> <span class="s1">&#39;type&#39;</span><span class="p">:</span><span class="s1">&#39;variable&#39;</span><span class="p">,</span> <span class="s1">&#39;mode&#39;</span><span class="p">:</span><span class="s1">&#39;input&#39;</span><span class="p">,</span> <span class="s1">&#39;value&#39;</span><span class="p">:</span><span class="n">iout</span><span class="p">,</span> <span class="s1">&#39;group&#39;</span><span class="p">:</span><span class="bp">self</span><span class="o">.</span><span class="n">name</span><span class="p">})</span>
+					<span class="n">G</span><span class="o">.</span><span class="n">add_edge</span><span class="p">(</span><span class="n">iname</span><span class="p">,</span> <span class="n">tname</span><span class="p">,</span> <span class="p">{</span><span class="s1">&#39;type&#39;</span><span class="p">:</span><span class="s1">&#39;literal&#39;</span><span class="p">})</span>
+
+				<span class="c1"># Group0</span>
+				<span class="k">for</span> <span class="n">fusion</span> <span class="ow">in</span> <span class="n">xrange</span><span class="p">(</span><span class="n">ngrp0</span><span class="p">):</span>
+					<span class="n">fname</span> <span class="o">=</span> <span class="s1">&#39;F-</span><span class="si">%s</span><span class="s1">_T-</span><span class="si">%s</span><span class="s1">_</span><span class="si">%s</span><span class="s1">-</span><span class="si">%s</span><span class="s1">&#39;</span> <span class="o">%</span> <span class="p">(</span><span class="n">fusion</span><span class="p">,</span> <span class="n">tid</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">name</span><span class="p">,</span> <span class="mi">0</span><span class="p">)</span>
+					<span class="n">G</span><span class="o">.</span><span class="n">add_node</span><span class="p">(</span><span class="n">fname</span><span class="p">,</span> <span class="p">{</span><span class="s1">&#39;type&#39;</span><span class="p">:</span><span class="s1">&#39;fusion&#39;</span><span class="p">,</span><span class="s1">&#39;group&#39;</span><span class="p">:</span><span class="bp">self</span><span class="o">.</span><span class="n">name</span><span class="p">})</span>
+					<span class="k">for</span> <span class="nb">input</span> <span class="ow">in</span> <span class="n">ps</span><span class="p">[</span><span class="mi">0</span><span class="p">]:</span>
+						<span class="n">iname</span> <span class="o">=</span> <span class="s1">&#39;</span><span class="si">%s</span><span class="s1">-</span><span class="si">%s</span><span class="s1">&#39;</span> <span class="o">%</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">inputs</span><span class="p">[</span><span class="nb">input</span><span class="p">],</span> <span class="mi">0</span><span class="p">)</span>
+						<span class="k">if</span> <span class="n">iname</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">G</span><span class="o">.</span><span class="n">nodes</span><span class="p">():</span>
+							<span class="n">ilabel</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">inputs</span><span class="p">[</span><span class="nb">input</span><span class="p">]</span>
+							<span class="n">G</span><span class="o">.</span><span class="n">add_node</span><span class="p">(</span><span class="n">iname</span> <span class="p">,</span> <span class="p">{</span><span class="s1">&#39;label&#39;</span><span class="p">:</span><span class="n">ilabel</span><span class="p">,</span> <span class="s1">&#39;type&#39;</span><span class="p">:</span><span class="s1">&#39;variable&#39;</span><span class="p">,</span> <span class="s1">&#39;mode&#39;</span><span class="p">:</span><span class="s1">&#39;input&#39;</span><span class="p">,</span> <span class="s1">&#39;value&#39;</span><span class="p">:</span><span class="mi">0</span><span class="p">,</span> <span class="s1">&#39;group&#39;</span><span class="p">:</span><span class="bp">self</span><span class="o">.</span><span class="n">name</span><span class="p">})</span>
+						<span class="n">G</span><span class="o">.</span><span class="n">add_edge</span><span class="p">(</span><span class="n">iname</span><span class="p">,</span><span class="n">fname</span><span class="p">,</span> <span class="p">{</span><span class="s1">&#39;type&#39;</span><span class="p">:</span><span class="s1">&#39;fusing&#39;</span><span class="p">})</span>
+					<span class="n">G</span><span class="o">.</span><span class="n">add_edge</span><span class="p">(</span><span class="n">fname</span><span class="p">,</span><span class="n">tname</span><span class="p">,</span> <span class="p">{</span><span class="s1">&#39;type&#39;</span><span class="p">:</span><span class="s1">&#39;fused&#39;</span><span class="p">})</span>
+					
+				<span class="c1"># Group1</span>
+				<span class="k">for</span> <span class="n">fusion</span> <span class="ow">in</span> <span class="n">xrange</span><span class="p">(</span><span class="n">ngrp1</span><span class="p">):</span>
+					<span class="n">fname</span> <span class="o">=</span> <span class="s1">&#39;F-</span><span class="si">%s</span><span class="s1">_T-</span><span class="si">%s</span><span class="s1">_</span><span class="si">%s</span><span class="s1">-</span><span class="si">%s</span><span class="s1">&#39;</span> <span class="o">%</span> <span class="p">(</span><span class="n">fusion</span><span class="p">,</span> <span class="n">tid</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">name</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span>
+					<span class="n">G</span><span class="o">.</span><span class="n">add_node</span><span class="p">(</span><span class="n">fname</span><span class="p">,</span> <span class="p">{</span><span class="s1">&#39;type&#39;</span><span class="p">:</span><span class="s1">&#39;fusion&#39;</span><span class="p">,</span> <span class="s1">&#39;group&#39;</span><span class="p">:</span><span class="bp">self</span><span class="o">.</span><span class="n">name</span><span class="p">})</span>
+					<span class="k">for</span> <span class="nb">input</span> <span class="ow">in</span> <span class="n">ps</span><span class="p">[</span><span class="mi">0</span><span class="p">]:</span>
+						<span class="n">iname</span> <span class="o">=</span> <span class="s1">&#39;</span><span class="si">%s</span><span class="s1">-</span><span class="si">%s</span><span class="s1">&#39;</span> <span class="o">%</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">inputs</span><span class="p">[</span><span class="nb">input</span><span class="p">],</span> <span class="mi">1</span><span class="p">)</span>
+						<span class="k">if</span> <span class="n">iname</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">G</span><span class="o">.</span><span class="n">nodes</span><span class="p">():</span>
+							<span class="n">ilabel</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">inputs</span><span class="p">[</span><span class="nb">input</span><span class="p">]</span>
+							<span class="n">iout</span> <span class="o">=</span> <span class="n">ts</span><span class="p">[</span><span class="nb">input</span><span class="p">]</span>
+							<span class="n">G</span><span class="o">.</span><span class="n">add_node</span><span class="p">(</span><span class="n">iname</span> <span class="p">,</span> <span class="p">{</span><span class="s1">&#39;label&#39;</span><span class="p">:</span><span class="n">ilabel</span><span class="p">,</span> <span class="s1">&#39;type&#39;</span><span class="p">:</span><span class="s1">&#39;variable&#39;</span><span class="p">,</span> <span class="s1">&#39;mode&#39;</span><span class="p">:</span><span class="s1">&#39;input&#39;</span><span class="p">,</span> <span class="s1">&#39;value&#39;</span><span class="p">:</span><span class="mi">1</span><span class="p">,</span> <span class="s1">&#39;group&#39;</span><span class="p">:</span><span class="bp">self</span><span class="o">.</span><span class="n">name</span><span class="p">})</span>
+						<span class="n">G</span><span class="o">.</span><span class="n">add_edge</span><span class="p">(</span><span class="n">iname</span><span class="p">,</span><span class="n">fname</span><span class="p">,</span> <span class="p">{</span><span class="s1">&#39;type&#39;</span><span class="p">:</span><span class="s1">&#39;fusing&#39;</span><span class="p">})</span>
+					<span class="n">G</span><span class="o">.</span><span class="n">add_edge</span><span class="p">(</span><span class="n">fname</span><span class="p">,</span><span class="n">tname</span><span class="p">,</span> <span class="p">{</span><span class="s1">&#39;type&#39;</span><span class="p">:</span><span class="s1">&#39;fused&#39;</span><span class="p">})</span>
+
+				<span class="n">tid</span> <span class="o">+=</span> <span class="mi">1</span>
+</div>
+		<span class="k">return</span> <span class="n">G</span>
+
+
+<div class="viewcode-block" id="BooleanNode.pi_coverage"><a class="viewcode-back" href="../../reference/boolean_node.html#cana.boolean_node.BooleanNode.pi_coverage">[docs]</a>	<span class="k">def</span> <span class="nf">pi_coverage</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+		<span class="sd">&quot;&quot;&quot; Returns the :math:`F&#39;` (Prime Implicants) binary state coverage.</span>
+<span class="sd">		</span>
+<span class="sd">		Returns:</span>
+<span class="sd">			(list)</span>
+<span class="sd">		See also:</span>
+<span class="sd">			:func:`ts_coverage`</span>
+<span class="sd">		&quot;&quot;&quot;</span>
+		<span class="bp">self</span><span class="o">.</span><span class="n">_check_compute_canalization_variables</span><span class="p">(</span><span class="n">pi_coverage</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span></div>
+		<span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_pi_coverage</span>
+
+<div class="viewcode-block" id="BooleanNode.ts_coverage"><a class="viewcode-back" href="../../reference/boolean_node.html#cana.boolean_node.BooleanNode.ts_coverage">[docs]</a>	<span class="k">def</span> <span class="nf">ts_coverage</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+		<span class="sd">&quot;&quot;&quot; Returns the :math:`F&#39;&#39;` (Two-Symbol schematas) binary state coverage.</span>
+<span class="sd">		</span>
+<span class="sd">		Returns:</span>
+<span class="sd">			(list)</span>
+<span class="sd">		See also:</span>
+<span class="sd">			:func:`pi_coverage`</span>
+<span class="sd">		&quot;&quot;&quot;</span>
+		<span class="bp">self</span><span class="o">.</span><span class="n">_check_compute_canalization_variables</span><span class="p">(</span><span class="n">ts_coverage</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span></div>
+		<span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_ts_coverage</span>
+
+	<span class="k">def</span> <span class="nf">_check_compute_canalization_variables</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+		<span class="sd">&quot;&quot;&quot; Recursevely check if the requested canalization variables are instantiated/computed, otherwise computes them in order.</span>
+<span class="sd">		For example: to compute `two_symbols` we need `prime_implicants` first.</span>
+<span class="sd">		Likewise, to compute `prime_implicants` we need the `transition_density_tuple` first.</span>
+<span class="sd">		&quot;&quot;&quot;</span>
+		<span class="k">if</span> <span class="s1">&#39;transition_density_tuple&#39;</span> <span class="ow">in</span> <span class="n">kwargs</span><span class="p">:</span>
+			<span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_transition_density_tuple</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+				<span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">verbose</span><span class="p">:</span> <span class="nb">print</span> <span class="s2">&quot;Computing: Transition Density Tuple Table&quot;</span>
+				<span class="bp">self</span><span class="o">.</span><span class="n">_transition_density_tuple</span> <span class="o">=</span> <span class="n">BCanalization</span><span class="o">.</span><span class="n">make_transition_density_tables</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">k</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">outputs</span><span class="p">)</span>
+		
+		<span class="k">elif</span> <span class="s1">&#39;prime_implicants&#39;</span> <span class="ow">in</span> <span class="n">kwargs</span><span class="p">:</span>
+			<span class="bp">self</span><span class="o">.</span><span class="n">_check_compute_canalization_variables</span><span class="p">(</span><span class="n">transition_density_tuple</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+			<span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_prime_implicants</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+				<span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">verbose</span><span class="p">:</span> <span class="nb">print</span> <span class="s2">&quot;Computing: Prime Implicants&quot;</span>
+				<span class="bp">self</span><span class="o">.</span><span class="n">_prime_implicants</span> <span class="o">=</span> \
+					<span class="p">(</span>
+						<span class="n">BCanalization</span><span class="o">.</span><span class="n">find_implicants_qm</span><span class="p">(</span><span class="n">column</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">_transition_density_tuple</span><span class="p">[</span><span class="mi">0</span><span class="p">]),</span>
+						<span class="n">BCanalization</span><span class="o">.</span><span class="n">find_implicants_qm</span><span class="p">(</span><span class="n">column</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">_transition_density_tuple</span><span class="p">[</span><span class="mi">1</span><span class="p">])</span>
+					<span class="p">)</span>
+
+		<span class="k">elif</span> <span class="s1">&#39;pi_coverage&#39;</span> <span class="ow">in</span> <span class="n">kwargs</span><span class="p">:</span>
+			<span class="bp">self</span><span class="o">.</span><span class="n">_check_compute_canalization_variables</span><span class="p">(</span><span class="n">prime_implicants</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+			<span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_pi_coverage</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+				<span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">verbose</span><span class="p">:</span> <span class="nb">print</span> <span class="s2">&quot;Computing: Coverage of Prime Implicants&quot;</span>
+				<span class="bp">self</span><span class="o">.</span><span class="n">_pi_coverage</span> <span class="o">=</span> <span class="n">BCanalization</span><span class="o">.</span><span class="n">computes_pi_coverage</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">k</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">outputs</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_prime_implicants</span><span class="p">)</span>
+
+		<span class="k">elif</span> <span class="s1">&#39;two_symbols&#39;</span> <span class="ow">in</span> <span class="n">kwargs</span><span class="p">:</span>
+			<span class="bp">self</span><span class="o">.</span><span class="n">_check_compute_canalization_variables</span><span class="p">(</span><span class="n">prime_implicants</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+			<span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_two_symbols</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+				<span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">verbose</span><span class="p">:</span> <span class="nb">print</span> <span class="s2">&quot;Computing: Two Symbols&quot;</span>
+				<span class="bp">self</span><span class="o">.</span><span class="n">_two_symbols</span> <span class="o">=</span> \
+					<span class="p">(</span>
+						<span class="n">BCanalization</span><span class="o">.</span><span class="n">find_two_symbols_v2</span><span class="p">(</span><span class="n">k</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">k</span><span class="p">,</span> <span class="n">prime_implicants</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">_prime_implicants</span><span class="p">[</span><span class="mi">0</span><span class="p">]),</span>
+						<span class="n">BCanalization</span><span class="o">.</span><span class="n">find_two_symbols_v2</span><span class="p">(</span><span class="n">k</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">k</span><span class="p">,</span> <span class="n">prime_implicants</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">_prime_implicants</span><span class="p">[</span><span class="mi">1</span><span class="p">])</span>
+					<span class="p">)</span>
+		<span class="k">elif</span> <span class="s1">&#39;ts_coverage&#39;</span> <span class="ow">in</span> <span class="n">kwargs</span><span class="p">:</span>
+			<span class="bp">self</span><span class="o">.</span><span class="n">_check_compute_canalization_variables</span><span class="p">(</span><span class="n">two_symbols</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+			<span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_ts_coverage</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+				<span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">verbose</span><span class="p">:</span> <span class="nb">print</span> <span class="s2">&quot;Computing: Coverage of Two Symbols&quot;</span>
+				<span class="bp">self</span><span class="o">.</span><span class="n">_ts_coverage</span> <span class="o">=</span> <span class="n">BCanalization</span><span class="o">.</span><span class="n">computes_ts_coverage</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">k</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">outputs</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_two_symbols</span><span class="p">)</span>
+
+		<span class="k">else</span><span class="p">:</span>
+			<span class="k">raise</span> <span class="ne">Exception</span><span class="p">(</span><span class="s1">&#39;Canalization variable name not found. </span><span class="si">%s</span><span class="s1">&#39;</span> <span class="o">%</span> <span class="n">kwargs</span><span class="p">)</span>
+		<span class="k">return</span> <span class="kc">True</span>
+
+<div class="viewcode-block" id="BooleanNode.bias"><a class="viewcode-back" href="../../reference/boolean_node.html#cana.boolean_node.BooleanNode.bias">[docs]</a>	<span class="k">def</span> <span class="nf">bias</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+		<span class="sa">r</span><span class="sd">&quot;&quot;&quot; The node bias. The sum of the boolean output transitions divided by the number of entries (:math:`2^k`) in the LUT.</span>
+
+<span class="sd">		.. math::</span>
+
+<span class="sd">			bias(x) = \frac{ \sum_{f_{\alpha}\in F} s_{\alpha} }{ |F| }</span>
+
+<span class="sd">		Returns:</span>
+<span class="sd">			(float)</span>
+
+<span class="sd">		See Also:</span>
+<span class="sd">			:func:`~boolnets.boolean_network.network_bias`</span>
+<span class="sd">		&quot;&quot;&quot;</span></div>
+		<span class="k">return</span> <span class="nb">sum</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">outputs</span><span class="p">)</span> <span class="o">/</span> <span class="mi">2</span><span class="o">**</span><span class="bp">self</span><span class="o">.</span><span class="n">k</span>
+
+<div class="viewcode-block" id="BooleanNode.c_sensitivity"><a class="viewcode-back" href="../../reference/boolean_node.html#cana.boolean_node.BooleanNode.c_sensitivity">[docs]</a>	<span class="k">def</span> <span class="nf">c_sensitivity</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">c</span><span class="p">,</span> <span class="n">mode</span><span class="o">=</span><span class="s2">&quot;default&quot;</span><span class="p">,</span> <span class="n">max_k</span><span class="o">=</span><span class="mi">0</span><span class="p">):</span>
+		<span class="sd">&quot;&quot;&quot; Node c-sensitivity.</span>
+<span class="sd">		c-sensitivity is defined as: the mean probability that changing exactly</span>
+<span class="sd">		``c`` variables in input variables would change output value.</span>
+<span class="sd">		There is another mode &quot;forceK&quot;, which will be used to calculate Derrida value.</span>
+<span class="sd">		In that mode, it would assume the number of input variables is specified as max_k</span>
+<span class="sd">		this methods is equivalent to Derrida value in :cite:`Kadelka:2017`, only move a normalization</span>
+<span class="sd">		coefficient from expression of Derrida value to c-sensitivity to simplify it</span>
+
+<span class="sd">		Args:</span>
+<span class="sd">			c (int) : the ``c`` in the definition of c-senstivity above</span>
+<span class="sd">			mode (string) : either &quot;default&quot; or &quot;forceK&quot;</span>
+<span class="sd">			max_k (int) : you must specify max_k when you set mode as &#39;forceK&#39;</span>
+
+<span class="sd">		Returns:</span>
+<span class="sd">		    (float)</span>
+<span class="sd">		</span>
+<span class="sd">		See Also:</span>
+<span class="sd">		    :func:`~boolnets.boolean_network.derrida_curve`</span>
+<span class="sd">		&quot;&quot;&quot;</span>
+		<span class="n">S_c_f</span> <span class="o">=</span> <span class="mi">0</span>
+		<span class="n">ic</span> <span class="o">=</span> <span class="nb">min</span><span class="p">(</span><span class="n">c</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">k</span><span class="p">)</span>
+
+		<span class="k">if</span> <span class="n">mode</span> <span class="o">!=</span> <span class="s1">&#39;forceK&#39;</span><span class="p">:</span>
+			<span class="k">for</span> <span class="n">j</span> <span class="ow">in</span> <span class="n">product</span><span class="p">(</span><span class="s1">&#39;01&#39;</span><span class="p">,</span> <span class="n">repeat</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">k</span><span class="p">):</span>
+				<span class="n">origin_config</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">j</span><span class="p">)</span>
+				<span class="k">for</span> <span class="n">mut</span> <span class="ow">in</span> <span class="n">itertools</span><span class="o">.</span><span class="n">combinations</span><span class="p">(</span><span class="n">xrange</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">k</span><span class="p">),</span> <span class="n">ic</span><span class="p">):</span>
+					<span class="n">mut_config</span> <span class="o">=</span> <span class="n">origin_config</span><span class="p">[:]</span>
+					<span class="k">for</span> <span class="n">i_mut</span> <span class="ow">in</span> <span class="n">mut</span><span class="p">:</span>
+						<span class="n">mut_config</span><span class="p">[</span><span class="n">i_mut</span><span class="p">]</span> <span class="o">=</span> <span class="n">flip_bit</span><span class="p">(</span><span class="n">mut_config</span><span class="p">[</span><span class="n">i_mut</span><span class="p">])</span>
+					<span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">step</span><span class="p">(</span><span class="s1">&#39;&#39;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">origin_config</span><span class="p">))</span> <span class="o">!=</span> <span class="bp">self</span><span class="o">.</span><span class="n">step</span><span class="p">(</span><span class="s1">&#39;&#39;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">mut_config</span><span class="p">)):</span>
+						<span class="n">S_c_f</span> <span class="o">+=</span> <span class="mi">1</span>
+			<span class="k">if</span> <span class="n">S_c_f</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+				<span class="k">return</span> <span class="mf">0.</span>
+			<span class="k">return</span> <span class="n">S_c_f</span> <span class="o">/</span> <span class="nb">float</span><span class="p">(</span><span class="n">ncr</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">k</span><span class="p">,</span> <span class="n">c</span><span class="p">))</span> <span class="o">/</span> <span class="nb">float</span><span class="p">(</span><span class="mi">2</span> <span class="o">**</span> <span class="bp">self</span><span class="o">.</span><span class="n">k</span><span class="p">)</span>
+		<span class="k">else</span><span class="p">:</span>
+			<span class="k">assert</span> <span class="n">max_k</span> <span class="o">&gt;=</span> <span class="bp">self</span><span class="o">.</span><span class="n">k</span>
+			<span class="k">for</span> <span class="n">ic</span> <span class="ow">in</span> <span class="n">xrange</span><span class="p">(</span><span class="nb">max</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="n">c</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">k</span> <span class="o">-</span> <span class="n">max_k</span><span class="p">),</span> <span class="nb">min</span><span class="p">(</span><span class="n">c</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">k</span><span class="p">)</span> <span class="o">+</span> <span class="mi">1</span><span class="p">):</span>
+				<span class="k">for</span> <span class="n">j</span> <span class="ow">in</span> <span class="n">product</span><span class="p">(</span><span class="s1">&#39;01&#39;</span><span class="p">,</span> <span class="n">repeat</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">k</span><span class="p">):</span>
+					<span class="n">origin_config</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">j</span><span class="p">)</span>
+					<span class="k">for</span> <span class="n">mut</span> <span class="ow">in</span> <span class="n">itertools</span><span class="o">.</span><span class="n">combinations</span><span class="p">(</span><span class="n">xrange</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">k</span><span class="p">),</span> <span class="n">ic</span><span class="p">):</span>
+						<span class="n">mut_config</span> <span class="o">=</span> <span class="n">origin_config</span><span class="p">[:]</span>
+						<span class="k">for</span> <span class="n">i_mut</span> <span class="ow">in</span> <span class="n">mut</span><span class="p">:</span>
+							<span class="n">mut_config</span><span class="p">[</span><span class="n">i_mut</span><span class="p">]</span> <span class="o">=</span> <span class="n">flip_bit</span><span class="p">(</span><span class="n">mut_config</span><span class="p">[</span><span class="n">i_mut</span><span class="p">])</span>
+						<span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">step</span><span class="p">(</span><span class="s1">&#39;&#39;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">origin_config</span><span class="p">))</span> <span class="o">!=</span> <span class="bp">self</span><span class="o">.</span><span class="n">step</span><span class="p">(</span>
+								<span class="s1">&#39;&#39;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">mut_config</span><span class="p">)):</span>
+							<span class="n">S_c_f</span> <span class="o">+=</span> <span class="n">ncr</span><span class="p">(</span><span class="n">max_k</span> <span class="o">-</span> <span class="bp">self</span><span class="o">.</span><span class="n">k</span><span class="p">,</span> <span class="n">c</span> <span class="o">-</span> <span class="n">ic</span><span class="p">)</span></div></div>
+			<span class="k">return</span> <span class="n">S_c_f</span> <span class="o">/</span> <span class="nb">float</span><span class="p">(</span><span class="n">ncr</span><span class="p">(</span><span class="n">max_k</span><span class="p">,</span> <span class="n">c</span><span class="p">))</span> <span class="o">/</span> <span class="nb">float</span><span class="p">(</span><span class="mi">2</span> <span class="o">**</span> <span class="bp">self</span><span class="o">.</span><span class="n">k</span><span class="p">)</span>
+</pre></div>
+
+           </div>
+           <div class="articleComments">
+            
+           </div>
+          </div>
+          <footer>
+  
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>
+        &copy; Copyright 2017, Correia, R. B., Gates, A., Rocha, L. M..
+      Last updated on Feb 19, 2018.
+
+    </p>
+  </div>
+  Built with <a href="http://sphinx-doc.org/">Sphinx</a> using a <a href="https://github.com/snide/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>. 
+
+</footer>
+
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+  
+
+
+  
+
+    <script type="text/javascript">
+        var DOCUMENTATION_OPTIONS = {
+            URL_ROOT:'../../',
+            VERSION:'0.0.2-alpha',
+            COLLAPSE_INDEX:false,
+            FILE_SUFFIX:'.html',
+            HAS_SOURCE:  true,
+            SOURCELINK_SUFFIX: '.txt'
+        };
+    </script>
+      <script type="text/javascript" src="../../static/jquery.js"></script>
+      <script type="text/javascript" src="../../static/underscore.js"></script>
+      <script type="text/javascript" src="../../static/doctools.js"></script>
+      <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.1/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+
+  
+
+  
+  
+    <script type="text/javascript" src="../../static/js/theme.js"></script>
+  
+
+  
+  
+  <script type="text/javascript">
+      jQuery(function () {
+          SphinxRtdTheme.StickyNav.enable();
+      });
+  </script>
+   
+
+</body>
+</html>

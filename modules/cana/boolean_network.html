@@ -1,0 +1,1191 @@
+
+
+<!DOCTYPE html>
+<!--[if IE 8]><html class="no-js lt-ie9" lang="en" > <![endif]-->
+<!--[if gt IE 8]><!--> <html class="no-js" lang="en" > <!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  
+  <title>cana.boolean_network &mdash; CANA 0.0.2-alpha documentation</title>
+  
+
+  
+  
+  
+  
+
+  
+
+  
+  
+    
+
+  
+
+  
+  
+    <link rel="stylesheet" href="../../static/css/theme.css" type="text/css" />
+  
+
+  
+
+  
+        <link rel="index" title="Index"
+              href="../../genindex.html"/>
+        <link rel="search" title="Search" href="../../search.html"/>
+    <link rel="top" title="CANA 0.0.2-alpha documentation" href="../../index.html"/>
+        <link rel="up" title="Module code" href="../index.html"/> 
+
+  
+  <script src="../../static/js/modernizr.min.js"></script>
+
+</head>
+
+<body class="wy-body-for-nav" role="document">
+
+   
+  <div class="wy-grid-for-nav">
+
+    
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search">
+          
+
+          
+            <a href="../../index.html" class="icon icon-home"> CANA
+          
+
+          
+          </a>
+
+          
+            
+            
+              <div class="version">
+                0.0.2
+              </div>
+            
+          
+
+          
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+
+          
+        </div>
+
+        <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+          
+            
+            
+              
+            
+            
+              <ul>
+<li class="toctree-l1"><a class="reference internal" href="../../install.html">Installation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../notation.html">Notation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../tutorial.html">Tutorials</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../reference/index.html">API Reference</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../development.html">Development</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../appendix/index.html">Appendix</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../references.html">References</a></li>
+</ul>
+
+            
+          
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+
+      
+      <nav class="wy-nav-top" role="navigation" aria-label="top navigation">
+        
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../index.html">CANA</a>
+        
+      </nav>
+
+
+      
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div role="navigation" aria-label="breadcrumbs navigation">
+
+  <ul class="wy-breadcrumbs">
+    
+      <li><a href="../../index.html">Docs</a> &raquo;</li>
+        
+          <li><a href="../index.html">Module code</a> &raquo;</li>
+        
+      <li>cana.boolean_network</li>
+    
+    
+      <li class="wy-breadcrumbs-aside">
+        
+            
+        
+      </li>
+    
+  </ul>
+
+  
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+            
+  <h1>Source code for cana.boolean_network</h1><div class="highlight"><pre>
+<span></span><span class="c1"># -*- coding: utf-8 -*-</span>
+<span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">Boolean Network</span>
+<span class="sd">================</span>
+
+
+
+<span class="sd">&quot;&quot;&quot;</span>
+<span class="c1">#	Copyright (C) 2017 by</span>
+<span class="c1">#	Rion Brattig Correia &lt;rionbr@gmail.com&gt;</span>
+<span class="c1">#	Alex Gates &lt;ajgates@indiana.edu&gt;</span>
+<span class="c1">#	All rights reserved.</span>
+<span class="c1">#	MIT license.</span>
+<span class="kn">from</span> <span class="nn">collections</span> <span class="k">import</span> <span class="n">defaultdict</span>
+<span class="kn">import</span> <span class="nn">cStringIO</span>
+<span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
+<span class="kn">import</span> <span class="nn">networkx</span> <span class="k">as</span> <span class="nn">nx</span>
+<span class="kn">import</span> <span class="nn">random</span>
+<span class="kn">import</span> <span class="nn">itertools</span>
+<span class="kn">from</span> <span class="nn">boolean_node</span> <span class="k">import</span> <span class="n">BooleanNode</span>
+<span class="kn">import</span> <span class="nn">bns</span>
+<span class="kn">from</span> <span class="nn">control</span> <span class="k">import</span> <span class="n">fvs</span><span class="p">,</span> <span class="n">mds</span><span class="p">,</span> <span class="n">sc</span>
+<span class="kn">from</span> <span class="nn">base</span> <span class="k">import</span> <span class="n">deprecated</span>
+<span class="kn">from</span> <span class="nn">utils</span> <span class="k">import</span> <span class="o">*</span>
+<span class="kn">import</span> <span class="nn">warnings</span>
+<span class="c1">#</span>
+<span class="c1">#</span>
+<div class="viewcode-block" id="BooleanNetwork"><a class="viewcode-back" href="../../reference/boolean_network.html#cana.boolean_network.BooleanNetwork">[docs]</a><span class="k">class</span> <span class="nc">BooleanNetwork</span><span class="p">:</span>
+	<span class="sd">&quot;&quot;&quot;</span>
+
+
+<span class="sd">	&quot;&quot;&quot;</span>
+	<span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">name</span><span class="o">=</span><span class="s1">&#39;&#39;</span><span class="p">,</span> <span class="n">Nnodes</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">logic</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">sg</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">stg</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">stg_r</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">_ef</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">attractors</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+			<span class="n">constants</span><span class="o">=</span><span class="p">{},</span> <span class="n">Nconstants</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">keep_constants</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
+			<span class="n">bin2num</span><span class="o">=</span><span class="n">binstate_to_statenum</span><span class="p">,</span> <span class="n">num2bin</span><span class="o">=</span><span class="n">statenum_to_binstate</span><span class="p">,</span>
+			<span class="n">verbose</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+
+		<span class="bp">self</span><span class="o">.</span><span class="n">name</span> <span class="o">=</span> <span class="n">name</span> 							<span class="c1"># Name of the Network</span>
+		<span class="bp">self</span><span class="o">.</span><span class="n">Nnodes</span> <span class="o">=</span> <span class="n">Nnodes</span> 						<span class="c1"># Number of Nodes</span>
+		<span class="bp">self</span><span class="o">.</span><span class="n">logic</span> <span class="o">=</span> <span class="n">logic</span> 							<span class="c1"># A dict that contains the network logic {&lt;id&gt;:{&#39;name&#39;:&lt;string&gt;,&#39;in&#39;:&lt;list-input-node-id&gt;,&#39;out&#39;:&lt;list-output-transitions&gt;},..}</span>
+		<span class="bp">self</span><span class="o">.</span><span class="n">_sg</span> <span class="o">=</span> <span class="n">sg</span> 								<span class="c1"># Structure-Graph (SG)</span>
+		<span class="bp">self</span><span class="o">.</span><span class="n">_stg</span> <span class="o">=</span> <span class="n">stg</span> 							<span class="c1"># State-Transition-Graph (STG)</span>
+		<span class="bp">self</span><span class="o">.</span><span class="n">_stg_r</span> <span class="o">=</span> <span class="n">stg_r</span> 						<span class="c1"># State-Transition-Graph Reachability dict (STG-R)</span>
+		<span class="bp">self</span><span class="o">.</span><span class="n">_eg</span> <span class="o">=</span> <span class="kc">None</span> 							<span class="c1"># Effective Graph, computed from the effective connectivity</span>
+		<span class="bp">self</span><span class="o">.</span><span class="n">_attractors</span> <span class="o">=</span> <span class="n">attractors</span> 				<span class="c1"># Network Attractors</span>
+		<span class="c1">#</span>
+		<span class="bp">self</span><span class="o">.</span><span class="n">keep_constants</span> <span class="o">=</span> <span class="n">keep_constants</span>		<span class="c1"># Keep/Include constants in some of the computations</span>
+		<span class="bp">self</span><span class="o">.</span><span class="n">constants</span> <span class="o">=</span> <span class="n">constants</span> 					<span class="c1"># A dict that contains of constant variables in the network</span>
+		<span class="bp">self</span><span class="o">.</span><span class="n">Nconstants</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">constants</span><span class="p">)</span>			<span class="c1"># Number of constant variables</span>
+		<span class="c1">#</span>
+		<span class="bp">self</span><span class="o">.</span><span class="n">Nstates</span> <span class="o">=</span> <span class="mi">2</span><span class="o">**</span><span class="n">Nnodes</span> 					<span class="c1"># Number of possible states in the network 2^N</span>
+		<span class="c1">#</span>
+		<span class="bp">self</span><span class="o">.</span><span class="n">verbose</span> <span class="o">=</span> <span class="n">verbose</span>
+		
+		<span class="c1"># Intanciate BooleanNodes</span>
+		<span class="bp">self</span><span class="o">.</span><span class="n">nodes</span> <span class="o">=</span> <span class="nb">list</span><span class="p">()</span>
+		<span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="n">xrange</span><span class="p">(</span><span class="n">Nnodes</span><span class="p">):</span>
+			<span class="n">name</span> <span class="o">=</span> <span class="n">logic</span><span class="p">[</span><span class="n">i</span><span class="p">][</span><span class="s1">&#39;name&#39;</span><span class="p">]</span>
+			<span class="n">k</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">logic</span><span class="p">[</span><span class="n">i</span><span class="p">][</span><span class="s1">&#39;in&#39;</span><span class="p">])</span>
+			<span class="n">inputs</span> <span class="o">=</span> <span class="p">[</span><span class="n">logic</span><span class="p">[</span><span class="n">j</span><span class="p">][</span><span class="s1">&#39;name&#39;</span><span class="p">]</span> <span class="k">for</span> <span class="n">j</span> <span class="ow">in</span> <span class="n">logic</span><span class="p">[</span><span class="n">i</span><span class="p">][</span><span class="s1">&#39;in&#39;</span><span class="p">]]</span>
+			<span class="n">outputs</span> <span class="o">=</span> <span class="n">logic</span><span class="p">[</span><span class="n">i</span><span class="p">][</span><span class="s1">&#39;out&#39;</span><span class="p">]</span>
+			<span class="n">node</span> <span class="o">=</span> <span class="n">BooleanNode</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="n">name</span><span class="p">,</span> <span class="n">k</span><span class="o">=</span><span class="n">k</span><span class="p">,</span> <span class="n">inputs</span><span class="o">=</span><span class="n">inputs</span><span class="p">,</span> <span class="n">outputs</span><span class="o">=</span><span class="n">outputs</span><span class="p">)</span>
+			<span class="bp">self</span><span class="o">.</span><span class="n">nodes</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">node</span><span class="p">)</span>
+
+		<span class="c1"># </span>
+		<span class="bp">self</span><span class="o">.</span><span class="n">bin2num</span> <span class="o">=</span> <span class="n">bin2num</span>						<span class="c1"># Helper function. Converts binstate to statenum. It gets updated by `_update_trans_func`</span>
+		<span class="bp">self</span><span class="o">.</span><span class="n">num2bin</span> <span class="o">=</span> <span class="n">num2bin</span>						<span class="c1"># Helper function. Converts statenum to binstate. It gets updated by `_update_trans_func`</span>
+		<span class="bp">self</span><span class="o">.</span><span class="n">_update_trans_func</span><span class="p">()</span> 					<span class="c1"># Updates helper functions and other variables</span>
+
+	<span class="k">def</span> <span class="nf">__str__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+		<span class="n">node_names</span> <span class="o">=</span> <span class="p">[</span><span class="n">node</span><span class="o">.</span><span class="n">name</span> <span class="k">for</span> <span class="n">node</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">nodes</span><span class="p">]</span>
+		<span class="k">return</span> <span class="s2">&quot;&lt;BNetwork(Name=&#39;</span><span class="si">%s</span><span class="s2">&#39;, N=</span><span class="si">%d</span><span class="s2">, Nodes=</span><span class="si">%s</span><span class="s2">)&gt;&quot;</span> <span class="o">%</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">name</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">Nnodes</span><span class="p">,</span> <span class="n">node_names</span><span class="p">)</span>
+
+	<span class="c1">#</span>
+	<span class="c1"># I/O Methods</span>
+	<span class="c1">#</span>
+<div class="viewcode-block" id="BooleanNetwork.from_file"><a class="viewcode-back" href="../../reference/boolean_network.html#cana.boolean_network.BooleanNetwork.from_file">[docs]</a>	<span class="nd">@classmethod</span>
+	<span class="k">def</span> <span class="nf">from_file</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">input_file</span><span class="p">,</span> <span class="n">keep_constants</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+		<span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">		Load the Boolean Network from a file.</span>
+
+<span class="sd">		Args:</span>
+<span class="sd">			infile (string) : The name of a file containing the Boolean Network.</span>
+
+<span class="sd">		Returns:</span>
+<span class="sd">			BooleanNetwork (object) : The boolean network object.</span>
+
+<span class="sd">		See also:</span>
+<span class="sd">			:func:`from_string` :func:`from_dict`</span>
+<span class="sd">		&quot;&quot;&quot;</span>
+		<span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="n">input_file</span><span class="p">,</span> <span class="s1">&#39;r&#39;</span><span class="p">)</span> <span class="k">as</span> <span class="n">infile</span><span class="p">:</span></div>
+			<span class="k">return</span> <span class="bp">cls</span><span class="o">.</span><span class="n">from_string</span><span class="p">(</span><span class="n">infile</span><span class="o">.</span><span class="n">read</span><span class="p">(),</span> <span class="n">keep_constants</span><span class="o">=</span><span class="n">keep_constants</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+
+<div class="viewcode-block" id="BooleanNetwork.from_string"><a class="viewcode-back" href="../../reference/boolean_network.html#cana.boolean_network.BooleanNetwork.from_string">[docs]</a>	<span class="nd">@classmethod</span>
+	<span class="k">def</span> <span class="nf">from_string</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">input_string</span><span class="p">,</span> <span class="n">keep_constants</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+		<span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">		Load the Boolean Network from a string.</span>
+
+<span class="sd">		Args:</span>
+<span class="sd">			input_string (string): The representation of a Boolean Network.</span>
+
+<span class="sd">		Returns:</span>
+<span class="sd">			(BooleanNetwork)</span>
+
+<span class="sd">		See also:</span>
+<span class="sd">			:func:`from_file` :func:`from_dict`</span>
+
+<span class="sd">		Note: see examples for more information.</span>
+<span class="sd">		&quot;&quot;&quot;</span>
+		<span class="n">network_file</span> <span class="o">=</span> <span class="n">cStringIO</span><span class="o">.</span><span class="n">StringIO</span><span class="p">(</span><span class="n">input_string</span><span class="p">)</span>
+		<span class="n">logic</span> <span class="o">=</span> <span class="n">defaultdict</span><span class="p">(</span><span class="nb">dict</span><span class="p">)</span>
+		
+		<span class="n">line</span> <span class="o">=</span> <span class="n">network_file</span><span class="o">.</span><span class="n">readline</span><span class="p">()</span>
+		<span class="k">while</span> <span class="n">line</span> <span class="o">!=</span> <span class="s2">&quot;&quot;</span><span class="p">:</span>
+			<span class="k">if</span> <span class="n">line</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">!=</span> <span class="s1">&#39;#&#39;</span> <span class="ow">and</span> <span class="n">line</span> <span class="o">!=</span> <span class="s1">&#39;</span><span class="se">\n</span><span class="s1">&#39;</span><span class="p">:</span>
+				<span class="c1"># .v &lt;#-nodes&gt;</span>
+				<span class="k">if</span> <span class="s1">&#39;.v&#39;</span> <span class="ow">in</span> <span class="n">line</span><span class="p">:</span>
+					<span class="n">Nnodes</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">line</span><span class="o">.</span><span class="n">split</span><span class="p">()[</span><span class="mi">1</span><span class="p">])</span>
+					<span class="k">for</span> <span class="n">inode</span> <span class="ow">in</span> <span class="n">xrange</span><span class="p">(</span><span class="n">Nnodes</span><span class="p">):</span>
+						<span class="n">logic</span><span class="p">[</span><span class="n">inode</span><span class="p">]</span> <span class="o">=</span> <span class="p">{</span><span class="s1">&#39;name&#39;</span><span class="p">:</span><span class="s1">&#39;&#39;</span><span class="p">,</span><span class="s1">&#39;in&#39;</span><span class="p">:[],</span><span class="s1">&#39;out&#39;</span><span class="p">:[]}</span>
+				<span class="c1"># .l &lt;node-id&gt; &lt;node-name&gt;</span>
+				<span class="k">elif</span> <span class="s1">&#39;.l&#39;</span> <span class="ow">in</span> <span class="n">line</span><span class="p">:</span>
+					<span class="n">logic</span><span class="p">[</span><span class="nb">int</span><span class="p">(</span><span class="n">line</span><span class="o">.</span><span class="n">split</span><span class="p">()[</span><span class="mi">1</span><span class="p">])</span><span class="o">-</span><span class="mi">1</span><span class="p">][</span><span class="s1">&#39;name&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">line</span><span class="o">.</span><span class="n">split</span><span class="p">()[</span><span class="mi">2</span><span class="p">]</span>
+				<span class="c1"># .n &lt;node-id&gt; &lt;#-inputs&gt; &lt;input-node-id&gt;</span>
+				<span class="k">elif</span> <span class="s1">&#39;.n&#39;</span> <span class="ow">in</span> <span class="n">line</span><span class="p">:</span>
+					<span class="n">inode</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">line</span><span class="o">.</span><span class="n">split</span><span class="p">()[</span><span class="mi">1</span><span class="p">])</span> <span class="o">-</span> <span class="mi">1</span>
+					<span class="n">indegree</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">line</span><span class="o">.</span><span class="n">split</span><span class="p">()[</span><span class="mi">2</span><span class="p">])</span>
+					<span class="k">for</span> <span class="n">jnode</span> <span class="ow">in</span> <span class="n">xrange</span><span class="p">(</span><span class="n">indegree</span><span class="p">):</span>
+						<span class="n">logic</span><span class="p">[</span><span class="n">inode</span><span class="p">][</span><span class="s1">&#39;in&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="nb">int</span><span class="p">(</span><span class="n">line</span><span class="o">.</span><span class="n">split</span><span class="p">()[</span><span class="mi">3</span> <span class="o">+</span> <span class="n">jnode</span><span class="p">])</span><span class="o">-</span><span class="mi">1</span><span class="p">)</span>
+					
+					<span class="n">logic</span><span class="p">[</span><span class="n">inode</span><span class="p">][</span><span class="s1">&#39;out&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="p">[</span><span class="mi">0</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="n">xrange</span><span class="p">(</span><span class="mi">2</span><span class="o">**</span><span class="n">indegree</span><span class="p">)</span> <span class="k">if</span> <span class="n">indegree</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">]</span>
+
+					<span class="n">logic_line</span> <span class="o">=</span> <span class="n">network_file</span><span class="o">.</span><span class="n">readline</span><span class="p">()</span><span class="o">.</span><span class="n">strip</span><span class="p">()</span>
+
+					<span class="k">if</span> <span class="n">indegree</span> <span class="o">&lt;=</span> <span class="mi">0</span><span class="p">:</span>
+						<span class="k">if</span> <span class="n">logic_line</span> <span class="o">==</span> <span class="s1">&#39;&#39;</span><span class="p">:</span>
+							<span class="n">logic</span><span class="p">[</span><span class="n">inode</span><span class="p">][</span><span class="s1">&#39;in&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="p">[</span><span class="n">inode</span><span class="p">]</span>
+							<span class="n">logic</span><span class="p">[</span><span class="n">inode</span><span class="p">][</span><span class="s1">&#39;out&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="p">[</span><span class="mi">0</span><span class="p">,</span><span class="mi">1</span><span class="p">]</span>
+						<span class="k">else</span><span class="p">:</span>
+							<span class="n">logic</span><span class="p">[</span><span class="n">inode</span><span class="p">][</span><span class="s1">&#39;out&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="p">[</span><span class="nb">int</span><span class="p">(</span><span class="n">logic_line</span><span class="p">)]</span>
+					<span class="k">else</span><span class="p">:</span>
+						<span class="k">while</span> <span class="n">logic_line</span> <span class="o">!=</span> <span class="s1">&#39;</span><span class="se">\n</span><span class="s1">&#39;</span> <span class="ow">and</span> <span class="n">logic_line</span> <span class="o">!=</span> <span class="s1">&#39;&#39;</span> <span class="ow">and</span> <span class="nb">len</span><span class="p">(</span><span class="n">logic_line</span><span class="p">)</span><span class="o">&gt;</span><span class="mi">1</span><span class="p">:</span>
+							<span class="k">for</span> <span class="n">nlogicline</span> <span class="ow">in</span> <span class="n">expand_logic_line</span><span class="p">(</span><span class="n">logic_line</span><span class="p">):</span>
+								<span class="n">logic</span><span class="p">[</span><span class="n">inode</span><span class="p">][</span><span class="s1">&#39;out&#39;</span><span class="p">][</span><span class="n">binstate_to_statenum</span><span class="p">(</span><span class="n">nlogicline</span><span class="o">.</span><span class="n">split</span><span class="p">()[</span><span class="mi">0</span><span class="p">])]</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">nlogicline</span><span class="o">.</span><span class="n">split</span><span class="p">()[</span><span class="mi">1</span><span class="p">])</span>
+							<span class="n">logic_line</span> <span class="o">=</span> <span class="n">network_file</span><span class="o">.</span><span class="n">readline</span><span class="p">()</span><span class="o">.</span><span class="n">strip</span><span class="p">()</span>
+
+				<span class="c1"># .e = end of file</span>
+				<span class="k">elif</span> <span class="s1">&#39;.e&#39;</span> <span class="ow">in</span> <span class="n">line</span><span class="p">:</span>
+					<span class="k">break</span>
+			<span class="n">line</span> <span class="o">=</span> <span class="n">network_file</span><span class="o">.</span><span class="n">readline</span><span class="p">()</span>
+</div>
+		<span class="k">return</span> <span class="bp">cls</span><span class="o">.</span><span class="n">from_dict</span><span class="p">(</span><span class="n">logic</span><span class="p">,</span> <span class="n">keep_constants</span><span class="o">=</span><span class="n">keep_constants</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+
+<div class="viewcode-block" id="BooleanNetwork.from_dict"><a class="viewcode-back" href="../../reference/boolean_network.html#cana.boolean_network.BooleanNetwork.from_dict">[docs]</a>	<span class="nd">@classmethod</span>
+	<span class="k">def</span> <span class="nf">from_dict</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">logic</span><span class="p">,</span> <span class="n">keep_constants</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+		<span class="sd">&quot;&quot;&quot;Instanciaets a BoolleanNetwork from a logic dictionary.</span>
+
+<span class="sd">		Args:</span>
+<span class="sd">			logic (dict) : The logic dict.</span>
+<span class="sd">			keep_constants (bool) : </span>
+
+<span class="sd">		Returns:</span>
+<span class="sd">			(BooleanNetwork)</span>
+
+<span class="sd">		See also:</span>
+<span class="sd">			:func:`from_file` :func:`from_dict`</span>
+<span class="sd">		&quot;&quot;&quot;</span>
+		<span class="n">Nnodes</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">logic</span><span class="p">)</span>
+		<span class="n">keep_constants</span> <span class="o">=</span> <span class="n">keep_constants</span>
+		<span class="n">constants</span> <span class="o">=</span> <span class="p">{}</span>
+		<span class="k">if</span> <span class="s1">&#39;name&#39;</span> <span class="ow">in</span> <span class="n">kwargs</span><span class="p">:</span>
+			<span class="n">name</span> <span class="o">=</span> <span class="n">kwargs</span><span class="p">[</span><span class="s1">&#39;name&#39;</span><span class="p">]</span>
+		<span class="k">else</span><span class="p">:</span>
+			<span class="n">name</span> <span class="o">=</span> <span class="s1">&#39;&#39;</span>
+		<span class="k">if</span> <span class="n">keep_constants</span><span class="p">:</span>
+			<span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">nodelogic</span> <span class="ow">in</span> <span class="n">logic</span><span class="o">.</span><span class="n">iteritems</span><span class="p">():</span>
+				<span class="c1"># No inputs? It&#39;s a constant!</span>
+				<span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">nodelogic</span><span class="p">[</span><span class="s1">&#39;in&#39;</span><span class="p">])</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+					<span class="n">constants</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="n">logic</span><span class="p">[</span><span class="n">i</span><span class="p">][</span><span class="s1">&#39;out&#39;</span><span class="p">][</span><span class="mi">0</span><span class="p">]</span>
+</div>
+		<span class="k">return</span> <span class="n">BooleanNetwork</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="n">name</span><span class="p">,</span> <span class="n">logic</span><span class="o">=</span><span class="n">logic</span><span class="p">,</span> <span class="n">Nnodes</span><span class="o">=</span><span class="n">Nnodes</span><span class="p">,</span> <span class="n">constants</span><span class="o">=</span><span class="n">constants</span><span class="p">,</span> <span class="n">keep_constants</span><span class="o">=</span><span class="n">keep_constants</span><span class="p">)</span>
+
+	<span class="c1">#</span>
+	<span class="c1"># I/O Methods</span>
+	<span class="c1">#</span>
+<div class="viewcode-block" id="BooleanNetwork.to_cnet"><a class="viewcode-back" href="../../reference/boolean_network.html#cana.boolean_network.BooleanNetwork.to_cnet">[docs]</a>	<span class="k">def</span> <span class="nf">to_cnet</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">file</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">adjust_no_input</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
+		<span class="sd">&quot;&quot;&quot; Outputs the network logic to ``.cnet`` format, which is similar to the Berkeley Logic Interchange Format (BLIF).</span>
+<span class="sd">		This is the format used by BNS to compute attractors.</span>
+
+<span class="sd">		Args:</span>
+<span class="sd">			file (string,optional) : A string of the file to write the output to. If not supplied, a string will be returned.</span>
+<span class="sd">			adjust_no_input (bool) : Adjust output string for nodes with no input.</span>
+
+<span class="sd">		Returns:</span>
+<span class="sd">			(string) : The ``.cnet`` format string.</span>
+
+<span class="sd">		Note:</span>
+<span class="sd">			See `BNS &lt;https://people.kth.se/~dubrova/bns.html&gt;`_ for more information.</span>
+
+<span class="sd">		&quot;&quot;&quot;</span>
+		<span class="c1"># Copy</span>
+		<span class="n">logic</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">logic</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span>
+		<span class="c1">#</span>
+		<span class="k">if</span> <span class="n">adjust_no_input</span><span class="p">:</span>
+			<span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">data</span> <span class="ow">in</span> <span class="n">logic</span><span class="o">.</span><span class="n">iteritems</span><span class="p">():</span>
+				<span class="c1"># updates in place</span>
+				<span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">data</span><span class="p">[</span><span class="s1">&#39;in&#39;</span><span class="p">])</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+					<span class="n">data</span><span class="p">[</span><span class="s1">&#39;in&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="p">[</span><span class="n">i</span> <span class="o">+</span> <span class="mi">1</span><span class="p">]</span>
+					<span class="n">data</span><span class="p">[</span><span class="s1">&#39;out&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="p">[</span><span class="mi">0</span><span class="p">,</span><span class="mi">1</span><span class="p">]</span>
+
+		<span class="n">bns_string</span> <span class="o">=</span> <span class="s1">&#39;.v &#39;</span> <span class="o">+</span> <span class="nb">str</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">Nnodes</span><span class="p">)</span> <span class="o">+</span> <span class="s1">&#39;</span><span class="se">\n</span><span class="s1">&#39;</span> <span class="o">+</span> <span class="s1">&#39;</span><span class="se">\n</span><span class="s1">&#39;</span>
+		<span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="n">xrange</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">Nnodes</span><span class="p">):</span>
+			<span class="n">k</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">logic</span><span class="p">[</span><span class="n">i</span><span class="p">][</span><span class="s1">&#39;in&#39;</span><span class="p">])</span>
+			<span class="n">bns_string</span> <span class="o">+=</span> <span class="s1">&#39;.n &#39;</span> <span class="o">+</span> <span class="nb">str</span><span class="p">(</span><span class="n">i</span> <span class="o">+</span> <span class="mi">1</span><span class="p">)</span> <span class="o">+</span> <span class="s2">&quot; &quot;</span> <span class="o">+</span> <span class="nb">str</span><span class="p">(</span><span class="n">k</span><span class="p">)</span> <span class="o">+</span> <span class="s2">&quot; &quot;</span> <span class="o">+</span> <span class="s2">&quot; &quot;</span><span class="o">.</span><span class="n">join</span><span class="p">([</span><span class="nb">str</span><span class="p">(</span><span class="n">v</span> <span class="o">+</span> <span class="mi">1</span><span class="p">)</span> <span class="k">for</span> <span class="n">v</span> <span class="ow">in</span> <span class="n">logic</span><span class="p">[</span><span class="n">i</span><span class="p">][</span><span class="s1">&#39;in&#39;</span><span class="p">]])</span> <span class="o">+</span> <span class="s2">&quot;</span><span class="se">\n</span><span class="s2">&quot;</span>
+			<span class="k">for</span> <span class="n">statenum</span> <span class="ow">in</span> <span class="n">xrange</span><span class="p">(</span><span class="mi">2</span><span class="o">**</span><span class="n">k</span><span class="p">):</span>
+				<span class="c1"># If is a constant (TODO: This must come from the BooleanNode, not the logic)</span>
+				<span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">logic</span><span class="p">[</span><span class="n">i</span><span class="p">][</span><span class="s1">&#39;out&#39;</span><span class="p">])</span> <span class="o">==</span> <span class="mi">1</span><span class="p">:</span>
+					<span class="n">bns_string</span> <span class="o">+=</span> <span class="nb">str</span><span class="p">(</span><span class="n">logic</span><span class="p">[</span><span class="n">i</span><span class="p">][</span><span class="s1">&#39;out&#39;</span><span class="p">][</span><span class="n">statenum</span><span class="p">])</span> <span class="o">+</span> <span class="s2">&quot;</span><span class="se">\n</span><span class="s2">&quot;</span>
+				<span class="c1"># Not a constant, print the state and output</span>
+				<span class="k">else</span><span class="p">:</span>
+					<span class="n">bns_string</span> <span class="o">+=</span> <span class="n">statenum_to_binstate</span><span class="p">(</span><span class="n">statenum</span><span class="p">,</span> <span class="n">base</span><span class="o">=</span><span class="n">k</span><span class="p">)</span> <span class="o">+</span> <span class="s2">&quot; &quot;</span> <span class="o">+</span> <span class="nb">str</span><span class="p">(</span><span class="n">logic</span><span class="p">[</span><span class="n">i</span><span class="p">][</span><span class="s1">&#39;out&#39;</span><span class="p">][</span><span class="n">statenum</span><span class="p">])</span> <span class="o">+</span> <span class="s2">&quot;</span><span class="se">\n</span><span class="s2">&quot;</span>
+			<span class="n">bns_string</span> <span class="o">+=</span> <span class="s2">&quot;</span><span class="se">\n</span><span class="s2">&quot;</span>
+
+		<span class="k">if</span> <span class="n">file</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+			<span class="k">return</span> <span class="n">bns_string</span>
+		<span class="k">else</span><span class="p">:</span>
+			<span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">file</span><span class="p">,</span> <span class="n">string</span><span class="p">):</span>
+				<span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="n">file</span><span class="p">,</span> <span class="s1">&#39;w&#39;</span><span class="p">)</span> <span class="k">as</span> <span class="n">iofile</span><span class="p">:</span>
+					<span class="n">iofile</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="n">bns_string</span><span class="p">)</span>
+					<span class="n">iofile</span><span class="o">.</span><span class="n">close</span><span class="p">()</span>
+			<span class="k">else</span><span class="p">:</span></div>
+				<span class="k">raise</span> <span class="ne">AttributeError</span><span class="p">(</span><span class="s2">&quot;File format not supported. Please specify a string.&quot;</span><span class="p">)</span>
+
+	<span class="c1">#</span>
+	<span class="c1"># Methods</span>
+	<span class="c1">#</span>
+<div class="viewcode-block" id="BooleanNetwork.structural_graph"><a class="viewcode-back" href="../../reference/boolean_network.html#cana.boolean_network.BooleanNetwork.structural_graph">[docs]</a>	<span class="k">def</span> <span class="nf">structural_graph</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">remove_constants</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
+		<span class="sd">&quot;&quot;&quot; Calculates and returns the structural graph of the boolean network.</span>
+
+<span class="sd">		Args:</span>
+<span class="sd">			remove_constants (bool) : Remove constants from the graph. Defaults to ``False``.</span>
+<span class="sd">		Returns:</span>
+<span class="sd">			G (networkx.Digraph) : The boolean network structural graph.</span>
+<span class="sd">		&quot;&quot;&quot;</span>
+		<span class="bp">self</span><span class="o">.</span><span class="n">_sg</span> <span class="o">=</span> <span class="n">nx</span><span class="o">.</span><span class="n">DiGraph</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="s2">&quot;Structural Graph: &quot;</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">name</span><span class="p">)</span>
+	
+		<span class="c1"># Add Nodes</span>
+		<span class="bp">self</span><span class="o">.</span><span class="n">_sg</span><span class="o">.</span><span class="n">add_nodes_from</span><span class="p">(</span> <span class="p">(</span><span class="n">i</span><span class="p">,</span> <span class="p">{</span><span class="s1">&#39;label&#39;</span><span class="p">:</span><span class="n">n</span><span class="o">.</span><span class="n">name</span><span class="p">})</span> <span class="k">for</span> <span class="n">i</span><span class="p">,</span><span class="n">n</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">nodes</span><span class="p">)</span> <span class="p">)</span>
+		<span class="k">for</span> <span class="n">target</span> <span class="ow">in</span> <span class="n">xrange</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">Nnodes</span><span class="p">):</span>
+			<span class="k">for</span> <span class="n">source</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">logic</span><span class="p">[</span><span class="n">target</span><span class="p">][</span><span class="s1">&#39;in&#39;</span><span class="p">]:</span>
+				<span class="bp">self</span><span class="o">.</span><span class="n">_sg</span><span class="o">.</span><span class="n">add_edge</span><span class="p">(</span><span class="n">source</span><span class="p">,</span> <span class="n">target</span><span class="p">,</span> <span class="o">**</span><span class="p">{</span><span class="s1">&#39;weight&#39;</span><span class="p">:</span><span class="mf">1.</span><span class="p">})</span>
+
+		<span class="k">if</span> <span class="n">remove_constants</span><span class="p">:</span>
+			<span class="bp">self</span><span class="o">.</span><span class="n">_sg</span><span class="o">.</span><span class="n">remove_nodes_from</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">constants</span><span class="o">.</span><span class="n">keys</span><span class="p">())</span>
+		<span class="c1">#</span></div>
+		<span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_sg</span>
+
+<div class="viewcode-block" id="BooleanNetwork.number_interactions"><a class="viewcode-back" href="../../reference/boolean_network.html#cana.boolean_network.BooleanNetwork.number_interactions">[docs]</a>	<span class="k">def</span> <span class="nf">number_interactions</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+		<span class="sd">&quot;&quot;&quot; Returns the number of interactions in the Structural Graph (SG).</span>
+<span class="sd">		Practically, it returns the number of edges of the SG.</span>
+<span class="sd">		</span>
+<span class="sd">		Returns:</span>
+<span class="sd">			int</span>
+<span class="sd">		&quot;&quot;&quot;</span>
+		<span class="bp">self</span><span class="o">.</span><span class="n">_check_compute_variables</span><span class="p">(</span><span class="n">sg</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span></div>
+		<span class="k">return</span> <span class="n">nx</span><span class="o">.</span><span class="n">number_of_edges</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_sg</span><span class="p">)</span>
+
+<div class="viewcode-block" id="BooleanNetwork.structural_indegrees"><a class="viewcode-back" href="../../reference/boolean_network.html#cana.boolean_network.BooleanNetwork.structural_indegrees">[docs]</a>	<span class="k">def</span> <span class="nf">structural_indegrees</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+		<span class="sd">&quot;&quot;&quot; Returns the in-degrees of the Structural Graph. Sorted.</span>
+<span class="sd">		</span>
+<span class="sd">		Returns:</span>
+<span class="sd">			(int) : the number of in-degrees.</span>
+<span class="sd">		See also:</span>
+<span class="sd">			:func:`structural_outdegrees`, :func:`effective_indegrees`, :func:`effective_outdegrees`</span>
+<span class="sd">		&quot;&quot;&quot;</span>
+		<span class="bp">self</span><span class="o">.</span><span class="n">_check_compute_variables</span><span class="p">(</span><span class="n">sg</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span></div>
+		<span class="k">return</span> <span class="nb">sorted</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_sg</span><span class="o">.</span><span class="n">in_degree</span><span class="p">()</span><span class="o">.</span><span class="n">values</span><span class="p">(),</span> <span class="n">reverse</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+
+<div class="viewcode-block" id="BooleanNetwork.structural_outdegrees"><a class="viewcode-back" href="../../reference/boolean_network.html#cana.boolean_network.BooleanNetwork.structural_outdegrees">[docs]</a>	<span class="k">def</span> <span class="nf">structural_outdegrees</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+		<span class="sd">&quot;&quot;&quot; Returns the out-degrees of the Structural Graph. Sorted.</span>
+
+<span class="sd">		Returns:</span>
+<span class="sd">			(list)</span>
+
+<span class="sd">		See also:</span>
+<span class="sd">			:func:`structural_indegrees`, :func:`effective_indegrees`, :func:`effective_outdegrees`</span>
+<span class="sd">		&quot;&quot;&quot;</span>
+		<span class="bp">self</span><span class="o">.</span><span class="n">_check_compute_variables</span><span class="p">(</span><span class="n">sg</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span></div>
+		<span class="k">return</span> <span class="nb">sorted</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_sg</span><span class="o">.</span><span class="n">out_degree</span><span class="p">()</span><span class="o">.</span><span class="n">values</span><span class="p">(),</span> <span class="n">reverse</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+
+<div class="viewcode-block" id="BooleanNetwork.effective_graph"><a class="viewcode-back" href="../../reference/boolean_network.html#cana.boolean_network.BooleanNetwork.effective_graph">[docs]</a>	<span class="k">def</span> <span class="nf">effective_graph</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">mode</span><span class="o">=</span><span class="s1">&#39;input&#39;</span><span class="p">,</span> <span class="n">bound</span><span class="o">=</span><span class="s1">&#39;upper&#39;</span><span class="p">,</span> <span class="n">threshold</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+		<span class="sd">&quot;&quot;&quot;Computes and returns the effective graph of the network.</span>
+<span class="sd">		In practive it asks each :class:`~boolnets.boolean_node.BooleanNode` for their :func:`~boolnets.boolean_node.BooleanNode.effective_connectivity`.</span>
+<span class="sd">	</span>
+<span class="sd">		Args:</span>
+<span class="sd">			mode (string) : Per &quot;input&quot; or per &quot;node&quot;. Defaults to &quot;node&quot;.</span>
+<span class="sd">			bound (string) : The bound to which compute input redundancy.</span>
+<span class="sd">			threshold (float) : Only return edges above a certain effective connectivity threshold.</span>
+<span class="sd">				This is usefull when computing graph measures at diffent levels.</span>
+
+<span class="sd">		Returns:</span>
+<span class="sd">			(networkx.DiGraph) : directed graph</span>
+<span class="sd">		</span>
+<span class="sd">		See Also:</span>
+<span class="sd">			:func:`~boolnets.boolean_node.BooleanNode.effective_connectivity`</span>
+<span class="sd">		&quot;&quot;&quot;</span>
+		<span class="k">if</span> <span class="n">threshold</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+			<span class="bp">self</span><span class="o">.</span><span class="n">_eg</span> <span class="o">=</span> <span class="n">nx</span><span class="o">.</span><span class="n">DiGraph</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="s2">&quot;Effective Graph: &quot;</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">name</span> <span class="o">+</span> <span class="s2">&quot;(Threshold: </span><span class="si">%.2f</span><span class="s2">)&quot;</span> <span class="o">%</span> <span class="n">threshold</span><span class="p">)</span>
+		<span class="k">else</span><span class="p">:</span>
+			<span class="bp">self</span><span class="o">.</span><span class="n">_eg</span> <span class="o">=</span> <span class="n">nx</span><span class="o">.</span><span class="n">DiGraph</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="s2">&quot;Effective Graph: &quot;</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">name</span> <span class="o">+</span> <span class="s2">&quot;(Threshold: None)&quot;</span><span class="p">)</span>
+
+		<span class="c1"># Add Nodes</span>
+		<span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">node</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">nodes</span><span class="p">,</span> <span class="n">start</span><span class="o">=</span><span class="mi">0</span><span class="p">):</span>
+			<span class="bp">self</span><span class="o">.</span><span class="n">_eg</span><span class="o">.</span><span class="n">add_node</span><span class="p">(</span><span class="n">i</span><span class="p">,</span> <span class="o">**</span><span class="p">{</span><span class="s1">&#39;label&#39;</span><span class="p">:</span><span class="n">node</span><span class="o">.</span><span class="n">name</span><span class="p">})</span>
+
+		<span class="c1"># Add Edges</span>
+		<span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">node</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">nodes</span><span class="p">,</span> <span class="n">start</span><span class="o">=</span><span class="mi">0</span><span class="p">):</span>
+
+			<span class="k">if</span> <span class="n">mode</span> <span class="o">==</span> <span class="s1">&#39;node&#39;</span><span class="p">:</span>
+				<span class="k">raise</span> <span class="ne">Exception</span><span class="p">(</span><span class="s1">&#39;TODO&#39;</span><span class="p">)</span>
+
+			<span class="k">elif</span> <span class="n">mode</span> <span class="o">==</span> <span class="s1">&#39;input&#39;</span><span class="p">:</span>
+				<span class="n">e_is</span> <span class="o">=</span> <span class="n">node</span><span class="o">.</span><span class="n">effective_connectivity</span><span class="p">(</span><span class="n">mode</span><span class="o">=</span><span class="n">mode</span><span class="p">,</span> <span class="n">bound</span><span class="o">=</span><span class="n">bound</span><span class="p">,</span> <span class="n">norm</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+				<span class="k">for</span> <span class="n">inputs</span><span class="p">,</span><span class="n">e_i</span> <span class="ow">in</span> <span class="nb">zip</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">logic</span><span class="p">[</span><span class="n">i</span><span class="p">][</span><span class="s1">&#39;in&#39;</span><span class="p">],</span> <span class="n">e_is</span><span class="p">):</span>
+					<span class="c1"># If there is a threshold, only return those number above the threshold. Else, return all edges.</span>
+					<span class="k">if</span> <span class="p">(</span><span class="n">threshold</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">)</span> <span class="ow">or</span> <span class="p">((</span><span class="n">threshold</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">)</span> <span class="ow">and</span> <span class="p">(</span><span class="n">e_i</span> <span class="o">&gt;</span> <span class="n">threshold</span><span class="p">)):</span>
+						<span class="bp">self</span><span class="o">.</span><span class="n">_eg</span><span class="o">.</span><span class="n">add_edge</span><span class="p">(</span><span class="n">inputs</span><span class="p">,</span> <span class="n">i</span><span class="p">,</span> <span class="o">**</span><span class="p">{</span><span class="s1">&#39;weight&#39;</span><span class="p">:</span><span class="n">e_i</span><span class="p">})</span>						
+			<span class="k">else</span><span class="p">:</span>
+				<span class="k">raise</span> <span class="ne">AttributeError</span><span class="p">(</span><span class="s1">&#39;The mode you selected does not exist. Try &quot;node&quot; or &quot;input&quot;.&#39;</span><span class="p">)</span>
+</div>
+		<span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_eg</span>
+
+<div class="viewcode-block" id="BooleanNetwork.effective_indegrees"><a class="viewcode-back" href="../../reference/boolean_network.html#cana.boolean_network.BooleanNetwork.effective_indegrees">[docs]</a>	<span class="k">def</span> <span class="nf">effective_indegrees</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+		<span class="sd">&quot;&quot;&quot; Returns the in-degrees of the Effective Graph. Sorted.</span>
+
+<span class="sd">		Returns:</span>
+<span class="sd">			(list)</span>
+<span class="sd">		See also:</span>
+<span class="sd">			:func:`effective_outdegrees`, :func:`structural_indegrees`, :func:`structural_outdegrees`</span>
+<span class="sd">		&quot;&quot;&quot;</span>
+		<span class="bp">self</span><span class="o">.</span><span class="n">_check_compute_variables</span><span class="p">(</span><span class="n">eg</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span></div>
+		<span class="k">return</span> <span class="nb">sorted</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_eg</span><span class="o">.</span><span class="n">in_degree</span><span class="p">()</span><span class="o">.</span><span class="n">values</span><span class="p">(),</span> <span class="n">reverse</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+
+<div class="viewcode-block" id="BooleanNetwork.effective_outdegrees"><a class="viewcode-back" href="../../reference/boolean_network.html#cana.boolean_network.BooleanNetwork.effective_outdegrees">[docs]</a>	<span class="k">def</span> <span class="nf">effective_outdegrees</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+		<span class="sd">&quot;&quot;&quot; Returns the out-degrees of the Effective Graph. Sorted.</span>
+<span class="sd">		</span>
+<span class="sd">		Returns:</span>
+<span class="sd">			(list)</span>
+<span class="sd">		See also:</span>
+<span class="sd">			:func:`effective_indegrees`, :func:`structural_indegrees`, :func:`structural_outdegrees`</span>
+<span class="sd">		&quot;&quot;&quot;</span>
+		<span class="bp">self</span><span class="o">.</span><span class="n">_check_compute_variables</span><span class="p">(</span><span class="n">eg</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span></div>
+		<span class="k">return</span> <span class="nb">sorted</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_eg</span><span class="o">.</span><span class="n">out_degree</span><span class="p">()</span><span class="o">.</span><span class="n">values</span><span class="p">(),</span> <span class="n">reverse</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+
+<div class="viewcode-block" id="BooleanNetwork.state_transition_graph"><a class="viewcode-back" href="../../reference/boolean_network.html#cana.boolean_network.BooleanNetwork.state_transition_graph">[docs]</a>	<span class="k">def</span> <span class="nf">state_transition_graph</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+		<span class="sd">&quot;&quot;&quot;Creates and returns the full State Transition Graph (STG) for the Boolean Network.</span>
+
+<span class="sd">		Returns:</span>
+<span class="sd">			(networkx.DiGraph) : The state transition graph for the Boolean Network.</span>
+<span class="sd">		&quot;&quot;&quot;</span>
+		<span class="bp">self</span><span class="o">.</span><span class="n">_stg</span> <span class="o">=</span> <span class="n">nx</span><span class="o">.</span><span class="n">DiGraph</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="s1">&#39;STG: &#39;</span><span class="o">+</span><span class="bp">self</span><span class="o">.</span><span class="n">name</span><span class="p">)</span>
+		<span class="bp">self</span><span class="o">.</span><span class="n">_stg</span><span class="o">.</span><span class="n">add_nodes_from</span><span class="p">(</span> <span class="p">(</span><span class="n">i</span><span class="p">,</span> <span class="p">{</span><span class="s1">&#39;label&#39;</span><span class="p">:</span><span class="bp">self</span><span class="o">.</span><span class="n">num2bin</span><span class="p">(</span><span class="n">i</span><span class="p">)})</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="n">xrange</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">Nstates</span><span class="p">)</span> <span class="p">)</span>
+		<span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="n">xrange</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">Nstates</span><span class="p">):</span>
+			<span class="n">b</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">num2bin</span><span class="p">(</span><span class="n">i</span><span class="p">)</span>
+			<span class="bp">self</span><span class="o">.</span><span class="n">_stg</span><span class="o">.</span><span class="n">add_edge</span><span class="p">(</span><span class="n">i</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">bin2num</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">step</span><span class="p">(</span><span class="n">b</span><span class="p">)))</span>
+		<span class="c1"># </span></div>
+		<span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_stg</span>
+
+<div class="viewcode-block" id="BooleanNetwork.stg_indegree"><a class="viewcode-back" href="../../reference/boolean_network.html#cana.boolean_network.BooleanNetwork.stg_indegree">[docs]</a>	<span class="k">def</span> <span class="nf">stg_indegree</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+		<span class="sd">&quot;&quot;&quot; Returns the In-degrees of the State-Transition-Graph (STG). Sorted.</span>
+<span class="sd">		</span>
+<span class="sd">		Returns:</span>
+<span class="sd">			list</span>
+<span class="sd">		&quot;&quot;&quot;</span>
+		<span class="bp">self</span><span class="o">.</span><span class="n">_check_compute_variables</span><span class="p">(</span><span class="n">stg</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span></div>
+		<span class="k">return</span> <span class="nb">sorted</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_stg</span><span class="o">.</span><span class="n">in_degree</span><span class="p">()</span><span class="o">.</span><span class="n">values</span><span class="p">(),</span> <span class="n">reverse</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+
+<div class="viewcode-block" id="BooleanNetwork.step"><a class="viewcode-back" href="../../reference/boolean_network.html#cana.boolean_network.BooleanNetwork.step">[docs]</a>	<span class="k">def</span> <span class="nf">step</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">initial</span><span class="p">,</span> <span class="n">n</span><span class="o">=</span><span class="mi">1</span><span class="p">):</span>
+		<span class="sd">&quot;&quot;&quot; Steps the boolean network &#39;n&#39; step from the given initial input condition.</span>
+<span class="sd">		Args:</span>
+<span class="sd">			initial (string) : the initial state.</span>
+<span class="sd">			n (int) : the number of steps.</span>
+<span class="sd">		Returns:</span>
+<span class="sd">			(string) : The stepped binary state.</span>
+<span class="sd">		&quot;&quot;&quot;</span>
+		<span class="c1"># for every node:</span>
+		<span class="c1">#   node input = breaks down initial by node input</span>
+		<span class="c1">#   asks node to step with the input</span>
+		<span class="c1">#   append output to list</span>
+		<span class="c1"># joins the results from each node output</span>
+		<span class="k">assert</span> <span class="nb">len</span><span class="p">(</span><span class="n">initial</span><span class="p">)</span> <span class="o">==</span> <span class="bp">self</span><span class="o">.</span><span class="n">Nnodes</span></div>
+		<span class="k">return</span> <span class="s1">&#39;&#39;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span> <span class="p">[</span> <span class="nb">str</span><span class="p">(</span><span class="n">node</span><span class="o">.</span><span class="n">step</span><span class="p">(</span> <span class="s1">&#39;&#39;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">initial</span><span class="p">[</span><span class="n">j</span><span class="p">]</span> <span class="k">for</span> <span class="n">j</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">logic</span><span class="p">[</span><span class="n">i</span><span class="p">][</span><span class="s1">&#39;in&#39;</span><span class="p">])</span> <span class="p">)</span> <span class="p">)</span> <span class="k">for</span> <span class="n">i</span><span class="p">,</span><span class="n">node</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">nodes</span><span class="p">,</span> <span class="n">start</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span> <span class="p">]</span> <span class="p">)</span>
+
+<div class="viewcode-block" id="BooleanNetwork.trajectory"><a class="viewcode-back" href="../../reference/boolean_network.html#cana.boolean_network.BooleanNetwork.trajectory">[docs]</a>	<span class="k">def</span> <span class="nf">trajectory</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">initial</span><span class="p">,</span> <span class="n">length</span><span class="o">=</span><span class="mi">2</span><span class="p">):</span>
+		<span class="sd">&quot;&quot;&quot; Computes the trajectory of ``length`` steps without the State Transition Graph (STG).</span>
+<span class="sd">		&quot;&quot;&quot;</span>
+		<span class="n">trajectory</span> <span class="o">=</span> <span class="p">[</span><span class="n">initial</span><span class="p">]</span>
+		<span class="k">for</span> <span class="n">istep</span> <span class="ow">in</span> <span class="n">xrange</span><span class="p">(</span><span class="n">length</span><span class="p">):</span>
+			<span class="n">trajectory</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">step</span><span class="p">(</span><span class="n">trajectory</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]))</span></div>
+		<span class="k">return</span> <span class="n">trajectory</span>
+
+<div class="viewcode-block" id="BooleanNetwork.trajectory_to_attractor"><a class="viewcode-back" href="../../reference/boolean_network.html#cana.boolean_network.BooleanNetwork.trajectory_to_attractor">[docs]</a>	<span class="k">def</span> <span class="nf">trajectory_to_attractor</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">initial</span><span class="p">):</span>
+		<span class="sd">&quot;&quot;&quot; Computes the trajectory starting at ``initial`` until it reaches an attracor (this is garanteed)</span>
+
+<span class="sd">		Args:</span>
+<span class="sd">			initial (string): the initial state.</span>
+<span class="sd">		Returns:</span>
+<span class="sd">			(list): the state trajectory between initial and the final attractor state.</span>
+<span class="sd">		&quot;&quot;&quot;</span>
+		<span class="bp">self</span><span class="o">.</span><span class="n">_check_compute_variables</span><span class="p">(</span><span class="n">attractors</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+		<span class="n">attractor_states</span> <span class="o">=</span> <span class="p">[</span><span class="n">s</span> <span class="k">for</span> <span class="n">att</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_attractors</span> <span class="k">for</span> <span class="n">s</span> <span class="ow">in</span> <span class="n">att</span><span class="p">]</span>
+		
+		<span class="n">trajectory</span> <span class="o">=</span> <span class="p">[</span><span class="n">initial</span><span class="p">]</span>
+		<span class="k">while</span> <span class="p">(</span><span class="n">trajectory</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">attractor_states</span><span class="p">):</span>
+			<span class="n">trajectory</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">step</span><span class="p">(</span><span class="n">trajectory</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]))</span>
+</div>
+		<span class="k">return</span> <span class="n">trajectory</span>
+
+<div class="viewcode-block" id="BooleanNetwork.attractor"><a class="viewcode-back" href="../../reference/boolean_network.html#cana.boolean_network.BooleanNetwork.attractor">[docs]</a>	<span class="k">def</span> <span class="nf">attractor</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">initial</span><span class="p">):</span>
+		<span class="sd">&quot;&quot;&quot; Computes the trajectory starting at ``initial`` until it reaches an attracor (this is garanteed)</span>
+
+<span class="sd">		Args:</span>
+<span class="sd">			initial (string): the initial state.</span>
+<span class="sd">		Returns:</span>
+<span class="sd">			attractor (string): the atractor state.</span>
+<span class="sd">		&quot;&quot;&quot;</span>
+		<span class="bp">self</span><span class="o">.</span><span class="n">_check_compute_variables</span><span class="p">(</span><span class="n">attractors</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+
+		<span class="n">trajectory</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">trajectory_to_attractor</span><span class="p">(</span><span class="n">initial</span><span class="p">)</span>
+		<span class="k">for</span> <span class="n">attractor</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_attractors</span><span class="p">:</span>
+			<span class="k">if</span> <span class="n">trajectory</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span> <span class="ow">in</span> <span class="n">attractor</span><span class="p">:</span></div>
+				<span class="k">return</span> <span class="n">attractor</span>
+
+<div class="viewcode-block" id="BooleanNetwork.attractors"><a class="viewcode-back" href="../../reference/boolean_network.html#cana.boolean_network.BooleanNetwork.attractors">[docs]</a>	<span class="k">def</span> <span class="nf">attractors</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">mode</span><span class="o">=</span><span class="s1">&#39;stg&#39;</span><span class="p">):</span>
+		<span class="sd">&quot;&quot;&quot;Find the attractors of the boolean network.</span>
+
+<span class="sd">		Args:</span>
+<span class="sd">			mode (string) : ``stg`` or ``sat``. Defaults to ``stg``.</span>
+<span class="sd">				``stg``: Uses the full State Transition Graph (STG) and identifies the attractors as strongly connected components.</span>
+<span class="sd">				``bns``: Uses the SAT-based :mod:`cana.bns` to find all attractors.</span>
+<span class="sd">		Returns:</span>
+<span class="sd">			attractors (list) : A list containing all attractors for the boolean network.</span>
+<span class="sd">		See also:</span>
+<span class="sd">			:mod:`cana.bns`</span>
+<span class="sd">		&quot;&quot;&quot;</span>
+		<span class="bp">self</span><span class="o">.</span><span class="n">_check_compute_variables</span><span class="p">(</span><span class="n">stg</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+
+		<span class="k">if</span> <span class="n">mode</span> <span class="o">==</span> <span class="s1">&#39;stg&#39;</span><span class="p">:</span>
+			<span class="bp">self</span><span class="o">.</span><span class="n">_attractors</span> <span class="o">=</span> <span class="p">[</span><span class="nb">list</span><span class="p">(</span><span class="n">a</span><span class="p">)</span> <span class="k">for</span> <span class="n">a</span> <span class="ow">in</span> <span class="n">nx</span><span class="o">.</span><span class="n">attracting_components</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_stg</span><span class="p">)]</span>
+		
+		<span class="k">elif</span> <span class="n">mode</span> <span class="o">==</span> <span class="s1">&#39;bns&#39;</span><span class="p">:</span>
+			<span class="bp">self</span><span class="o">.</span><span class="n">_attractors</span> <span class="o">=</span> <span class="n">bns</span><span class="o">.</span><span class="n">attractors</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">to_cnet</span><span class="p">(</span><span class="n">file</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">adjust_no_input</span><span class="o">=</span><span class="kc">False</span><span class="p">))</span>
+		<span class="k">else</span><span class="p">:</span>
+			<span class="k">raise</span> <span class="ne">AttributeError</span><span class="p">(</span><span class="s2">&quot;Could not find the specified mode. Try &#39;stg&#39; or &#39;bns&#39;.&quot;</span><span class="p">)</span>
+
+		<span class="bp">self</span><span class="o">.</span><span class="n">_attractors</span><span class="o">.</span><span class="n">sort</span><span class="p">(</span><span class="n">key</span><span class="o">=</span><span class="nb">len</span><span class="p">,</span><span class="n">reverse</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span></div>
+		<span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_attractors</span>
+
+<div class="viewcode-block" id="BooleanNetwork.network_bias"><a class="viewcode-back" href="../../reference/boolean_network.html#cana.boolean_network.BooleanNetwork.network_bias">[docs]</a>	<span class="k">def</span> <span class="nf">network_bias</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+		<span class="sd">&quot;&quot;&quot;Network Bias. The sum of individual node biases divided by the number of nodes.</span>
+<span class="sd">		Practically, it asks each node for their own bias.</span>
+
+<span class="sd">		.. math:</span>
+<span class="sd">			TODO</span>
+
+<span class="sd">		See Also:</span>
+<span class="sd">			:func:`~boolnets.boolean_node.bias`</span>
+<span class="sd">		&quot;&quot;&quot;</span></div>
+		<span class="k">return</span> <span class="nb">sum</span><span class="p">([</span><span class="n">node</span><span class="o">.</span><span class="n">bias</span><span class="p">()</span> <span class="k">for</span> <span class="n">node</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">nodes</span><span class="p">])</span> <span class="o">/</span> <span class="bp">self</span><span class="o">.</span><span class="n">Nnodes</span>
+
+<div class="viewcode-block" id="BooleanNetwork.basin_entropy"><a class="viewcode-back" href="../../reference/boolean_network.html#cana.boolean_network.BooleanNetwork.basin_entropy">[docs]</a>	<span class="k">def</span> <span class="nf">basin_entropy</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">base</span><span class="o">=</span><span class="mi">2</span><span class="p">):</span>
+		<span class="sd">&quot;&quot;&quot;</span>
+
+<span class="sd">		&quot;&quot;&quot;</span>
+		<span class="bp">self</span><span class="o">.</span><span class="n">_check_compute_variables</span><span class="p">(</span><span class="n">stg</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+
+		<span class="n">prob_vec</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="nb">len</span><span class="p">(</span><span class="n">wcc</span><span class="p">)</span> <span class="k">for</span> <span class="n">wcc</span> <span class="ow">in</span> <span class="n">nx</span><span class="o">.</span><span class="n">weakly_connected_components</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_stg</span><span class="p">)])</span><span class="o">/</span><span class="mf">2.0</span><span class="o">**</span><span class="bp">self</span><span class="o">.</span><span class="n">Nnodes</span></div>
+		<span class="k">return</span> <span class="n">entropy</span><span class="p">(</span><span class="n">prob_vec</span><span class="p">,</span> <span class="n">base</span><span class="o">=</span><span class="n">base</span><span class="p">)</span>
+				
+<div class="viewcode-block" id="BooleanNetwork.set_constant"><a class="viewcode-back" href="../../reference/boolean_network.html#cana.boolean_network.BooleanNetwork.set_constant">[docs]</a>	<span class="k">def</span> <span class="nf">set_constant</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">node</span><span class="p">,</span> <span class="n">value</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+		<span class="sd">&quot;&quot;&quot; Sets or unsets a node as a constant.</span>
+
+<span class="sd">		Args:</span>
+<span class="sd">			node (int) : The node ``id`` in the logic dict.</span>
+<span class="sd">		Todo:</span>
+<span class="sd">			This functions needs to better handle node_id and node_name</span>
+<span class="sd">		&quot;&quot;&quot;</span>
+		<span class="k">if</span> <span class="n">value</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+			<span class="bp">self</span><span class="o">.</span><span class="n">nodes</span><span class="p">[</span><span class="n">node</span><span class="p">]</span><span class="o">.</span><span class="n">constant</span> <span class="o">=</span> <span class="kc">True</span>
+			<span class="bp">self</span><span class="o">.</span><span class="n">nodes</span><span class="p">[</span><span class="n">node</span><span class="p">]</span><span class="o">.</span><span class="n">constant_value</span> <span class="o">=</span> <span class="n">value</span>
+			<span class="bp">self</span><span class="o">.</span><span class="n">Nconstants</span> <span class="o">+=</span> <span class="mi">1</span>
+		<span class="k">else</span><span class="p">:</span>
+			<span class="bp">self</span><span class="o">.</span><span class="n">nodes</span><span class="p">[</span><span class="n">node</span><span class="p">]</span><span class="o">.</span><span class="n">constant</span> <span class="o">=</span> <span class="kc">False</span>
+			<span class="bp">self</span><span class="o">.</span><span class="n">nodes</span><span class="p">[</span><span class="n">node</span><span class="p">]</span><span class="o">.</span><span class="n">constant_value</span> <span class="o">=</span> <span class="n">value</span>
+			<span class="bp">self</span><span class="o">.</span><span class="n">Nconstants</span> <span class="o">-=</span> <span class="mi">1</span>
+</div>
+		<span class="bp">self</span><span class="o">.</span><span class="n">_update_trans_func</span><span class="p">()</span>
+
+	<span class="k">def</span> <span class="nf">remove_all_constants</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+		<span class="bp">self</span><span class="o">.</span><span class="n">keep_constants</span> <span class="o">=</span> <span class="kc">False</span>
+		<span class="k">for</span> <span class="n">inode</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">constants</span><span class="p">:</span>
+			<span class="bp">self</span><span class="o">.</span><span class="n">set_constant</span><span class="p">(</span><span class="n">inode</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span>
+
+	<span class="k">def</span> <span class="nf">_update_trans_func</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+		<span class="sd">&quot;&quot;&quot;</span>
+
+<span class="sd">		&quot;&quot;&quot;</span>
+		<span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">keep_constants</span><span class="p">:</span>
+			<span class="bp">self</span><span class="o">.</span><span class="n">Nstates</span> <span class="o">=</span> <span class="mi">2</span><span class="o">**</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">Nnodes</span> <span class="o">-</span> <span class="bp">self</span><span class="o">.</span><span class="n">Nconstants</span><span class="p">)</span>
+			<span class="n">constant_template</span> <span class="o">=</span> <span class="p">[</span><span class="kc">None</span> <span class="k">if</span> <span class="ow">not</span> <span class="p">(</span><span class="n">ivar</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">constants</span><span class="o">.</span><span class="n">keys</span><span class="p">())</span> <span class="k">else</span> <span class="bp">self</span><span class="o">.</span><span class="n">constants</span><span class="p">[</span><span class="n">ivar</span><span class="p">]</span> <span class="k">for</span> <span class="n">ivar</span> <span class="ow">in</span> <span class="n">xrange</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">Nnodes</span><span class="p">)]</span>
+			<span class="bp">self</span><span class="o">.</span><span class="n">bin2num</span> <span class="o">=</span> <span class="k">lambda</span> <span class="n">bs</span><span class="p">:</span> <span class="n">constantbinstate_to_statenum</span><span class="p">(</span><span class="n">bs</span><span class="p">,</span> <span class="n">constant_template</span><span class="p">)</span>
+			<span class="bp">self</span><span class="o">.</span><span class="n">num2bin</span> <span class="o">=</span> <span class="k">lambda</span> <span class="n">sn</span><span class="p">:</span> <span class="n">binstate_to_constantbinstate</span><span class="p">(</span>
+				<span class="n">statenum_to_binstate</span><span class="p">(</span><span class="n">sn</span><span class="p">,</span> <span class="n">base</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">Nnodes</span> <span class="o">-</span> <span class="bp">self</span><span class="o">.</span><span class="n">Nconstants</span><span class="p">),</span> <span class="n">constant_template</span><span class="p">)</span>
+		<span class="k">else</span><span class="p">:</span>
+			<span class="bp">self</span><span class="o">.</span><span class="n">Nstates</span> <span class="o">=</span>  <span class="mi">2</span><span class="o">**</span><span class="bp">self</span><span class="o">.</span><span class="n">Nnodes</span>
+			<span class="bp">self</span><span class="o">.</span><span class="n">bin2num</span> <span class="o">=</span> <span class="n">binstate_to_statenum</span>
+			<span class="bp">self</span><span class="o">.</span><span class="n">num2bin</span> <span class="o">=</span> <span class="k">lambda</span> <span class="n">sn</span><span class="p">:</span> <span class="n">statenum_to_binstate</span><span class="p">(</span><span class="n">sn</span><span class="p">,</span> <span class="n">base</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">Nnodes</span><span class="p">)</span>
+
+
+	<span class="c1">#</span>
+	<span class="c1"># Dynamical Control Methods</span>
+	<span class="c1">#</span>
+<div class="viewcode-block" id="BooleanNetwork.state_transition_graph_reachability"><a class="viewcode-back" href="../../reference/boolean_network.html#cana.boolean_network.BooleanNetwork.state_transition_graph_reachability">[docs]</a>	<span class="k">def</span> <span class="nf">state_transition_graph_reachability</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">filename</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+		<span class="sd">&quot;&quot;&quot;Generates a State-Transition-Graph Reachability (STG-R) dictionary.</span>
+<span class="sd">		This dict/file will be used by the State Transition Graph Control Analysis.</span>
+
+<span class="sd">		Args:</span>
+<span class="sd">			filename (string) : The location to a file where the STG-R will be stored.</span>
+
+<span class="sd">		Returns:</span>
+<span class="sd">			(dict) : The STG-R in dict format.</span>
+<span class="sd">		&quot;&quot;&quot;</span>
+		<span class="bp">self</span><span class="o">.</span><span class="n">_check_compute_variables</span><span class="p">(</span><span class="n">stg</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+	
+		<span class="bp">self</span><span class="o">.</span><span class="n">_stg_r</span> <span class="o">=</span> <span class="p">{}</span>
+
+		<span class="k">if</span> <span class="p">(</span><span class="n">filename</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">):</span>
+			<span class="k">for</span> <span class="n">source</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_stg</span><span class="p">:</span>
+				<span class="bp">self</span><span class="o">.</span><span class="n">_stg_r</span><span class="p">[</span><span class="n">source</span><span class="p">]</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_dfs_reachable</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_stg</span><span class="p">,</span> <span class="n">source</span><span class="p">))</span> <span class="o">-</span> <span class="mf">1.0</span>
+		<span class="k">else</span><span class="p">:</span>
+			<span class="k">try</span><span class="p">:</span>
+				<span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="n">filename</span><span class="p">,</span> <span class="s1">&#39;rb&#39;</span><span class="p">)</span> <span class="k">as</span> <span class="n">handle</span><span class="p">:</span>
+					<span class="bp">self</span><span class="o">.</span><span class="n">_stg_r</span> <span class="o">=</span> <span class="n">pickle</span><span class="o">.</span><span class="n">load</span><span class="p">(</span><span class="n">handle</span><span class="p">)</span>
+			<span class="k">except</span> <span class="ne">IOError</span><span class="p">:</span>
+				<span class="nb">print</span> <span class="s2">&quot;Finding STG dict&quot;</span>
+				<span class="k">for</span> <span class="n">source</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_stg</span><span class="p">:</span>
+					<span class="bp">self</span><span class="o">.</span><span class="n">_stg_r</span><span class="p">[</span><span class="n">source</span><span class="p">]</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_dfs_reachable</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_stg</span><span class="p">,</span> <span class="n">source</span><span class="p">))</span> <span class="o">-</span> <span class="mf">1.0</span>
+				<span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="n">filename</span><span class="p">,</span> <span class="s1">&#39;wb&#39;</span><span class="p">)</span> <span class="k">as</span> <span class="n">handle</span><span class="p">:</span>
+					<span class="n">pickle</span><span class="o">.</span><span class="n">dump</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_stg_r</span><span class="p">,</span> <span class="n">handle</span><span class="p">)</span></div>
+		<span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_stg_r</span>
+
+<div class="viewcode-block" id="BooleanNetwork.attractor_driver_nodes"><a class="viewcode-back" href="../../reference/control/index.html#cana.boolean_network.BooleanNetwork.attractor_driver_nodes">[docs]</a>	<span class="k">def</span> <span class="nf">attractor_driver_nodes</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">min_dvs</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">max_dvs</span><span class="o">=</span><span class="mi">4</span><span class="p">,</span> <span class="n">verbose</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
+		<span class="sd">&quot;&quot;&quot;Get the minimum necessary driver nodes by iterating the combination of all possible driver nodes of length :math:`min &lt;= x &lt;= max`.</span>
+<span class="sd">		</span>
+<span class="sd">		Args:</span>
+<span class="sd">			min_dvs (int) : Mininum number of driver nodes to search.</span>
+<span class="sd">			max_dvs (int) : Maximum number of driver nodes to search.</span>
+<span class="sd">		Returns:</span>
+<span class="sd">			(list) : The list of driver nodes found in the search.</span>
+<span class="sd">		Note:</span>
+<span class="sd">			This is an inefficient bruit force search, maybe we can think of better ways to do this?</span>
+<span class="sd">		TODO:</span>
+<span class="sd">			Parallelize the search on each combination. Each CSTG is independent and can be searched in parallel.</span>
+<span class="sd">		See also:</span>
+<span class="sd">			:func:`controlled_state_transition_graph`, :func:`controlled_attractor_graph`.</span>
+<span class="sd">		&quot;&quot;&quot;</span>
+		<span class="n">nodeids</span> <span class="o">=</span> <span class="nb">range</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">Nnodes</span><span class="p">)</span>
+		<span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">keep_constants</span><span class="p">:</span>
+			<span class="k">for</span> <span class="n">cv</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">constants</span><span class="o">.</span><span class="n">keys</span><span class="p">():</span>
+				<span class="n">nodeids</span><span class="o">.</span><span class="n">remove</span><span class="p">(</span><span class="n">cv</span><span class="p">)</span>
+		
+		<span class="n">attractor_controllers_found</span> <span class="o">=</span> <span class="p">[]</span>
+		<span class="n">nr_dvs</span> <span class="o">=</span> <span class="n">min_dvs</span>
+		<span class="k">while</span> <span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">attractor_controllers_found</span><span class="p">)</span> <span class="o">==</span> <span class="mi">0</span><span class="p">)</span> <span class="ow">and</span> <span class="p">(</span><span class="n">nr_dvs</span> <span class="o">&lt;=</span> <span class="n">max_dvs</span><span class="p">):</span>
+			<span class="k">if</span> <span class="n">verbose</span><span class="p">:</span> <span class="nb">print</span> <span class="s2">&quot;Trying with </span><span class="si">%d</span><span class="s2"> Driver Nodes&quot;</span> <span class="o">%</span> <span class="p">(</span><span class="n">nr_dvs</span><span class="p">)</span>
+			<span class="k">for</span> <span class="n">dvs</span> <span class="ow">in</span> <span class="n">itertools</span><span class="o">.</span><span class="n">combinations</span><span class="p">(</span><span class="n">nodeids</span><span class="p">,</span> <span class="n">nr_dvs</span><span class="p">):</span>
+				<span class="n">dvs</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">dvs</span><span class="p">)</span>
+				<span class="n">cstg</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">controlled_state_transition_graph</span><span class="p">(</span><span class="n">dvs</span><span class="p">)</span>
+				<span class="n">cag</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">controlled_attractor_graph</span><span class="p">(</span><span class="n">cstg</span><span class="p">)</span>
+				<span class="n">att_reachable_from</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">mean_reachable_attractors</span><span class="p">(</span><span class="n">cag</span><span class="p">)</span>
+				
+				<span class="k">if</span> <span class="n">att_reachable_from</span> <span class="o">==</span> <span class="mf">1.0</span><span class="p">:</span> 
+					<span class="n">attractor_controllers_found</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">dvs</span><span class="p">)</span>
+			<span class="c1"># Add another driver node</span>
+			<span class="n">nr_dvs</span> <span class="o">+=</span> <span class="mi">1</span>
+
+		<span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">attractor_controllers_found</span><span class="p">)</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+			<span class="n">warnings</span><span class="o">.</span><span class="n">warn</span><span class="p">(</span><span class="s2">&quot;No attractor control driver variable sets found after exploring all subsets of size </span><span class="si">{:,d}</span><span class="s2"> to </span><span class="si">{:,d}</span><span class="s2"> nodes!!&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">min_dvs</span><span class="p">,</span> <span class="n">max_dvs</span><span class="p">))</span>
+</div>
+		<span class="k">return</span> <span class="n">attractor_controllers_found</span>
+
+
+<div class="viewcode-block" id="BooleanNetwork.controlled_state_transition_graph"><a class="viewcode-back" href="../../reference/control/index.html#cana.boolean_network.BooleanNetwork.controlled_state_transition_graph">[docs]</a>	<span class="k">def</span> <span class="nf">controlled_state_transition_graph</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">driver_nodes</span><span class="o">=</span><span class="p">[]):</span>
+		<span class="sd">&quot;&quot;&quot;Returns the Controlled State-Transition-Graph (CSTG).</span>
+<span class="sd">		In practice, it copies the original STG, flips driver nodes (variables), and updates the CSTG.</span>
+<span class="sd">		</span>
+<span class="sd">		Args:</span>
+<span class="sd">			driver_nodes (list) : The list of driver nodes.</span>
+<span class="sd">		Returns:</span>
+<span class="sd">			(networkx.DiGraph) : The Controlled State-Transition-Graph.</span>
+<span class="sd">		See also:</span>
+<span class="sd">			:func:`attractor_driver_nodes`, :func:`controlled_attractor_graph`.</span>
+<span class="sd">		&quot;&quot;&quot;</span>
+		<span class="bp">self</span><span class="o">.</span><span class="n">_check_compute_variables</span><span class="p">(</span><span class="n">attractors</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+
+		<span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">keep_constants</span><span class="p">:</span>
+			<span class="k">for</span> <span class="n">dv</span> <span class="ow">in</span> <span class="n">driver_nodes</span><span class="p">:</span>
+				<span class="k">if</span> <span class="n">dv</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">constants</span><span class="p">:</span>
+					<span class="n">warnings</span><span class="o">.</span><span class="n">warn</span><span class="p">(</span><span class="s2">&quot;Cannot control a constant variable &#39;</span><span class="si">%s</span><span class="s2">&#39;! Skipping&quot;</span> <span class="o">%</span> <span class="bp">self</span><span class="o">.</span><span class="n">nodes</span><span class="p">[</span><span class="n">dv</span><span class="p">]</span><span class="o">.</span><span class="n">name</span> <span class="p">)</span>
+
+		<span class="n">attractor_states</span> <span class="o">=</span> <span class="p">[</span><span class="n">s</span> <span class="k">for</span> <span class="n">att</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_attractors</span> <span class="k">for</span> <span class="n">s</span> <span class="ow">in</span> <span class="n">att</span><span class="p">]</span>
+
+		<span class="n">cstg</span> <span class="o">=</span> <span class="n">copy</span><span class="o">.</span><span class="n">deepcopy</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_stg</span><span class="p">)</span>
+		<span class="n">cstg</span><span class="o">.</span><span class="n">name</span> <span class="o">=</span> <span class="s1">&#39;C-&#39;</span> <span class="o">+</span> <span class="n">cstg</span><span class="o">.</span><span class="n">name</span> <span class="o">+</span><span class="s1">&#39; (&#39;</span> <span class="o">+</span> <span class="s1">&#39;,&#39;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="nb">map</span><span class="p">(</span><span class="nb">str</span><span class="p">,[</span><span class="bp">self</span><span class="o">.</span><span class="n">nodes</span><span class="p">[</span><span class="n">dv</span><span class="p">]</span><span class="o">.</span><span class="n">name</span> <span class="k">for</span> <span class="n">dv</span> <span class="ow">in</span> <span class="n">driver_nodes</span><span class="p">]))</span> <span class="o">+</span> <span class="s1">&#39;)&#39;</span>
+
+		<span class="c1"># add the control pertubations applied to attractor configurations</span>
+		<span class="k">for</span> <span class="n">astate</span> <span class="ow">in</span> <span class="n">attractor_states</span><span class="p">:</span>
+			<span class="n">abinstate</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">num2bin</span><span class="p">(</span><span class="n">astate</span><span class="p">)</span>
+			<span class="c1">#abinstate = bnutil._statenum_to_binstate(astate, bool_net.Nnodes)</span>
+			<span class="n">controlled_states</span> <span class="o">=</span> <span class="n">flip_binstate_bit_set</span><span class="p">(</span><span class="n">abinstate</span><span class="p">,</span> <span class="n">copy</span><span class="o">.</span><span class="n">copy</span><span class="p">(</span><span class="n">driver_nodes</span><span class="p">))</span>
+			<span class="n">controlled_states</span><span class="o">.</span><span class="n">remove</span><span class="p">(</span><span class="n">abinstate</span><span class="p">)</span>
+
+			<span class="k">for</span> <span class="n">constate</span> <span class="ow">in</span> <span class="n">controlled_states</span><span class="p">:</span>
+				<span class="n">cstg</span><span class="o">.</span><span class="n">add_edge</span><span class="p">(</span><span class="n">astate</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">bin2num</span><span class="p">(</span><span class="n">constate</span><span class="p">))</span>
+
+		<span class="c1"># add the control pertubations applied to all other configurations</span>
+		<span class="k">for</span> <span class="n">statenum</span> <span class="ow">in</span> <span class="n">xrange</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">Nstates</span><span class="p">):</span>
+			<span class="k">if</span> <span class="ow">not</span> <span class="p">(</span><span class="n">statenum</span> <span class="ow">in</span> <span class="n">attractor_states</span><span class="p">):</span>
+				<span class="n">binstate</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">num2bin</span><span class="p">(</span><span class="n">statenum</span><span class="p">)</span>
+				<span class="n">controlled_states</span> <span class="o">=</span> <span class="n">flip_binstate_bit_set</span><span class="p">(</span><span class="n">binstate</span><span class="p">,</span> <span class="n">copy</span><span class="o">.</span><span class="n">copy</span><span class="p">(</span><span class="n">driver_nodes</span><span class="p">))</span>
+				<span class="n">controlled_states</span><span class="o">.</span><span class="n">remove</span><span class="p">(</span><span class="n">binstate</span><span class="p">)</span>
+
+				<span class="k">for</span> <span class="n">constate</span> <span class="ow">in</span> <span class="n">controlled_states</span><span class="p">:</span>
+					<span class="n">cstg</span><span class="o">.</span><span class="n">add_edge</span><span class="p">(</span><span class="n">statenum</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">bin2num</span><span class="p">(</span><span class="n">constate</span><span class="p">))</span>
+</div>
+		<span class="k">return</span> <span class="n">cstg</span>
+
+<div class="viewcode-block" id="BooleanNetwork.controlled_attractor_graph"><a class="viewcode-back" href="../../reference/control/index.html#cana.boolean_network.BooleanNetwork.controlled_attractor_graph">[docs]</a>	<span class="k">def</span> <span class="nf">controlled_attractor_graph</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">cstg</span><span class="p">):</span>
+		<span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">		Args:</span>
+<span class="sd">			cstg (networkx.DiGraph) : A Controlled State-Transition-Graph (CSTG)</span>
+<span class="sd">		Returns:</span>
+<span class="sd">			(networkx.DiGraph) : The Controlled Attractor Graph (CAG)</span>
+<span class="sd">		See also:</span>
+<span class="sd">			:func:`attractor_driver_nodes`, :func:`controlled_state_transition_graph`.</span>
+<span class="sd">		&quot;&quot;&quot;</span>
+		<span class="bp">self</span><span class="o">.</span><span class="n">_check_compute_variables</span><span class="p">(</span><span class="n">attractors</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+
+		<span class="n">Nattract</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_attractors</span><span class="p">)</span>
+
+		<span class="n">cag</span> <span class="o">=</span> <span class="n">nx</span><span class="o">.</span><span class="n">DiGraph</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="s1">&#39;CAG: &#39;</span> <span class="o">+</span> <span class="n">cstg</span><span class="o">.</span><span class="n">name</span><span class="p">)</span>
+		<span class="c1"># Nodes</span>
+		<span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">attr</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_attractors</span><span class="p">):</span>
+			<span class="n">cag</span><span class="o">.</span><span class="n">add_node</span><span class="p">(</span><span class="n">i</span><span class="p">,</span> <span class="o">**</span><span class="p">{</span><span class="s1">&#39;label&#39;</span><span class="p">:</span><span class="s1">&#39;|&#39;</span><span class="o">.</span><span class="n">join</span><span class="p">([</span><span class="bp">self</span><span class="o">.</span><span class="n">num2bin</span><span class="p">(</span><span class="n">a</span><span class="p">)</span> <span class="k">for</span> <span class="n">a</span> <span class="ow">in</span> <span class="n">attr</span><span class="p">])})</span>
+		<span class="c1"># Edges</span>
+		<span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="n">xrange</span><span class="p">(</span><span class="n">Nattract</span><span class="p">):</span>
+			<span class="n">ireach</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_dfs_reachable</span><span class="p">(</span><span class="n">cstg</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_attractors</span><span class="p">[</span><span class="n">i</span><span class="p">][</span><span class="mi">0</span><span class="p">])</span>
+			<span class="k">for</span> <span class="n">j</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">i</span> <span class="o">+</span> <span class="mi">1</span><span class="p">,</span> <span class="n">Nattract</span><span class="p">):</span>
+				<span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_attractors</span><span class="p">[</span><span class="n">j</span><span class="p">][</span><span class="mi">0</span><span class="p">]</span> <span class="ow">in</span> <span class="n">ireach</span><span class="p">:</span>
+					<span class="n">cag</span><span class="o">.</span><span class="n">add_edge</span><span class="p">(</span><span class="n">i</span><span class="p">,</span> <span class="n">j</span><span class="p">)</span>
+				<span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_attractors</span><span class="p">[</span><span class="n">i</span><span class="p">][</span><span class="mi">0</span><span class="p">]</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_dfs_reachable</span><span class="p">(</span><span class="n">cstg</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_attractors</span><span class="p">[</span><span class="n">j</span><span class="p">][</span><span class="mi">0</span><span class="p">]):</span>
+					<span class="n">cag</span><span class="o">.</span><span class="n">add_edge</span><span class="p">(</span><span class="n">j</span><span class="p">,</span> <span class="n">i</span><span class="p">)</span></div>
+		<span class="k">return</span> <span class="n">cag</span>
+
+<div class="viewcode-block" id="BooleanNetwork.mean_reachable_configurations"><a class="viewcode-back" href="../../reference/boolean_network.html#cana.boolean_network.BooleanNetwork.mean_reachable_configurations">[docs]</a>	<span class="k">def</span> <span class="nf">mean_reachable_configurations</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">cstg</span><span class="p">):</span>
+		<span class="sd">&quot;&quot;&quot;Returns the Mean Fraction of Reachable Configurations</span>
+
+<span class="sd">		Args:</span>
+<span class="sd">			cstg (networkx.DiGraph) : The Controlled State-Transition-Graph.</span>
+<span class="sd">		Returns:</span>
+<span class="sd">			(float) : Mean Fraction of Reachable Configurations</span>
+<span class="sd">		&quot;&quot;&quot;</span>
+		<span class="n">reachable_from</span> <span class="o">=</span> <span class="p">[]</span>
+		
+		<span class="k">for</span> <span class="n">source</span> <span class="ow">in</span> <span class="n">cstg</span><span class="p">:</span>
+			<span class="n">control_reach</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_dfs_reachable</span><span class="p">(</span><span class="n">cstg</span><span class="p">,</span> <span class="n">source</span><span class="p">))</span> <span class="o">-</span> <span class="mf">1.0</span>
+			<span class="n">reachable_from</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">control_reach</span><span class="p">)</span>
+		
+		<span class="n">norm</span> <span class="o">=</span> <span class="p">(</span><span class="mf">2.0</span><span class="o">**</span><span class="bp">self</span><span class="o">.</span><span class="n">Nnodes</span> <span class="o">-</span> <span class="mf">1.0</span><span class="p">)</span> <span class="o">*</span> <span class="nb">len</span><span class="p">(</span><span class="n">reachable_from</span><span class="p">)</span>
+		<span class="n">reachable_from</span> <span class="o">=</span> <span class="nb">sum</span><span class="p">(</span><span class="n">reachable_from</span><span class="p">)</span> <span class="o">/</span> <span class="p">(</span><span class="n">norm</span><span class="p">)</span>
+</div>
+		<span class="k">return</span> <span class="n">reachable_from</span>
+
+<div class="viewcode-block" id="BooleanNetwork.mean_controlable_configurations"><a class="viewcode-back" href="../../reference/boolean_network.html#cana.boolean_network.BooleanNetwork.mean_controlable_configurations">[docs]</a>	<span class="k">def</span> <span class="nf">mean_controlable_configurations</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">cstg</span><span class="p">):</span>
+		<span class="sd">&quot;&quot;&quot;The Mean Fraction of Controlable Configurations</span>
+
+<span class="sd">		Args:</span>
+<span class="sd">			cstg (networkx.DiGraph) : The Controlled State-Transition-Graph.</span>
+<span class="sd">		Returns:</span>
+<span class="sd">			(float) : Mean Fraction of Controlable Configurations.</span>
+<span class="sd">		&quot;&quot;&quot;</span>
+		<span class="bp">self</span><span class="o">.</span><span class="n">_check_compute_variables</span><span class="p">(</span><span class="n">stg_r</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+
+		<span class="n">control_from</span><span class="p">,</span> <span class="n">reachable_from</span> <span class="o">=</span> <span class="p">[],</span> <span class="p">[]</span>
+
+		<span class="k">for</span> <span class="n">source</span> <span class="ow">in</span> <span class="n">cstg</span><span class="p">:</span>
+			<span class="n">control_reach</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_dfs_reachable</span><span class="p">(</span><span class="n">cstg</span><span class="p">,</span> <span class="n">source</span><span class="p">))</span> <span class="o">-</span> <span class="mf">1.0</span>
+			<span class="n">control_from</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">control_reach</span> <span class="o">-</span> <span class="bp">self</span><span class="o">.</span><span class="n">_stg_r</span><span class="p">[</span><span class="n">source</span><span class="p">])</span>
+			<span class="n">reachable_from</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">control_reach</span><span class="p">)</span>
+		
+		<span class="n">norm</span> <span class="o">=</span> <span class="p">(</span><span class="mf">2.0</span><span class="o">**</span><span class="bp">self</span><span class="o">.</span><span class="n">Nnodes</span> <span class="o">-</span> <span class="mf">1.0</span><span class="p">)</span> <span class="o">*</span> <span class="nb">len</span><span class="p">(</span><span class="n">reachable_from</span><span class="p">)</span>
+		<span class="n">control_from</span> <span class="o">=</span> <span class="nb">sum</span><span class="p">(</span><span class="n">control_from</span><span class="p">)</span> <span class="o">/</span> <span class="p">(</span><span class="n">norm</span><span class="p">)</span>
+</div>
+		<span class="k">return</span> <span class="n">control_from</span>
+
+<div class="viewcode-block" id="BooleanNetwork.mean_reachable_attractors"><a class="viewcode-back" href="../../reference/boolean_network.html#cana.boolean_network.BooleanNetwork.mean_reachable_attractors">[docs]</a>	<span class="k">def</span> <span class="nf">mean_reachable_attractors</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">cag</span><span class="p">,</span> <span class="n">norm</span><span class="o">=</span><span class="kc">True</span><span class="p">):</span>
+		<span class="sd">&quot;&quot;&quot;The Mean Fraction of Reachable Attractors to a specific Controlled Attractor Graph (CAG).</span>
+
+<span class="sd">		Args:</span>
+<span class="sd">			cag (networkx.DiGraph) : A Controlled Attractor Graph (CAG).</span>
+
+<span class="sd">		Returns:</span>
+<span class="sd">			(float) Mean Fraction of Reachable Attractors </span>
+<span class="sd">		&quot;&quot;&quot;</span>
+		<span class="n">att_norm</span> <span class="o">=</span> <span class="p">(</span><span class="nb">float</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">cag</span><span class="p">))</span> <span class="o">-</span> <span class="mf">1.0</span><span class="p">)</span> <span class="o">*</span> <span class="nb">len</span><span class="p">(</span><span class="n">cag</span><span class="p">)</span> 
+
+		<span class="k">if</span> <span class="n">att_norm</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+			<span class="c1"># if there is only one attractor everything is reachable</span>
+			<span class="n">att_reachable_from</span> <span class="o">=</span> <span class="mi">1</span>
+		<span class="k">else</span><span class="p">:</span>
+			<span class="c1"># otherwise find the reachable from each attractor</span>
+			<span class="n">att_reachable_from</span> <span class="o">=</span> <span class="p">[</span><span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_dfs_reachable</span><span class="p">(</span><span class="n">cag</span><span class="p">,</span> <span class="n">idxatt</span><span class="p">))</span> <span class="o">-</span> <span class="mf">1.0</span> <span class="k">for</span> <span class="n">idxatt</span> <span class="ow">in</span> <span class="n">cag</span><span class="p">]</span>
+			<span class="n">att_reachable_from</span> <span class="o">=</span> <span class="nb">sum</span><span class="p">(</span><span class="n">att_reachable_from</span><span class="p">)</span> <span class="o">/</span> <span class="p">(</span><span class="n">att_norm</span><span class="p">)</span>
+</div>
+		<span class="k">return</span> <span class="n">att_reachable_from</span>
+
+	<span class="k">def</span> <span class="nf">_dfs_reachable</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">G</span><span class="p">,</span> <span class="n">source</span><span class="p">):</span>
+		<span class="sd">&quot;&quot;&quot;Produce nodes in a depth-first-search pre-ordering starting from source.&quot;&quot;&quot;</span>
+		<span class="k">return</span> <span class="p">[</span><span class="n">n</span> <span class="k">for</span> <span class="n">n</span> <span class="ow">in</span> <span class="n">nx</span><span class="o">.</span><span class="n">dfs_preorder_nodes</span><span class="p">(</span><span class="n">G</span><span class="p">,</span> <span class="n">source</span><span class="p">)]</span>
+
+	<span class="c1">#</span>
+	<span class="c1"># Feedback Vertex Set (FVS)</span>
+	<span class="c1">#</span>
+<div class="viewcode-block" id="BooleanNetwork.feedback_vertex_set_driver_nodes"><a class="viewcode-back" href="../../reference/boolean_network.html#cana.boolean_network.BooleanNetwork.feedback_vertex_set_driver_nodes">[docs]</a>	<span class="k">def</span> <span class="nf">feedback_vertex_set_driver_nodes</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">graph</span><span class="o">=</span><span class="s1">&#39;structural&#39;</span><span class="p">,</span> <span class="n">method</span><span class="o">=</span><span class="s1">&#39;grasp&#39;</span><span class="p">,</span> <span class="n">max_iter</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">max_search</span><span class="o">=</span><span class="mi">11</span><span class="p">,</span> <span class="n">keep_self_loops</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+		<span class="sd">&quot;&quot;&quot;The minimum set of necessary driver nodes to control the network based on Feedback Vertex Set (FVS) theory.</span>
+
+<span class="sd">		Args:</span>
+<span class="sd">			graph (string) : Which graph to perform computation</span>
+<span class="sd">			method (string) : FVS method. ``bruteforce`` or ``grasp`` (default).</span>
+<span class="sd">			max_iter (int) : The maximum number of iterations used by the grasp method.</span>
+<span class="sd">			max_search (int) : The maximum number of searched used by the bruteforce method.</span>
+<span class="sd">			keep_self_loops (bool) : Keep or remove self loop in the graph to be searched.</span>
+
+<span class="sd">		Returns:</span>
+<span class="sd">			(list) : A list-of-lists with FVS solution nodes.</span>
+
+<span class="sd">		Note:</span>
+<span class="sd">			When computing FVS on the structural graph, you might want to use ``remove_constants=True``</span>
+<span class="sd">			to make sure the resulting set is minimal – since constants are not controlabled by definition.</span>
+<span class="sd">			Also, when computing on the effective graph, you can define the desired ``threshold`` level.</span>
+<span class="sd">		&quot;&quot;&quot;</span>
+		<span class="bp">self</span><span class="o">.</span><span class="n">_check_compute_variables</span><span class="p">(</span><span class="n">sg</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+
+		<span class="k">if</span> <span class="n">graph</span> <span class="o">==</span> <span class="s1">&#39;structural&#39;</span><span class="p">:</span>
+			<span class="n">dg</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">structural_graph</span><span class="p">(</span><span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+		<span class="k">elif</span> <span class="n">graph</span> <span class="o">==</span> <span class="s1">&#39;effective&#39;</span><span class="p">:</span>
+			<span class="n">dg</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">effective_graph</span><span class="p">(</span><span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+		<span class="k">else</span><span class="p">:</span>
+			<span class="k">raise</span> <span class="ne">AttributeError</span><span class="p">(</span><span class="s2">&quot;The graph type &#39;</span><span class="si">%s</span><span class="s2">&#39; is not accepted. Try &#39;structural&#39; or &#39;effective&#39;.&quot;</span> <span class="o">%</span> <span class="n">graph</span><span class="p">)</span>
+		<span class="c1">#</span>
+		<span class="k">if</span> <span class="n">method</span> <span class="o">==</span> <span class="s1">&#39;grasp&#39;</span><span class="p">:</span>
+			<span class="n">fvssets</span> <span class="o">=</span> <span class="n">fvs</span><span class="o">.</span><span class="n">fvs_grasp</span><span class="p">(</span><span class="n">dg</span><span class="p">,</span> <span class="n">max_iter</span><span class="o">=</span><span class="n">max_iter</span><span class="p">,</span> <span class="n">keep_self_loops</span><span class="o">=</span><span class="n">keep_self_loops</span><span class="p">)</span>
+		<span class="k">elif</span> <span class="n">method</span> <span class="o">==</span> <span class="s1">&#39;bruteforce&#39;</span><span class="p">:</span>
+			<span class="n">fvssets</span> <span class="o">=</span> <span class="n">fvs</span><span class="o">.</span><span class="n">fvs_bruteforce</span><span class="p">(</span><span class="n">dg</span><span class="p">,</span> <span class="n">max_search</span><span class="o">=</span><span class="n">max_search</span><span class="p">,</span> <span class="n">keep_self_loops</span><span class="o">=</span><span class="n">keep_self_loops</span><span class="p">)</span>
+		<span class="k">else</span><span class="p">:</span>
+			<span class="k">raise</span> <span class="ne">AttributeError</span><span class="p">(</span><span class="s2">&quot;The FVS method &#39;</span><span class="si">%s</span><span class="s2">&#39; does not exist. Try &#39;grasp&#39; or &#39;bruteforce&#39;.&quot;</span> <span class="o">%</span> <span class="n">method</span><span class="p">)</span>
+</div>
+		<span class="k">return</span> <span class="n">fvssets</span> <span class="c1">#[ [self.nodes[i].name for i in fvsset] for fvsset in fvssets]</span>
+		
+	<span class="c1">#</span>
+	<span class="c1"># Minimum Dominating Set</span>
+	<span class="c1">#</span>
+<div class="viewcode-block" id="BooleanNetwork.minimum_dominating_set_driver_nodes"><a class="viewcode-back" href="../../reference/boolean_network.html#cana.boolean_network.BooleanNetwork.minimum_dominating_set_driver_nodes">[docs]</a>	<span class="k">def</span> <span class="nf">minimum_dominating_set_driver_nodes</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">max_search</span><span class="o">=</span><span class="mi">5</span><span class="p">,</span> <span class="n">keep_self_loops</span><span class="o">=</span><span class="kc">True</span><span class="p">):</span>
+		<span class="sd">&quot;&quot;&quot;The minimun set of necessary driver nodes to control the network based on Minimum Dominating Set (MDS) theory.</span>
+
+<span class="sd">		Args:</span>
+<span class="sd">			max_search (int) : Maximum search of additional variables. Defaults to 5.</span>
+<span class="sd">			keep_self_loops (bool) : If self-loops are used in the computation.</span>
+<span class="sd">		Returns:</span>
+<span class="sd">			(list) : A list-of-lists with MDS solution nodes.</span>
+<span class="sd">		&quot;&quot;&quot;</span>
+		<span class="bp">self</span><span class="o">.</span><span class="n">_check_compute_variables</span><span class="p">(</span><span class="n">sg</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+		<span class="c1">#</span>
+		<span class="n">mdssets</span> <span class="o">=</span> <span class="n">mds</span><span class="o">.</span><span class="n">mds</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_sg</span><span class="p">,</span> <span class="n">max_search</span><span class="o">=</span><span class="n">max_search</span><span class="p">,</span> <span class="n">keep_self_loops</span><span class="o">=</span><span class="n">keep_self_loops</span><span class="p">)</span></div>
+		<span class="k">return</span>  <span class="n">mdssets</span> <span class="c1">#[ [self.nodes[i].name for i in mdsset] for mdsset in mdssets]</span>
+
+	<span class="c1">#</span>
+	<span class="c1"># Structural Controllability</span>
+	<span class="c1">#</span>
+<div class="viewcode-block" id="BooleanNetwork.structural_controllability_driver_nodes"><a class="viewcode-back" href="../../reference/boolean_network.html#cana.boolean_network.BooleanNetwork.structural_controllability_driver_nodes">[docs]</a>	<span class="k">def</span> <span class="nf">structural_controllability_driver_nodes</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">keep_self_loops</span><span class="o">=</span><span class="kc">True</span><span class="p">):</span>
+		<span class="sd">&quot;&quot;&quot; The minimum set of necessary driver nodes to control the network based on Structural Controlability (SC) theory.</span>
+
+<span class="sd">		Args:</span>
+<span class="sd">			keep_self_loops (bool) : If self-loops are used in the computation.</span>
+<span class="sd">		Returns:</span>
+<span class="sd">			(list) : A list-of-lists with SC solution nodes.</span>
+<span class="sd">		&quot;&quot;&quot;</span>
+		<span class="bp">self</span><span class="o">.</span><span class="n">_check_compute_variables</span><span class="p">(</span><span class="n">sg</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+		<span class="c1">#</span>
+		<span class="n">scsets</span> <span class="o">=</span> <span class="n">sc</span><span class="o">.</span><span class="n">sc</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_sg</span><span class="p">,</span> <span class="n">keep_self_loops</span><span class="o">=</span><span class="n">keep_self_loops</span><span class="p">)</span></div>
+		<span class="k">return</span> <span class="n">scsets</span> <span class="c1"># [ [self.nodes[i].name for i in scset] for scset in scsets]</span>
+
+	<span class="c1">#</span>
+	<span class="c1"># Dynamics Canalization Map (DCM)</span>
+	<span class="c1">#</span>
+<div class="viewcode-block" id="BooleanNetwork.dynamics_canalization_map"><a class="viewcode-back" href="../../reference/boolean_network.html#cana.boolean_network.BooleanNetwork.dynamics_canalization_map">[docs]</a>	<span class="k">def</span> <span class="nf">dynamics_canalization_map</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">output</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">simplify</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">keep_constants</span><span class="o">=</span><span class="kc">True</span><span class="p">):</span>
+		<span class="sd">&quot;&quot;&quot; Computes the Dynamics Canalization Map (DCM).</span>
+<span class="sd">		In practice, it asks each node to compute their Canalization Map and then puts them together, simplifying it if possible.</span>
+
+<span class="sd">		Args:</span>
+<span class="sd">			output (int) : The output DCM to return. Default is ``None``, retuning both [0,1].</span>
+<span class="sd">			simplify (bool) : Attemps to simpify the DCM by removing thresholds nodes with :math:`\tao=1`.</span>
+<span class="sd">			keep_constants (bool) : Keep or remove constants from the DCM.</span>
+<span class="sd">		Returns:</span>
+<span class="sd">			DCM (networkx.DiGraph) : a directed graph representation of the DCM.</span>
+<span class="sd">		See Also:</span>
+<span class="sd">			:func:`boolean_node.canalizing_map` for the CM and :func:`drawing.draw_dynamics_canalizing_map_graphviz` for plotting.</span>
+<span class="sd">		&quot;&quot;&quot;</span>
+		<span class="n">CMs</span> <span class="o">=</span> <span class="p">[]</span>
+		<span class="k">for</span> <span class="n">node</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">nodes</span><span class="p">:</span>
+			<span class="k">if</span> <span class="n">keep_constants</span> <span class="ow">or</span> <span class="ow">not</span> <span class="n">node</span><span class="o">.</span><span class="n">constant</span><span class="p">:</span>
+				<span class="n">CMs</span><span class="o">.</span><span class="n">append</span><span class="p">(</span> <span class="n">node</span><span class="o">.</span><span class="n">canalizing_map</span><span class="p">(</span><span class="n">output</span><span class="p">)</span> <span class="p">)</span>
+		<span class="c1"># https://networkx.readthedocs.io/en/stable/reference/algorithms.operators.html</span>
+		<span class="n">DCM</span> <span class="o">=</span> <span class="n">nx</span><span class="o">.</span><span class="n">compose_all</span><span class="p">(</span><span class="n">CMs</span><span class="p">)</span>
+		<span class="n">DCM</span><span class="o">.</span><span class="n">name</span> <span class="o">=</span> <span class="s1">&#39;DCM: </span><span class="si">%s</span><span class="s1">&#39;</span> <span class="o">%</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">name</span><span class="p">)</span>
+
+		<span class="k">if</span> <span class="n">simplify</span><span class="p">:</span>			
+			<span class="c1">#Loop all threshold nodes</span>
+			<span class="k">for</span> <span class="n">n</span><span class="p">,</span><span class="n">d</span> <span class="ow">in</span> <span class="p">((</span><span class="n">n</span><span class="p">,</span><span class="n">d</span><span class="p">)</span> <span class="k">for</span> <span class="n">n</span><span class="p">,</span><span class="n">d</span> <span class="ow">in</span> <span class="n">DCM</span><span class="o">.</span><span class="n">nodes</span><span class="p">(</span><span class="n">data</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span> <span class="k">if</span> <span class="n">d</span><span class="p">[</span><span class="s1">&#39;type&#39;</span><span class="p">]</span><span class="o">==</span><span class="s1">&#39;threshold&#39;</span><span class="p">):</span>
+				
+				<span class="c1"># Constant, remove threshold node</span>
+				<span class="k">if</span> <span class="n">d</span><span class="p">[</span><span class="s1">&#39;tau&#39;</span><span class="p">]</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+					<span class="n">DCM</span><span class="o">.</span><span class="n">remove_node</span><span class="p">(</span><span class="n">n</span><span class="p">)</span>
+
+				<span class="c1"># Tau == 1</span>
+				<span class="k">if</span> <span class="n">d</span><span class="p">[</span><span class="s1">&#39;tau&#39;</span><span class="p">]</span> <span class="o">==</span> <span class="mi">1</span><span class="p">:</span>
+					<span class="n">in_nei</span> <span class="o">=</span> <span class="n">DCM</span><span class="o">.</span><span class="n">in_edges</span><span class="p">(</span><span class="n">n</span><span class="p">)[</span><span class="mi">0</span><span class="p">]</span>
+					<span class="n">out_nei</span> <span class="o">=</span> <span class="n">DCM</span><span class="o">.</span><span class="n">out_edges</span><span class="p">(</span><span class="n">n</span><span class="p">)[</span><span class="mi">0</span><span class="p">]</span>
+
+					<span class="n">neis</span> <span class="o">=</span> <span class="nb">set</span><span class="p">(</span> <span class="nb">list</span><span class="p">(</span><span class="n">in_nei</span><span class="p">)</span> <span class="o">+</span> <span class="nb">list</span><span class="p">(</span><span class="n">out_nei</span><span class="p">)</span> <span class="p">)</span>
+					<span class="c1"># Convert to self loop</span>
+					<span class="k">if</span> <span class="p">(</span><span class="n">in_nei</span> <span class="o">==</span> <span class="n">out_nei</span><span class="p">[::</span><span class="o">-</span><span class="mi">1</span><span class="p">]):</span>
+						<span class="n">DCM</span><span class="o">.</span><span class="n">remove_node</span><span class="p">(</span><span class="n">n</span><span class="p">)</span>
+						<span class="n">DCM</span><span class="o">.</span><span class="n">add_edge</span><span class="p">(</span><span class="n">in_nei</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span><span class="n">out_nei</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span> <span class="p">{</span><span class="s1">&#39;type&#39;</span><span class="p">:</span><span class="s1">&#39;simplified&#39;</span><span class="p">,</span><span class="s1">&#39;mode&#39;</span><span class="p">:</span><span class="s1">&#39;selfloop&#39;</span><span class="p">})</span>
+					<span class="c1"># Link variables nodes directly</span>
+					<span class="k">elif</span> <span class="ow">not</span> <span class="nb">any</span><span class="p">([</span><span class="n">DCM</span><span class="o">.</span><span class="n">node</span><span class="p">[</span><span class="n">tn</span><span class="p">][</span><span class="s1">&#39;type&#39;</span><span class="p">]</span><span class="o">==</span><span class="s1">&#39;fusion&#39;</span> <span class="k">for</span> <span class="n">tn</span> <span class="ow">in</span> <span class="n">in_nei</span><span class="p">]):</span>
+						<span class="n">DCM</span><span class="o">.</span><span class="n">remove_node</span><span class="p">(</span><span class="n">n</span><span class="p">)</span>
+						<span class="n">DCM</span><span class="o">.</span><span class="n">add_edge</span><span class="p">(</span><span class="n">in_nei</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span><span class="n">out_nei</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span> <span class="p">{</span><span class="s1">&#39;type&#39;</span><span class="p">:</span><span class="s1">&#39;simplified&#39;</span><span class="p">,</span><span class="s1">&#39;mode&#39;</span><span class="p">:</span><span class="s1">&#39;direct&#39;</span><span class="p">})</span>
+		<span class="c1"># Remove Isolates</span>
+		<span class="n">DCM</span><span class="o">.</span><span class="n">remove_nodes_from</span><span class="p">(</span><span class="n">nx</span><span class="o">.</span><span class="n">isolates</span><span class="p">(</span><span class="n">DCM</span><span class="p">))</span>
+</div>
+		<span class="k">return</span> <span class="n">DCM</span>
+
+	<span class="k">def</span> <span class="nf">_check_compute_variables</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+		<span class="sd">&quot;&quot;&quot; Recursevely check if the requested control variables are instantiated/computed, otherwise computes them in order.</span>
+<span class="sd">		&quot;&quot;&quot;</span>
+		<span class="k">if</span> <span class="s1">&#39;sg&#39;</span> <span class="ow">in</span> <span class="n">kwargs</span><span class="p">:</span>
+			<span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_sg</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+				<span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">verbose</span><span class="p">:</span> <span class="nb">print</span> <span class="s2">&quot;Computing: Structural Graph&quot;</span>
+				<span class="bp">self</span><span class="o">.</span><span class="n">_sg</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">structural_graph</span><span class="p">()</span>
+
+		<span class="k">elif</span> <span class="s1">&#39;eg&#39;</span> <span class="ow">in</span> <span class="n">kwargs</span><span class="p">:</span>
+			<span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_eg</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+				<span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">verbose</span><span class="p">:</span> <span class="nb">print</span> <span class="s2">&quot;Computing: Effective Graph&quot;</span>
+				<span class="bp">self</span><span class="o">.</span><span class="n">_eg</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">effective_graph</span><span class="p">()</span>
+
+		<span class="k">elif</span> <span class="s1">&#39;stg&#39;</span> <span class="ow">in</span> <span class="n">kwargs</span><span class="p">:</span>
+			<span class="bp">self</span><span class="o">.</span><span class="n">_check_compute_variables</span><span class="p">(</span><span class="n">sg</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+			<span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_stg</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+				<span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">verbose</span><span class="p">:</span> <span class="nb">print</span> <span class="s2">&quot;Computing: State-Transition-Graph&quot;</span>
+				<span class="bp">self</span><span class="o">.</span><span class="n">_stg</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">state_transition_graph</span><span class="p">()</span>
+
+		<span class="k">elif</span> <span class="s1">&#39;attractors&#39;</span> <span class="ow">in</span> <span class="n">kwargs</span><span class="p">:</span>
+			<span class="bp">self</span><span class="o">.</span><span class="n">_check_compute_variables</span><span class="p">(</span><span class="n">stg</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+			<span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_attractors</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+				<span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">verbose</span><span class="p">:</span> <span class="nb">print</span> <span class="s2">&quot;Computing: Attractors&quot;</span>
+				<span class="bp">self</span><span class="o">.</span><span class="n">_attractors</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">attractors</span><span class="p">()</span>
+
+		<span class="k">elif</span> <span class="s1">&#39;stg_r&#39;</span> <span class="ow">in</span> <span class="n">kwargs</span><span class="p">:</span>
+			<span class="bp">self</span><span class="o">.</span><span class="n">_check_compute_variables</span><span class="p">(</span><span class="n">stg</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+			<span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_stg_r</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+				<span class="bp">self</span><span class="o">.</span><span class="n">_stg_r</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">state_transition_graph_reachability</span><span class="p">()</span>
+		<span class="k">else</span><span class="p">:</span>
+			<span class="k">raise</span> <span class="ne">Exception</span><span class="p">(</span><span class="s1">&#39;Control variable name not found. </span><span class="si">%s</span><span class="s1">&#39;</span> <span class="o">%</span> <span class="n">kwargs</span><span class="p">)</span>
+		<span class="k">return</span> <span class="kc">True</span>
+
+	<span class="c1">#</span>
+	<span class="c1"># Get Node Names from Ids</span>
+	<span class="c1">#</span>
+	<span class="k">def</span> <span class="nf">_get_node_name</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="nb">id</span><span class="p">):</span>
+		<span class="sd">&quot;&quot;&quot; Return the name of the node based on its id.</span>
+
+<span class="sd">		Args:</span>
+<span class="sd">			id (int): id of the node.</span>
+<span class="sd">		Returns:</span>
+<span class="sd">			name (string): name of the node.</span>
+<span class="sd">		&quot;&quot;&quot;</span>
+		<span class="k">try</span><span class="p">:</span>
+			<span class="n">node</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">nodes</span><span class="p">[</span><span class="nb">id</span><span class="p">]</span>
+		<span class="k">except</span><span class="p">:</span>
+			<span class="k">raise</span> <span class="ne">AttributeError</span><span class="p">(</span><span class="s2">&quot;Node with id &#39;</span><span class="si">%d</span><span class="s2">&#39; does not exist.&quot;</span> <span class="o">%</span> <span class="p">(</span><span class="nb">id</span><span class="p">))</span>
+		<span class="k">else</span><span class="p">:</span>
+			<span class="k">return</span> <span class="n">node</span><span class="o">.</span><span class="n">name</span>
+
+<div class="viewcode-block" id="BooleanNetwork.get_node_name"><a class="viewcode-back" href="../../reference/boolean_network.html#cana.boolean_network.BooleanNetwork.get_node_name">[docs]</a>	<span class="k">def</span> <span class="nf">get_node_name</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">iterable</span><span class="o">=</span><span class="p">[]):</span>
+		<span class="sd">&quot;&quot;&quot; Return node names. Optionally, it returns only the names of the ids requested.</span>
+
+<span class="sd">		Args:</span>
+<span class="sd">			iterable (int,list, optional) : The id (or list of ids) of nodes to which return their names.</span>
+<span class="sd">		Returns:</span>
+<span class="sd">			names (list) : The name of the nodes.</span>
+<span class="sd">		&quot;&quot;&quot;</span>
+		<span class="c1"># If only one id is passed, make it a list</span>
+		<span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">iterable</span><span class="p">,</span> <span class="nb">list</span><span class="p">):</span>
+			<span class="n">iterable</span> <span class="o">=</span> <span class="p">[</span><span class="n">iterable</span><span class="p">]</span>
+		<span class="c1"># No ids requested, return all the names</span>
+		<span class="k">if</span> <span class="ow">not</span> <span class="nb">len</span><span class="p">(</span><span class="n">iterable</span><span class="p">):</span>
+			<span class="k">return</span> <span class="p">[</span><span class="n">n</span><span class="o">.</span><span class="n">name</span> <span class="k">for</span> <span class="n">n</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">nodes</span><span class="p">]</span>
+		<span class="c1"># otherwise, use the recursive map to change ids to names</span>
+		<span class="k">else</span><span class="p">:</span></div>
+			<span class="k">return</span> <span class="n">recursive_map</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_get_node_name</span><span class="p">,</span> <span class="n">iterable</span><span class="p">)</span>
+	<span class="c1">#</span>
+	<span class="c1"># Plotting Methods</span>
+	<span class="c1">#</span>
+<div class="viewcode-block" id="BooleanNetwork.derrida_curve"><a class="viewcode-back" href="../../reference/boolean_network.html#cana.boolean_network.BooleanNetwork.derrida_curve">[docs]</a>	<span class="k">def</span> <span class="nf">derrida_curve</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">nsamples</span><span class="o">=</span><span class="mi">10</span><span class="p">,</span> <span class="n">random_seed</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">method</span><span class="o">=</span><span class="s1">&#39;random&#39;</span><span class="p">):</span>
+		<span class="sd">&quot;&quot;&quot; The Derrida Curve (also reffered as criticality measure :math:`D_s`).</span>
+<span class="sd">		When &quot;mode&quot; is set as &quot;random&quot; (default), it would use random sampling to estimate Derrida value</span>
+<span class="sd">		If &quot;mode&quot; is set as &quot;sensitivity&quot;, it would use c-sensitivity to calculate Derrida value (slower)</span>
+<span class="sd">		You can refer to :cite:&#39;kadelka2017influence&#39; about why c-sensitivity can be used to caculate Derrida value</span>
+<span class="sd">		Args:</span>
+<span class="sd">			nsamples (int) : The number of samples per hammimg distance to get.</span>
+<span class="sd">			random_seed (int) : The random state seed.</span>
+<span class="sd">			method (string) : specify the method you want. either &#39;random&#39; or &#39;sensitivity&#39;</span>
+<span class="sd">		Returns:</span>
+<span class="sd">			(dx,dy) (tuple) : The dx and dy of the curve.</span>
+<span class="sd">		&quot;&quot;&quot;</span>
+		<span class="n">random</span><span class="o">.</span><span class="n">seed</span><span class="p">(</span><span class="n">random_seed</span><span class="p">)</span>
+
+		<span class="n">dx</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">linspace</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span><span class="mi">1</span><span class="p">,</span><span class="bp">self</span><span class="o">.</span><span class="n">Nnodes</span><span class="p">)</span>
+		<span class="n">dy</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">Nnodes</span><span class="p">)</span>
+
+		<span class="k">if</span> <span class="n">method</span> <span class="o">==</span> <span class="s1">&#39;random&#39;</span><span class="p">:</span>
+			<span class="c1"># for each possible hamming distance between the starting states</span>
+			<span class="k">for</span> <span class="n">hamm_dist</span> <span class="ow">in</span> <span class="n">xrange</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">Nnodes</span> <span class="o">+</span> <span class="mi">1</span><span class="p">):</span>
+
+				<span class="c1"># sample nsample times</span>
+				<span class="k">for</span> <span class="n">isample</span> <span class="ow">in</span> <span class="n">xrange</span><span class="p">(</span><span class="n">nsamples</span><span class="p">):</span>
+					<span class="n">rnd_config</span> <span class="o">=</span> <span class="p">[</span><span class="n">random</span><span class="o">.</span><span class="n">choice</span><span class="p">([</span><span class="s1">&#39;0&#39;</span><span class="p">,</span> <span class="s1">&#39;1&#39;</span><span class="p">])</span> <span class="k">for</span> <span class="n">b</span> <span class="ow">in</span> <span class="n">xrange</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">Nnodes</span><span class="p">)]</span>
+					<span class="n">perturbed_var</span> <span class="o">=</span> <span class="n">random</span><span class="o">.</span><span class="n">sample</span><span class="p">(</span><span class="nb">range</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">Nnodes</span><span class="p">),</span> <span class="n">hamm_dist</span><span class="p">)</span>
+					<span class="n">perturbed_config</span> <span class="o">=</span> <span class="p">[</span><span class="n">flip_bit</span><span class="p">(</span><span class="n">rnd_config</span><span class="p">[</span><span class="n">ivar</span><span class="p">])</span> <span class="k">if</span> <span class="n">ivar</span> <span class="ow">in</span> <span class="n">perturbed_var</span> <span class="k">else</span> <span class="n">rnd_config</span><span class="p">[</span><span class="n">ivar</span><span class="p">]</span> <span class="k">for</span> <span class="n">ivar</span> <span class="ow">in</span> <span class="n">xrange</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">Nnodes</span><span class="p">)]</span>
+					<span class="n">dy</span><span class="p">[</span><span class="n">hamm_dist</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span> <span class="o">+=</span> <span class="n">hamming_distance</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">step</span><span class="p">(</span><span class="n">rnd_config</span><span class="p">),</span> <span class="bp">self</span><span class="o">.</span><span class="n">step</span><span class="p">(</span><span class="n">perturbed_config</span><span class="p">))</span>
+
+			<span class="n">dy</span> <span class="o">/=</span> <span class="nb">float</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">Nnodes</span> <span class="o">*</span> <span class="n">nsamples</span><span class="p">)</span>
+		<span class="k">elif</span> <span class="n">method</span> <span class="o">==</span> <span class="s1">&#39;sensitivity&#39;</span><span class="p">:</span>
+			<span class="k">for</span> <span class="n">hamm_dist</span> <span class="ow">in</span> <span class="n">xrange</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span><span class="bp">self</span><span class="o">.</span><span class="n">Nnodes</span> <span class="o">+</span><span class="mi">1</span><span class="p">):</span>
+				<span class="n">dy</span><span class="p">[</span><span class="n">hamm_dist</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span> <span class="o">=</span> <span class="nb">sum</span><span class="p">([</span><span class="n">node</span><span class="o">.</span><span class="n">c_sensitivity</span><span class="p">(</span><span class="n">hamm_dist</span><span class="p">,</span><span class="n">mode</span><span class="o">=</span><span class="s1">&#39;forceK&#39;</span><span class="p">,</span><span class="n">max_k</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">Nnodes</span><span class="p">)</span> <span class="k">for</span> <span class="n">node</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">nodes</span><span class="p">])</span><span class="o">/</span><span class="bp">self</span><span class="o">.</span><span class="n">Nnodes</span>
+</div></div>
+		<span class="k">return</span> <span class="n">dx</span><span class="p">,</span> <span class="n">dy</span>
+
+
+
+</pre></div>
+
+           </div>
+           <div class="articleComments">
+            
+           </div>
+          </div>
+          <footer>
+  
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>
+        &copy; Copyright 2017, Correia, R. B., Gates, A., Rocha, L. M..
+      Last updated on Feb 19, 2018.
+
+    </p>
+  </div>
+  Built with <a href="http://sphinx-doc.org/">Sphinx</a> using a <a href="https://github.com/snide/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>. 
+
+</footer>
+
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+  
+
+
+  
+
+    <script type="text/javascript">
+        var DOCUMENTATION_OPTIONS = {
+            URL_ROOT:'../../',
+            VERSION:'0.0.2-alpha',
+            COLLAPSE_INDEX:false,
+            FILE_SUFFIX:'.html',
+            HAS_SOURCE:  true,
+            SOURCELINK_SUFFIX: '.txt'
+        };
+    </script>
+      <script type="text/javascript" src="../../static/jquery.js"></script>
+      <script type="text/javascript" src="../../static/underscore.js"></script>
+      <script type="text/javascript" src="../../static/doctools.js"></script>
+      <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.1/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+
+  
+
+  
+  
+    <script type="text/javascript" src="../../static/js/theme.js"></script>
+  
+
+  
+  
+  <script type="text/javascript">
+      jQuery(function () {
+          SphinxRtdTheme.StickyNav.enable();
+      });
+  </script>
+   
+
+</body>
+</html>

@@ -5,23 +5,14 @@
 <!--[if gt IE 8]><!--> <html class="no-js" lang="en" > <!--<![endif]-->
 <head>
   <meta charset="utf-8">
-  <script type="text/javascript">
-
-      var _gaq = _gaq || [];
-      _gaq.push(['_setAccount', 'UA-71404006-4']);
-      _gaq.push(['_trackPageview']);
-
-      (function() {
-        var ga = document.createElement('script'); ga.type = 'text/javascript'; ga.async = true;
-        ga.src = ('https:' == document.location.protocol ? 'https://ssl' : 'http://www') + '.google-analytics.com/ga.js';
-        var s = document.getElementsByTagName('script')[0]; s.parentNode.insertBefore(ga, s);
-      })();
-    </script>
+  
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   
-  <title>Development &mdash; CANA 0.0.1a documentation</title>
+  <title>Development &mdash; CANA 0.0.2-alpha documentation</title>
   
 
+  
+  
   
   
 
@@ -35,7 +26,7 @@
 
   
   
-    <link rel="stylesheet" href="_static/css/theme.css" type="text/css" />
+    <link rel="stylesheet" href="static/css/theme.css" type="text/css" />
   
 
   
@@ -44,17 +35,18 @@
         <link rel="index" title="Index"
               href="genindex.html"/>
         <link rel="search" title="Search" href="search.html"/>
-    <link rel="top" title="CANA 0.0.1a documentation" href="index.html"/>
+    <link rel="top" title="CANA 0.0.2-alpha documentation" href="index.html"/>
         <link rel="next" title="Appendix" href="appendix/index.html"/>
         <link rel="prev" title="Utilities" href="reference/utils.html"/> 
 
   
-  <script src="_static/js/modernizr.min.js"></script>
+  <script src="static/js/modernizr.min.js"></script>
 
 </head>
 
 <body class="wy-body-for-nav" role="document">
 
+   
   <div class="wy-grid-for-nav">
 
     
@@ -74,7 +66,7 @@
             
             
               <div class="version">
-                0.0.1
+                0.0.2
               </div>
             
           
@@ -95,7 +87,10 @@
           
             
             
-                <ul class="current">
+              
+            
+            
+              <ul class="current">
 <li class="toctree-l1"><a class="reference internal" href="install.html">Installation</a></li>
 <li class="toctree-l1"><a class="reference internal" href="notation.html">Notation</a></li>
 <li class="toctree-l1"><a class="reference internal" href="tutorial.html">Tutorials</a></li>
@@ -121,8 +116,10 @@
 
       
       <nav class="wy-nav-top" role="navigation" aria-label="top navigation">
-        <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
-        <a href="index.html">CANA</a>
+        
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="index.html">CANA</a>
+        
       </nav>
 
 
@@ -131,23 +128,40 @@
         <div class="rst-content">
           
 
- 
+
+
+
+
+
+
+
+
+
+
+
 
 
 
 <div role="navigation" aria-label="breadcrumbs navigation">
+
   <ul class="wy-breadcrumbs">
-    <li><a href="index.html">Docs</a> &raquo;</li>
-      
-    <li>Development</li>
+    
+      <li><a href="index.html">Docs</a> &raquo;</li>
+        
+      <li>Development</li>
+    
+    
       <li class="wy-breadcrumbs-aside">
         
-          
-            <a href="_sources/development.rst.txt" rel="nofollow"> View page source</a>
+            
+            <a href="sources/development.rst.txt" rel="nofollow"> View page source</a>
           
         
       </li>
+    
   </ul>
+
+  
   <hr/>
 </div>
           <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
@@ -162,7 +176,7 @@
 <ul class="simple">
 <li>Parallelize control methods;</li>
 <li>Parallelize canalization methods;</li>
-<li>There are more code on <code class="docutils literal"><span class="pre">iu.github.edu</span></code> that needs conversion;</li>
+<li>There are more code on <code class="docutils literal notranslate"><span class="pre">iu.github.edu</span></code> that needs conversion;</li>
 <li>Generating ensembles of dynamics from structural motifs;</li>
 <li>Better document networks from Cell Collective;</li>
 <li>Expand on easy-to-replicate tutorials;</li>
@@ -171,11 +185,18 @@
 <div class="section" id="developing">
 <h2>Developing<a class="headerlink" href="#developing" title="Permalink to this headline">¶</a></h2>
 <p>Pull requests are welcome :)
-Please get in contact with one of us beforehand: <code class="docutils literal"><span class="pre">rionbr(at)gmail(dot)com</span></code> or <code class="docutils literal"><span class="pre">ajgates(at)indiana(dot)edu</span></code>.</p>
+Please get in contact with one of us beforehand: <code class="docutils literal notranslate"><span class="pre">rionbr(at)gmail(dot)com</span></code> or <code class="docutils literal notranslate"><span class="pre">ajgates(at)indiana(dot)edu</span></code>.</p>
 </div>
 <div class="section" id="changelog">
 <h2>Changelog<a class="headerlink" href="#changelog" title="Permalink to this headline">¶</a></h2>
 <dl class="docutils">
+<dt>v0.0.2</dt>
+<dd><ul class="first last simple">
+<li>NetworkX 2.1 compatibility</li>
+<li>New tutorials</li>
+<li>Derrida curve bugfix</li>
+</ul>
+</dd>
 <dt>v0.0.1</dt>
 <dd><ul class="first last simple">
 <li>Code ported to public package.</li>
@@ -190,21 +211,24 @@ Please get in contact with one of us beforehand: <code class="docutils literal">
 </div>
 <div class="section" id="tests">
 <h2>Tests<a class="headerlink" href="#tests" title="Permalink to this headline">¶</a></h2>
-<p>Run <code class="docutils literal"><span class="pre">nosetests</span> <span class="pre">-v</span></code> to perform tests and diagnoses on functions.</p>
+<p>Run <code class="docutils literal notranslate"><span class="pre">nosetests</span> <span class="pre">-v</span></code> to perform tests and diagnoses on functions.</p>
 </div>
 </div>
 
 
+           </div>
+           <div class="articleComments">
+            
            </div>
           </div>
           <footer>
   
     <div class="rst-footer-buttons" role="navigation" aria-label="footer navigation">
       
-        <a href="appendix/index.html" class="btn btn-neutral float-right" title="Appendix" accesskey="n">Next <span class="fa fa-arrow-circle-right"></span></a>
+        <a href="appendix/index.html" class="btn btn-neutral float-right" title="Appendix" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right"></span></a>
       
       
-        <a href="reference/utils.html" class="btn btn-neutral" title="Utilities" accesskey="p"><span class="fa fa-arrow-circle-left"></span> Previous</a>
+        <a href="reference/utils.html" class="btn btn-neutral" title="Utilities" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left"></span> Previous</a>
       
     </div>
   
@@ -213,8 +237,8 @@ Please get in contact with one of us beforehand: <code class="docutils literal">
 
   <div role="contentinfo">
     <p>
-        &copy; Copyright 2017, Gates, A., Correia, R. B., Rocha, L. M..
-      Last updated on Apr 03, 2017.
+        &copy; Copyright 2017, Correia, R. B., Gates, A., Rocha, L. M..
+      Last updated on Feb 19, 2018.
 
     </p>
   </div>
@@ -236,22 +260,23 @@ Please get in contact with one of us beforehand: <code class="docutils literal">
     <script type="text/javascript">
         var DOCUMENTATION_OPTIONS = {
             URL_ROOT:'./',
-            VERSION:'0.0.1a',
+            VERSION:'0.0.2-alpha',
             COLLAPSE_INDEX:false,
             FILE_SUFFIX:'.html',
-            HAS_SOURCE:  true
+            HAS_SOURCE:  true,
+            SOURCELINK_SUFFIX: '.txt'
         };
     </script>
-      <script type="text/javascript" src="_static/jquery.js"></script>
-      <script type="text/javascript" src="_static/underscore.js"></script>
-      <script type="text/javascript" src="_static/doctools.js"></script>
-      <script type="text/javascript" src="https://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+      <script type="text/javascript" src="static/jquery.js"></script>
+      <script type="text/javascript" src="static/underscore.js"></script>
+      <script type="text/javascript" src="static/doctools.js"></script>
+      <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.1/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
 
   
 
   
   
-    <script type="text/javascript" src="_static/js/theme.js"></script>
+    <script type="text/javascript" src="static/js/theme.js"></script>
   
 
   

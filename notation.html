@@ -5,23 +5,14 @@
 <!--[if gt IE 8]><!--> <html class="no-js" lang="en" > <!--<![endif]-->
 <head>
   <meta charset="utf-8">
-  <script type="text/javascript">
-
-      var _gaq = _gaq || [];
-      _gaq.push(['_setAccount', 'UA-71404006-4']);
-      _gaq.push(['_trackPageview']);
-
-      (function() {
-        var ga = document.createElement('script'); ga.type = 'text/javascript'; ga.async = true;
-        ga.src = ('https:' == document.location.protocol ? 'https://ssl' : 'http://www') + '.google-analytics.com/ga.js';
-        var s = document.getElementsByTagName('script')[0]; s.parentNode.insertBefore(ga, s);
-      })();
-    </script>
+  
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   
-  <title>Notation &mdash; CANA 0.0.1a documentation</title>
+  <title>Notation &mdash; CANA 0.0.2-alpha documentation</title>
   
 
+  
+  
   
   
 
@@ -35,7 +26,7 @@
 
   
   
-    <link rel="stylesheet" href="_static/css/theme.css" type="text/css" />
+    <link rel="stylesheet" href="static/css/theme.css" type="text/css" />
   
 
   
@@ -44,17 +35,18 @@
         <link rel="index" title="Index"
               href="genindex.html"/>
         <link rel="search" title="Search" href="search.html"/>
-    <link rel="top" title="CANA 0.0.1a documentation" href="index.html"/>
+    <link rel="top" title="CANA 0.0.2-alpha documentation" href="index.html"/>
         <link rel="next" title="Tutorials" href="tutorial.html"/>
         <link rel="prev" title="Installation" href="install.html"/> 
 
   
-  <script src="_static/js/modernizr.min.js"></script>
+  <script src="static/js/modernizr.min.js"></script>
 
 </head>
 
 <body class="wy-body-for-nav" role="document">
 
+   
   <div class="wy-grid-for-nav">
 
     
@@ -74,7 +66,7 @@
             
             
               <div class="version">
-                0.0.1
+                0.0.2
               </div>
             
           
@@ -95,7 +87,10 @@
           
             
             
-                <ul class="current">
+              
+            
+            
+              <ul class="current">
 <li class="toctree-l1"><a class="reference internal" href="install.html">Installation</a></li>
 <li class="toctree-l1 current"><a class="current reference internal" href="#">Notation</a><ul>
 <li class="toctree-l2"><a class="reference internal" href="#node-automata">Node (automata)</a></li>
@@ -121,8 +116,10 @@
 
       
       <nav class="wy-nav-top" role="navigation" aria-label="top navigation">
-        <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
-        <a href="index.html">CANA</a>
+        
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="index.html">CANA</a>
+        
       </nav>
 
 
@@ -131,23 +128,40 @@
         <div class="rst-content">
           
 
- 
+
+
+
+
+
+
+
+
+
+
+
 
 
 
 <div role="navigation" aria-label="breadcrumbs navigation">
+
   <ul class="wy-breadcrumbs">
-    <li><a href="index.html">Docs</a> &raquo;</li>
-      
-    <li>Notation</li>
+    
+      <li><a href="index.html">Docs</a> &raquo;</li>
+        
+      <li>Notation</li>
+    
+    
       <li class="wy-breadcrumbs-aside">
         
-          
-            <a href="_sources/notation.rst.txt" rel="nofollow"> View page source</a>
+            
+            <a href="sources/notation.rst.txt" rel="nofollow"> View page source</a>
           
         
       </li>
+    
   </ul>
+
+  
   <hr/>
 </div>
           <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
@@ -155,7 +169,7 @@
             
   <div class="section" id="notation">
 <h1>Notation<a class="headerlink" href="#notation" title="Permalink to this headline">¶</a></h1>
-<p>This notation follows the initial notation in <a class="reference internal" href="references.html#marques-pita-2013" id="id1">[MPR13]</a> from where all subsequent paper derive.</p>
+<p>This notation follows the initial notation in <a class="reference internal" href="references.html#marques-pita-2013" id="id1">[MPR13]</a> from where all subsequent papers derive.</p>
 <div class="section" id="node-automata">
 <h2>Node (automata)<a class="headerlink" href="#node-automata" title="Permalink to this headline">¶</a></h2>
 <table border="1" class="docutils">
@@ -167,35 +181,35 @@
 <tr class="row-odd"><td>symbol</td>
 <td>description</td>
 </tr>
-<tr class="row-even"><td><span class="math">\(x\)</span></td>
-<td><p class="first">Boolean Automaton (<a class="reference internal" href="reference/boolean_node.html#cana.boolean_node.BooleanNode" title="cana.boolean_node.BooleanNode"><code class="xref py py-class docutils literal"><span class="pre">BooleanNode</span></code></a>)</p>
+<tr class="row-even"><td><span class="math notranslate">\(x\)</span></td>
+<td><p class="first">Boolean Automaton (<a class="reference internal" href="reference/boolean_node.html#cana.boolean_node.BooleanNode" title="cana.boolean_node.BooleanNode"><code class="xref py py-class docutils literal notranslate"><span class="pre">BooleanNode</span></code></a>)</p>
 <p class="last">Binary-state automaton</p>
 </td>
 </tr>
-<tr class="row-odd"><td><span class="math">\(k\)</span></td>
-<td><p class="first">Number of inputs of <span class="math">\(x\)</span></p>
-<p class="last">How many inputs determine the transitions of an automaton <span class="math">\(x\)</span></p>
+<tr class="row-odd"><td><span class="math notranslate">\(k\)</span></td>
+<td><p class="first">Number of inputs of <span class="math notranslate">\(x\)</span></p>
+<p class="last">How many inputs determine the transitions of an automaton <span class="math notranslate">\(x\)</span></p>
 </td>
 </tr>
-<tr class="row-even"><td><span class="math">\(F\)</span></td>
-<td><p class="first">Look-up table (LUT) of <span class="math">\(x\)</span></p>
-<p class="last">The transition function of <span class="math">\(x\)</span> represented as a LUT (<span class="math">\(2^k\)</span> entries)</p>
+<tr class="row-even"><td><span class="math notranslate">\(F\)</span></td>
+<td><p class="first">Look-up table (LUT) of <span class="math notranslate">\(x\)</span></p>
+<p class="last">The transition function of <span class="math notranslate">\(x\)</span> represented as a LUT (<span class="math notranslate">\(2^k\)</span> entries)</p>
 </td>
 </tr>
-<tr class="row-odd"><td><span class="math">\(f_\alpha\)</span></td>
-<td><p class="first">LUT entry in <span class="math">\(F\)</span></p>
+<tr class="row-odd"><td><span class="math notranslate">\(f_\alpha\)</span></td>
+<td><p class="first">LUT entry in <span class="math notranslate">\(F\)</span></p>
 <p class="last">k-tuple combination of input states
 i.e. condition and corresponding transition</p>
 </td>
 </tr>
-<tr class="row-even"><td><span class="math">\(c_{\alpha}\)</span></td>
-<td><p class="first">condition part in a LUT entry of <span class="math">\(f_\alpha\)</span></p>
+<tr class="row-even"><td><span class="math notranslate">\(c_{\alpha}\)</span></td>
+<td><p class="first">condition part in a LUT entry of <span class="math notranslate">\(f_\alpha\)</span></p>
 <p class="last">k-tuple combination of input states i.e. condition</p>
 </td>
 </tr>
-<tr class="row-odd"><td><span class="math">\(s_{\alpha}\)</span></td>
-<td><p class="first">transition in a LUT entry <span class="math">\(f_\alpha\)</span></p>
-<p class="last">Boolean state prescribed as the transition in <span class="math">\(f_\alpha\)</span></p>
+<tr class="row-odd"><td><span class="math notranslate">\(s_{\alpha}\)</span></td>
+<td><p class="first">transition in a LUT entry <span class="math notranslate">\(f_\alpha\)</span></p>
+<p class="last">Boolean state prescribed as the transition in <span class="math notranslate">\(f_\alpha\)</span></p>
 </td>
 </tr>
 </tbody>
@@ -212,55 +226,55 @@ i.e. condition and corresponding transition</p>
 <tr class="row-odd"><td>symbol</td>
 <td>description</td>
 </tr>
-<tr class="row-even"><td><span class="math">\(B\)</span></td>
-<td><p class="first">Boolean Network (<a class="reference internal" href="reference/boolean_network.html#cana.boolean_network.BooleanNetwork" title="cana.boolean_network.BooleanNetwork"><code class="xref py py-class docutils literal"><span class="pre">BooleanNetwork</span></code></a>)</p>
-<p class="last">A graph of <span class="math">\(n\)</span> automata with directed edges (source node is input of end node)</p>
+<tr class="row-even"><td><span class="math notranslate">\(B\)</span></td>
+<td><p class="first">Boolean Network (<a class="reference internal" href="reference/boolean_network.html#cana.boolean_network.BooleanNetwork" title="cana.boolean_network.BooleanNetwork"><code class="xref py py-class docutils literal notranslate"><span class="pre">BooleanNetwork</span></code></a>)</p>
+<p class="last">A graph of <span class="math notranslate">\(n\)</span> automata with directed edges (source node is input of end node)</p>
 </td>
 </tr>
-<tr class="row-odd"><td><span class="math">\(X\)</span></td>
-<td><p class="first">set of automata in <span class="math">\(B\)</span></p>
-<p class="last">set of Boolean automata that constitute a Boolean Network <span class="math">\(B\)</span></p>
+<tr class="row-odd"><td><span class="math notranslate">\(X\)</span></td>
+<td><p class="first">set of automata in <span class="math notranslate">\(B\)</span></p>
+<p class="last">set of Boolean automata that constitute a Boolean Network <span class="math notranslate">\(B\)</span></p>
 </td>
 </tr>
-<tr class="row-even"><td><span class="math">\(n\)</span></td>
-<td><p class="first">number of nodes in <span class="math">\(B\)</span></p>
-<p class="last"><span class="math">\(n = |X|\)</span></p>
+<tr class="row-even"><td><span class="math notranslate">\(n\)</span></td>
+<td><p class="first">number of nodes in <span class="math notranslate">\(B\)</span></p>
+<p class="last"><span class="math notranslate">\(n = |X|\)</span></p>
 </td>
 </tr>
-<tr class="row-odd"><td><span class="math">\(\textbf{x}\)</span></td>
+<tr class="row-odd"><td><span class="math notranslate">\(\textbf{x}\)</span></td>
 <td><p class="first">network configuration</p>
-<p class="last">collection of the states of all nodes in a Boolean Networ <span class="math">\(B\)</span></p>
+<p class="last">collection of the states of all nodes in a Boolean Networ <span class="math notranslate">\(B\)</span></p>
 </td>
 </tr>
-<tr class="row-even"><td><span class="math">\(X_i\)</span></td>
-<td><p class="first">set of inputs of nodes <span class="math">\(X_i\)</span> in <span class="math">\(B\)</span></p>
-<p class="last">Set of input nodes of <span class="math">\(X_i\)</span></p>
+<tr class="row-even"><td><span class="math notranslate">\(X_i\)</span></td>
+<td><p class="first">set of inputs of nodes <span class="math notranslate">\(X_i\)</span> in <span class="math notranslate">\(B\)</span></p>
+<p class="last">Set of input nodes of <span class="math notranslate">\(X_i\)</span></p>
 </td>
 </tr>
-<tr class="row-odd"><td><span class="math">\(k_i\)</span></td>
-<td><p class="first">in-degree of <span class="math">\(X_i\)</span></p>
-<p class="last">Cardinality of <span class="math">\(X_i\)</span></p>
+<tr class="row-odd"><td><span class="math notranslate">\(k_i\)</span></td>
+<td><p class="first">in-degree of <span class="math notranslate">\(X_i\)</span></p>
+<p class="last">Cardinality of <span class="math notranslate">\(X_i\)</span></p>
 </td>
 </tr>
-<tr class="row-even"><td><span class="math">\(F_i\)</span></td>
-<td><p class="first">Look-up table of <span class="math">\(X_i\)</span></p>
+<tr class="row-even"><td><span class="math notranslate">\(F_i\)</span></td>
+<td><p class="first">Look-up table of <span class="math notranslate">\(X_i\)</span></p>
 <p class="last">Transition function represented as a LUT.</p>
 </td>
 </tr>
-<tr class="row-odd"><td><span class="math">\(f_{i:\alpha}\)</span></td>
-<td><p class="first">LUT entry in <span class="math">\(F_i\)</span></p>
-<p class="last">Sub-indices <span class="math">\(i\)</span> and <span class="math">\(\alpha\)</span>, separated by ’:’, are used to specify node and entry.</p>
+<tr class="row-odd"><td><span class="math notranslate">\(f_{i:\alpha}\)</span></td>
+<td><p class="first">LUT entry in <span class="math notranslate">\(F_i\)</span></p>
+<p class="last">Sub-indices <span class="math notranslate">\(i\)</span> and <span class="math notranslate">\(\alpha\)</span>, separated by ’:’, are used to specify node and entry.</p>
 </td>
 </tr>
-<tr class="row-even"><td><span class="math">\(A_i\)</span></td>
-<td><p class="first">An attractor of <span class="math">\(B\)</span></p>
-<p class="last">A specific (index <span class="math">\(i\)</span>) fixes-point or periodic attractor of a B.N. <span class="math">\(B\)</span></p>
+<tr class="row-even"><td><span class="math notranslate">\(A_i\)</span></td>
+<td><p class="first">An attractor of <span class="math notranslate">\(B\)</span></p>
+<p class="last">A specific (index <span class="math notranslate">\(i\)</span>) fixes-point or periodic attractor of a B.N. <span class="math notranslate">\(B\)</span></p>
 </td>
 </tr>
-<tr class="row-odd"><td><span class="math">\(\sigma(\textbf{x}) \rightarrow A\)</span></td>
-<td><p class="first">Dynamic trajectory of <span class="math">\(\textbf{x}\)</span> to <span class="math">\(A\)</span></p>
+<tr class="row-odd"><td><span class="math notranslate">\(\sigma(\textbf{x}) \rightarrow A\)</span></td>
+<td><p class="first">Dynamic trajectory of <span class="math notranslate">\(\textbf{x}\)</span> to <span class="math notranslate">\(A\)</span></p>
 <p class="last">This notation is used to represent that the trajectory of some
-configuration <span class="math">\(\textbf{x}\)</span> is known to converge to <span class="math">\(A\)</span></p>
+configuration <span class="math notranslate">\(\textbf{x}\)</span> is known to converge to <span class="math notranslate">\(A\)</span></p>
 </td>
 </tr>
 </tbody>
@@ -277,26 +291,26 @@ configuration <span class="math">\(\textbf{x}\)</span> is known to converge to <
 <tr class="row-odd"><td>symbol</td>
 <td>description</td>
 </tr>
-<tr class="row-even"><td><span class="math">\(\#\)</span></td>
+<tr class="row-even"><td><span class="math notranslate">\(\#\)</span></td>
 <td><p class="first">Wildcard symbol</p>
 <p class="last">If this symbol appears in a condition, the variable it represents can
 be in any state</p>
 </td>
 </tr>
-<tr class="row-odd"><td><span class="math">\(F^{'}\)</span></td>
-<td><p class="first">wildcard-schema redescription of <span class="math">\(F\)</span></p>
+<tr class="row-odd"><td><span class="math notranslate">\(F^{'}\)</span></td>
+<td><p class="first">wildcard-schema redescription of <span class="math notranslate">\(F\)</span></p>
 <p class="last">LUT where entries are wildcard schemata</p>
 </td>
 </tr>
-<tr class="row-even"><td><span class="math">\(f^{'}_{v}\)</span></td>
-<td><p class="first">a wildcard schema in <span class="math">\(F^{'}\)</span></p>
-<p class="last">An entry in <span class="math">\(F^{'}\)</span> is like an entry in <span class="math">\(F\)</span> but its condition part can
+<tr class="row-even"><td><span class="math notranslate">\(f^{'}_{v}\)</span></td>
+<td><p class="first">a wildcard schema in <span class="math notranslate">\(F^{'}\)</span></p>
+<p class="last">An entry in <span class="math notranslate">\(F^{'}\)</span> is like an entry in <span class="math notranslate">\(F\)</span> but its condition part can
 have wildcard symbols</p>
 </td>
 </tr>
-<tr class="row-odd"><td><span class="math">\(\Upsilon_{v}\)</span></td>
-<td><p class="first">Entries <span class="math">\(f_{\alpha} \in F\)</span> in <span class="math">\(f^{'}_{v}\)</span></p>
-<p class="last">collection of the states of all nodes in a Boolean Network <span class="math">\(B\)</span></p>
+<tr class="row-odd"><td><span class="math notranslate">\(\Upsilon_{v}\)</span></td>
+<td><p class="first">Entries <span class="math notranslate">\(f_{\alpha} \in F\)</span> in <span class="math notranslate">\(f^{'}_{v}\)</span></p>
+<p class="last">collection of the states of all nodes in a Boolean Network <span class="math notranslate">\(B\)</span></p>
 </td>
 </tr>
 </tbody>
@@ -313,86 +327,86 @@ have wildcard symbols</p>
 <tr class="row-odd"><td>symbol</td>
 <td>description</td>
 </tr>
-<tr class="row-even"><td><span class="math">\(\circ_m\)</span></td>
+<tr class="row-even"><td><span class="math notranslate">\(\circ_m\)</span></td>
 <td><p class="first">Position-free symbol</p>
 <p class="last">If a variable in the condition part of a schema is marked with this symbol, it
 can exchange places with any other variable in the same schema marked with the
-same symbol. Index <span class="math">\(m\)</span> is used to distinguish subsets of identically-
+same symbol. Index <span class="math notranslate">\(m\)</span> is used to distinguish subsets of identically-
 marked inputs.</p>
 </td>
 </tr>
-<tr class="row-odd"><td><span class="math">\(\beta\)</span></td>
+<tr class="row-odd"><td><span class="math notranslate">\(\beta\)</span></td>
 <td><p class="first">Depth of search for two-symbol schemata</p>
 <p class="last">Defines the minimum number of wildcard schemata in a two-symbol redescription.</p>
 </td>
 </tr>
-<tr class="row-even"><td><span class="math">\(F''\)</span></td>
-<td><p class="first">2-Symbol redescription of <span class="math">\(F\)</span>.</p>
+<tr class="row-even"><td><span class="math notranslate">\(F''\)</span></td>
+<td><p class="first">2-Symbol redescription of <span class="math notranslate">\(F\)</span>.</p>
 <p class="last">LUT where entries are two-symbol schemata.</p>
 </td>
 </tr>
-<tr class="row-odd"><td><span class="math">\(f''_{\theta}\)</span></td>
-<td><p class="first">a 2-Symbol schema in <span class="math">\(F''\)</span></p>
-<p class="last">An entry in <span class="math">\(F''\)</span> is like an entry in <span class="math">\(|F|\)</span> but its condition part can
+<tr class="row-odd"><td><span class="math notranslate">\(f''_{\theta}\)</span></td>
+<td><p class="first">a 2-Symbol schema in <span class="math notranslate">\(F''\)</span></p>
+<p class="last">An entry in <span class="math notranslate">\(F''\)</span> is like an entry in <span class="math notranslate">\(|F|\)</span> but its condition part can
 have wildcard and position-free symbols.</p>
 </td>
 </tr>
-<tr class="row-even"><td><span class="math">\(\Theta_{\theta}\)</span></td>
-<td><p class="first">Entries <span class="math">\(f_{\alpha} \in F : f'_v \rightarrow F''_{\theta}\)</span></p>
-<p class="last">The set of original LUT entries in <span class="math">\(F\)</span> redescribed by a single 2-symbol
-schema <span class="math">\(\Theta'_{\theta} = \{ f'_{\alpha} : f_{\alpha} \rightarrow f''_{\theta} \}\)</span></p>
+<tr class="row-even"><td><span class="math notranslate">\(\Theta_{\theta}\)</span></td>
+<td><p class="first">Entries <span class="math notranslate">\(f_{\alpha} \in F : f'_v \rightarrow F''_{\theta}\)</span></p>
+<p class="last">The set of original LUT entries in <span class="math notranslate">\(F\)</span> redescribed by a single 2-symbol
+schema <span class="math notranslate">\(\Theta'_{\theta} = \{ f'_{\alpha} : f_{\alpha} \rightarrow f''_{\theta} \}\)</span></p>
 </td>
 </tr>
-<tr class="row-odd"><td><span class="math">\(\Theta'_{\theta}\)</span></td>
-<td><p class="first">Schemata <span class="math">\(f'_v \in F' : f'_v \rightarrow f''_{\theta}\)</span></p>
-<p class="last">The set of wildcard schemata in F&#8217; redescribed by a single 2-symbol schema
-<span class="math">\(\Theta'_{\theta} = \{ f'_v : f_v \rightarrow f''_{\theta} \}\)</span>.</p>
+<tr class="row-odd"><td><span class="math notranslate">\(\Theta'_{\theta}\)</span></td>
+<td><p class="first">Schemata <span class="math notranslate">\(f'_v \in F' : f'_v \rightarrow f''_{\theta}\)</span></p>
+<p class="last">The set of wildcard schemata in F’ redescribed by a single 2-symbol schema
+<span class="math notranslate">\(\Theta'_{\theta} = \{ f'_v : f_v \rightarrow f''_{\theta} \}\)</span>.</p>
 </td>
 </tr>
-<tr class="row-even"><td><span class="math">\(X_l\)</span></td>
-<td><p class="first">set of liberals enputs in a schema <span class="math">\(f''\)</span></p>
-<p class="last">The variables in the condition part of schema <span class="math">\(f''\)</span> that are specified
+<tr class="row-even"><td><span class="math notranslate">\(X_l\)</span></td>
+<td><p class="first">set of liberals enputs in a schema <span class="math notranslate">\(f''\)</span></p>
+<p class="last">The variables in the condition part of schema <span class="math notranslate">\(f''\)</span> that are specified
 in a Boolean state (not wildcard)</p>
 </td>
 </tr>
-<tr class="row-odd"><td><span class="math">\(\eta_l\)</span></td>
-<td><p class="first">size of literal-emput set in schema <span class="math">\(f''\)</span>.</p>
-<p class="last"><span class="math">\(\eta_{l} = |X_{l}|\)</span></p>
+<tr class="row-odd"><td><span class="math notranslate">\(\eta_l\)</span></td>
+<td><p class="first">size of literal-emput set in schema <span class="math notranslate">\(f''\)</span>.</p>
+<p class="last"><span class="math notranslate">\(\eta_{l} = |X_{l}|\)</span></p>
 </td>
 </tr>
-<tr class="row-even"><td><span class="math">\(X_l^s\)</span></td>
-<td><p class="first"><span class="math">\(\text{state-}s\)</span> literal enputs in <span class="math">\(f''\)</span></p>
-<p class="last">Subset <span class="math">\(X_l^s \subset X_l\)</span> of literal enput in a scpecific state
-<span class="math">\(s : s \in {0,1}\)</span>.</p>
+<tr class="row-even"><td><span class="math notranslate">\(X_l^s\)</span></td>
+<td><p class="first"><span class="math notranslate">\(\text{state-}s\)</span> literal enputs in <span class="math notranslate">\(f''\)</span></p>
+<p class="last">Subset <span class="math notranslate">\(X_l^s \subset X_l\)</span> of literal enput in a scpecific state
+<span class="math notranslate">\(s : s \in {0,1}\)</span>.</p>
 </td>
 </tr>
-<tr class="row-odd"><td><span class="math">\(X_g\)</span></td>
-<td><p class="first">group invariant enput in a schema <span class="math">\(f''\)</span></p>
-<p class="last">The set variables in the condition part of schema <span class="math">\(f''\)</span> that are marked
+<tr class="row-odd"><td><span class="math notranslate">\(X_g\)</span></td>
+<td><p class="first">group invariant enput in a schema <span class="math notranslate">\(f''\)</span></p>
+<p class="last">The set variables in the condition part of schema <span class="math notranslate">\(f''\)</span> that are marked
 with an identical position-free symbol, in every state they can take.</p>
 </td>
 </tr>
-<tr class="row-even"><td><span class="math">\(X_g^s\)</span></td>
-<td><p class="first">elements of <span class="math">\(X_g\)</span> in state <span class="math">\(s\)</span></p>
+<tr class="row-even"><td><span class="math notranslate">\(X_g^s\)</span></td>
+<td><p class="first">elements of <span class="math notranslate">\(X_g\)</span> in state <span class="math notranslate">\(s\)</span></p>
 <p class="last">This notation is used to refer to the members of a group-invariant enput
-instantiated in a specific state <span class="math">\(s\)</span>, that is
-<span class="math">\(X_g^s = { \forall x_i \in X_g \land x_i = s}\)</span>.</p>
+instantiated in a specific state <span class="math notranslate">\(s\)</span>, that is
+<span class="math notranslate">\(X_g^s = { \forall x_i \in X_g \land x_i = s}\)</span>.</p>
 </td>
 </tr>
-<tr class="row-odd"><td><span class="math">\(\eta\)</span></td>
-<td><p class="first">number of group-invariant enputs in <span class="math">\(f''\)</span></p>
+<tr class="row-odd"><td><span class="math notranslate">\(\eta\)</span></td>
+<td><p class="first">number of group-invariant enputs in <span class="math notranslate">\(f''\)</span></p>
 <p class="last">Number of subsets of inputs marked with a distinct position-free symbol.</p>
 </td>
 </tr>
-<tr class="row-even"><td><span class="math">\(n_g\)</span></td>
-<td><p class="first">size of a single group-invariant enput <span class="math">\(g\)</span> in <span class="math">\(f''\)</span></p>
-<p class="last">Number of inputs marked with the position-free symbol in <span class="math">\(g\)</span>.</p>
+<tr class="row-even"><td><span class="math notranslate">\(n_g\)</span></td>
+<td><p class="first">size of a single group-invariant enput <span class="math notranslate">\(g\)</span> in <span class="math notranslate">\(f''\)</span></p>
+<p class="last">Number of inputs marked with the position-free symbol in <span class="math notranslate">\(g\)</span>.</p>
 </td>
 </tr>
-<tr class="row-odd"><td><span class="math">\(n_g^s\)</span></td>
-<td><p class="first">a sub-constraint in <span class="math">\(X_g\)</span> on state <span class="math">\(s \in {0,1}\)</span></p>
-<p class="last">specifies a group-invariant constraint in the set <span class="math">\(X_g\)</span>, at least
-<span class="math">\(n_g^s\)</span> variables must be in state <span class="math">\(s\)</span>.</p>
+<tr class="row-odd"><td><span class="math notranslate">\(n_g^s\)</span></td>
+<td><p class="first">a sub-constraint in <span class="math notranslate">\(X_g\)</span> on state <span class="math notranslate">\(s \in {0,1}\)</span></p>
+<p class="last">specifies a group-invariant constraint in the set <span class="math notranslate">\(X_g\)</span>, at least
+<span class="math notranslate">\(n_g^s\)</span> variables must be in state <span class="math notranslate">\(s\)</span>.</p>
 </td>
 </tr>
 </tbody>
@@ -402,15 +416,18 @@ instantiated in a specific state <span class="math">\(s\)</span>, that is
 
 
            </div>
+           <div class="articleComments">
+            
+           </div>
           </div>
           <footer>
   
     <div class="rst-footer-buttons" role="navigation" aria-label="footer navigation">
       
-        <a href="tutorial.html" class="btn btn-neutral float-right" title="Tutorials" accesskey="n">Next <span class="fa fa-arrow-circle-right"></span></a>
+        <a href="tutorial.html" class="btn btn-neutral float-right" title="Tutorials" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right"></span></a>
       
       
-        <a href="install.html" class="btn btn-neutral" title="Installation" accesskey="p"><span class="fa fa-arrow-circle-left"></span> Previous</a>
+        <a href="install.html" class="btn btn-neutral" title="Installation" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left"></span> Previous</a>
       
     </div>
   
@@ -419,8 +436,8 @@ instantiated in a specific state <span class="math">\(s\)</span>, that is
 
   <div role="contentinfo">
     <p>
-        &copy; Copyright 2017, Gates, A., Correia, R. B., Rocha, L. M..
-      Last updated on Apr 03, 2017.
+        &copy; Copyright 2017, Correia, R. B., Gates, A., Rocha, L. M..
+      Last updated on Feb 19, 2018.
 
     </p>
   </div>
@@ -442,22 +459,23 @@ instantiated in a specific state <span class="math">\(s\)</span>, that is
     <script type="text/javascript">
         var DOCUMENTATION_OPTIONS = {
             URL_ROOT:'./',
-            VERSION:'0.0.1a',
+            VERSION:'0.0.2-alpha',
             COLLAPSE_INDEX:false,
             FILE_SUFFIX:'.html',
-            HAS_SOURCE:  true
+            HAS_SOURCE:  true,
+            SOURCELINK_SUFFIX: '.txt'
         };
     </script>
-      <script type="text/javascript" src="_static/jquery.js"></script>
-      <script type="text/javascript" src="_static/underscore.js"></script>
-      <script type="text/javascript" src="_static/doctools.js"></script>
-      <script type="text/javascript" src="https://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+      <script type="text/javascript" src="static/jquery.js"></script>
+      <script type="text/javascript" src="static/underscore.js"></script>
+      <script type="text/javascript" src="static/doctools.js"></script>
+      <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.1/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
 
   
 
   
   
-    <script type="text/javascript" src="_static/js/theme.js"></script>
+    <script type="text/javascript" src="static/js/theme.js"></script>
   
 
   
