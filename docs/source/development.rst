@@ -25,6 +25,10 @@ Please get in contact with one of us beforehand: ``rionbr(at)gmail(dot)com`` or 
 Changelog
 -----------
 
+v0.0.2
+	- NetworkX 2.1 compatibility
+	- New tutorials
+	- Derrida curve bugfix
 v0.0.1
 	- Code ported to public package.
 	- Documentation and docstring added.

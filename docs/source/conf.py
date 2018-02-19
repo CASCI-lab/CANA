@@ -47,7 +47,7 @@ extensions = [
     'sphinx.ext.viewcode',
     'sphinx.ext.napoleon',
     'sphinx.ext.autosummary',
-    'sphinxcontrib.googleanalytics',
+    #'sphinxcontrib.googleanalytics',
     'sphinxcontrib.bibtex',
     'sphinxtogithub',
 ]

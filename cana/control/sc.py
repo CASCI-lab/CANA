@@ -31,7 +31,7 @@ def sc(directed_graph, keep_self_loops=True):
 	bipartite_graph, vertex_out, vertex_in = _directed_to_bipartite(directed_graph, keep_self_loops=keep_self_loops)
 
 	# do the maximum matching on the bipartite representation
-	max_matching = nx.bipartite.hopcroft_karp_matching(bipartite_graph)
+	max_matching = nx.bipartite.hopcroft_karp_matching(bipartite_graph, top_nodes=vertex_out)
 
 	all_max_matchings = _enumerate_maximum_matchings(bipartite_graph, vertex_out, vertex_in, max_matching)
 
@@ -46,7 +46,7 @@ def sc(directed_graph, keep_self_loops=True):
 
 	return sc_sets
 
-def sc_min_size(directed_graph, keep_self_loops = True):
+def sc_min_size(directed_graph, keep_self_loops=True):
 	"""The minimum number of driver variables required by structural controllability.
 
 	Parameters:
@@ -63,7 +63,7 @@ def sc_min_size(directed_graph, keep_self_loops = True):
 		:func:`sc`
 	"""
 	# get the bipartite represenation of the directed graph
-	bipartite_graph, vertex_out, vertex_in = _directed_to_bipartite(directed_graph, keep_self_loops = keep_self_loops)
+	bipartite_graph, vertex_out, vertex_in = _directed_to_bipartite(directed_graph, keep_self_loops=keep_self_loops)
 
 	# do the maximum matching on the bipartite representation
 	max_matching = nx.bipartite.hopcroft_karp_matching(bipartite_graph)
@@ -106,8 +106,8 @@ def _directed_to_bipartite(directed_graph, keep_self_loops = True):
 	bipartite_graph.add_nodes_from(vertex_in, bipartite=1)
 
 	# add the edges
-	for n in directed_graph.nodes_iter():
-		for v in directed_graph.successors_iter(n):
+	for n in directed_graph.nodes():
+		for v in directed_graph.successors(n):
 			if keep_self_loops:
 				bipartite_graph.add_edge( (n, True), (v, False) )
 			elif (n != v):
@@ -116,7 +116,7 @@ def _directed_to_bipartite(directed_graph, keep_self_loops = True):
 	return bipartite_graph, vertex_out, vertex_in
 		
 def _bipartite_to_directed(bipartite_graph):
-	"""Recover the directed graph from its bipartite represtation.
+	"""Recover the directed graph from its bipartite representation.
 
 	Args:
 		bipartite_graph (networkx.Graph) : The bipartite represtation of a directed graph consisting of two vertex sets:
@@ -129,7 +129,7 @@ def _bipartite_to_directed(bipartite_graph):
 		:attr:`_directed_to_bipartite`.
 	"""
 	directed_graph = nx.DiGraph()
-	for edge in bipartite_graph.edge_iter():
+	for edge, d in bipartite_graph.edges():
 		for node in edge:
 			if node[1] == True:
 				source = node[0]
@@ -170,7 +170,7 @@ def _make_matching_digraph(bipartite_graph, U, V, M):
 	# loop over the first vertex set
 	for v in V:
 		# and loop over all neighbors of v
-		for u in bipartite_graph.neighbors_iter(v):
+		for u in bipartite_graph.neighbors(v):
 			# check if the edge is in the maximum matching
 			if v in matched_vertices and M[v] == u:
 				# if the edge is matched, place a directed edge from U to V
@@ -279,8 +279,8 @@ def _find_path_length_two(G, V, M):
 	"""
 	path = None
 	for v in _listminus(V, M.keys()):
-		for u in G.neighbors_iter(v):
-			for w in G.neighbors_iter(u):
+		for u in G.neighbors(v):
+			for w in G.neighbors(u):
 				if w in M and M[w] == u:
 					path = [v, u, w]
 					break

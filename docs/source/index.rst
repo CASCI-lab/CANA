@@ -8,8 +8,11 @@ Description:
 
 This package implements a series of methods used to study control, canalization and redundancy in Boolean Networks.
 
+A new upcoming paper describing CANA is in the making.
 
-The mathematical descriptions can be seen in the following papers.
+	:cite:`CANA:2018` "R.B. Correia, A. Gates, X. Wang and L.M. Rocha [2018]. "CANA: A python package for quantifying control and canalization in Boolean Networks." In Preparation.
+
+The original mathematical descriptions implemented in CANA can be seen in the following papers.
 
 	:cite:`Gates:2016` "A. Gates and L.M. Rocha. [2016] "`Control of complex networks requires both structure and dynamics`__." Scientific Reports 6, 24456. doi: 10.1038/srep24456."
 

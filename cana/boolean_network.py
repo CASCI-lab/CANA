@@ -3,7 +3,7 @@
 Boolean Network
 ================
 
-description ... 
+
 
 """
 #	Copyright (C) 2017 by
@@ -248,7 +248,7 @@ class BooleanNetwork:
 		self._sg.add_nodes_from( (i, {'label':n.name}) for i,n in enumerate(self.nodes) )
 		for target in xrange(self.Nnodes):
 			for source in self.logic[target]['in']:
-				self._sg.add_edge(source, target, {'weight':1.})
+				self._sg.add_edge(source, target, **{'weight':1.})
 
 		if remove_constants:
 			self._sg.remove_nodes_from(self.constants.keys())
@@ -311,7 +311,7 @@ class BooleanNetwork:
 
 		# Add Nodes
 		for i, node in enumerate(self.nodes, start=0):
-			self._eg.add_node(i, {'label':node.name})
+			self._eg.add_node(i, **{'label':node.name})
 
 		# Add Edges
 		for i, node in enumerate(self.nodes, start=0):
@@ -324,7 +324,7 @@ class BooleanNetwork:
 				for inputs,e_i in zip(self.logic[i]['in'], e_is):
 					# If there is a threshold, only return those number above the threshold. Else, return all edges.
 					if (threshold is None) or ((threshold is not None) and (e_i > threshold)):
-						self._eg.add_edge(inputs,i,{'weight':e_i})						
+						self._eg.add_edge(inputs, i, **{'weight':e_i})						
 			else:
 				raise AttributeError('The mode you selected does not exist. Try "node" or "input".')
 
@@ -585,7 +585,7 @@ class BooleanNetwork:
 			nr_dvs += 1
 
 		if len(attractor_controllers_found) == 0:
-			warnings.warn("No attractor control driver variable sets found after exploring all subsets of size %s nodes!!" % str(number_driver_variables))
+			warnings.warn("No attractor control driver variable sets found after exploring all subsets of size {:,d} to {:,d} nodes!!".format(min_dvs, max_dvs))
 
 		return attractor_controllers_found
 
@@ -651,7 +651,7 @@ class BooleanNetwork:
 		cag = nx.DiGraph(name='CAG: ' + cstg.name)
 		# Nodes
 		for i, attr in enumerate(self._attractors):
-			cag.add_node(i, {'label':'|'.join([self.num2bin(a) for a in attr])})
+			cag.add_node(i, **{'label':'|'.join([self.num2bin(a) for a in attr])})
 		# Edges
 		for i in xrange(Nattract):
 			ireach = self._dfs_reachable(cstg, self._attractors[i][0])

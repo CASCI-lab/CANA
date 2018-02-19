@@ -41,7 +41,7 @@ To instanciante a network from scratch:
 		1:{'name':'in1', 'in':[0],'out':[0,1]}, 
 		2:{'name':'out', 'in':[0,1], 'out':[0,0,0,1]}
 	}
-	print BooleanNode.from_dict(logic, name='AND Net')
+	print BooleanNetwork.from_dict(logic, name='AND Net')
 	<BNetwork(Name='AND Net', N=3, Nodes=['in0', 'in1', 'out'])>
 
 To load a predefined network.
@@ -62,12 +62,10 @@ To compute the State-Transition-Graph (STG) of a Boolean Network.
 
 .. code-block:: python
 
-	from cana.datasets.bio import THALIANA
-	net = THALIANA
 	# this is a networkx.DiGraph() object
-	STG = net.state_transition_graph()
+	STG = t.state_transition_graph()
 	# a list of attractors
-	attrs = net.attractors(mode='stg')
+	attrs = t.attractors(mode='stg')
 	
 		
 Control Driver Nodes
@@ -78,14 +76,14 @@ Note that for large networks, some of these methods do not scale.
 
 .. code-block:: python
 
-	from cana.datasets.bio import THALIANA
-	net = THALIANA()
-	# Find driver nodes
-	A = net.attractor_driver_nodes()
-	MDS = net.minimum_dominating_set_driver_nodes()
-	SC = net.structural_controllability_driver_nodes()
-	FVS = net.feedback_vertex_set_driver_nodes(method='bruteforce', remove_constants=True, keep_self_loops=True)
-
+	# Find driver nodes (bruteforce, takes some time)
+	A = t.attractor_driver_nodes(min_dvs=4, max_dvs=5, verbose=True)
+	SC = t.structural_controllability_driver_nodes(keep_self_loops=False)
+	MDS = t.minimum_dominating_set_driver_nodes(max_search=10)
+	FVS = t.feedback_vertex_set_driver_nodes(method='bruteforce', remove_constants=True, keep_self_loops=True)
+	#
+	print t.get_node_name(SC)
+	[['UFO', 'EMF1', 'LUG', 'CLF'], ['UFO', 'LUG', 'CLF', 'SEP']]
 
 LUT, F' and F'' schematas
 ---------------------------

@@ -3,7 +3,6 @@
 Network Motifs
 ===============
 
-Description...
 
 """
 #   Copyright (C) 2017 by
