@@ -159,7 +159,11 @@ def binstate_to_density(binstate):
 	return sum(map(int, binstate))
 
 def binstate_to_constantbinstate(binstate, constant_template):
-	""" @Not Sure yet. It is being used in the boolean_network._update_trans_func @ """
+	"""
+	Todo:
+		Documentation
+	"""
+	# This function is being used in the boolean_network._update_trans_func
 	constantbinstate = ''
 	iorig = 0
 	for value in constant_template:
@@ -172,7 +176,10 @@ def binstate_to_constantbinstate(binstate, constant_template):
 	return constantbinstate
 
 def constantbinstate_to_statenum(constantbinstate, constant_template):
-	""" @NOT SURE """
+	"""
+	Todo:
+		Documentation
+	"""
 	binstate = ''.join([constantbinstate[ivar] for ivar in xrange(len(constant_template)) if constant_template[ivar] is None])
 	return binstate_to_statenum(binstate)
 
@@ -229,7 +236,8 @@ def print_logic_table(outputs):
 
 def entropy(prob_vector, logbase = 2.):
 	""" Calculates the entropy given a probability vector
-	@ SHOULD THIS BE CALCULATED USING scipy.entropy INSTEAD? @
+	TODO:
+		This should be calculated using ``scipy.entropy``
 	"""
 	prob_vector = np.array(prob_vector)
 	pos_prob_vector = prob_vector[prob_vector > 0]

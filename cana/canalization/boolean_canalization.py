@@ -3,7 +3,6 @@
 Boolean Canalization
 =====================
 
-Description...
 
 """
 #   Copyright (C) 2017 by
@@ -30,7 +29,7 @@ __author__ = """\n""".join([
 # Quine-McCluskey Functions
 # 
 def make_transition_density_tables(k=1, outputs=[0,1]):
-	""" This method creates a tuple-of-lists that is used to calculate Prime Implicants in the first step of the Quine-McCluskey algorithm.
+	""" This method creates a tuple-of-lists that is used to calculate Prime Implicants in the first step of the Quine-McCluskey algorithm :cite:`Quine:1955`.
 	In practice it separates the positive and negative transitions (tuple), then further separates it by counting the number of 1's in each (lists).
 	
 	Args:
@@ -56,7 +55,7 @@ def make_transition_density_tables(k=1, outputs=[0,1]):
 	return transition_density_tuple
 
 def find_implicants_qm(column, verbose=False):
-	""" Finds the prime implicants (PI) using the Quine-McCluskey algorithm.
+	""" Finds the prime implicants (PI) using the Quine-McCluskey algorithm :cite:`Quine:1955`.
 
 	Args:
 		column (list) : A list-of-lists containing the counts of ``1`` for each input.

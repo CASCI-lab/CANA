@@ -11,8 +11,8 @@ __author__ = """\n""".join([
 
 __copyright__ = u'2017, Gates, A., Correia, R. B., Rocha, L. M.'
 
-__version__ = '0.0.1'
-__release__ = '0.0.1b'
+__version__ = '0.0.2'
+__release__ = '0.0.2-alpha'
 #
 __all__ = ['boolean_network','boolean_node']
 
