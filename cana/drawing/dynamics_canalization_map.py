@@ -11,6 +11,7 @@ description ...
 #	Alex Gates <ajgates@indiana.edu>
 #	All rights reserved.
 #	MIT license.try:
+import warnings
 try:
 	import graphviz
 except:
