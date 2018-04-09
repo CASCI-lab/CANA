@@ -293,3 +293,25 @@ def isclose(a, b, rel_tol=1e-09, abs_tol=0.0):
 		bool
 	'''
 	return abs(a - b) <= max(rel_tol * max(abs(a), abs(b)), abs_tol)
+
+
+def output_transitions(eval_line,input_list):
+	'''
+	returns an output list from combinatorically trying all input values
+	Args:
+	    eval_line (string) : logic or arithmetic line to evaluate
+	    input_list (list) : list of input variables
+
+	Returns:
+		list of all possible output transitions
+	'''
+	total=2**len(input_list) #total combinations to try
+	output_list=[]
+	for i in range(total):
+		trial_string = statenum_to_binstate(i,len(input_list))
+		#evaluate trial_string by assigning value to each input variable
+		for j,input in enumerate(input_list):
+			exec(input+'='+trial_string[j])
+		output_list.append(int(eval(eval_line)))
+		
+	return output_list

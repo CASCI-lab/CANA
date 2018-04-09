@@ -23,6 +23,7 @@ from control import fvs, mds, sc
 from base import deprecated
 from utils import *
 import warnings
+import re
 #
 #
 class BooleanNetwork:
@@ -148,6 +149,58 @@ class BooleanNetwork:
 				elif '.e' in line:
 					break
 			line = network_file.readline()
+
+		return cls.from_dict(logic, keep_constants=keep_constants, **kwargs)
+
+	@classmethod
+	def from_text(cls, input_file, keep_constants=True, **kwargs):
+		"""
+		Load the Boolean Network from a text file specifying Boolean update rules.  File should be structured thus:
+		#BOOLEAN RULES
+		node_name*=node_input_1 [logic operator] node_input_2 ...
+
+		Args:
+			infile (string) : The name of a file containing the Boolean Network.
+
+		Returns:
+			BooleanNetwork (object) : The boolean network object.
+
+		See also:
+			:func:`from_string` :func:`from_dict`
+		"""
+		with open(input_file, 'r') as infile:
+			input_string=infile.read()
+
+		logic = defaultdict(dict)
+
+		#parse lines to receive node names
+		network_file = cStringIO.StringIO(input_string)
+		line = network_file.readline() #header line
+		line = network_file.readline() #first Boolean update rule
+		i=0
+		while line != "":	
+			logic[i] = {'name': line.split("*")[0].strip(), 'in':[], 'out':[]}
+			line = network_file.readline()
+			i+=1
+
+		#parse lines again to determine inputs and output sequence
+		network_file = cStringIO.StringIO(input_string)
+		line = network_file.readline() #header line
+		line = network_file.readline() #first Boolean update rule
+		i=0
+		while line != "":
+			eval_line = line.split("=")[1] #logical condition to evaluate
+			#need regular expression to check for non-alphanumeric character before/after node name (since some node names are included in other node names)
+			#additional characters added to eval_line to avoid start/end of string complications
+			input_names=[logic[node]['name'] for node in logic if re.compile('\W'+logic[node]['name']+'\W').search('*'+eval_line+'*')]
+			input_nums=[node for input in input_names for node in logic if input==logic[node]['name']]
+			logic[i]['in']=input_nums
+			#determine output transitions
+			logic[i]['out']=output_transitions(eval_line,input_names)
+			line = network_file.readline()
+			i+=1
+			#print eval_line
+		#print logic
 
 		return cls.from_dict(logic, keep_constants=keep_constants, **kwargs)
 
