@@ -334,7 +334,11 @@ class BooleanNode(object):
 
 		"""
 		d = []
-		for statenum, output in zip( xrange(self.k**2), self.outputs):
+		if ((self.k == 1) and (self.constant == False)):
+			k = 2
+		else:
+			k = self.k
+		for statenum, output in zip( xrange(k**2), self.outputs):
 			# Binary State, Transition
 			d.append( (statenum_to_binstate(statenum, base=self.k), output) )
 		df = pd.DataFrame(d, columns=['In:','Out:'])
@@ -469,10 +473,10 @@ class BooleanNode(object):
 
 		# Outputs
 		if output is None or output == 0:
-			G.add_node('%s-0' % (self.name) , {'label':self.name, 'type':'variable', 'mode':'output', 'value':0, 'constant':self.constant, 'group':self.name})
+			G.add_node('{:s}-0'.format(self.name) , **{'label':self.name, 'type':'variable', 'mode':'output', 'value':0, 'constant':self.constant, 'group':self.name})
 
 		if output is None or output == 1:
-			G.add_node('%s-1' % (self.name) , {'label':self.name, 'type':'variable', 'mode':'output', 'value':1, 'constant':self.constant, 'group':self.name})
+			G.add_node('{:s}-1'.format(self.name) , **{'label':self.name, 'type':'variable', 'mode':'output', 'value':1, 'constant':self.constant, 'group':self.name})
 
 		tid = 0
 		for out, tspsss in zip( [0,1] , self._two_symbols ):
@@ -507,47 +511,47 @@ class BooleanNode(object):
 				tau = nlit + ngrp0 + ngrp1
 
 				# Threshold Node
-				tname = 'T-%s_%s-%s' % (tid,self.name,out)
+				tname = 'T-{:d}_{:s}-{:d}'.format(tid,self.name,out)
 				label = "%d" % (tau)
-				G.add_node(tname , {'label':label, 'type':'threshold', 'tau':tau, 'group':self.name})
+				G.add_node(tname , **{'label':label, 'type':'threshold', 'tau':tau, 'group':self.name})
 
 				# Add Edges from Threshold node to output
-				xname = '%s-%s' % (self.name,out)
-				G.add_edge(tname,xname, {'type':'out'})
+				xname = '{:s}-{:d}'.format(self.name,out)
+				G.add_edge(tname,xname, **{'type':'out'})
 
 				# Literal Edges
 				for lit in lits:
-					iname = '%s-%s' % (self.inputs[lit], ts[lit])
+					iname = '{:s}-{:s}'.format(self.inputs[lit], ts[lit])
 					if iname not in G.nodes():
 						ilabel = self.inputs[lit]
 						iout = int(ts[lit])
-						G.add_node(iname , {'label':ilabel, 'type':'variable', 'mode':'input', 'value':iout, 'group':self.name})
-					G.add_edge(iname, tname, {'type':'literal'})
+						G.add_node(iname , **{'label':ilabel, 'type':'variable', 'mode':'input', 'value':iout, 'group':self.name})
+					G.add_edge(iname, tname, **{'type':'literal'})
 
 				# Group0
 				for fusion in xrange(ngrp0):
-					fname = 'F-%s_T-%s_%s-%s' % (fusion, tid, self.name, 0)
-					G.add_node(fname, {'type':'fusion','group':self.name})
+					fname = 'F-{:d}_T-{:d}_{:s}-{:d}'.format(fusion, tid, self.name, 0)
+					G.add_node(fname, **{'type':'fusion','group':self.name})
 					for input in ps[0]:
 						iname = '%s-%s' % (self.inputs[input], 0)
 						if iname not in G.nodes():
 							ilabel = self.inputs[input]
-							G.add_node(iname , {'label':ilabel, 'type':'variable', 'mode':'input', 'value':0, 'group':self.name})
-						G.add_edge(iname,fname, {'type':'fusing'})
-					G.add_edge(fname,tname, {'type':'fused'})
+							G.add_node(iname , **{'label':ilabel, 'type':'variable', 'mode':'input', 'value':0, 'group':self.name})
+						G.add_edge(iname,fname, **{'type':'fusing'})
+					G.add_edge(fname,tname, **{'type':'fused'})
 					
 				# Group1
 				for fusion in xrange(ngrp1):
-					fname = 'F-%s_T-%s_%s-%s' % (fusion, tid, self.name, 1)
-					G.add_node(fname, {'type':'fusion', 'group':self.name})
+					fname = 'F-{:d}_T-{:d}_{:s}-{:d}'.format(fusion, tid, self.name, 1)
+					G.add_node(fname, **{'type':'fusion', 'group':self.name})
 					for input in ps[0]:
 						iname = '%s-%s' % (self.inputs[input], 1)
 						if iname not in G.nodes():
 							ilabel = self.inputs[input]
 							iout = ts[input]
-							G.add_node(iname , {'label':ilabel, 'type':'variable', 'mode':'input', 'value':1, 'group':self.name})
-						G.add_edge(iname,fname, {'type':'fusing'})
-					G.add_edge(fname,tname, {'type':'fused'})
+							G.add_node(iname , **{'label':ilabel, 'type':'variable', 'mode':'input', 'value':1, 'group':self.name})
+						G.add_edge(iname,fname, **{'type':'fusing'})
+					G.add_edge(fname,tname, **{'type':'fused'})
 
 				tid += 1
 

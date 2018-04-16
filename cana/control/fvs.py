@@ -146,7 +146,7 @@ def _in1(directed_graph):
 	remove_set = set([n for n in directed_graph.nodes() if (directed_graph.in_degree(n) == 1)])
 	
 	for u in remove_set:
-		v = directed_graph.predecessors(u)[0]
+		v = list(directed_graph.predecessors(u))[0]
 		directed_graph.add_edges_from([(v, w) for w in directed_graph.successors(u)])
 	directed_graph.remove_nodes_from(remove_set)
 	return directed_graph, len(remove_set) == 0
@@ -157,7 +157,7 @@ def _out1(directed_graph):
 	remove_set = set([n for n in directed_graph.nodes() if (directed_graph.out_degree(n) == 1)])
 
 	for u in remove_set:
-		v = directed_graph.successors(u)[0]
+		v = list(directed_graph.successors(u))[0]
 		directed_graph.add_edges_from([(w, v) for w in directed_graph.predecessors(u)])
 	directed_graph.remove_nodes_from(remove_set)
 	
@@ -166,7 +166,7 @@ def _out1(directed_graph):
 def _selfloop(directed_graph, S):
 	"""
 	"""
-	remove_set = directed_graph.nodes_with_selfloops()
+	remove_set = list( directed_graph.nodes_with_selfloops() )
 
 	S = S.union(set(remove_set))
 
