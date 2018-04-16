@@ -8,7 +8,7 @@
   
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   
-  <title>Tutorials &mdash; CANA 0.0.2-alpha documentation</title>
+  <title>Tutorials &mdash; CANA 0.0.3-alpha documentation</title>
   
 
   
@@ -35,7 +35,7 @@
         <link rel="index" title="Index"
               href="genindex.html"/>
         <link rel="search" title="Search" href="search.html"/>
-    <link rel="top" title="CANA 0.0.2-alpha documentation" href="index.html"/>
+    <link rel="top" title="CANA 0.0.3-alpha documentation" href="index.html"/>
         <link rel="next" title="API Reference" href="reference/index.html"/>
         <link rel="prev" title="Notation" href="notation.html"/> 
 
@@ -66,7 +66,7 @@
             
             
               <div class="version">
-                0.0.2
+                0.0.3
               </div>
             
           
@@ -176,7 +176,8 @@ There you will find several <code class="docutils literal notranslate"><span cla
 <div class="section" id="instanciante-a-boolean-node">
 <h2>Instanciante a Boolean Node<a class="headerlink" href="#instanciante-a-boolean-node" title="Permalink to this headline">¶</a></h2>
 <p>To instanciante a node from scratch:</p>
-<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="k">print</span> <span class="n">BooleanNode</span><span class="o">.</span><span class="n">from_output_list</span><span class="p">(</span><span class="n">outputs</span><span class="o">=</span><span class="p">[</span><span class="mi">0</span><span class="p">,</span><span class="mi">0</span><span class="p">,</span><span class="mi">0</span><span class="p">,</span><span class="mi">1</span><span class="p">],</span> <span class="n">name</span><span class="o">=</span><span class="s1">&#39;AND&#39;</span><span class="p">,</span> <span class="n">inputs</span><span class="o">=</span><span class="p">[</span><span class="s1">&#39;in1&#39;</span><span class="p">,</span><span class="s1">&#39;in2&#39;</span><span class="p">])</span>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">cana</span> <span class="kn">import</span> <span class="n">BooleanNode</span>
+<span class="k">print</span> <span class="n">BooleanNode</span><span class="o">.</span><span class="n">from_output_list</span><span class="p">(</span><span class="n">outputs</span><span class="o">=</span><span class="p">[</span><span class="mi">0</span><span class="p">,</span><span class="mi">0</span><span class="p">,</span><span class="mi">0</span><span class="p">,</span><span class="mi">1</span><span class="p">],</span> <span class="n">name</span><span class="o">=</span><span class="s1">&#39;AND&#39;</span><span class="p">,</span> <span class="n">inputs</span><span class="o">=</span><span class="p">[</span><span class="s1">&#39;in1&#39;</span><span class="p">,</span><span class="s1">&#39;in2&#39;</span><span class="p">])</span>
 <span class="o">&lt;</span><span class="n">BNode</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="s1">&#39;AND&#39;</span><span class="p">,</span> <span class="n">k</span><span class="o">=</span><span class="mi">2</span><span class="p">,</span> <span class="n">inputs</span><span class="o">=</span><span class="p">[</span><span class="n">in1</span><span class="p">,</span><span class="n">in2</span><span class="p">],</span> <span class="n">state</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">outputs</span><span class="o">=</span><span class="s1">&#39;[0,0,0,1]&#39;</span> <span class="n">constant</span><span class="o">=</span><span class="bp">False</span><span class="p">)</span><span class="o">&gt;</span>
 </pre></div>
 </div>
@@ -193,7 +194,8 @@ There you will find several <code class="docutils literal notranslate"><span cla
 <div class="section" id="instanciante-a-boolean-network">
 <h2>Instanciante a Boolean Network<a class="headerlink" href="#instanciante-a-boolean-network" title="Permalink to this headline">¶</a></h2>
 <p>To instanciante a network from scratch:</p>
-<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">logic</span> <span class="o">=</span> <span class="p">{</span>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">cana</span> <span class="kn">import</span> <span class="n">BooleanNetwork</span>
+<span class="n">logic</span> <span class="o">=</span> <span class="p">{</span>
         <span class="mi">0</span><span class="p">:{</span><span class="s1">&#39;name&#39;</span><span class="p">:</span><span class="s1">&#39;in0&#39;</span><span class="p">,</span> <span class="s1">&#39;in&#39;</span><span class="p">:[</span><span class="mi">0</span><span class="p">],</span><span class="s1">&#39;out&#39;</span><span class="p">:[</span><span class="mi">0</span><span class="p">,</span><span class="mi">1</span><span class="p">]},</span>
         <span class="mi">1</span><span class="p">:{</span><span class="s1">&#39;name&#39;</span><span class="p">:</span><span class="s1">&#39;in1&#39;</span><span class="p">,</span> <span class="s1">&#39;in&#39;</span><span class="p">:[</span><span class="mi">0</span><span class="p">],</span><span class="s1">&#39;out&#39;</span><span class="p">:[</span><span class="mi">0</span><span class="p">,</span><span class="mi">1</span><span class="p">]},</span>
         <span class="mi">2</span><span class="p">:{</span><span class="s1">&#39;name&#39;</span><span class="p">:</span><span class="s1">&#39;out&#39;</span><span class="p">,</span> <span class="s1">&#39;in&#39;</span><span class="p">:[</span><span class="mi">0</span><span class="p">,</span><span class="mi">1</span><span class="p">],</span> <span class="s1">&#39;out&#39;</span><span class="p">:[</span><span class="mi">0</span><span class="p">,</span><span class="mi">0</span><span class="p">,</span><span class="mi">0</span><span class="p">,</span><span class="mi">1</span><span class="p">]}</span>
@@ -286,7 +288,7 @@ Note that for large networks, some of these methods do not scale.</p>
   <div role="contentinfo">
     <p>
         &copy; Copyright 2017, Correia, R. B., Gates, A., Rocha, L. M..
-      Last updated on Feb 19, 2018.
+      Last updated on Apr 16, 2018.
 
     </p>
   </div>
@@ -308,7 +310,7 @@ Note that for large networks, some of these methods do not scale.</p>
     <script type="text/javascript">
         var DOCUMENTATION_OPTIONS = {
             URL_ROOT:'./',
-            VERSION:'0.0.2-alpha',
+            VERSION:'0.0.3-alpha',
             COLLAPSE_INDEX:false,
             FILE_SUFFIX:'.html',
             HAS_SOURCE:  true,

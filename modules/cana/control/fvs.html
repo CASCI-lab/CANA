@@ -8,7 +8,7 @@
   
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   
-  <title>cana.control.fvs &mdash; CANA 0.0.2-alpha documentation</title>
+  <title>cana.control.fvs &mdash; CANA 0.0.3-alpha documentation</title>
   
 
   
@@ -35,7 +35,7 @@
         <link rel="index" title="Index"
               href="../../../genindex.html"/>
         <link rel="search" title="Search" href="../../../search.html"/>
-    <link rel="top" title="CANA 0.0.2-alpha documentation" href="../../../index.html"/>
+    <link rel="top" title="CANA 0.0.3-alpha documentation" href="../../../index.html"/>
         <link rel="up" title="Module code" href="../../index.html"/> 
 
   
@@ -65,7 +65,7 @@
             
             
               <div class="version">
-                0.0.2
+                0.0.3
               </div>
             
           
@@ -309,7 +309,7 @@
 	<span class="n">remove_set</span> <span class="o">=</span> <span class="nb">set</span><span class="p">([</span><span class="n">n</span> <span class="k">for</span> <span class="n">n</span> <span class="ow">in</span> <span class="n">directed_graph</span><span class="o">.</span><span class="n">nodes</span><span class="p">()</span> <span class="k">if</span> <span class="p">(</span><span class="n">directed_graph</span><span class="o">.</span><span class="n">in_degree</span><span class="p">(</span><span class="n">n</span><span class="p">)</span> <span class="o">==</span> <span class="mi">1</span><span class="p">)])</span>
 	
 	<span class="k">for</span> <span class="n">u</span> <span class="ow">in</span> <span class="n">remove_set</span><span class="p">:</span>
-		<span class="n">v</span> <span class="o">=</span> <span class="n">directed_graph</span><span class="o">.</span><span class="n">predecessors</span><span class="p">(</span><span class="n">u</span><span class="p">)[</span><span class="mi">0</span><span class="p">]</span>
+		<span class="n">v</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">directed_graph</span><span class="o">.</span><span class="n">predecessors</span><span class="p">(</span><span class="n">u</span><span class="p">))[</span><span class="mi">0</span><span class="p">]</span>
 		<span class="n">directed_graph</span><span class="o">.</span><span class="n">add_edges_from</span><span class="p">([(</span><span class="n">v</span><span class="p">,</span> <span class="n">w</span><span class="p">)</span> <span class="k">for</span> <span class="n">w</span> <span class="ow">in</span> <span class="n">directed_graph</span><span class="o">.</span><span class="n">successors</span><span class="p">(</span><span class="n">u</span><span class="p">)])</span>
 	<span class="n">directed_graph</span><span class="o">.</span><span class="n">remove_nodes_from</span><span class="p">(</span><span class="n">remove_set</span><span class="p">)</span>
 	<span class="k">return</span> <span class="n">directed_graph</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="n">remove_set</span><span class="p">)</span> <span class="o">==</span> <span class="mi">0</span>
@@ -320,7 +320,7 @@
 	<span class="n">remove_set</span> <span class="o">=</span> <span class="nb">set</span><span class="p">([</span><span class="n">n</span> <span class="k">for</span> <span class="n">n</span> <span class="ow">in</span> <span class="n">directed_graph</span><span class="o">.</span><span class="n">nodes</span><span class="p">()</span> <span class="k">if</span> <span class="p">(</span><span class="n">directed_graph</span><span class="o">.</span><span class="n">out_degree</span><span class="p">(</span><span class="n">n</span><span class="p">)</span> <span class="o">==</span> <span class="mi">1</span><span class="p">)])</span>
 
 	<span class="k">for</span> <span class="n">u</span> <span class="ow">in</span> <span class="n">remove_set</span><span class="p">:</span>
-		<span class="n">v</span> <span class="o">=</span> <span class="n">directed_graph</span><span class="o">.</span><span class="n">successors</span><span class="p">(</span><span class="n">u</span><span class="p">)[</span><span class="mi">0</span><span class="p">]</span>
+		<span class="n">v</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">directed_graph</span><span class="o">.</span><span class="n">successors</span><span class="p">(</span><span class="n">u</span><span class="p">))[</span><span class="mi">0</span><span class="p">]</span>
 		<span class="n">directed_graph</span><span class="o">.</span><span class="n">add_edges_from</span><span class="p">([(</span><span class="n">w</span><span class="p">,</span> <span class="n">v</span><span class="p">)</span> <span class="k">for</span> <span class="n">w</span> <span class="ow">in</span> <span class="n">directed_graph</span><span class="o">.</span><span class="n">predecessors</span><span class="p">(</span><span class="n">u</span><span class="p">)])</span>
 	<span class="n">directed_graph</span><span class="o">.</span><span class="n">remove_nodes_from</span><span class="p">(</span><span class="n">remove_set</span><span class="p">)</span>
 	
@@ -329,7 +329,7 @@
 <span class="k">def</span> <span class="nf">_selfloop</span><span class="p">(</span><span class="n">directed_graph</span><span class="p">,</span> <span class="n">S</span><span class="p">):</span>
 	<span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">	&quot;&quot;&quot;</span>
-	<span class="n">remove_set</span> <span class="o">=</span> <span class="n">directed_graph</span><span class="o">.</span><span class="n">nodes_with_selfloops</span><span class="p">()</span>
+	<span class="n">remove_set</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span> <span class="n">directed_graph</span><span class="o">.</span><span class="n">nodes_with_selfloops</span><span class="p">()</span> <span class="p">)</span>
 
 	<span class="n">S</span> <span class="o">=</span> <span class="n">S</span><span class="o">.</span><span class="n">union</span><span class="p">(</span><span class="nb">set</span><span class="p">(</span><span class="n">remove_set</span><span class="p">))</span>
 
@@ -425,7 +425,7 @@
   <div role="contentinfo">
     <p>
         &copy; Copyright 2017, Correia, R. B., Gates, A., Rocha, L. M..
-      Last updated on Feb 19, 2018.
+      Last updated on Apr 16, 2018.
 
     </p>
   </div>
@@ -447,7 +447,7 @@
     <script type="text/javascript">
         var DOCUMENTATION_OPTIONS = {
             URL_ROOT:'../../../',
-            VERSION:'0.0.2-alpha',
+            VERSION:'0.0.3-alpha',
             COLLAPSE_INDEX:false,
             FILE_SUFFIX:'.html',
             HAS_SOURCE:  true,
