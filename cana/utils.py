@@ -314,4 +314,5 @@ def output_transitions(eval_line,input_list):
 			exec(input+'='+trial_string[j])
 		output_list.append(int(eval(eval_line)))
 		
+		#print trial_string, int(eval(eval_line))
 	return output_list

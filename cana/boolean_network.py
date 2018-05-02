@@ -199,7 +199,7 @@ class BooleanNetwork:
 			logic[i]['out']=output_transitions(eval_line,input_names)
 			line = network_file.readline()
 			i+=1
-			#print eval_line
+			#print logic[i-1]['name'], eval_line
 		#print logic
 
 		return cls.from_dict(logic, keep_constants=keep_constants, **kwargs)
