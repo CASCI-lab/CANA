@@ -14,6 +14,7 @@ To instanciante a node from scratch:
 
 .. code-block:: python
 
+	from cana import BooleanNode
 	print BooleanNode.from_output_list(outputs=[0,0,0,1], name='AND', inputs=['in1','in2'])
 	<BNode(name='AND', k=2, inputs=[in1,in2], state=0, outputs='[0,0,0,1]' constant=False)>
 
@@ -36,6 +37,7 @@ To instanciante a network from scratch:
 
 .. code-block:: python
 
+	from cana import BooleanNetwork
 	logic = {
 		0:{'name':'in0', 'in':[0],'out':[0,1]}, 
 		1:{'name':'in1', 'in':[0],'out':[0,1]}, 

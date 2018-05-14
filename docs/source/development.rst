@@ -25,6 +25,8 @@ Please get in contact with one of us beforehand: ``rionbr(at)gmail(dot)com`` or 
 Changelog
 -----------
 
+v0.0.3
+	- Bugfixes
 v0.0.2
 	- NetworkX 2.1 compatibility
 	- New tutorials

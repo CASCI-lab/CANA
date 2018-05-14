@@ -505,7 +505,7 @@ class BooleanNetwork:
 		"""
 
 		"""
-		if self.keep_constants:
+		if not self.keep_constants:
 			self.Nstates = 2**(self.Nnodes - self.Nconstants)
 			constant_template = [None if not (ivar in self.constants.keys()) else self.constants[ivar] for ivar in xrange(self.Nnodes)]
 			self.bin2num = lambda bs: constantbinstate_to_statenum(bs, constant_template)
@@ -827,25 +827,26 @@ class BooleanNetwork:
 		if simplify:			
 			#Loop all threshold nodes
 			for n,d in ((n,d) for n,d in DCM.nodes(data=True) if d['type']=='threshold'):
-				
+
 				# Constant, remove threshold node
 				if d['tau'] == 0:
 					DCM.remove_node(n)
 
 				# Tau == 1
 				if d['tau'] == 1:
-					in_nei = DCM.in_edges(n)[0]
-					out_nei = DCM.out_edges(n)[0]
+					in_nei = list(DCM.in_edges(n))[0]
+					out_nei = list(DCM.out_edges(n))[0]
 
 					neis = set( list(in_nei) + list(out_nei) )
+
 					# Convert to self loop
 					if (in_nei == out_nei[::-1]):
 						DCM.remove_node(n)
-						DCM.add_edge(in_nei[0],out_nei[1], {'type':'simplified','mode':'selfloop'})
+						DCM.add_edge(in_nei[0],out_nei[1], **{'type':'simplified','mode':'selfloop'})
 					# Link variables nodes directly
 					elif not any([DCM.node[tn]['type']=='fusion' for tn in in_nei]):
 						DCM.remove_node(n)
-						DCM.add_edge(in_nei[0],out_nei[1], {'type':'simplified','mode':'direct'})
+						DCM.add_edge(in_nei[0],out_nei[1], **{'type':'simplified','mode':'direct'})
 		# Remove Isolates
 		DCM.remove_nodes_from(nx.isolates(DCM))
 

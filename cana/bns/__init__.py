@@ -69,6 +69,8 @@ def attractors(cnet, bnspath=_path, cleanup=True):
 		for i,line in enumerate(p.stdout):
 			# Strip line
 			cleanline = line.strip().replace('\n', "")
+			#DEBUG: print "{:d}: '{:s}'".format(i ,cleanline)
+			
 			if 'Attractor' in cleanline:
 				attractors.append(current_attractor)
 				current_attractor = []
@@ -80,9 +82,9 @@ def attractors(cnet, bnspath=_path, cleanup=True):
 				pass
 			elif 'Depth' in cleanline:
 				pass
-			elif 'Average' in cleanline:
-				break
-			elif len(cleanline) > 0: 
+			elif 'average' in cleanline:
+				pass
+			elif len(cleanline) > 0:
 				current_attractor.append( binstate_to_statenum(cleanline) )
 
 	except OSError:
