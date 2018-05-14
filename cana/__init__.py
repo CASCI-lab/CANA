@@ -15,7 +15,7 @@ __copyright__ = u'2017, Correia, R. B., Gates, A., Rocha, L. M.'
 __version__ = '0.0.3'
 __release__ = '0.0.3-alpha'
 #
-__all__ = ['boolean_network','boolean_node']
+__all__ = ['boolean_network','boolean_node','format_conversion']
 
 #
 from boolean_network import BooleanNetwork
