@@ -54,6 +54,9 @@ def CC_bool_expr2cnet(expression_all_file,external_node_file,outputfile):
                 NodeList.append(word)
                 NodeDict[word] = len(NodeList)
 
+        NodeList_sorted = NodeList[:]
+        NodeList_sorted.sort(key=lambda x: len(x), reverse=True)
+
         # initiate node value list
         # comparing with substituting truth value, value assignment shoud be
         # much faster!
@@ -79,7 +82,7 @@ def CC_bool_expr2cnet(expression_all_file,external_node_file,outputfile):
             for line in expfile:
                 line = line.strip()
                 rem = re.match(r'^(\S+)\s*=\s*(.+)$',line)                
-                FunctionDict[rem.group(1)] = _parse_bool_func(rem.group(2),NodeDict)
+                FunctionDict[rem.group(1)] = _parse_bool_func(rem.group(2),NodeDict,NodeList_sorted)
 
         
         for node in NodeList[:externalp]:
@@ -136,13 +139,14 @@ def _LUTrow(assignment,result):
     '''
     return ''.join(['1' if i else '0' for i in assignment]) + ' ' + ('1' if result else '0') + '\n'
 
-def _parse_bool_func(exp,NodeDict):
+def _parse_bool_func(exp,NodeDict, NodeList_sorted = None):
     '''interal function. convert a Boolean expression to an expression can be evaluated by python
     Don't use this outside this module. It won't have any meaning unless calling from CC_bool_expr2cnet()!
 
     Args:
         exp (string) : Boolean expressions extracted from Cell Collective Boolean expression files
         NodeDict (dict) : a dict containing (node name)->(node number) map
+        NodeList_sorted (list) : a list containing all node names. Sorted as longest to shortest. 
 
     Returns:
         list : a list containing all node names occur in exp
@@ -155,8 +159,9 @@ def _parse_bool_func(exp,NodeDict):
     # node names must not be AND NOT OR !
     # update: should consider node names that are subset of other node names
     varlist = []
-    NodeList_sorted = [nodename for nodename in NodeDict]
-    NodeList_sorted.sort(key=lambda x:len(x),reverse=True)
+    if NodeList_sorted is None:
+        NodeList_sorted = [nodename for nodename in NodeDict]
+        NodeList_sorted.sort(key=lambda x:len(x),reverse=True)
     exp_copy = exp
     for nodename in NodeList_sorted:
         if nodename in exp_copy:
