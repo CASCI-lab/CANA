@@ -153,10 +153,15 @@ def _parse_bool_func(exp,NodeDict):
     # node names must not contain = and spaces !
     # update, now can process node names containing ()
     # node names must not be AND NOT OR !
+    # update: should consider node names that are subset of other node names
     varlist = []
-    for nodename in NodeDict:
-        if nodename in exp:
+    NodeList_sorted = [nodename for nodename in NodeDict]
+    NodeList_sorted.sort(key=lambda x:len(x),reverse=True)
+    exp_copy = exp
+    for nodename in NodeList_sorted:
+        if nodename in exp_copy:
             varlist.append(nodename)
+            exp_copy = exp_copy.replace(nodename,'')
     sublist = [(varlist[i],'NodeValueList[' + str(NodeDict[varlist[i]] - 1) + ']') for i in range(len(varlist))]
     map_lower_case = [('AND','and'), ('OR','or'), ('NOT','not')]
     # even keywords should be sorted in the same pool
