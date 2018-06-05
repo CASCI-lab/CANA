@@ -304,6 +304,26 @@ def output_transitions(eval_line,input_list):
 
 	Returns:
 		list of all possible output transitions
+
+	Example (leukemia network): RAS*=(GRB2 or PLCG1) and not GAP
+                eval_line = "(GRB2 or PLCG1) and not GAP"
+                input_list = ['GRB2', 'PLCG1', 'GAP']
+
+                This function generates the following trial strings:
+                        000
+                        001
+                        010
+                        011
+                        100
+                        101
+                        110
+                        111
+
+                A variable is dynamically created for each member of the input list
+                and assigned the corresponding value from each trail string.
+                The original eval_line is then evaluated with each assignment
+                which results in the output list [0, 0, 1, 0, 1, 0, 1, 0]
+
 	'''
 	total=2**len(input_list) #total combinations to try
 	output_list=[]

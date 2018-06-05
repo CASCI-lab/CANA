@@ -1,3 +1,7 @@
+#Boolean network model of survival signaling in T-LGL leukemia
+#From Zhang, Ranran, et al. 
+#"Network model of survival signaling in large granular lymphocyte leukemia." 
+#Proceedings of the National Academy of Sciences 105.42 (2008): 16308-16313.
 #BOOLEAN RULES
 CTLA4* =TCR
 TCR*= Stimuli and not CTLA4

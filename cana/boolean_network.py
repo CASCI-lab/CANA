@@ -175,20 +175,24 @@ class BooleanNetwork:
 
 		#parse lines to receive node names
 		network_file = cStringIO.StringIO(input_string)
-		line = network_file.readline() #header line
-		line = network_file.readline() #first Boolean update rule
+		line = network_file.readline()
 		i=0
-		while line != "":	
+		while line != "":
+                        if line[0]=='#':
+                                line = network_file.readline()
+                                continue
 			logic[i] = {'name': line.split("*")[0].strip(), 'in':[], 'out':[]}
 			line = network_file.readline()
 			i+=1
 
 		#parse lines again to determine inputs and output sequence
 		network_file = cStringIO.StringIO(input_string)
-		line = network_file.readline() #header line
-		line = network_file.readline() #first Boolean update rule
+		line = network_file.readline()
 		i=0
 		while line != "":
+                        if line[0]=='#':
+                                line = network_file.readline()
+                                continue
 			eval_line = line.split("=")[1] #logical condition to evaluate
 			#need regular expression to check for non-alphanumeric character before/after node name (since some node names are included in other node names)
 			#additional characters added to eval_line to avoid start/end of string complications
