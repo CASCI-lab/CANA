@@ -65,3 +65,22 @@ def MARQUESPITA():
 	return BooleanNetwork.from_file(_path + '/marques-pita_rocha.txt', name="Marques-Pita & Rocha", keep_constants=True)
 
 
+def LEUKEMIA():
+	"""Boolean network model of survival signaling in T-LGL leukemia  
+
+	The network is defined in :cite:`zhang2008network`.
+
+	Returns:
+		(BooleanNetwork)
+	"""
+	return BooleanNetwork.from_text(_path + '/leukemia.txt', name="Leukemia", keep_constants=True)
+
+def BREAST_CANCER():
+	"""Boolean network model of signal transduction in ER+ breast cancer 
+
+	The network is defined in :cite:`zanudo2017network`.
+
+	Returns:
+		(BooleanNetwork)
+	"""
+	return BooleanNetwork.from_text(_path + '/breast_cancer.txt', name="Breast Cancer", keep_constants=True)
