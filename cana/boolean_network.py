@@ -76,12 +76,14 @@ class BooleanNetwork:
 	# I/O Methods
 	#
 	@classmethod
-	def from_file(cls, input_file, keep_constants=True, **kwargs):
+	def from_file(cls, input_file, file_type='cnet', keep_constants=True, **kwargs):
 		"""
 		Load the Boolean Network from a file.
 
 		Args:
 			infile (string) : The name of a file containing the Boolean Network.
+			file_type (string) : The type of file, either 'cnet' for cnet format
+			or 'logical' for Boolean logical rules.  Default is 'cnet'
 
 		Returns:
 			BooleanNetwork (object) : The boolean network object.
@@ -90,7 +92,10 @@ class BooleanNetwork:
 			:func:`from_string` :func:`from_dict`
 		"""
 		with open(input_file, 'r') as infile:
-			return cls.from_string(infile.read(), keep_constants=keep_constants, **kwargs)
+                        if file_type=='cnet':
+                                return cls.from_string(infile.read(), keep_constants=keep_constants, **kwargs)
+                        elif file_type=='logical':
+                                return cls.from_boolean_text(infile.read(), keep_constants=keep_constants, **kwargs)
 
 	@classmethod
 	def from_string(cls, input_string, keep_constants=True, **kwargs):
@@ -153,7 +158,7 @@ class BooleanNetwork:
 		return cls.from_dict(logic, keep_constants=keep_constants, **kwargs)
 
 	@classmethod
-	def from_text(cls, input_file, keep_constants=True, **kwargs):
+	def from_boolean_text(cls, input_string, keep_constants=True, **kwargs):
 		"""
 		Load the Boolean Network from a text file specifying Boolean update rules.  File should be structured thus:
 		#BOOLEAN RULES
@@ -168,8 +173,6 @@ class BooleanNetwork:
 		See also:
 			:func:`from_string` :func:`from_dict`
 		"""
-		with open(input_file, 'r') as infile:
-			input_string=infile.read()
 
 		logic = defaultdict(dict)
 

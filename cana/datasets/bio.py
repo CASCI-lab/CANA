@@ -73,7 +73,7 @@ def LEUKEMIA():
 	Returns:
 		(BooleanNetwork)
 	"""
-	return BooleanNetwork.from_text(_path + '/leukemia.txt', name="Leukemia", keep_constants=True)
+	return BooleanNetwork.from_file(_path + '/leukemia.txt', name="Leukemia", keep_constants=True, file_type='logical')
 
 def BREAST_CANCER():
 	"""Boolean network model of signal transduction in ER+ breast cancer 
@@ -83,4 +83,4 @@ def BREAST_CANCER():
 	Returns:
 		(BooleanNetwork)
 	"""
-	return BooleanNetwork.from_text(_path + '/breast_cancer.txt', name="Breast Cancer", keep_constants=True)
+	return BooleanNetwork.from_file(_path + '/breast_cancer.txt', name="Breast Cancer", keep_constants=True, file_type='logical')

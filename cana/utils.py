@@ -303,7 +303,7 @@ def output_transitions(eval_line,input_list):
 	    input_list (list) : list of input variables
 
 	Returns:
-		list of all possible output transitions
+		list of all possible output transitions (list)
 
 	Example (leukemia network): RAS*=(GRB2 or PLCG1) and not GAP
                 eval_line = "(GRB2 or PLCG1) and not GAP"
