@@ -43,6 +43,8 @@ def CC_bool_expr2cnet(expression_all_file, external_node_file, outputfile):
             NodeDict[NodeList[i]] = i + 1
 
         # any node beyond this mark will be external node
+		# update: for some expression file, we may see external nodes among internal nodes
+		# so the best way to describe them would be "external nodes without truth value or expression assignment
         externalp = len(NodeList)
 
         # add external nodes.  Nodes without input
@@ -51,8 +53,9 @@ def CC_bool_expr2cnet(expression_all_file, external_node_file, outputfile):
         with open(external_node_file) as f:
             for line in f:
                 word = line.strip()
-                NodeList.append(word)
-                NodeDict[word] = len(NodeList)
+                if word not in NodeDict:
+                    NodeList.append(word)
+                    NodeDict[word] = len(NodeList)
 
         NodeList_sorted = NodeList[:]
         NodeList_sorted.sort(key=lambda x: len(x), reverse=True)
