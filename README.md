@@ -3,7 +3,7 @@ CANAlization: Control & Redundancy in Boolean Networks
 
 This package implements a series of methods used to study control, canalization and redundancy in Boolean Networks.
 
-Instalation:
+Installation:
 -------------
 
 This package (will be) available in Pypi. Just run the following command on terminal to install.
