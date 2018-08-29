@@ -22,7 +22,7 @@ The full documentation can be found at: [rionbr.github.io/CANA](https://rionbr.g
 Papers:
 ---------
 
-- R.B. Correia, A. Gates, X. Wang and L.M. Rocha [2018]. "CANA: A python package for quantifying control and canalization in Boolean Networks." *In Preparation*.
+- R.B. Correia, A.J. Gates, X. Wang, L.M. Rocha [2018]. "[CANA: A python package for quantifying control and canalization in Boolean Networks](https://www.informatics.indiana.edu/rocha/publications/FSB18.php)". *Frontiers in Physiology*. **9**: 1046. doi: 10.3389/fphys.2018.01046
 
 - A. Gates and L.M. Rocha. [2016] "[Control of complex networks requires both structure and dynamics.](http://www.informatics.indiana.edu/rocha/publications/NSR16.php)" *Scientific Reports* **6**, 24456. doi: 10.1038/srep24456.
 
