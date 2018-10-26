@@ -18,7 +18,7 @@ __release__ = '0.0.3-alpha'
 __all__ = ['boolean_network','boolean_node']
 
 #
-from boolean_network import BooleanNetwork
-from boolean_node import BooleanNode
-from utils import *
+#from boolean_network import BooleanNetwork
+#from boolean_node import BooleanNode
+#from utils import *
 #

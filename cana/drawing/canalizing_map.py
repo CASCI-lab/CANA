@@ -16,7 +16,7 @@ try:
 	import graphviz
 except:
 	warnings.warn("'Graphviz' could not be loaded, you won't be able to plot graphs. Try installing it first.")
-from .. utils import *
+from cana.utils import *
 import networkx as nx
 
 
@@ -110,7 +110,7 @@ def draw_canalizing_map_graphviz(DG=None,
 				color = fused_edge_color
 
 			else:
-				raise AttributeError("Node type could not be found. Must be either 'out', 'literal', 'fusing' or 'fused'.")
+				raise AttributeError("Node type could not be found. Must be either 'out', 'literal', 'fusing' or 'fused'.  Got %s." % str(d['type']))
 		G.edge(s, t, arrowhead=arrowhead, color=color)
 
 	return G

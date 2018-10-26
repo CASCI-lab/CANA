@@ -60,7 +60,7 @@ def statenum_to_binstate(statenum, base):
 	# binary representation
 	bstate = bin(statenum)[2::]
 	# 0 padding
-	bstate = "".join(['0' for n in xrange(base - len(bstate))]) + bstate
+	bstate = "".join(['0' for n in range(base - len(bstate))]) + bstate
 	### Consider, and test, changing this function to just
 	# bstate = bin(statenum)[2:].zfill(base)
 	return bstate
@@ -180,7 +180,7 @@ def constantbinstate_to_statenum(constantbinstate, constant_template):
 	Todo:
 		Documentation
 	"""
-	binstate = ''.join([constantbinstate[ivar] for ivar in xrange(len(constant_template)) if constant_template[ivar] is None])
+	binstate = ''.join([constantbinstate[ivar] for ivar in range(len(constant_template)) if constant_template[ivar] is None])
 	return binstate_to_statenum(binstate)
 
 def expand_logic_line(line):
@@ -231,7 +231,7 @@ def print_logic_table(outputs):
 
 	"""
 	k = int(math.log(len(outputs))/math.log(2))
-	for statenum in xrange(2**k):
+	for statenum in range(2**k):
 		print(statenum_to_binstate(statenum, base=k) + " : " + str(outputs[statenum]))
 
 def entropy(prob_vector, logbase = 2.):
@@ -256,7 +256,7 @@ def hamming_distance(s1, s2):
 		>>> 1
 	"""
 	assert len(s1) == len(s2) , "The two strings must have the same length"
-	return sum([s1[i] != s2[i] for i in xrange(len(s1))])
+	return sum([s1[i] != s2[i] for i in range(len(s1))])
 
 
 def ncr(n, r):
@@ -271,8 +271,8 @@ def ncr(n, r):
 	"""
 	r = min(r, n - r)
 	if r == 0: return 1
-	numer = reduce(op.mul, xrange(n, n - r, -1))
-	denom = reduce(op.mul, xrange(1, r + 1))
+	numer = reduce(op.mul, range(n, n - r, -1))
+	denom = reduce(op.mul, range(1, r + 1))
 	return numer // denom
 
 

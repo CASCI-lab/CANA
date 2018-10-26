@@ -12,16 +12,19 @@ Boolean Network
 #	All rights reserved.
 #	MIT license.
 from collections import defaultdict
-import cStringIO
+try:
+    import cStringIO.StringIO
+except ImportError:
+    from io import StringIO
+
 import numpy as np
 import networkx as nx
 import random
 import itertools
-from boolean_node import BooleanNode
-import bns
-from control import fvs, mds, sc
-from base import deprecated
-from utils import *
+from cana.boolean_node import BooleanNode
+import cana.bns as bns
+from cana.control import fvs, mds, sc
+from cana.utils import *
 import warnings
 #
 #
@@ -54,7 +57,7 @@ class BooleanNetwork:
 		
 		# Intanciate BooleanNodes
 		self.nodes = list()
-		for i in xrange(Nnodes):
+		for i in range(Nnodes):
 			name = logic[i]['name']
 			k = len(logic[i]['in'])
 			inputs = [logic[j]['name'] for j in logic[i]['in']]
@@ -107,7 +110,7 @@ class BooleanNetwork:
 
 		Note: see examples for more information.
 		"""
-		network_file = cStringIO.StringIO(input_string)
+		network_file = StringIO(input_string)
 		logic = defaultdict(dict)
 		
 		line = network_file.readline()
@@ -116,7 +119,7 @@ class BooleanNetwork:
 				# .v <#-nodes>
 				if '.v' in line:
 					Nnodes = int(line.split()[1])
-					for inode in xrange(Nnodes):
+					for inode in range(Nnodes):
 						logic[inode] = {'name':'','in':[],'out':[]}
 				# .l <node-id> <node-name>
 				elif '.l' in line:
@@ -125,10 +128,10 @@ class BooleanNetwork:
 				elif '.n' in line:
 					inode = int(line.split()[1]) - 1
 					indegree = int(line.split()[2])
-					for jnode in xrange(indegree):
+					for jnode in range(indegree):
 						logic[inode]['in'].append(int(line.split()[3 + jnode])-1)
 					
-					logic[inode]['out'] = [0 for i in xrange(2**indegree) if indegree > 0]
+					logic[inode]['out'] = [0 for i in range(2**indegree) if indegree > 0]
 
 					logic_line = network_file.readline().strip()
 
@@ -173,7 +176,7 @@ class BooleanNetwork:
 		else:
 			name = ''
 		if keep_constants:
-			for i, nodelogic in logic.iteritems():
+			for i, nodelogic in logic.items():
 				# No inputs? It's a constant!
 				if len(nodelogic['in']) == 0:
 					constants[i] = logic[i]['out'][0]
@@ -202,17 +205,17 @@ class BooleanNetwork:
 		logic = self.logic.copy()
 		#
 		if adjust_no_input:
-			for i, data in logic.iteritems():
+			for i, data in logic.items():
 				# updates in place
 				if len(data['in']) == 0:
 					data['in'] = [i + 1]
 					data['out'] = [0,1]
 
 		bns_string = '.v ' + str(self.Nnodes) + '\n' + '\n'
-		for i in xrange(self.Nnodes):
+		for i in range(self.Nnodes):
 			k = len(logic[i]['in'])
 			bns_string += '.n ' + str(i + 1) + " " + str(k) + " " + " ".join([str(v + 1) for v in logic[i]['in']]) + "\n"
-			for statenum in xrange(2**k):
+			for statenum in range(2**k):
 				# If is a constant (TODO: This must come from the BooleanNode, not the logic)
 				if len(logic[i]['out']) == 1:
 					bns_string += str(logic[i]['out'][statenum]) + "\n"
@@ -246,7 +249,7 @@ class BooleanNetwork:
 	
 		# Add Nodes
 		self._sg.add_nodes_from( (i, {'label':n.name}) for i,n in enumerate(self.nodes) )
-		for target in xrange(self.Nnodes):
+		for target in range(self.Nnodes):
 			for source in self.logic[target]['in']:
 				self._sg.add_edge(source, target, **{'weight':1.})
 
@@ -359,8 +362,8 @@ class BooleanNetwork:
 			(networkx.DiGraph) : The state transition graph for the Boolean Network.
 		"""
 		self._stg = nx.DiGraph(name='STG: '+self.name)
-		self._stg.add_nodes_from( (i, {'label':self.num2bin(i)}) for i in xrange(self.Nstates) )
-		for i in xrange(self.Nstates):
+		self._stg.add_nodes_from( (i, {'label':self.num2bin(i)}) for i in range(self.Nstates) )
+		for i in range(self.Nstates):
 			b = self.num2bin(i)
 			self._stg.add_edge(i, self.bin2num(self.step(b)))
 		# 
@@ -395,7 +398,7 @@ class BooleanNetwork:
 		""" Computes the trajectory of ``length`` steps without the State Transition Graph (STG).
 		"""
 		trajectory = [initial]
-		for istep in xrange(length):
+		for istep in range(length):
 			trajectory.append(self.step(trajectory[-1]))
 		return trajectory
 
@@ -507,7 +510,7 @@ class BooleanNetwork:
 		"""
 		if not self.keep_constants:
 			self.Nstates = 2**(self.Nnodes - self.Nconstants)
-			constant_template = [None if not (ivar in self.constants.keys()) else self.constants[ivar] for ivar in xrange(self.Nnodes)]
+			constant_template = [None if not (ivar in self.constants.keys()) else self.constants[ivar] for ivar in range(self.Nnodes)]
 			self.bin2num = lambda bs: constantbinstate_to_statenum(bs, constant_template)
 			self.num2bin = lambda sn: binstate_to_constantbinstate(
 				statenum_to_binstate(sn, base=self.Nnodes - self.Nconstants), constant_template)
@@ -542,7 +545,7 @@ class BooleanNetwork:
 				with open(filename, 'rb') as handle:
 					self._stg_r = pickle.load(handle)
 			except IOError:
-				print "Finding STG dict"
+				print("Finding STG dict")
 				for source in self._stg:
 					self._stg_r[source] = len(self._dfs_reachable(self._stg, source)) - 1.0
 				with open(filename, 'wb') as handle:
@@ -564,7 +567,7 @@ class BooleanNetwork:
 		See also:
 			:func:`controlled_state_transition_graph`, :func:`controlled_attractor_graph`.
 		"""
-		nodeids = range(self.Nnodes)
+		nodeids = list(range(self.Nnodes))
 		if self.keep_constants:
 			for cv in self.constants.keys():
 				nodeids.remove(cv)
@@ -572,7 +575,7 @@ class BooleanNetwork:
 		attractor_controllers_found = []
 		nr_dvs = min_dvs
 		while (len(attractor_controllers_found) == 0) and (nr_dvs <= max_dvs):
-			if verbose: print "Trying with %d Driver Nodes" % (nr_dvs)
+			if verbose: print("Trying with %d Driver Nodes" % (nr_dvs))
 			for dvs in itertools.combinations(nodeids, nr_dvs):
 				dvs = list(dvs)
 				cstg = self.controlled_state_transition_graph(dvs)
@@ -624,7 +627,7 @@ class BooleanNetwork:
 				cstg.add_edge(astate, self.bin2num(constate))
 
 		# add the control pertubations applied to all other configurations
-		for statenum in xrange(self.Nstates):
+		for statenum in range(self.Nstates):
 			if not (statenum in attractor_states):
 				binstate = self.num2bin(statenum)
 				controlled_states = flip_binstate_bit_set(binstate, copy.copy(driver_nodes))
@@ -653,7 +656,7 @@ class BooleanNetwork:
 		for i, attr in enumerate(self._attractors):
 			cag.add_node(i, **{'label':'|'.join([self.num2bin(a) for a in attr])})
 		# Edges
-		for i in xrange(Nattract):
+		for i in range(Nattract):
 			ireach = self._dfs_reachable(cstg, self._attractors[i][0])
 			for j in range(i + 1, Nattract):
 				if self._attractors[j][0] in ireach:
@@ -826,7 +829,8 @@ class BooleanNetwork:
 
 		if simplify:			
 			#Loop all threshold nodes
-			for n,d in ((n,d) for n,d in DCM.nodes(data=True) if d['type']=='threshold'):
+			threshold_nodes=[(n,d) for n,d in DCM.nodes(data=True) if d['type']=='threshold']
+			for n,d in threshold_nodes:
 
 				# Constant, remove threshold node
 				if d['tau'] == 0:
@@ -857,24 +861,24 @@ class BooleanNetwork:
 		"""
 		if 'sg' in kwargs:
 			if self._sg is None:
-				if self.verbose: print "Computing: Structural Graph"
+				if self.verbose: print("Computing: Structural Graph")
 				self._sg = self.structural_graph()
 
 		elif 'eg' in kwargs:
 			if self._eg is None:
-				if self.verbose: print "Computing: Effective Graph"
+				if self.verbose: print("Computing: Effective Graph")
 				self._eg = self.effective_graph()
 
 		elif 'stg' in kwargs:
 			self._check_compute_variables(sg=True)
 			if self._stg is None:
-				if self.verbose: print "Computing: State-Transition-Graph"
+				if self.verbose: print("Computing: State-Transition-Graph")
 				self._stg = self.state_transition_graph()
 
 		elif 'attractors' in kwargs:
 			self._check_compute_variables(stg=True)
 			if self._attractors is None:
-				if self.verbose: print "Computing: Attractors"
+				if self.verbose: print("Computing: Attractors")
 				self._attractors = self.attractors()
 
 		elif 'stg_r' in kwargs:
@@ -942,18 +946,18 @@ class BooleanNetwork:
 
 		if method == 'random':
 			# for each possible hamming distance between the starting states
-			for hamm_dist in xrange(1, self.Nnodes + 1):
+			for hamm_dist in range(1, self.Nnodes + 1):
 
 				# sample nsample times
-				for isample in xrange(nsamples):
-					rnd_config = [random.choice(['0', '1']) for b in xrange(self.Nnodes)]
+				for isample in range(nsamples):
+					rnd_config = [random.choice(['0', '1']) for b in range(self.Nnodes)]
 					perturbed_var = random.sample(range(self.Nnodes), hamm_dist)
-					perturbed_config = [flip_bit(rnd_config[ivar]) if ivar in perturbed_var else rnd_config[ivar] for ivar in xrange(self.Nnodes)]
+					perturbed_config = [flip_bit(rnd_config[ivar]) if ivar in perturbed_var else rnd_config[ivar] for ivar in range(self.Nnodes)]
 					dy[hamm_dist-1] += hamming_distance(self.step(rnd_config), self.step(perturbed_config))
 
 			dy /= float(self.Nnodes * nsamples)
 		elif method == 'sensitivity':
-			for hamm_dist in xrange(1,self.Nnodes +1):
+			for hamm_dist in range(1,self.Nnodes +1):
 				dy[hamm_dist-1] = sum([node.c_sensitivity(hamm_dist,mode='forceK',max_k=self.Nnodes) for node in self.nodes])/self.Nnodes
 
 		return dx, dy
