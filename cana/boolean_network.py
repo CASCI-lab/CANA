@@ -110,7 +110,7 @@ class BooleanNetwork:
 
 		Note: see examples for more information.
 		"""
-		network_file = StringIO(input_string)
+		network_file = StringIO(unicode(input_string))
 		logic = defaultdict(dict)
 		
 		line = network_file.readline()
