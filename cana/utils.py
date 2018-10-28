@@ -16,15 +16,15 @@ def recursive_map(f,d):
 
 def binstate_to_statenum(binstate):
 	""" Converts from binary state to state number.
-	
+
 	Args:
 		binstate (string) : The binary state.
 	Returns:
 		int : The state number.
 	Example:
-		
+
 		.. code-block:: python
-		
+
 			'000' -> 0
 			'001' -> 1
 			'010' -> 2 ...
@@ -36,14 +36,14 @@ def binstate_to_statenum(binstate):
 
 def statenum_to_binstate(statenum, base):
 	""" Converts an interger into the binary string.
-	
+
 	Args:
 		statenum (int) : The state number.
 		base (int) : The binary base
 	Returns:
 		string : The binary state.
 	Example:
-		
+
 		.. code-block:: python
 
 			0 -> '00' (base 2)
@@ -65,6 +65,31 @@ def statenum_to_binstate(statenum, base):
 	# bstate = bin(statenum)[2:].zfill(base)
 	return bstate
 
+def binstate_pinned_to_binstate(binstate, pinned_binstate, pinned_var):
+	'''
+	Combines two binstates based on the locations of pinned variables.
+	Args:
+		binstate (str) : the binary state of non-pinned variables
+		pinned_binstate (str) : the binary states of the pinned variables
+		pinned_var (list of int) : the list of pinned variables
+	Returns:
+		string : The combined binary state.
+	See also:
+	    :attr:'statenum_to_binstate'
+	'''
+	total_length = len(binstate) + len(pinned_binstate)
+	new_binstate = list(statenum_to_binstate(0, base=total_length))
+	ipin = 0
+	ireg = 0
+	for istate in range(total_length):
+		if istate in pinned_var:
+			new_binstate[pinned_var[ipin]] = pinned_binstate[ipin]
+			ipin+=1
+		else:
+			new_binstate[istate] = binstate[ireg]
+			ireg+=1
+
+	return ''.join(new_binstate)
 
 def statenum_to_output_list(statenum, base):
 	'''
@@ -113,11 +138,11 @@ def flip_binstate_bit(binstate, idx):
 
 def flip_binstate_bit_set(binstate, idxs):
 	"""Flips the binary value for a set of bits in a binary state.
-	
+
 	Args:
 		binstate (string) : The binary state to flip.
 		idxs (int) : The indexes of the bits to flip.
-	
+
 	Returns:
 		(list) : The flipped states
 	"""
@@ -132,9 +157,9 @@ def flip_binstate_bit_set(binstate, idxs):
 
 def statenum_to_density(statenum):
 	"""Converts from state number to density
-	
+
 	Args:
-		statenum (int): The state number 
+		statenum (int): The state number
 	Returns:
 		int: The density of ``1`` in that specific binary state number.
 	Example:
@@ -279,9 +304,9 @@ def ncr(n, r):
 def isclose(a, b, rel_tol=1e-09, abs_tol=0.0):
 	'''
 	Python 2 doesn't have math.isclose()
-	Here is an equivalent function 
+	Here is an equivalent function
 	Use this to tell whether two float numbers are close enough
-		considering using == to compare floats is dangerous! 
+		considering using == to compare floats is dangerous!
 		2.0*3.3 != 3.0*2.2 in python!
 	Args:
 	    a (float) : the first float number
