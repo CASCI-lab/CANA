@@ -10,6 +10,7 @@ Some of the commonly used biological boolean networks
 #   Copyright (C) 2017 by
 #   Alex Gates <ajgates@gmail.com>
 #   Rion Brattig Correia <rionbr@gmail.com>
+#   Thomas Parmer <tjparmer@indiana.edu>
 #   All rights reserved.
 #   MIT license.
 import os
@@ -42,6 +43,8 @@ def DROSOPHILA(cells=1):
 	Args:
 		cells (int) : Which model to return.
 
+	Returns:
+		(BooleanNetwork)
 	"""
 	if cells == 1:
 		return BooleanNetwork.from_file(_path + '/drosophila_single_cell.txt', name="Drosophila Melanogaster", keep_constants=True)
@@ -52,7 +55,9 @@ def BUDDING_YEAST():
 	""" 
 
 	The network is defined in :cite:`Fangting:2004`.
-		
+	
+	Returns:
+		(BooleanNetwork)
 	"""
 	return BooleanNetwork.from_file(_path + '/yeast_cell_cycle.txt', name="Budding Yeast Cell Cycle", keep_constants=True)
 
@@ -61,6 +66,8 @@ def MARQUESPITA():
 
 	The network is defined in :cite:`Marques-Pita:2013`.
 
+	Returns:
+		(BooleanNetwork)
 	"""
 	return BooleanNetwork.from_file(_path + '/marques-pita_rocha.txt', name="Marques-Pita & Rocha", keep_constants=True)
 
@@ -68,19 +75,19 @@ def MARQUESPITA():
 def LEUKEMIA():
 	"""Boolean network model of survival signaling in T-LGL leukemia  
 
-	The network is defined in :cite:`zhang2008network`.
+	The network is defined in :cite:`Zhang:2008`.
 
 	Returns:
 		(BooleanNetwork)
 	"""
-	return BooleanNetwork.from_file(_path + '/leukemia.txt', name="Leukemia", keep_constants=True, file_type='logical')
+	return BooleanNetwork.from_file(_path + '/leukemia.txt', type='logical', name="Leukemia", keep_constants=True)
 
 def BREAST_CANCER():
 	"""Boolean network model of signal transduction in ER+ breast cancer 
 
-	The network is defined in :cite:`zanudo2017network`.
+	The network is defined in :cite:`Zanudo:2017`.
 
 	Returns:
 		(BooleanNetwork)
 	"""
-	return BooleanNetwork.from_file(_path + '/breast_cancer.txt', name="Breast Cancer", keep_constants=True, file_type='logical')
+	return BooleanNetwork.from_file(_path + '/breast_cancer.txt', type='logical', name="Breast Cancer", keep_constants=True)
