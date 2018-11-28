@@ -23,6 +23,7 @@ from control import fvs, mds, sc
 from base import deprecated
 from utils import *
 import warnings
+import re
 #
 #
 class BooleanNetwork:
@@ -75,12 +76,14 @@ class BooleanNetwork:
 	# I/O Methods
 	#
 	@classmethod
-	def from_file(cls, input_file, keep_constants=True, **kwargs):
+	def from_file(cls, input_file, file_type='cnet', keep_constants=True, **kwargs):
 		"""
 		Load the Boolean Network from a file.
 
 		Args:
 			infile (string) : The name of a file containing the Boolean Network.
+			file_type (string) : The type of file, either 'cnet' for cnet format
+			or 'logical' for Boolean logical rules.  Default is 'cnet'
 
 		Returns:
 			BooleanNetwork (object) : The boolean network object.
@@ -89,7 +92,10 @@ class BooleanNetwork:
 			:func:`from_string` :func:`from_dict`
 		"""
 		with open(input_file, 'r') as infile:
-			return cls.from_string(infile.read(), keep_constants=keep_constants, **kwargs)
+                        if file_type=='cnet':
+                                return cls.from_string(infile.read(), keep_constants=keep_constants, **kwargs)
+                        elif file_type=='logical':
+                                return cls.from_boolean_text(infile.read(), keep_constants=keep_constants, **kwargs)
 
 	@classmethod
 	def from_string(cls, input_string, keep_constants=True, **kwargs):
@@ -148,6 +154,60 @@ class BooleanNetwork:
 				elif '.e' in line:
 					break
 			line = network_file.readline()
+
+		return cls.from_dict(logic, keep_constants=keep_constants, **kwargs)
+
+	@classmethod
+	def from_boolean_text(cls, input_string, keep_constants=True, **kwargs):
+		"""
+		Load the Boolean Network from a text file specifying Boolean update rules.  File should be structured thus:
+		#BOOLEAN RULES
+		node_name*=node_input_1 [logic operator] node_input_2 ...
+
+		Args:
+			infile (string) : The name of a file containing the Boolean Network.
+
+		Returns:
+			BooleanNetwork (object) : The boolean network object.
+
+		See also:
+			:func:`from_string` :func:`from_dict`
+		"""
+
+		logic = defaultdict(dict)
+
+		#parse lines to receive node names
+		network_file = cStringIO.StringIO(input_string)
+		line = network_file.readline()
+		i=0
+		while line != "":
+                        if line[0]=='#':
+                                line = network_file.readline()
+                                continue
+			logic[i] = {'name': line.split("*")[0].strip(), 'in':[], 'out':[]}
+			line = network_file.readline()
+			i+=1
+
+		#parse lines again to determine inputs and output sequence
+		network_file = cStringIO.StringIO(input_string)
+		line = network_file.readline()
+		i=0
+		while line != "":
+                        if line[0]=='#':
+                                line = network_file.readline()
+                                continue
+			eval_line = line.split("=")[1] #logical condition to evaluate
+			#need regular expression to check for non-alphanumeric character before/after node name (since some node names are included in other node names)
+			#additional characters added to eval_line to avoid start/end of string complications
+			input_names=[logic[node]['name'] for node in logic if re.compile('\W'+logic[node]['name']+'\W').search('*'+eval_line+'*')]
+			input_nums=[node for input in input_names for node in logic if input==logic[node]['name']]
+			logic[i]['in']=input_nums
+			#determine output transitions
+			logic[i]['out']=output_transitions(eval_line,input_names)
+			line = network_file.readline()
+			i+=1
+			#print logic[i-1]['name'], eval_line
+		#print logic
 
 		return cls.from_dict(logic, keep_constants=keep_constants, **kwargs)
 
