@@ -16,7 +16,7 @@ def recursive_map(f,d):
 
 def binstate_to_statenum(binstate):
 	"""Converts from binary state to state number.
-	
+
 	Args:
 		binstate (string) : The binary state.
 	
@@ -24,9 +24,9 @@ def binstate_to_statenum(binstate):
 		int : The state number.
 	
 	Example:
-		
+
 		.. code-block:: python
-		
+
 			'000' -> 0
 			'001' -> 1
 			'010' -> 2 ...
@@ -38,16 +38,16 @@ def binstate_to_statenum(binstate):
 
 def statenum_to_binstate(statenum, base):
 	"""Converts an interger into the binary string.
-	
+
 	Args:
 		statenum (int) : The state number.
 		base (int) : The binary base
-	
+
 	Returns:
 		string : The binary state.
-	
+
 	Example:
-		
+
 		.. code-block:: python
 
 			0 -> '00' (base 2)
@@ -64,11 +64,37 @@ def statenum_to_binstate(statenum, base):
 	# binary representation
 	bstate = bin(statenum)[2::]
 	# 0 padding
-	bstate = "".join(['0' for n in xrange(base - len(bstate))]) + bstate
+	bstate = "".join(['0' for n in range(base - len(bstate))]) + bstate
 	### Consider, and test, changing this function to just
 	# bstate = bin(statenum)[2:].zfill(base)
 	return bstate
 
+def binstate_pinned_to_binstate(binstate, pinned_binstate, pinned_var):
+	"""Combines two binstates based on the locations of pinned variables.
+
+	Args:
+		binstate (str) : the binary state of non-pinned variables
+		pinned_binstate (str) : the binary states of the pinned variables
+		pinned_var (list of int) : the list of pinned variables
+
+	Returns:
+		string : The combined binary state.
+
+	See also:
+	    :attr:'statenum_to_binstate'
+	"""
+	total_length = len(binstate) + len(pinned_binstate)
+	new_binstate = list(statenum_to_binstate(0, base=total_length))
+	ipin = 0
+	ireg = 0
+	for istate in range(total_length):
+		if istate in pinned_var:
+			new_binstate[pinned_var[ipin]] = pinned_binstate[ipin]
+			ipin += 1
+		else:
+			new_binstate[istate] = binstate[ireg]
+			ireg += 1
+	return ''.join(new_binstate)
 
 def statenum_to_output_list(statenum, base):
 	"""Converts an interger into a list of 0 and 1, thus can feed to BooleanNode.from_output_list()
@@ -90,7 +116,7 @@ def flip_bit(bit):
 
 	Args:
 		bit (string/int/bool): The current bit position
-	
+
 	Returns:
 		same as input: The flipped bit
 	"""
@@ -107,7 +133,7 @@ def flip_binstate_bit(binstate, idx):
 	Args:
 		binstate (string) : The binary state.
 		idx (int) : The index of the bit to flip.
-	
+
 	Returns:
 		(string) : New binary state.
 
@@ -140,13 +166,13 @@ def flip_binstate_bit_set(binstate, idxs):
 
 def statenum_to_density(statenum):
 	"""Converts from state number to density
-	
+
 	Args:
 		statenum (int): The state number 
-	
+
 	Returns:
 		int: The density of ``1`` in that specific binary state number.
-	
+
 	Example:
 		>>> statenum_to_binstate(14, base=2)
 		>>> '1110'
@@ -192,7 +218,7 @@ def constantbinstate_to_statenum(constantbinstate, constant_template):
 	Todo:
 		Documentation
 	"""
-	binstate = ''.join([constantbinstate[ivar] for ivar in xrange(len(constant_template)) if constant_template[ivar] is None])
+	binstate = ''.join([constantbinstate[ivar] for ivar in range(len(constant_template)) if constant_template[ivar] is None])
 	return binstate_to_statenum(binstate)
 
 def expand_logic_line(line):
@@ -247,7 +273,7 @@ def print_logic_table(outputs):
 
 	"""
 	k = int(math.log(len(outputs))/math.log(2))
-	for statenum in xrange(2**k):
+	for statenum in range(2**k):
 		print(statenum_to_binstate(statenum, base=k) + " : " + str(outputs[statenum]))
 
 def entropy(prob_vector, logbase = 2.):
@@ -275,7 +301,7 @@ def hamming_distance(s1, s2):
 		>>> 1
 	"""
 	assert len(s1) == len(s2) , "The two strings must have the same length"
-	return sum([s1[i] != s2[i] for i in xrange(len(s1))])
+	return sum([s1[i] != s2[i] for i in range(len(s1))])
 
 
 def ncr(n, r):
@@ -291,16 +317,16 @@ def ncr(n, r):
 	"""
 	r = min(r, n - r)
 	if r == 0: return 1
-	numer = reduce(op.mul, xrange(n, n - r, -1))
-	denom = reduce(op.mul, xrange(1, r + 1))
+	numer = reduce(op.mul, range(n, n - r, -1))
+	denom = reduce(op.mul, range(1, r + 1))
 	return numer // denom
 
 
 def isclose(a, b, rel_tol=1e-09, abs_tol=0.0):
 	"""Python 2 doesn't have math.isclose()
-	Here is an equivalent function 
+	Here is an equivalent function
 	Use this to tell whether two float numbers are close enough
-		considering using == to compare floats is dangerous! 
+		considering using == to compare floats is dangerous!
 		2.0*3.3 != 3.0*2.2 in python!
 	Args:
 	    a (float) : the first float number

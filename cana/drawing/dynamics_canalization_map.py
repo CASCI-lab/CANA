@@ -128,7 +128,7 @@ def draw_dynamics_canalization_map_graphviz(DG, engine='neato', overlap='false',
 					arrowhead = simplified_edge_arrowhead
 					color = simplified_edge_color
 			else:
-				raise AttributeError("Node type could not be found. Must be either 'out', 'literal', 'fusing' or 'fused'.")
+				raise AttributeError("Node type could not be found. Must be either 'out', 'literal', 'fusing', 'fused' or 'simplified'.  Got {:s}.".format(d['type']))
 		G.edge(s, t, arrowhead=arrowhead, color=color)
 
 	return G

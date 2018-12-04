@@ -16,7 +16,10 @@ import numpy as np
 import pandas as pd
 import itertools
 from .. utils import *
-from Queue import Queue, PriorityQueue
+try:
+	from Queue import Queue, PriorityQueue
+except ImportError:
+	from queue import Queue, PriorityQueue
 from collections import deque
 
 __author__ = """\n""".join([
@@ -40,8 +43,8 @@ def make_transition_density_tables(k=1, outputs=[0,1]):
 		tables (tuple) : a tuple where [0] is the negative table and [1] is the positive table.
 	"""
 	# we need to split up the LUT based on the transition (to either 0 or 1) and the density of 1s in the binstate
-	transition_density_tuple = [ [ [] for density in xrange(k+1) ] for transition in [0,1] ]
-	for statenum in xrange(2**k):
+	transition_density_tuple = [ [ [] for density in range(k+1) ] for transition in [0,1] ]
+	for statenum in range(2**k):
 		binstate = statenum_to_binstate(statenum, base=k)
 		density = binstate_to_density(binstate)
 		transition = outputs[statenum]
@@ -77,11 +80,11 @@ def find_implicants_qm(column, verbose=False):
 		done = True
 
 		# default everything to empty with no matches
-		next_column  = [set() for _ in xrange(N+1)]
-		matches = [[False for _ in xrange(len(column[density]))] for density in xrange(N+1)]
+		next_column  = [set() for _ in range(N+1)]
+		matches = [[False for _ in range(len(column[density]))] for density in range(N+1)]
 
 		# loop through the possible densities
-		for density in xrange(N):
+		for density in range(N):
 
 			# compare the implicants from successive densities
 			for i, implicant in enumerate(column[density]):
@@ -96,8 +99,8 @@ def find_implicants_qm(column, verbose=False):
 						done = False
 
 		# now add back the implicants that were not matched 
-		for i in xrange(N+1):
-			for j in xrange(len(matches[i])):
+		for i in range(N+1):
+			for j in range(len(matches[i])):
 				if not matches[i][j]:
 					prime_implicants.add(column[i][j])
 		
@@ -156,7 +159,7 @@ def computes_pi_coverage(k, outputs, prime_implicants):
 	Note: based on code from Alex Gates and Etienne Nzabarushimana.
 	"""
 	pi_coverage = {}
-	for statenum in xrange(2**k):
+	for statenum in range(2**k):
 		binstate = statenum_to_binstate(statenum, base=k)
 		pi_coverage[binstate] = covering_implicants = []
 		transition = outputs[statenum]
@@ -199,7 +202,7 @@ def find_two_symbols_v2(k=1, prime_implicants=None, verbose=False, verbose_level
 	
 	# Init
 	n_pi = len(prime_implicants)
-	pi_matrix = np.array(map(tuple, prime_implicants), dtype=int)
+	pi_matrix = np.array(tuple(map(tuple, prime_implicants)), dtype=int)
 
 	# List of the Two-Symbol Schematas
 	TS = []
@@ -221,51 +224,51 @@ def find_two_symbols_v2(k=1, prime_implicants=None, verbose=False, verbose_level
 		if verbose:
 			if verbose_level == 1:
 				if i%500==0:
-					print '>>> QUEUE: pop | A (m=%d) | Queue size: %d' % (n_schematas, len(Q) )					
+					print('>>> QUEUE: pop | A (m=%d) | Queue size: %d' % (n_schematas, len(Q) ))
 			elif verbose_level > 5:
-				print '>>> QUEUE: pop | A (m=%d) | Queue size: %d' % (n_schematas, len(Q) )
+				print('>>> QUEUE: pop | A (m=%d) | Queue size: %d' % (n_schematas, len(Q) ))
 			if verbose_level>10:
-				print schematas
+				print(schematas)
 		
 		# count the number of [0's, 1's, 2's] in each column
 		column_counts = _count_cols_symbols_v2(pi_matrix=schematas, verbose=verbose, verbose_level=verbose_level)
 		if verbose and verbose_level>10:
-			print '>>> COLUMN Schema Counts:'
+			print('>>> COLUMN Schema Counts:')
 		# find the permutation groups based on column counts
 		perm_groups = _check_col_counts_v3(counts_matrix=column_counts, verbose=verbose, verbose_level=verbose_level)
 		
 		if (perm_groups != -1):
-			if verbose and verbose_level>10: print '>>> There are permutable groups! Lets loop them'
+			if verbose and verbose_level>10: print('>>> There are permutable groups! Lets loop them')
 			for x_group in perm_groups:
 				if verbose and verbose_level>20:
-					print '>>> x_group:',x_group
-					print '>>> Truncated schemata matrix:'
-					print schematas[:,x_group].T
+					print('>>> x_group:',x_group)
+					print('>>> Truncated schemata matrix:')
+					print(schematas[:,x_group].T)
 				# find the row counts by taking the transpose of the truncated schemata list
 				row_counts = _count_cols_symbols_v2(pi_matrix=schematas[:,x_group].T, verbose=verbose, verbose_level=verbose_level)
 				if verbose and verbose_level>20:
-					print '>>> ROW Schema Counts:'
-					print row_counts
+					print('>>> ROW Schema Counts:')
+					print(row_counts)
 				# make sure all row counts are the same
 				if not (row_counts==row_counts[0]).all():
-					if verbose and verbose_level>20: print '>>> row_counts are NOT the same (-1)'
+					if verbose and verbose_level>20: print('>>> row_counts are NOT the same (-1)')
 					perm_groups = -1
 
 		if verbose and verbose_level>10:
-			print ">>> Exists permutation groups?:" , (perm_groups != -1)
-			print ">>> Are groups already in F''?:" , ((schematas.tolist(), perm_groups) in TS)
+			print(">>> Exists permutation groups?:" , (perm_groups != -1))
+			print(">>> Are groups already in F''?:" , ((schematas.tolist(), perm_groups) in TS))
 		if (perm_groups != -1) and not ((schematas.tolist(), perm_groups) in TS):
 			# do some weird permutation group testing
 			allowed_perm_groups = _check_schemata_permutations_v2(schematas, perm_groups, verbose=verbose, verbose_level=verbose_level)
 			if verbose and verbose_level>15:
-				print '>>> Permutation testing result:',allowed_perm_groups
+				print('>>> Permutation testing result:',allowed_perm_groups)
 			if allowed_perm_groups is not None:
 				if verbose and verbose_level>15:
-					print ">>> RESULTS: adding F'': %s , Idxs: %s" % (schematas.tolist(), allowed_perm_groups)
+					print(">>> RESULTS: adding F'': %s , Idxs: %s" % (schematas.tolist(), allowed_perm_groups))
 				TS.append( (schematas.tolist(), allowed_perm_groups) )
 
 		else:
-			if verbose and verbose_level>10: print '>>> Generate combinations of schematas (m-1) and add to Queue'
+			if verbose and verbose_level>10: print('>>> Generate combinations of schematas (m-1) and add to Queue')
 			if schematas.shape[0] > 2:
 				for idxs_subset in itertools.combinations(np.arange(0,n_schematas), (n_schematas - 1)):					
 					idxs_subset = list(idxs_subset)
@@ -273,18 +276,18 @@ def find_two_symbols_v2(k=1, prime_implicants=None, verbose=False, verbose_level
 					# This schemata has already been inserted onto the Queue before?
 					if schemata_subset.tostring() not in Q_history:
 						if verbose and verbose_level>25:
-							print '>>> QUEUE: appending (idxs: %s)' % (idxs_subset)
-							print schemata_subset
+							print('>>> QUEUE: appending (idxs: %s)' % (idxs_subset))
+							print(schemata_subset)
 						Q.append( schemata_subset )
 						Q_history.add(schemata_subset.tostring())
 					else:
 						if verbose and verbose_level>25:
-							print '>>> QUEUE: duplicate, skip (idxs: %s)' % (idxs_subset)
+							print('>>> QUEUE: duplicate, skip (idxs: %s)' % (idxs_subset))
 
 	if verbose:
-		print '>>> TWO-SYMBOLS:'
+		print('>>> TWO-SYMBOLS:')
 		for i,(tss,perms) in enumerate(TS):
-			print "F''-%d: %s | Perms: %s" % (i, tss, perms)
+			print("F''-%d: %s | Perms: %s" % (i, tss, perms))
 
 	# Simplification. Check if there are TSs that are completely contained within others.
 	# 'ts' = Two-Symbol
@@ -325,26 +328,26 @@ def find_two_symbols_v2(k=1, prime_implicants=None, verbose=False, verbose_level
 					del TSs[i] 
 
 	if verbose:
-		print '>>> TWO-SYMBOLS (simplified):'
+		print('>>> TWO-SYMBOLS (simplified):')
 		for i,(tss) in TSs.items():
-			print "F''-%d: %s | Perms: %s | CX: %s" % (i, tss['tss'], tss['perms'], tss['cx'])
+			print("F''-%d: %s | Perms: %s | CX: %s" % (i, tss['tss'], tss['perms'], tss['cx']))
 
 	# Final List (from simplified)
 	TSf = [ (tss['tss'][0], tss['perms'], [] ) for tss in TSs.values()]
 
 	# Check if all PI are being covered. If not, include the PI on the TS list
 	if verbose:
-		print '>>> Check all PI are accounted for in the TS'
+		print('>>> Check all PI are accounted for in the TS')
 	for i, pi in enumerate(pi_matrix, start=0):
 		if not any([_check_schema_within_schema( [pi.tolist()] , tss['xl'], dir='a', verbose=verbose)[0] for tss in TSs.values()]):
-			if verbose: print "PI-%d '%s' Not in list, ADDING." % (i, pi.tolist())
+			if verbose: print("PI-%d '%s' Not in list, ADDING." % (i, pi.tolist()))
 			TSf.append( (pi.tolist(),[],[]) )
 		else:
-			if verbose: print "PI-%d '%s' OK." % (i, pi.tolist())
+			if verbose: print("PI-%d '%s' OK." % (i, pi.tolist()))
 
 
 	if verbose:
-		print '>>> Check for Same-Symbol permutables'
+		print('>>> Check for Same-Symbol permutables')
 
 	# NEW: Step to include same-symbol permutables
 	for ts, perms, sames in TSf:
@@ -363,11 +366,11 @@ def find_two_symbols_v2(k=1, prime_implicants=None, verbose=False, verbose_level
 
 		
 		if verbose and verbose_level>10:
-			print "> F'' Original:"
-			print ts_matrix
-			print "> Permutables: %s" % (perms)
-			print "> F'' without permutables:"
-			print ts_matrix_left
+			print("> F'' Original:")
+			print(ts_matrix)
+			print("> Permutables: %s" % (perms))
+			print("> F'' without permutables:")
+			print(ts_matrix_left)
 		
 
 		counts_matrix = _count_cols_symbols_v2(pi_matrix=ts_matrix_left.T, verbose=False, verbose_level=verbose_level)
@@ -381,9 +384,9 @@ def find_two_symbols_v2(k=1, prime_implicants=None, verbose=False, verbose_level
 
 	# Final list after all PI were accounted for
 	if verbose:
-		print '>>> TS (final list):'
+		print('>>> TS (final list):')
 		for i,tss,sms in TSf:
-			print "TS: '%s' | Perm Idx: %s | Sms Idx: %s" % (i,tss,sms)
+			print("TS: '%s' | Perm Idx: %s | Sms Idx: %s" % (i,tss,sms))
 
 	return TSf
 
@@ -409,11 +412,11 @@ def _check_schema_within_schema(la, lb, dir=None, verbose=False):
 	if dir != 'b':
 		a_in_b = all([(xa in lb) for xa in la])
 		if verbose:
-			print '%s in %s : %s' % (la,lb,a_in_b)
+			print('%s in %s : %s' % (la,lb,a_in_b))
 	if dir != 'a':
 		b_in_a = all([(xb in la) for xb in lb])
 		if verbose:
-			print '%s in %s : %s' % (lb,la,b_in_a)
+			print('%s in %s : %s' % (lb,la,b_in_a))
 	#
 	return a_in_b, b_in_a
 		
@@ -454,12 +457,12 @@ def _check_schemata_permutations_v2(schematas, perm_groups, verbose=False, verbo
 		Not sure if this is really needed.
 	"""
 	if verbose and verbose_level>20:
-		print "-- Check Schemata Permutations (v2) : g(H',L) --"
+		print("-- Check Schemata Permutations (v2) : g(H',L) --")
 	allowed_perm_groups = []
 	all_indices = set([i_index for x_group in perm_groups for i_index in x_group])
 	for x_group in perm_groups:
 		sofar = []
-		for i_index in xrange(len(x_group) - 1):
+		for i_index in range(len(x_group) - 1):
 			x_index = x_group[i_index]
 			small_group = [x_index]
 			if not (x_index in sofar):
@@ -474,7 +477,7 @@ def _check_schemata_permutations_v2(schematas, perm_groups, verbose=False, verbo
 					allowed_perm_groups.append(small_group)
 
 		if verbose and verbose_level>30:
-			print '> allowed_perm_groups',allowed_perm_groups
+			print('> allowed_perm_groups',allowed_perm_groups)
 		if set([i_index for x_group in allowed_perm_groups for i_index in x_group]) == all_indices:
 			return allowed_perm_groups
 	return None
@@ -500,7 +503,7 @@ def _check_col_counts_v3(counts_matrix, verbose=False, verbose_level=0):
 		perm_groups (list) : a list of the indexes that can be permuted.
 	"""
 	if verbose and verbose_level>30:
-		print '-- Check Col Counts (v3) --'
+		print('-- Check Col Counts (v3) --')
 	
 	counts = {} 		# Multi Counts
 	perm_groups = [] 	# A list of groups of Permutable Indexes
@@ -522,7 +525,7 @@ def _check_col_counts_v3(counts_matrix, verbose=False, verbose_level=0):
 	# Append non-constants that have permutable positions
 	for col,idxs in counts.items():
 		if verbose and verbose_level>40:
-			print col,':',idxs
+			print(col,':',idxs)
 
 		if len(idxs) == 1:
 			return -1
@@ -530,8 +533,8 @@ def _check_col_counts_v3(counts_matrix, verbose=False, verbose_level=0):
 			perm_groups.append( idxs )
 
 	if verbose and verbose_level>40:
-		print 'counts:',counts
-		print 'perm_groups:',perm_groups
+		print('counts:',counts)
+		print('perm_groups:',perm_groups)
 
 	if len(perm_groups):
 		return perm_groups
@@ -546,7 +549,7 @@ def _check_identical_cols_count_symbols_v2(counts_matrix, verbose=False, verbose
 		perm_groups (list) : a list of the indexes that can be permuted
 	"""
 	if verbose and verbose_level>20:
-		print '-- Check Identical Col Counts (v2) --'
+		print('-- Check Identical Col Counts (v2) --')
 	
 	counts = {} 		# Multi Counts
 	perm_groups = [] 	# A list of groups of Permutable Indexes
@@ -556,7 +559,7 @@ def _check_identical_cols_count_symbols_v2(counts_matrix, verbose=False, verbose
 		row = row.tolist()
 		row_tuple = tuple(row)
 
-		if verbose and verbose_level>30: print 'RC: %s : %s' % (i,row_tuple)
+		if verbose and verbose_level>30: print('RC: %s : %s' % (i,row_tuple))
 
 		if row_tuple in counts:
 			# we have seen this one before, so add it to the permutation group
@@ -567,14 +570,14 @@ def _check_identical_cols_count_symbols_v2(counts_matrix, verbose=False, verbose
 
 	# Append non-constants that have permutable positions
 	for col,idxs in counts.items():
-		if verbose and verbose_level>30: print col,':',idxs
+		if verbose and verbose_level>30: print(col,':',idxs)
 
 		if len(idxs) >= 2:
 			perm_groups.append( idxs )
 
 	if verbose and verbose_level>30:
-		print 'counts:',counts
-		print 'sames_groups:',perm_groups
+		print('counts:',counts)
+		print('sames_groups:',perm_groups)
 
 	if len(perm_groups):
 		return perm_groups
@@ -588,7 +591,7 @@ def _count_cols_symbols_v2(pi_matrix=None, verbose=False, verbose_level=0):
 	Returns:
 		counts (numpy.ndarray) : a matrix ``n \times 3`` where the entries are counts.
 	"""
-	if verbose and verbose_level>20: print ' -- Count Cols (v2) --'
+	if verbose and verbose_level>20: print(' -- Count Cols (v2) --')
 	# How many PI?
 	n = pi_matrix.shape[1]
 	# Instanciate count matrix
@@ -611,9 +614,9 @@ def find_two_symbols_v1(k=1, prime_implicants=None, verbose=False):
 		# take first partition out of the set
 		schemata_list = np.array(map(list, Partition_Options.pop()))
 		if verbose:
-			print '== Partitions (v1) =='
-			print '>>> A (m=%d)' % schemata_list.shape[0]
-			print schemata_list
+			print('== Partitions (v1) ==')
+			print('>>> A (m=%d)' % schemata_list.shape[0])
+			print(schemata_list)
 
 		# count the number of [0's, 1's, 2's] in each column
 		column_counts = _three_symbol_count_cols_symbols_v1(k=k, transition_list=schemata_list)
@@ -622,37 +625,37 @@ def find_two_symbols_v1(k=1, prime_implicants=None, verbose=False):
 		permutation_groups = _check_counts_v1(column_counts)
 		
 		if (permutation_groups != -1):
-			if verbose: print '>>> There are permutable groups! Lets loop them'
+			if verbose: print('>>> There are permutable groups! Lets loop them')
 			for x_group in permutation_groups:
 
 				# find the row counts by taking the transpose of the truncated schemata list
 				row_counts = _three_symbol_count_cols_symbols_v1(k=schemata_list.shape[0], transition_list=schemata_list[:,x_group].T)
 				if verbose:
-					print '>>> ROW Schema Counts:'
-					print row_counts
+					print('>>> ROW Schema Counts:')
+					print(row_counts)
 				# make sure all row counts are the same
 				if len(row_counts) != row_counts.count(row_counts[0]):
 					permutation_groups = -1
 		if verbose:
-			print ">>> Permutation groups:",(permutation_groups != -1),permutation_groups
-			print ">>> Permuted groups already in F'':",((schemata_list.tolist(), permutation_groups) in two_symbol_schemata_list)
+			print(">>> Permutation groups:",(permutation_groups != -1),permutation_groups)
+			print(">>> Permuted groups already in F'':",((schemata_list.tolist(), permutation_groups) in two_symbol_schemata_list))
 		if (permutation_groups != -1) and not ((schemata_list.tolist(), permutation_groups) in two_symbol_schemata_list):
 			# do some weird permutation group testing
 			allowed_permutation_groups = _check_schemata_permutations_v1(schemata_list, permutation_groups)
 			if allowed_permutation_groups != []:
 				if verbose:
-					print "ADDING to F'':",schemata_subset
+					print("ADDING to F'':",schemata_subset)
 				two_symbol_schemata_list.append((schemata_list.tolist(), allowed_permutation_groups))
 
 		else:
 			if schemata_list.shape[0] > 2:
 				for schemata_subset in itertools.combinations(schemata_list, (schemata_list.shape[0] - 1)):
 					if verbose:
-						print 'ADDING to Queue:',schemata_subset
+						print('ADDING to Queue:',schemata_subset)
 					Partition_Options.append(np.array(schemata_subset))
 
 	if verbose:
-		print 'Partition_Options:',Partition_Options
+		print('Partition_Options:',Partition_Options)
 	final_list = []
 	prime_accounted = []
 
@@ -678,7 +681,7 @@ def _check_schemata_permutations_v1(schemata_list, permutation_groups):
 	for x_group in permutation_groups:
 		sofar = []
 
-		for i_index in xrange(len(x_group) - 1):
+		for i_index in range(len(x_group) - 1):
 			x_index = x_group[i_index]
 			small_group = [x_index]
 		
@@ -704,8 +707,8 @@ def _can_swap_v1(schemata_subset):
 	return can_switch
 
 def _check_counts_v1(column_counts = []):
-	print '-- Column Counts (v1) --'
-	print column_counts
+	print('-- Column Counts (v1) --')
+	print(column_counts)
 	unique_col_counts = []
 	permutation_groups = []
 
@@ -726,14 +729,14 @@ def _check_counts_v1(column_counts = []):
 
 	# check if a singleton permutation group exists
 	if [len(x_group) for x_group in permutation_groups].count(1) > 0:
-		print 'counts:',permutation_groups
+		print('counts:',permutation_groups)
 		return -1
 	else:
-		print 'counts:',permutation_groups
+		print('counts:',permutation_groups)
 		return permutation_groups
 
 def _three_symbol_count_cols_symbols_v1(k=1, transition_list = None):
-	column_counts = [[0, 0, 0] for i_col in xrange(k)]
+	column_counts = [[0, 0, 0] for i_col in range(k)]
 	for x_col in transition_list:
 		for i_entry, x_entry in enumerate(x_col):
 			if x_entry == '0':
@@ -797,7 +800,7 @@ def computes_ts_coverage(k, outputs, two_symbols):
 		coverage (dict): a dictionary of coverage where keys are inputs states and values are lists of the Two Symbols covering that input.
 	"""
 	ts_coverage = {}
-	for statenum in xrange(2**k):
+	for statenum in range(2**k):
 		binstate = statenum_to_binstate(statenum, base=k)
 		ts_coverage[binstate] = covering_twosymbols = []
 		output = outputs[statenum]
