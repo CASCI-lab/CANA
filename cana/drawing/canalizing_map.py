@@ -23,20 +23,21 @@ import networkx as nx
 def draw_canalizing_map_graphviz(DG=None,
 		on_node_fillcolor='black', on_node_fontcolor='white',
 		off_node_fillcolor='white', off_node_fontcolor='black',
-		
+
 		input_node_bordercolor='gray',
 		output_node_bordercolor='red',
 		controlled_node_bordercolor='green',
 		constant_node_bordercolor='pink',
-		
+
 		literal_edge_color='#208120', output_edge_color='#812020',
 		fusing_edge_color='#a5a5cc', fused_edge_color='#202081',
 		simplified_edge_color='#cca37a',
-		
+
 		fusing_edge_arrowhead='none',
 		fused_edge_arrowhead='dot',
 		literal_edge_arrowhead='dot',
 		out_edge_arrowhead='normal',
+
 		simplified_edge_arrowhead='normal',
 		*args, **kwargs):
 	""" Draws the Canalizing Map (CM) using the GraphViz plotting engine.
@@ -120,7 +121,7 @@ def draw_canalizing_map_graphviz(DG=None,
 					color = simplified_edge_color
 
 			else:
-				raise AttributeError("Node type could not be found. Must be either 'out', 'literal', 'fusing', 'fused' or 'simplified'.  Got %s." % str(d['type']))
+				raise AttributeError("Node type could not be found. Must be either 'out', 'literal', 'fusing', 'fused' or 'simplified'.  Got {:s}.".format(d['type']))
 		G.edge(s, t, arrowhead=arrowhead, color=color)
 
 	return G

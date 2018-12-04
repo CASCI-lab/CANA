@@ -224,7 +224,7 @@ def find_two_symbols_v2(k=1, prime_implicants=None, verbose=False, verbose_level
 		if verbose:
 			if verbose_level == 1:
 				if i%500==0:
-					print('>>> QUEUE: pop | A (m=%d) | Queue size: %d' % (n_schematas, len(Q) )	)				
+					print('>>> QUEUE: pop | A (m=%d) | Queue size: %d' % (n_schematas, len(Q) ))
 			elif verbose_level > 5:
 				print('>>> QUEUE: pop | A (m=%d) | Queue size: %d' % (n_schematas, len(Q) ))
 			if verbose_level>10:

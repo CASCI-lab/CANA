@@ -9,6 +9,7 @@ Boolean Network
 #	Copyright (C) 2017 by
 #	Rion Brattig Correia <rionbr@gmail.com>
 #	Alex Gates <ajgates@indiana.edu>
+#	Thomas Parmer <tjparmer@indiana.edu>
 #	All rights reserved.
 #	MIT license.
 from collections import defaultdict
@@ -16,7 +17,6 @@ try:
     import cStringIO.StringIO
 except ImportError:
     from io import StringIO
-
 import numpy as np
 import networkx as nx
 import random
@@ -26,6 +26,7 @@ import cana.bns as bns
 from cana.control import fvs, mds, sc
 from cana.utils import *
 import warnings
+import re
 #
 #
 class BooleanNetwork:
@@ -64,7 +65,6 @@ class BooleanNetwork:
 			outputs = logic[i]['out']
 			node = BooleanNode(name=name, k=k, inputs=inputs, outputs=outputs)
 			self.nodes.append(node)
-
 		#
 		self.bin2num = bin2num						# Helper function. Converts binstate to statenum. It gets updated by `_update_trans_func`
 		self.num2bin = num2bin						# Helper function. Converts statenum to binstate. It gets updated by `_update_trans_func`
@@ -78,12 +78,13 @@ class BooleanNetwork:
 	# I/O Methods
 	#
 	@classmethod
-	def from_file(cls, input_file, keep_constants=True, **kwargs):
+	def from_file(self, file, type='cnet', keep_constants=True, **kwargs):
 		"""
 		Load the Boolean Network from a file.
 
 		Args:
-			infile (string) : The name of a file containing the Boolean Network.
+			file (string) : The name of a file containing the Boolean Network.
+			type (string) : The type of file, either 'cnet' (default) or 'logical' for Boolean logical rules.
 
 		Returns:
 			BooleanNetwork (object) : The boolean network object.
@@ -91,26 +92,42 @@ class BooleanNetwork:
 		See also:
 			:func:`from_string` :func:`from_dict`
 		"""
-		with open(input_file, 'r') as infile:
-			return cls.from_string(infile.read(), keep_constants=keep_constants, **kwargs)
+		with open(file, 'r') as infile:
+			if type=='cnet':
+				return self.from_string_cnet(infile.read(), keep_constants=keep_constants, **kwargs)
+			elif type=='logical':
+				return self.from_string_boolean(infile.read(), keep_constants=keep_constants, **kwargs)
 
 	@classmethod
-	def from_string(cls, input_string, keep_constants=True, **kwargs):
+	def from_string_cnet(self, string, keep_constants=True, **kwargs):
 		"""
-		Load the Boolean Network from a string.
+		Instanciates a Boolean Network from a string in cnet format.
 
 		Args:
-			input_string (string): The representation of a Boolean Network.
+			string (string): A cnet format representation of a Boolean Network.
 
 		Returns:
 			(BooleanNetwork)
+
+		Examples:
+			String should be structured as follow
+			```
+			#.v = number of nodes
+			.v 1
+			#.l = node label
+			.l 1 node-a
+			.l 2 node-b
+			#.n = (node number) (in-degree) (input node 1) … (input node k)
+			.n 1 2 4 5
+			01 1 # transition rule
+			```
 
 		See also:
 			:func:`from_file` :func:`from_dict`
 
 		Note: see examples for more information.
 		"""
-		network_file = StringIO(str(input_string))
+		network_file = cStringIO.StringIO(string)
 		logic = defaultdict(dict)
 
 		line = network_file.readline()
@@ -152,10 +169,67 @@ class BooleanNetwork:
 					break
 			line = network_file.readline()
 
-		return cls.from_dict(logic, keep_constants=keep_constants, **kwargs)
+		return self.from_dict(logic, keep_constants=keep_constants, **kwargs)
 
 	@classmethod
-	def from_dict(cls, logic, keep_constants=True, **kwargs):
+	def from_string_boolean(self, string, keep_constants=True, **kwargs):
+		"""
+		Instanciates a Boolean Network from a Boolean update rules format.
+
+		Args:
+			string (string) : A boolean update rules format representation of a Boolean Network.
+
+		Returns:
+			(BooleanNetwork) : The boolean network object.
+
+		Examples:
+			String should be structured as follow
+			```
+			#BOOLEAN RULES
+			node_name*=node_input_1 [logic operator] node_input_2 ...
+			```
+
+		See also:
+			:func:`from_string` :func:`from_dict`
+		"""
+
+		logic = defaultdict(dict)
+
+		# parse lines to receive node names
+		network_file = StringIO(string)
+		line = network_file.readline()
+		i = 0
+		while line != "":
+			if line[0] == '#':
+				line = network_file.readline()
+				continue
+			logic[i] = {'name': line.split("*")[0].strip(), 'in':[], 'out':[]}
+			line = network_file.readline()
+			i += 1
+
+		# Parse lines again to determine inputs and output sequence
+		network_file = StringIO(string)
+		line = network_file.readline()
+		i = 0
+		while line != "":
+			if line[0] == '#':
+				line = network_file.readline()
+				continue
+			eval_line = line.split("=")[1] #logical condition to evaluate
+			# RE checks for non-alphanumeric character before/after node name (node names are included in other node names)
+			# Additional characters added to eval_line to avoid start/end of string complications
+			input_names = [logic[node]['name'] for node in logic if re.compile('\W'+logic[node]['name']+'\W').search('*'+eval_line+'*')]
+			input_nums = [node for input in input_names for node in logic if input==logic[node]['name']]
+			logic[i]['in'] = input_nums
+			# Determine output transitions
+			logic[i]['out'] = output_transitions(eval_line, input_names)
+			line = network_file.readline()
+			i += 1
+
+		return self.from_dict(logic, keep_constants=keep_constants, **kwargs)
+
+	@classmethod
+	def from_dict(self, logic, keep_constants=True, **kwargs):
 		"""Instanciaets a BoolleanNetwork from a logic dictionary.
 
 		Args:
@@ -183,11 +257,8 @@ class BooleanNetwork:
 
 		return BooleanNetwork(name=name, logic=logic, Nnodes=Nnodes, constants=constants, keep_constants=keep_constants)
 
-	#
-	# I/O Methods
-	#
 	def to_cnet(self, file=None, adjust_no_input=False):
-		""" Outputs the network logic to ``.cnet`` format, which is similar to the Berkeley Logic Interchange Format (BLIF).
+		"""Outputs the network logic to ``.cnet`` format, which is similar to the Berkeley Logic Interchange Format (BLIF).
 		This is the format used by BNS to compute attractors.
 
 		Args:
@@ -199,7 +270,6 @@ class BooleanNetwork:
 
 		Note:
 			See `BNS <https://people.kth.se/~dubrova/bns.html>`_ for more information.
-
 		"""
 		# Copy
 		logic = self.logic.copy()
@@ -238,10 +308,11 @@ class BooleanNetwork:
 	# Methods
 	#
 	def structural_graph(self, remove_constants=False):
-		""" Calculates and returns the structural graph of the boolean network.
+		"""Calculates and returns the structural graph of the boolean network.
 
 		Args:
 			remove_constants (bool) : Remove constants from the graph. Defaults to ``False``.
+		
 		Returns:
 			G (networkx.Digraph) : The boolean network structural graph.
 		"""
@@ -259,7 +330,7 @@ class BooleanNetwork:
 		return self._sg
 
 	def number_interactions(self):
-		""" Returns the number of interactions in the Structural Graph (SG).
+		"""Returns the number of interactions in the Structural Graph (SG).
 		Practically, it returns the number of edges of the SG.
 
 		Returns:
@@ -269,10 +340,11 @@ class BooleanNetwork:
 		return nx.number_of_edges(self._sg)
 
 	def structural_indegrees(self):
-		""" Returns the in-degrees of the Structural Graph. Sorted.
+		"""Returns the in-degrees of the Structural Graph. Sorted.
 
 		Returns:
 			(int) : the number of in-degrees.
+		
 		See also:
 			:func:`structural_outdegrees`, :func:`effective_indegrees`, :func:`effective_outdegrees`
 		"""
@@ -280,7 +352,7 @@ class BooleanNetwork:
 		return sorted(self._sg.in_degree().values(), reverse=True)
 
 	def structural_outdegrees(self):
-		""" Returns the out-degrees of the Structural Graph. Sorted.
+		"""Returns the out-degrees of the Structural Graph. Sorted.
 
 		Returns:
 			(list)
@@ -334,10 +406,11 @@ class BooleanNetwork:
 		return self._eg
 
 	def effective_indegrees(self):
-		""" Returns the in-degrees of the Effective Graph. Sorted.
+		"""Returns the in-degrees of the Effective Graph. Sorted.
 
 		Returns:
 			(list)
+		
 		See also:
 			:func:`effective_outdegrees`, :func:`structural_indegrees`, :func:`structural_outdegrees`
 		"""
@@ -345,10 +418,11 @@ class BooleanNetwork:
 		return sorted(self._eg.in_degree().values(), reverse=True)
 
 	def effective_outdegrees(self):
-		""" Returns the out-degrees of the Effective Graph. Sorted.
+		"""Returns the out-degrees of the Effective Graph. Sorted.
 
 		Returns:
 			(list)
+		
 		See also:
 			:func:`effective_indegrees`, :func:`structural_indegrees`, :func:`structural_outdegrees`
 		"""
@@ -370,7 +444,7 @@ class BooleanNetwork:
 		return self._stg
 
 	def stg_indegree(self):
-		""" Returns the In-degrees of the State-Transition-Graph (STG). Sorted.
+		"""Returns the In-degrees of the State-Transition-Graph (STG). Sorted.
 
 		Returns:
 			list
@@ -379,10 +453,12 @@ class BooleanNetwork:
 		return sorted(self._stg.in_degree().values(), reverse=True)
 
 	def step(self, initial, n=1):
-		""" Steps the boolean network 'n' step from the given initial input condition.
+		"""Steps the boolean network 'n' step from the given initial input condition.
+
 		Args:
 			initial (string) : the initial state.
 			n (int) : the number of steps.
+		
 		Returns:
 			(string) : The stepped binary state.
 		"""
@@ -395,15 +471,14 @@ class BooleanNetwork:
 		return ''.join( [ str(node.step( ''.join(initial[j] for j in self.logic[i]['in']) ) ) for i,node in enumerate(self.nodes, start=0) ] )
 
 	def trajectory(self, initial, length=2):
-		""" Computes the trajectory of ``length`` steps without the State Transition Graph (STG).
-		"""
+		"""Computes the trajectory of ``length`` steps without the State Transition Graph (STG)."""
 		trajectory = [initial]
 		for istep in range(length):
 			trajectory.append(self.step(trajectory[-1]))
 		return trajectory
 
 	def trajectory_to_attractor(self, initial):
-		""" Computes the trajectory starting at ``initial`` until it reaches an attracor (this is garanteed)
+		"""Computes the trajectory starting at ``initial`` until it reaches an attracor (this is garanteed)
 
 		Args:
 			initial (string): the initial state.
@@ -420,7 +495,7 @@ class BooleanNetwork:
 		return trajectory
 
 	def attractor(self, initial):
-		""" Computes the trajectory starting at ``initial`` until it reaches an attracor (this is garanteed)
+		"""Computes the trajectory starting at ``initial`` until it reaches an attracor (this is garanteed)
 
 		Args:
 			initial (string): the initial state.
@@ -481,10 +556,11 @@ class BooleanNetwork:
 		return entropy(prob_vec, base=base)
 
 	def set_constant(self, node, value=None):
-		""" Sets or unsets a node as a constant.
+		"""Sets or unsets a node as a constant.
 
 		Args:
 			node (int) : The node ``id`` in the logic dict.
+		
 		Todo:
 			This functions needs to better handle node_id and node_name
 		"""
@@ -558,12 +634,16 @@ class BooleanNetwork:
 		Args:
 			min_dvs (int) : Mininum number of driver nodes to search.
 			max_dvs (int) : Maximum number of driver nodes to search.
+		
 		Returns:
 			(list) : The list of driver nodes found in the search.
+		
 		Note:
 			This is an inefficient bruit force search, maybe we can think of better ways to do this?
+		
 		TODO:
 			Parallelize the search on each combination. Each CSTG is independent and can be searched in parallel.
+		
 		See also:
 			:func:`controlled_state_transition_graph`, :func:`controlled_attractor_graph`.
 		"""
@@ -575,7 +655,7 @@ class BooleanNetwork:
 		attractor_controllers_found = []
 		nr_dvs = min_dvs
 		while (len(attractor_controllers_found) == 0) and (nr_dvs <= max_dvs):
-			if verbose: print("Trying with %d Driver Nodes" % (nr_dvs))
+			if verbose: print("Trying with {:d} Driver Nodes".format(nr_dvs))
 			for dvs in itertools.combinations(nodeids, nr_dvs):
 				dvs = list(dvs)
 				cstg = self.controlled_state_transition_graph(dvs)
@@ -599,8 +679,10 @@ class BooleanNetwork:
 
 		Args:
 			driver_nodes (list) : The list of driver nodes.
+		
 		Returns:
 			(networkx.DiGraph) : The Controlled State-Transition-Graph.
+		
 		See also:
 			:func:`attractor_driver_nodes`, :func:`controlled_attractor_graph`.
 		"""
@@ -642,7 +724,6 @@ class BooleanNetwork:
 		#   append output to list
 		# joins the results from each node output
 		assert len(initial) == self.Nnodes
-
 		return ''.join( [ str(node.step( ''.join(initial[j] for j in self.logic[i]['in']) ) ) if not (i in pinned_var) else initial[i] for i,node in enumerate(self.nodes, start=0) ] )
 
 	def pinning_controlled_state_transition_graph(self, driver_nodes=[]):
@@ -689,12 +770,69 @@ class BooleanNetwork:
 
 		return pcstg_dict
 
+	def pinned_step(self, initial, pinned_binstate, pinned_var):
+		"""Steps the boolean network 1 step from the given initial input condition when the driver variables are pinned
+		to their controlled states.
+		Args:
+			initial (string) : the initial state.
+			n (int) : the number of steps.
+		Returns:
+			(string) : The stepped binary state.
+		"""
+		# for every node:
+		#   node input = breaks down initial by node input
+		#   asks node to step with the input
+		#   append output to list
+		# joins the results from each node output
+		assert len(initial) == self.Nnodes
+		return ''.join( [ str(node.step( ''.join(initial[j] for j in self.logic[i]['in']) ) ) if not (i in pinned_var) else initial[i] for i,node in enumerate(self.nodes, start=0) ] )
+
+	def pinning_controlled_state_transition_graph(self, driver_nodes=[]):
+		"""Returns a dictionary of Controlled State-Transition-Graph (CSTG) under the assumptions of
+		pinning controllability.
+		
+		In practice, it copies the original STG, flips driver nodes (variables), and updates the CSTG.
+		
+		Args:
+			driver_nodes (list) : The list of driver nodes.
+		
+		Returns:
+			(networkx.DiGraph) : The Pinning Controlled State-Transition-Graph.
+		
+		See also:
+			:func: `controlled_state_transition_graph`, :func:`attractor_driver_nodes`, :func:`controlled_attractor_graph`.
+		"""
+		self._check_compute_variables(attractors=True)
+		if self.keep_constants:
+			for dv in driver_nodes:
+				if dv in self.constants:
+					warnings.warn("Cannot control a constant variable '%s'! Skipping" % self.nodes[dv].name )
+		uncontrolled_system_size = self.Nnodes - len(driver_nodes)
+		pcstg_dict = {}
+		for att in self._attractors:
+			dn_attractor_transitions = [tuple(''.join([self.num2bin(s)[dn] for dn in driver_nodes]) for s in att_edge)
+			for att_edge in self._stg.subgraph(att).edges()]
+			pcstg_states = [self.bin2num(binstate_pinned_to_binstate(
+				statenum_to_binstate(statenum, base=uncontrolled_system_size), attsource, pinned_var=driver_nodes) )
+			for statenum in range(2**uncontrolled_system_size) for attsource, attsink in dn_attractor_transitions]
+			pcstg = nx.DiGraph(name='STG: '+self.name)
+			pcstg.name = 'PC-' + pcstg.name +' (' + ','.join(map(str,[self.nodes[dv].name for dv in driver_nodes])) + ')'
+			pcstg.add_nodes_from( (ps, {'label':ps}) for ps in pcstg_states)
+			for attsource, attsink in dn_attractor_transitions:
+				for statenum in range(2**uncontrolled_system_size):
+					initial = binstate_pinned_to_binstate(statenum_to_binstate(statenum, base=uncontrolled_system_size), attsource, pinned_var=driver_nodes)
+					pcstg.add_edge(self.bin2num(initial), self.bin2num(self.pinned_step(initial, pinned_binstate=attsink, pinned_var=driver_nodes)))
+			pcstg_dict[tuple(att)] = pcstg
+		return pcstg_dict
+
 	def controlled_attractor_graph(self, cstg):
 		"""
 		Args:
 			cstg (networkx.DiGraph) : A Controlled State-Transition-Graph (CSTG)
+		
 		Returns:
 			(networkx.DiGraph) : The Controlled Attractor Graph (CAG)
+		
 		See also:
 			:func:`attractor_driver_nodes`, :func:`controlled_state_transition_graph`.
 		"""
@@ -779,31 +917,29 @@ class BooleanNetwork:
 		return att_reachable_from
 
 	def fraction_pinned_attractors(self, pcstg_dict):
-		"""Returns the Number of Accessible Attractors
-
+		"""Returns the Number of Accessible Attractors		
 		Args:
 			pcstg_dict (dict of networkx.DiGraph) : The dictionary of Pinned Controlled State-Transition-Graphs.
+		
 		Returns:
 			(int) : Number of Accessible Attractors
 		"""
-
 		reached_attractors = []
 		for att, pcstg in pcstg_dict.items():
 			pinned_att = list(nx.attracting_components(pcstg))
 			print(set(att), pinned_att)
 			reached_attractors.append(set(att) in pinned_att)
-
 		return sum(reached_attractors) / float(len(pcstg_dict))
 
 	def fraction_pinned_configurations(self, pcstg_dict):
 		"""Returns the Fraction of successfully Pinned Configurations
-
+		
 		Args:
 			pcstg_dict (dict of networkx.DiGraph) : The dictionary of Pinned Controlled State-Transition-Graphs.
+		
 		Returns:
 			(list) : the Fraction of successfully Pinned Configurations to each attractor
 		"""
-
 		pinned_configurations = []
 		for att, pcstg in pcstg_dict.items():
 			att_reached = False
@@ -821,10 +957,11 @@ class BooleanNetwork:
 
 		Args:
 			pcstg_dict (dict of networkx.DiGraph) : The dictionary of Pinned Controlled State-Transition-Graphs.
+
 		Returns:
 			(int) : the mean Fraction of successfully Pinned Configurations
 		"""
-		return sum(self.fraction_pinned_configurations(pcstg_dict))/len(pcstg_dict)
+		return sum(self.fraction_pinned_configurations(pcstg_dict)) / len(pcstg_dict)
 
 	def _dfs_reachable(self, G, source):
 		"""Produce nodes in a depth-first-search pre-ordering starting from source."""
@@ -856,7 +993,7 @@ class BooleanNetwork:
 		if graph == 'structural':
 			dg = self.structural_graph(*args, **kwargs)
 		elif graph == 'effective':
-			dg = self.effective_graph(mode='input', bound='upper', threshold=None)
+			dg = self.effective_graph(mode='input', bound='upper', threshold=None, *args, **kwargs)
 		else:
 			raise AttributeError("The graph type '%s' is not accepted. Try 'structural' or 'effective'." % graph)
 		#
@@ -878,6 +1015,7 @@ class BooleanNetwork:
 		Args:
 			max_search (int) : Maximum search of additional variables. Defaults to 5.
 			keep_self_loops (bool) : If self-loops are used in the computation.
+		
 		Returns:
 			(list) : A list-of-lists with MDS solution nodes.
 		"""
@@ -890,10 +1028,11 @@ class BooleanNetwork:
 	# Structural Controllability
 	#
 	def structural_controllability_driver_nodes(self, keep_self_loops=True):
-		""" The minimum set of necessary driver nodes to control the network based on Structural Controlability (SC) theory.
+		"""The minimum set of necessary driver nodes to control the network based on Structural Controlability (SC) theory.
 
 		Args:
 			keep_self_loops (bool) : If self-loops are used in the computation.
+		
 		Returns:
 			(list) : A list-of-lists with SC solution nodes.
 		"""
@@ -906,15 +1045,17 @@ class BooleanNetwork:
 	# Dynamics Canalization Map (DCM)
 	#
 	def dynamics_canalization_map(self, output=None, simplify=True, keep_constants=True):
-		""" Computes the Dynamics Canalization Map (DCM).
+		"""Computes the Dynamics Canalization Map (DCM).
 		In practice, it asks each node to compute their Canalization Map and then puts them together, simplifying it if possible.
 
 		Args:
 			output (int) : The output DCM to return. Default is ``None``, retuning both [0,1].
 			simplify (bool) : Attemps to simpify the DCM by removing thresholds nodes with :math:`\tao=1`.
 			keep_constants (bool) : Keep or remove constants from the DCM.
+		
 		Returns:
 			DCM (networkx.DiGraph) : a directed graph representation of the DCM.
+		
 		See Also:
 			:func:`boolean_node.canalizing_map` for the CM and :func:`drawing.draw_dynamics_canalizing_map_graphviz` for plotting.
 		"""
@@ -928,7 +1069,7 @@ class BooleanNetwork:
 
 		if simplify:
 			#Loop all threshold nodes
-			threshold_nodes=[(n,d) for n,d in DCM.nodes(data=True) if d['type']=='threshold']
+			threshold_nodes = [(n,d) for n,d in DCM.nodes(data=True) if d['type']=='threshold']
 			for n,d in threshold_nodes:
 
 				# Constant, remove threshold node
@@ -956,7 +1097,8 @@ class BooleanNetwork:
 		return DCM
 
 	def _check_compute_variables(self, **kwargs):
-		""" Recursevely check if the requested control variables are instantiated/computed, otherwise computes them in order.
+		"""Recursevely check if the requested control variables are instantiated/computed.
+		Otherwise computes them in order.
 		"""
 		if 'sg' in kwargs:
 			if self._sg is None:
@@ -992,10 +1134,11 @@ class BooleanNetwork:
 	# Get Node Names from Ids
 	#
 	def _get_node_name(self, id):
-		""" Return the name of the node based on its id.
+		"""Return the name of the node based on its id.
 
 		Args:
 			id (int): id of the node.
+		
 		Returns:
 			name (string): name of the node.
 		"""
@@ -1007,10 +1150,11 @@ class BooleanNetwork:
 			return node.name
 
 	def get_node_name(self, iterable=[]):
-		""" Return node names. Optionally, it returns only the names of the ids requested.
+		"""Return node names. Optionally, it returns only the names of the ids requested.
 
 		Args:
 			iterable (int,list, optional) : The id (or list of ids) of nodes to which return their names.
+		
 		Returns:
 			names (list) : The name of the nodes.
 		"""
@@ -1027,14 +1171,16 @@ class BooleanNetwork:
 	# Plotting Methods
 	#
 	def derrida_curve(self, nsamples=10, random_seed=None, method='random'):
-		""" The Derrida Curve (also reffered as criticality measure :math:`D_s`).
+		"""The Derrida Curve (also reffered as criticality measure :math:`D_s`).
 		When "mode" is set as "random" (default), it would use random sampling to estimate Derrida value
 		If "mode" is set as "sensitivity", it would use c-sensitivity to calculate Derrida value (slower)
 		You can refer to :cite:'kadelka2017influence' about why c-sensitivity can be used to caculate Derrida value
+		
 		Args:
 			nsamples (int) : The number of samples per hammimg distance to get.
 			random_seed (int) : The random state seed.
 			method (string) : specify the method you want. either 'random' or 'sensitivity'
+		
 		Returns:
 			(dx,dy) (tuple) : The dx and dy of the curve.
 		"""

@@ -1,5 +1,4 @@
 from setuptools import setup, find_packages
-#import cana
 from cana import __package__, __title__, __description__, __version__
 
 

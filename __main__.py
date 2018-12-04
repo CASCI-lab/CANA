@@ -1,11 +1,4 @@
-from cana.datasets.bio import MARQUESPITA, THALIANA
+from cana.datasets.bio import BREAST_CANCER
 
-#N = MARQUESPITA()
-N = THALIANA()
+N = BREAST_CANCER()
 print N
-print 
-
-FVS_g = N.feedback_vertex_set_driver_nodes(graph='structural', method='grasp', remove_constants=True)
-print N.get_node_name(FVS_g) , '(grasp)'
-FVS_bf = N.feedback_vertex_set_driver_nodes(graph='structural', method='bruteforce', remove_constants=True)
-print N.get_node_name(FVS_bf) , '(bruteforce)'

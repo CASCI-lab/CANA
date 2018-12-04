@@ -6,19 +6,14 @@ __author__ = """\n""".join([
 	'Rion Brattig Correia <rionbr@gmail.com>',
 	'Alex Gates <ajgates@umail.iu.edu>',
 	'Xuan Wang <xw47@indiana.edu>'
+	'Thomas Parmer <tjparmer@indiana.edu>',
 	'Etienne Nzabarushimana <enzabaru@indiana.edu>',
 	'Luis M. Rocha <rocha@indiana.edu>'
 ])
 
 __copyright__ = u'2017, Correia, R. B., Gates, A., Rocha, L. M.'
 
-__version__ = '0.0.3'
-__release__ = '0.0.3-alpha'
+__version__ = '0.0.4'
+__release__ = '0.0.4-alpha'
 #
 __all__ = ['boolean_network','boolean_node']
-
-#
-#from boolean_network import BooleanNetwork
-#from boolean_node import BooleanNode
-#from utils import *
-#

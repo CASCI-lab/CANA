@@ -6,7 +6,7 @@ import math
 import operator as op
 
 def recursive_map(f,d):
-	""" Normal python map, but recursive
+	"""Normal python map, but recursive
 
 	Args:
 		f (function) : a function to be applied to every item of the iterable
@@ -15,12 +15,14 @@ def recursive_map(f,d):
 	return [ not hasattr(x, "__iter__") and f(x) or recursive_map(f, x) for x in d ]
 
 def binstate_to_statenum(binstate):
-	""" Converts from binary state to state number.
+	"""Converts from binary state to state number.
 
 	Args:
 		binstate (string) : The binary state.
+	
 	Returns:
 		int : The state number.
+	
 	Example:
 
 		.. code-block:: python
@@ -35,13 +37,15 @@ def binstate_to_statenum(binstate):
 	return int(binstate, 2)
 
 def statenum_to_binstate(statenum, base):
-	""" Converts an interger into the binary string.
+	"""Converts an interger into the binary string.
 
 	Args:
 		statenum (int) : The state number.
 		base (int) : The binary base
+
 	Returns:
 		string : The binary state.
+
 	Example:
 
 		.. code-block:: python
@@ -66,17 +70,19 @@ def statenum_to_binstate(statenum, base):
 	return bstate
 
 def binstate_pinned_to_binstate(binstate, pinned_binstate, pinned_var):
-	'''
-	Combines two binstates based on the locations of pinned variables.
+	"""Combines two binstates based on the locations of pinned variables.
+
 	Args:
 		binstate (str) : the binary state of non-pinned variables
 		pinned_binstate (str) : the binary states of the pinned variables
 		pinned_var (list of int) : the list of pinned variables
+
 	Returns:
 		string : The combined binary state.
+
 	See also:
 	    :attr:'statenum_to_binstate'
-	'''
+	"""
 	total_length = len(binstate) + len(pinned_binstate)
 	new_binstate = list(statenum_to_binstate(0, base=total_length))
 	ipin = 0
@@ -84,24 +90,25 @@ def binstate_pinned_to_binstate(binstate, pinned_binstate, pinned_var):
 	for istate in range(total_length):
 		if istate in pinned_var:
 			new_binstate[pinned_var[ipin]] = pinned_binstate[ipin]
-			ipin+=1
+			ipin += 1
 		else:
 			new_binstate[istate] = binstate[ireg]
-			ireg+=1
-
+			ireg += 1
 	return ''.join(new_binstate)
 
 def statenum_to_output_list(statenum, base):
-	'''
-	Converts an interger into a list of 0 and 1, thus can feed to BooleanNode.from_output_list()
+	"""Converts an interger into a list of 0 and 1, thus can feed to BooleanNode.from_output_list()
+	
 	Args:
 		statenum (int) : the state number
 		base (int) : the length of output list
+	
 	Returns:
 		list : a list of length base, consisting of 0 and 1
+	
 	See also:
 	    :attr:'statenum_to_binstate'
-	'''
+	"""
 	return [int(i) for i in statenum_to_binstate(statenum, base)]
 
 def flip_bit(bit):
@@ -109,6 +116,7 @@ def flip_bit(bit):
 
 	Args:
 		bit (string/int/bool): The current bit position
+
 	Returns:
 		same as input: The flipped bit
 	"""
@@ -125,6 +133,7 @@ def flip_binstate_bit(binstate, idx):
 	Args:
 		binstate (string) : The binary state.
 		idx (int) : The index of the bit to flip.
+
 	Returns:
 		(string) : New binary state.
 
@@ -159,9 +168,11 @@ def statenum_to_density(statenum):
 	"""Converts from state number to density
 
 	Args:
-		statenum (int): The state number
+		statenum (int): The state number 
+
 	Returns:
 		int: The density of ``1`` in that specific binary state number.
+
 	Example:
 		>>> statenum_to_binstate(14, base=2)
 		>>> '1110'
@@ -175,8 +186,10 @@ def binstate_to_density(binstate):
 
 	Args:
 		binstate (string) : The binary state
+	
 	Returns:
 		int
+	
 	Example:
 		>>> binstate_to_density('1110')
 		>>> 3
@@ -209,12 +222,14 @@ def constantbinstate_to_statenum(constantbinstate, constant_template):
 	return binstate_to_statenum(binstate)
 
 def expand_logic_line(line):
-	""" This generator expands a logic line containing ``-`` (ie. ``00- 0`` or ``0-0 1``) to a series of logic lines containing only ``0`` and ``1``.
+	"""This generator expands a logic line containing ``-`` (ie. ``00- 0`` or ``0-0 1``) to a series of logic lines containing only ``0`` and ``1``.
 
 	Args:
 		line (string) : The logic line. Format is <binary-state><space><output>.
+	
 	Returns:
 		generator : a series of logic lines
+	
 	Example:
 		>>> expand_logic_line('1-- 0')
 		>>> 100 0
@@ -241,12 +256,14 @@ def expand_logic_line(line):
 			yield i
 
 def print_logic_table(outputs):
-	""" Print Logic Table
+	"""Print Logic Table
 
 	Args:
 		outputs (list) : The transition outputs of the function.
+	
 	Returns:
 		print : a print-out of the logic table.
+	
 	Example:
 		>>> print_logic_table([0,0,1,1])
 		>>> 00 : 0
@@ -260,8 +277,9 @@ def print_logic_table(outputs):
 		print(statenum_to_binstate(statenum, base=k) + " : " + str(outputs[statenum]))
 
 def entropy(prob_vector, logbase = 2.):
-	""" Calculates the entropy given a probability vector
-	TODO:
+	"""Calculates the entropy given a probability vector
+	
+	Todo:
 		This should be calculated using ``scipy.entropy``
 	"""
 	prob_vector = np.array(prob_vector)
@@ -274,8 +292,10 @@ def hamming_distance(s1, s2):
 	Args:
 		s1 (string): First string
 		s2 (string): Second string
+	
 	Returns:
 		float : The Hamming distance
+	
 	Example:
 		>>> hamming_distance('001','101')
 		>>> 1
@@ -285,12 +305,13 @@ def hamming_distance(s1, s2):
 
 
 def ncr(n, r):
-	"""return the combination number
-	the combination of selecting r items from n iterms, order doesn't matter
+	"""Return the combination number.
+	The combination of selecting `r` items from `n` iterms, order doesn't matter.
 
 	Args:
 	    n (int): number of elements in collection
 	    r (int): length of combination
+	
 	Returns:
 	    int
 	"""
@@ -302,8 +323,7 @@ def ncr(n, r):
 
 
 def isclose(a, b, rel_tol=1e-09, abs_tol=0.0):
-	'''
-	Python 2 doesn't have math.isclose()
+	"""Python 2 doesn't have math.isclose()
 	Here is an equivalent function
 	Use this to tell whether two float numbers are close enough
 		considering using == to compare floats is dangerous!
@@ -316,5 +336,48 @@ def isclose(a, b, rel_tol=1e-09, abs_tol=0.0):
 
 	Returns:
 		bool
-	'''
+	"""
 	return abs(a - b) <= max(rel_tol * max(abs(a), abs(b)), abs_tol)
+
+
+def output_transitions(eval_line, input_list):
+	"""Returns an output list from combinatorically trying all input values
+	
+	Args:
+		eval_line (string) : logic or arithmetic line to evaluate
+		input_list (list) : list of input variables
+
+	Returns:
+		list of all possible output transitions (list)
+
+	Example:
+		RAS*=(GRB2 or PLCG1) and not GAP
+		eval_line = "(GRB2 or PLCG1) and not GAP"
+		input_list = ['GRB2', 'PLCG1', 'GAP']
+
+		This function generates the following trial strings:
+			000
+			001
+			010
+			011
+			100
+			101
+			110
+			111
+
+			A variable is dynamically created for each member of the input list
+			and assigned the corresponding value from each trail string.
+			The original eval_line is then evaluated with each assignment
+			which results in the output list [0, 0, 1, 0, 1, 0, 1, 0]
+	"""
+	total = 2**len(input_list) # Total combinations to try
+	output_list = []
+	for i in range(total):
+		trial_string = statenum_to_binstate(i, len(input_list) )
+		# Evaluate trial_string by assigning value to each input variable
+		for j,input in enumerate(input_list):
+			exec(input + '=' + trial_string[j])
+		output_list.append(int(eval(eval_line)))
+
+	return output_list
+
