@@ -454,6 +454,16 @@ class BooleanNode(object):
 			return self.outputs[binstate_to_statenum(input)]
 
 
+	def activities(self, N):
+		"""
+		Ghanbarnejad & Klemm (2012) EPL, 99
+
+		ToDo: there is likely a more efficent way to do this because we are double counting perturbations
+		"""
+		return [2**(-N) * np.abs([self.outputs[statenum] - self.outputs[binstate_to_statenum(flip_binstate_bit(statenum_to_binstate(statenum, base=self.k), inode))] 
+			for statenum in range(2**self.k)]).sum() for inode in range(self.k)]
+
+
 	def canalizing_map(self, output=None):
 		""" Computes the node Canalizing Map (CM).
 	

@@ -429,6 +429,32 @@ class BooleanNetwork:
 		self._check_compute_variables(eg=True)
 		return sorted(self._eg.out_degree().values(), reverse=True)
 
+
+	def activity_graph(self, threshold=None):
+		"""
+		Ghanbarnejad & Klemm (2012) EPL, 99
+		"""
+
+		if threshold is not None:
+			act_g = nx.DiGraph(name="Activity Graph: " + self.name + "(Threshold: %.2f)" % threshold)
+		else:
+			act_g = nx.DiGraph(name="Activity Graph: " + self.name + "(Threshold: None)")
+
+		# Add Nodes
+		for i, node in enumerate(self.nodes, start=0):
+			act_g.add_node(i, **{'label': node.name})
+
+		# Add Edges
+		for i, node in enumerate(self.nodes, start=0):
+
+			a_is = node.activities(N=self.Nnodes)
+			for inputs, a_i in zip(self.logic[i]['in'], a_is):
+				# If there is a threshold, only return those number above the threshold. Else, return all edges.
+				if ((threshold is None) and (a_i > 0)) or ((threshold is not None) and (a_i > threshold)):
+					act_g.add_edge(inputs, i, **{'weight': a_i})
+
+		return act_g
+
 	def state_transition_graph(self):
 		"""Creates and returns the full State Transition Graph (STG) for the Boolean Network.
 
