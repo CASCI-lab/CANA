@@ -10,7 +10,7 @@ Two methods are implemented here. A bruteforce and the Greedy Randomized Adaptiv
 
 """
 #   Copyright (C) 2017 by
-#   Alex Gates <ajgates@gmail.com>
+#   Alex Gates <ajgates42@gmail.com>
 #   Rion Brattig Correia <rionbr@gmail.com>
 #   All rights reserved.
 #   MIT license.
@@ -50,7 +50,7 @@ def fvs_grasp(directed_graph, max_iter=100, keep_self_loops=True):
 	
 	reduced_graph = directed_graph.copy()
 	
-	for i_iter in xrange(max_iter):
+	for i_iter in range(max_iter):
 		alpha = np.random.random()
 		S = _construct_greedy_randomized_solution(reduced_graph, alpha, S )
 		S = _local_search(directed_graph.copy(), S)

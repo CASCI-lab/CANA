@@ -28,7 +28,7 @@ This module interfaces CANA with the [B]oolean [N]etworks with [S]ynchronous upd
 import os
 import subprocess
 import tempfile
-from .. utils import binstate_to_statenum
+from cana.utils import binstate_to_statenum
 
 _path = os.path.dirname(os.path.realpath(__file__))
 """ Make sure we know what the current directory is """
@@ -68,7 +68,7 @@ def attractors(cnet, bnspath=_path, cleanup=True):
 		current_attractor = []
 		for i,line in enumerate(p.stdout):
 			# Strip line
-			cleanline = line.strip().replace('\n', "")
+			cleanline = line.decode('ascii').strip().replace('\n', "")
 			#DEBUG: print "{:d}: '{:s}'".format(i ,cleanline)
 			
 			if 'Attractor' in cleanline:
@@ -88,6 +88,6 @@ def attractors(cnet, bnspath=_path, cleanup=True):
 				current_attractor.append( binstate_to_statenum(cleanline) )
 
 	except OSError:
-		print "'BNS' could not be found! You must have it compiled or download the binary for your system from the 'bns' website (https://people.kth.se/~dubrova/bns.html)."
+		print("'BNS' could not be found! You must have it compiled or download the binary for your system from the 'bns' website (https://people.kth.se/~dubrova/bns.html).")
 
 	return attractors

@@ -17,10 +17,9 @@ import numpy as np
 import pandas as pd
 import itertools
 from collections import defaultdict
-from canalization import boolean_canalization as BCanalization
-from base import deprecated
+from cana.canalization import boolean_canalization as BCanalization
 import warnings
-from utils import *
+from cana.utils import *
 #
 #
 #
@@ -75,7 +74,7 @@ class BooleanNode(object):
 		"""
 		name = kwargs.pop('name') if 'name' in kwargs else 'x'
 		k = int(np.log2(len(outputs)))
-		inputs = kwargs.pop('inputs') if 'inputs' in kwargs else ['i%d' % (x+1) for x in xrange(k)]
+		inputs = kwargs.pop('inputs') if 'inputs' in kwargs else ['i%d' % (x+1) for x in range(k)]
 		state = kwargs.pop('state') if 'state' in kwargs else False
 
 		return BooleanNode(name=name, k=k, inputs=inputs, state=state, outputs=outputs, *args, **kwargs)
@@ -154,7 +153,7 @@ class BooleanNode(object):
 			redundancies = []
 			# Generate a per input coverage
 			# ex: {0: {'11': [], '10': [], '00': [], '01': []}, 1: {'11': [], '10': [], '00': [], '01': []}}
-			pi_input_coverage = { input : { binstate: [ pi[input] for pi in pis ] for binstate,pis in self._pi_coverage.items() } for input in xrange(self.k) }
+			pi_input_coverage = { input : { binstate: [ pi[input] for pi in pis ] for binstate,pis in self._pi_coverage.items() } for input in range(self.k) }
 
 			# Loop ever input node
 			for input,binstates in pi_input_coverage.items():
@@ -286,8 +285,8 @@ class BooleanNode(object):
 			symmetries = []
 			# Generate a per input coverage
 			# ex: {0: {'11': [], '10': [], '00': [], '01': []}, 1: {'11': [], '10': [], '00': [], '01': []}}
-			#ts_input_coverage = { input : { binstate: [ idxs.count(input) for schema,reps,sms in tss for idxs in reps+sms ] for binstate,tss in self._ts_coverage.items() } for input in xrange(self.k) }
-			ts_input_coverage = { input : { binstate: [ len(idxs) if input in idxs else 0 for schema,reps,sms in tss for idxs in reps+sms ] for binstate,tss in self._ts_coverage.items() } for input in xrange(self.k) }
+			#ts_input_coverage = { input : { binstate: [ idxs.count(input) for schema,reps,sms in tss for idxs in reps+sms ] for binstate,tss in self._ts_coverage.items() } for input in range(self.k) }
+			ts_input_coverage = { input : { binstate: [ len(idxs) if input in idxs else 0 for schema,reps,sms in tss for idxs in reps+sms ] for binstate,tss in self._ts_coverage.items() } for input in range(self.k) }
 			# Loop ever input node
 			for input,binstates in ts_input_coverage.items():
 				# {'numstate': [number-of-ts's for each match], '10': [0, 2] ...}
@@ -338,7 +337,7 @@ class BooleanNode(object):
 			k = 2
 		else:
 			k = self.k
-		for statenum, output in zip( xrange(k**2), self.outputs):
+		for statenum, output in zip( range(k**2), self.outputs):
 			# Binary State, Transition
 			d.append( (statenum_to_binstate(statenum, base=self.k), output) )
 		df = pd.DataFrame(d, columns=['In:','Out:'])
@@ -492,7 +491,7 @@ class BooleanNode(object):
 				group2 = []
 				nlit, ngrp0, ngrp1, ngrp2 = 0,0,0,0 # Tau is the threshold, counted as the sum of (0's and 1's literals; 0's in permutation group; 1's in permutation group)
 				
-				for j in xrange(self.k):			
+				for j in range(self.k):			
 					# Is this input in any permutation group?
 					input = ts[j]
 					if not any([j in group for group in ps]):
@@ -529,7 +528,7 @@ class BooleanNode(object):
 					G.add_edge(iname, tname, **{'type':'literal'})
 
 				# Group0
-				for fusion in xrange(ngrp0):
+				for fusion in range(ngrp0):
 					fname = 'F-{:d}_T-{:d}_{:s}-{:d}'.format(fusion, tid, self.name, 0)
 					G.add_node(fname, **{'type':'fusion','group':self.name})
 					for input in ps[0]:
@@ -541,7 +540,7 @@ class BooleanNode(object):
 					G.add_edge(fname,tname, **{'type':'fused'})
 					
 				# Group1
-				for fusion in xrange(ngrp1):
+				for fusion in range(ngrp1):
 					fname = 'F-{:d}_T-{:d}_{:s}-{:d}'.format(fusion, tid, self.name, 1)
 					G.add_node(fname, **{'type':'fusion', 'group':self.name})
 					for input in ps[0]:
@@ -587,13 +586,13 @@ class BooleanNode(object):
 		"""
 		if 'transition_density_tuple' in kwargs:
 			if self._transition_density_tuple is None:
-				if self.verbose: print "Computing: Transition Density Tuple Table"
+				if self.verbose: print("Computing: Transition Density Tuple Table")
 				self._transition_density_tuple = BCanalization.make_transition_density_tables(self.k, self.outputs)
 		
 		elif 'prime_implicants' in kwargs:
 			self._check_compute_canalization_variables(transition_density_tuple=True)
 			if self._prime_implicants is None:
-				if self.verbose: print "Computing: Prime Implicants"
+				if self.verbose: print("Computing: Prime Implicants")
 				self._prime_implicants = \
 					(
 						BCanalization.find_implicants_qm(column=self._transition_density_tuple[0]),
@@ -603,13 +602,13 @@ class BooleanNode(object):
 		elif 'pi_coverage' in kwargs:
 			self._check_compute_canalization_variables(prime_implicants=True)
 			if self._pi_coverage is None:
-				if self.verbose: print "Computing: Coverage of Prime Implicants"
+				if self.verbose: print("Computing: Coverage of Prime Implicants")
 				self._pi_coverage = BCanalization.computes_pi_coverage(self.k, self.outputs, self._prime_implicants)
 
 		elif 'two_symbols' in kwargs:
 			self._check_compute_canalization_variables(prime_implicants=True)
 			if self._two_symbols is None:
-				if self.verbose: print "Computing: Two Symbols"
+				if self.verbose: print("Computing: Two Symbols")
 				self._two_symbols = \
 					(
 						BCanalization.find_two_symbols_v2(k=self.k, prime_implicants=self._prime_implicants[0]),
@@ -618,7 +617,7 @@ class BooleanNode(object):
 		elif 'ts_coverage' in kwargs:
 			self._check_compute_canalization_variables(two_symbols=True)
 			if self._ts_coverage is None:
-				if self.verbose: print "Computing: Coverage of Two Symbols"
+				if self.verbose: print("Computing: Coverage of Two Symbols")
 				self._ts_coverage = BCanalization.computes_ts_coverage(self.k, self.outputs, self._two_symbols)
 
 		else:
@@ -666,7 +665,7 @@ class BooleanNode(object):
 		if mode != 'forceK':
 			for j in product('01', repeat=self.k):
 				origin_config = list(j)
-				for mut in itertools.combinations(xrange(self.k), ic):
+				for mut in itertools.combinations(range(self.k), ic):
 					mut_config = origin_config[:]
 					for i_mut in mut:
 						mut_config[i_mut] = flip_bit(mut_config[i_mut])
@@ -677,10 +676,10 @@ class BooleanNode(object):
 			return S_c_f / float(ncr(self.k, c)) / float(2 ** self.k)
 		else:
 			assert max_k >= self.k
-			for ic in xrange(max(1, c + self.k - max_k), min(c, self.k) + 1):
+			for ic in range(max(1, c + self.k - max_k), min(c, self.k) + 1):
 				for j in product('01', repeat=self.k):
 					origin_config = list(j)
-					for mut in itertools.combinations(xrange(self.k), ic):
+					for mut in itertools.combinations(range(self.k), ic):
 						mut_config = origin_config[:]
 						for i_mut in mut:
 							mut_config[i_mut] = flip_bit(mut_config[i_mut])
