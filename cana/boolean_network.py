@@ -14,7 +14,7 @@ Boolean Network
 #	MIT license.
 from collections import defaultdict
 try:
-    import cStringIO.StringIO
+    import cStringIO.StringIO as StringIO
 except ImportError:
     from io import StringIO
 import numpy as np
@@ -127,7 +127,7 @@ class BooleanNetwork:
 
 		Note: see examples for more information.
 		"""
-		network_file = cStringIO.StringIO(string)
+		network_file = StringIO(string)
 		logic = defaultdict(dict)
 
 		line = network_file.readline()
@@ -447,7 +447,7 @@ class BooleanNetwork:
 		# Add Edges
 		for i, node in enumerate(self.nodes, start=0):
 
-			a_is = node.activities(N=self.Nnodes)
+			a_is = node.activities()
 			for inputs, a_i in zip(self.logic[i]['in'], a_is):
 				# If there is a threshold, only return those number above the threshold. Else, return all edges.
 				if ((threshold is None) and (a_i > 0)) or ((threshold is not None) and (a_i > threshold)):
@@ -1050,12 +1050,12 @@ class BooleanNetwork:
 		mdssets = mds.mds(self._sg, max_search=max_search, keep_self_loops=keep_self_loops)
 		return  mdssets #[ [self.nodes[i].name for i in mdsset] for mdsset in mdssets]
 
-	#
 	# Structural Controllability
 	#
 	def structural_controllability_driver_nodes(self, keep_self_loops=True):
 		"""The minimum set of necessary driver nodes to control the network based on Structural Controlability (SC) theory.
 
+	#
 		Args:
 			keep_self_loops (bool) : If self-loops are used in the computation.
 		
@@ -1066,6 +1066,39 @@ class BooleanNetwork:
 		#
 		scsets = sc.sc(self._sg, keep_self_loops=keep_self_loops)
 		return scsets # [ [self.nodes[i].name for i in scset] for scset in scsets]
+
+
+	# Dynamical Impact
+	#
+	def dynamical_impact(self, t=100, n_samples=0):
+		"""Given an initial condition and the same configuration with node i perturbed, the system is run for t timesteps.
+		The dynamical impact is the fraction of such configuration pairs that result in different configurations after t timesteps.
+
+	#
+		Args:
+			t (int) : the number of time steps the system is run before impact is calculated.
+
+			n_samples (int) : the number of samples used to approximate the dynamical impact of a node.
+				if 0 then the full STG is used to calculate the true value instead of the approximation method.
+		
+		Returns:
+			(vector) : An N-dimensional vector of dynamical impact for each node.
+		"""
+		impact_vec = [0.0 for inode in range(self.Nnodes)]
+		for inode in range(self.Nnodes):
+			if n_samples == 0:
+				# use STG
+				for statenum in range(self.Nstates):
+					config = self.num2bin(statenum)
+					perturbed_config = flip_binstate_bit(config, inode)
+					impact_vec[inode] += float(self.trajectory(config, length=t) == self.trajectory(perturbed_config, length=t)) / self.Nstates
+			else:
+				# we sample configurations
+				for isample in range(n_samples):
+					rnd_config = "".join([random.choice(['0', '1']) for b in range(self.Nnodes)])
+					perturbed_config = flip_binstate_bit(rnd_config, inode)
+					impact_vec[inode] += float(self.trajectory(rnd_config, length=t)[-1] != self.trajectory(perturbed_config, length=t)[-1]) / n_samples
+		return impact_vec
 
 	#
 	# Dynamics Canalization Map (DCM)

@@ -448,22 +448,25 @@ class BooleanNode(object):
 		else:
 			if isinstance(input, str):
 				input = ''.join(input)
+				if len(input) != self.k:
+					raise ValueError('Input length do not match number of k inputs')
 				output_idx = binstate_to_statenum(input)
+
 			elif isinstance(input, int):
 				output_idx = input
-			if len(input) != self.k:
-				raise ValueError('Input length do not match number of k inputs')
+				if input >= 2**self.k:
+					raise ValueError('Input statenum is too large for k inputs')
 
 			return self.outputs[output_idx]
 
 
-	def activities(self, N):
+	def activities(self):
 		"""
 		Ghanbarnejad & Klemm (2012) EPL, 99
 
 		ToDo: there is likely a more efficent way to do this because we are double counting perturbations
 		"""
-		return [2**(-N) * np.abs([self.step[statenum] - self.step[flip_binstate_bit(statenum_to_binstate(statenum, base=self.k), inode)] 
+		return [2**(-self.k) * np.abs([self.step(statenum) - self.step(flip_binstate_bit(statenum_to_binstate(statenum, base=self.k), inode))
 			for statenum in range(2**self.k)]).sum() for inode in range(self.k)]
 
 
