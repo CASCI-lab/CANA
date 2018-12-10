@@ -312,7 +312,7 @@ class BooleanNetwork:
 
 		Args:
 			remove_constants (bool) : Remove constants from the graph. Defaults to ``False``.
-		
+
 		Returns:
 			G (networkx.Digraph) : The boolean network structural graph.
 		"""
@@ -344,7 +344,7 @@ class BooleanNetwork:
 
 		Returns:
 			(int) : the number of in-degrees.
-		
+
 		See also:
 			:func:`structural_outdegrees`, :func:`effective_indegrees`, :func:`effective_outdegrees`
 		"""
@@ -410,7 +410,7 @@ class BooleanNetwork:
 
 		Returns:
 			(list)
-		
+
 		See also:
 			:func:`effective_outdegrees`, :func:`structural_indegrees`, :func:`structural_outdegrees`
 		"""
@@ -422,7 +422,7 @@ class BooleanNetwork:
 
 		Returns:
 			(list)
-		
+
 		See also:
 			:func:`effective_indegrees`, :func:`structural_indegrees`, :func:`structural_outdegrees`
 		"""
@@ -478,13 +478,13 @@ class BooleanNetwork:
 		self._check_compute_variables(stg=True)
 		return sorted(self._stg.in_degree().values(), reverse=True)
 
-	def step(self, initial, n=1):
+	def step(self, initial):
 		"""Steps the boolean network 'n' step from the given initial input condition.
 
 		Args:
 			initial (string) : the initial state.
 			n (int) : the number of steps.
-		
+
 		Returns:
 			(string) : The stepped binary state.
 		"""
@@ -586,7 +586,7 @@ class BooleanNetwork:
 
 		Args:
 			node (int) : The node ``id`` in the logic dict.
-		
+
 		Todo:
 			This functions needs to better handle node_id and node_name
 		"""
@@ -660,16 +660,16 @@ class BooleanNetwork:
 		Args:
 			min_dvs (int) : Mininum number of driver nodes to search.
 			max_dvs (int) : Maximum number of driver nodes to search.
-		
+
 		Returns:
 			(list) : The list of driver nodes found in the search.
-		
+
 		Note:
 			This is an inefficient bruit force search, maybe we can think of better ways to do this?
-		
+
 		TODO:
 			Parallelize the search on each combination. Each CSTG is independent and can be searched in parallel.
-		
+
 		See also:
 			:func:`controlled_state_transition_graph`, :func:`controlled_attractor_graph`.
 		"""
@@ -705,10 +705,10 @@ class BooleanNetwork:
 
 		Args:
 			driver_nodes (list) : The list of driver nodes.
-		
+
 		Returns:
 			(networkx.DiGraph) : The Controlled State-Transition-Graph.
-		
+
 		See also:
 			:func:`attractor_driver_nodes`, :func:`controlled_attractor_graph`.
 		"""
@@ -816,15 +816,15 @@ class BooleanNetwork:
 	def pinning_controlled_state_transition_graph(self, driver_nodes=[]):
 		"""Returns a dictionary of Controlled State-Transition-Graph (CSTG) under the assumptions of
 		pinning controllability.
-		
+
 		In practice, it copies the original STG, flips driver nodes (variables), and updates the CSTG.
-		
+
 		Args:
 			driver_nodes (list) : The list of driver nodes.
-		
+
 		Returns:
 			(networkx.DiGraph) : The Pinning Controlled State-Transition-Graph.
-		
+
 		See also:
 			:func: `controlled_state_transition_graph`, :func:`attractor_driver_nodes`, :func:`controlled_attractor_graph`.
 		"""
@@ -855,10 +855,10 @@ class BooleanNetwork:
 		"""
 		Args:
 			cstg (networkx.DiGraph) : A Controlled State-Transition-Graph (CSTG)
-		
+
 		Returns:
 			(networkx.DiGraph) : The Controlled Attractor Graph (CAG)
-		
+
 		See also:
 			:func:`attractor_driver_nodes`, :func:`controlled_state_transition_graph`.
 		"""
@@ -943,10 +943,10 @@ class BooleanNetwork:
 		return att_reachable_from
 
 	def fraction_pinned_attractors(self, pcstg_dict):
-		"""Returns the Number of Accessible Attractors		
+		"""Returns the Number of Accessible Attractors
 		Args:
 			pcstg_dict (dict of networkx.DiGraph) : The dictionary of Pinned Controlled State-Transition-Graphs.
-		
+
 		Returns:
 			(int) : Number of Accessible Attractors
 		"""
@@ -959,10 +959,10 @@ class BooleanNetwork:
 
 	def fraction_pinned_configurations(self, pcstg_dict):
 		"""Returns the Fraction of successfully Pinned Configurations
-		
+
 		Args:
 			pcstg_dict (dict of networkx.DiGraph) : The dictionary of Pinned Controlled State-Transition-Graphs.
-		
+
 		Returns:
 			(list) : the Fraction of successfully Pinned Configurations to each attractor
 		"""
@@ -1041,7 +1041,7 @@ class BooleanNetwork:
 		Args:
 			max_search (int) : Maximum search of additional variables. Defaults to 5.
 			keep_self_loops (bool) : If self-loops are used in the computation.
-		
+
 		Returns:
 			(list) : A list-of-lists with MDS solution nodes.
 		"""
@@ -1058,7 +1058,7 @@ class BooleanNetwork:
 	#
 		Args:
 			keep_self_loops (bool) : If self-loops are used in the computation.
-		
+
 		Returns:
 			(list) : A list-of-lists with SC solution nodes.
 		"""
@@ -1080,7 +1080,7 @@ class BooleanNetwork:
 
 			n_samples (int) : the number of samples used to approximate the dynamical impact of a node.
 				if 0 then the full STG is used to calculate the true value instead of the approximation method.
-		
+
 		Returns:
 			(vector) : An N-dimensional vector of dynamical impact for each node.
 		"""
@@ -1091,7 +1091,7 @@ class BooleanNetwork:
 				for statenum in range(self.Nstates):
 					config = self.num2bin(statenum)
 					perturbed_config = flip_binstate_bit(config, inode)
-					impact_vec[inode] += float(self.trajectory(config, length=t) == self.trajectory(perturbed_config, length=t)) / self.Nstates
+					impact_vec[inode] += float(self.trajectory(config, length=t)[-1] != self.trajectory(perturbed_config, length=t)[-1]) / self.Nstates
 			else:
 				# we sample configurations
 				for isample in range(n_samples):
@@ -1099,6 +1099,54 @@ class BooleanNetwork:
 					perturbed_config = flip_binstate_bit(rnd_config, inode)
 					impact_vec[inode] += float(self.trajectory(rnd_config, length=t)[-1] != self.trajectory(perturbed_config, length=t)[-1]) / n_samples
 		return impact_vec
+
+	def temporal_partial_derivative(self, t=100, n_samples=0, mode='tensor'):
+		"""The partial derivative of node i on node j after t steps
+
+	#
+		Args:
+			t (int) : the number of time steps the system is run before impact is calculated.
+
+			n_samples (int) : the number of samples used to approximate the dynamical impact of a node.
+				if 0 then the full STG is used to calculate the true value instead of the approximation method.
+
+			mode (str) : determines if we calculate the partial derivative over the whole trajectory
+				'matrix' returns the partial derivative after t steps
+				'tensor' : returns a tensor of the partial derivatives at each step of the t steps
+
+		Returns:
+			(vector) : the partial derivatives
+		"""
+
+		if mode == 'matrix':
+			partial = np.zeros((self.Nnodes, self.Nnodes))
+		elif mode=='tensor':
+			partial = np.zeros((t, self.Nnodes, self.Nnodes))
+
+
+		for inode in range(self.Nnodes):
+			if n_samples == 0:
+				# use STG
+				config_genderator = (self.num2bin(statenum) for statenum in range(self.Nstates))
+				norm_term = self.Nstates
+			else:
+				# sample configurations
+				config_genderator = (random_binstate(self.Nnodes) for isample in range(n_samples))
+				norm_term = n_samples
+
+
+			for config in config_genderator:
+				config_trajectory = self.trajectory(config, length=t)
+				perturbed_config_trajectory = self.trajectory(flip_binstate_bit(config, inode), length=t)
+
+				if mode == 'matrix':
+					partial[inode] += [float(config_trajectory[-1][jnode] != perturbed_config_trajectory[-1][jnode]) for jnode in range(self.Nnodes)]
+
+				elif mode=='tensor':
+					for n_step in range(1,t+1):
+						partial[n_step-1,inode] += [float(config_trajectory[n_step][jnode] != perturbed_config_trajectory[n_step][jnode]) for jnode in range(self.Nnodes)]
+		return partial / norm_term
+
 
 	#
 	# Dynamics Canalization Map (DCM)
@@ -1111,10 +1159,10 @@ class BooleanNetwork:
 			output (int) : The output DCM to return. Default is ``None``, retuning both [0,1].
 			simplify (bool) : Attemps to simpify the DCM by removing thresholds nodes with :math:`\tao=1`.
 			keep_constants (bool) : Keep or remove constants from the DCM.
-		
+
 		Returns:
 			DCM (networkx.DiGraph) : a directed graph representation of the DCM.
-		
+
 		See Also:
 			:func:`boolean_node.canalizing_map` for the CM and :func:`drawing.draw_dynamics_canalizing_map_graphviz` for plotting.
 		"""
@@ -1197,7 +1245,7 @@ class BooleanNetwork:
 
 		Args:
 			id (int): id of the node.
-		
+
 		Returns:
 			name (string): name of the node.
 		"""
@@ -1213,7 +1261,7 @@ class BooleanNetwork:
 
 		Args:
 			iterable (int,list, optional) : The id (or list of ids) of nodes to which return their names.
-		
+
 		Returns:
 			names (list) : The name of the nodes.
 		"""
@@ -1234,12 +1282,12 @@ class BooleanNetwork:
 		When "mode" is set as "random" (default), it would use random sampling to estimate Derrida value
 		If "mode" is set as "sensitivity", it would use c-sensitivity to calculate Derrida value (slower)
 		You can refer to :cite:'kadelka2017influence' about why c-sensitivity can be used to caculate Derrida value
-		
+
 		Args:
 			nsamples (int) : The number of samples per hammimg distance to get.
 			random_seed (int) : The random state seed.
 			method (string) : specify the method you want. either 'random' or 'sensitivity'
-		
+
 		Returns:
 			(dx,dy) (tuple) : The dx and dy of the curve.
 		"""

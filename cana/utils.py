@@ -3,6 +3,7 @@ import numpy as np
 from itertools import product
 import copy
 import math
+import random
 import operator as op
 
 def recursive_map(f,d):
@@ -19,10 +20,10 @@ def binstate_to_statenum(binstate):
 
 	Args:
 		binstate (string) : The binary state.
-	
+
 	Returns:
 		int : The state number.
-	
+
 	Example:
 
 		.. code-block:: python
@@ -98,14 +99,14 @@ def binstate_pinned_to_binstate(binstate, pinned_binstate, pinned_var):
 
 def statenum_to_output_list(statenum, base):
 	"""Converts an interger into a list of 0 and 1, thus can feed to BooleanNode.from_output_list()
-	
+
 	Args:
 		statenum (int) : the state number
 		base (int) : the length of output list
-	
+
 	Returns:
 		list : a list of length base, consisting of 0 and 1
-	
+
 	See also:
 	    :attr:'statenum_to_binstate'
 	"""
@@ -168,7 +169,7 @@ def statenum_to_density(statenum):
 	"""Converts from state number to density
 
 	Args:
-		statenum (int): The state number 
+		statenum (int): The state number
 
 	Returns:
 		int: The density of ``1`` in that specific binary state number.
@@ -186,10 +187,10 @@ def binstate_to_density(binstate):
 
 	Args:
 		binstate (string) : The binary state
-	
+
 	Returns:
 		int
-	
+
 	Example:
 		>>> binstate_to_density('1110')
 		>>> 3
@@ -221,15 +222,28 @@ def constantbinstate_to_statenum(constantbinstate, constant_template):
 	binstate = ''.join([constantbinstate[ivar] for ivar in range(len(constant_template)) if constant_template[ivar] is None])
 	return binstate_to_statenum(binstate)
 
+def random_binstate(N):
+	"""
+	generates a random binary state over N variables
+
+	Args:
+		N (int) : the length of the binary state
+
+	Returns:
+		binstate (str) : a random binary state
+	"""
+
+	return"".join([random.choice(['0', '1']) for bit in range(N)])
+
 def expand_logic_line(line):
 	"""This generator expands a logic line containing ``-`` (ie. ``00- 0`` or ``0-0 1``) to a series of logic lines containing only ``0`` and ``1``.
 
 	Args:
 		line (string) : The logic line. Format is <binary-state><space><output>.
-	
+
 	Returns:
 		generator : a series of logic lines
-	
+
 	Example:
 		>>> expand_logic_line('1-- 0')
 		>>> 100 0
@@ -260,10 +274,10 @@ def print_logic_table(outputs):
 
 	Args:
 		outputs (list) : The transition outputs of the function.
-	
+
 	Returns:
 		print : a print-out of the logic table.
-	
+
 	Example:
 		>>> print_logic_table([0,0,1,1])
 		>>> 00 : 0
@@ -278,7 +292,7 @@ def print_logic_table(outputs):
 
 def entropy(prob_vector, logbase = 2.):
 	"""Calculates the entropy given a probability vector
-	
+
 	Todo:
 		This should be calculated using ``scipy.entropy``
 	"""
@@ -292,10 +306,10 @@ def hamming_distance(s1, s2):
 	Args:
 		s1 (string): First string
 		s2 (string): Second string
-	
+
 	Returns:
 		float : The Hamming distance
-	
+
 	Example:
 		>>> hamming_distance('001','101')
 		>>> 1
@@ -311,7 +325,7 @@ def ncr(n, r):
 	Args:
 	    n (int): number of elements in collection
 	    r (int): length of combination
-	
+
 	Returns:
 	    int
 	"""
@@ -342,7 +356,7 @@ def isclose(a, b, rel_tol=1e-09, abs_tol=0.0):
 
 def output_transitions(eval_line, input_list):
 	"""Returns an output list from combinatorically trying all input values
-	
+
 	Args:
 		eval_line (string) : logic or arithmetic line to evaluate
 		input_list (list) : list of input variables
