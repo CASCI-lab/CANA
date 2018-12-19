@@ -127,7 +127,7 @@ class BooleanNetwork:
 
 		Note: see examples for more information.
 		"""
-		network_file = cStringIO.StringIO(string)
+		network_file = StringIO(string)
 		logic = defaultdict(dict)
 		
 		line = network_file.readline()
