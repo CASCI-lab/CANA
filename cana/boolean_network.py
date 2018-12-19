@@ -14,9 +14,9 @@ Boolean Network
 #	MIT license.
 from collections import defaultdict
 try:
-    import cStringIO.StringIO as StringIO
+	import cStringIO.StringIO as StringIO
 except ImportError:
-    from io import StringIO
+	from io import StringIO
 import numpy as np
 import networkx as nx
 import random
@@ -1070,83 +1070,99 @@ class BooleanNetwork:
 
 	# Dynamical Impact
 	#
-	def dynamical_impact(self, t=100, n_samples=0):
-		"""Given an initial condition and the same configuration with node i perturbed, the system is run for t timesteps.
-		The dynamical impact is the fraction of such configuration pairs that result in different configurations after t timesteps.
+	def partial_derative_node(self, node, n_traj=10, t=1):
+		"""The partial derivative of node on all other nodes after t steps
 
 	#
 		Args:
+			node (int) : the node index for perturbations
+
 			t (int) : the number of time steps the system is run before impact is calculated.
 
-			n_samples (int) : the number of samples used to approximate the dynamical impact of a node.
+			n_traj (int) : the number of trajectories used to approximate the dynamical impact of a node.
 				if 0 then the full STG is used to calculate the true value instead of the approximation method.
-
-		Returns:
-			(vector) : An N-dimensional vector of dynamical impact for each node.
-		"""
-		impact_vec = [0.0 for inode in range(self.Nnodes)]
-		for inode in range(self.Nnodes):
-			if n_samples == 0:
-				# use STG
-				for statenum in range(self.Nstates):
-					config = self.num2bin(statenum)
-					perturbed_config = flip_binstate_bit(config, inode)
-					impact_vec[inode] += float(self.trajectory(config, length=t)[-1] != self.trajectory(perturbed_config, length=t)[-1]) / self.Nstates
-			else:
-				# we sample configurations
-				for isample in range(n_samples):
-					rnd_config = "".join([random.choice(['0', '1']) for b in range(self.Nnodes)])
-					perturbed_config = flip_binstate_bit(rnd_config, inode)
-					impact_vec[inode] += float(self.trajectory(rnd_config, length=t)[-1] != self.trajectory(perturbed_config, length=t)[-1]) / n_samples
-		return impact_vec
-
-	def temporal_partial_derivative(self, t=100, n_samples=0, mode='tensor'):
-		"""The partial derivative of node i on node j after t steps
-
-	#
-		Args:
-			t (int) : the number of time steps the system is run before impact is calculated.
-
-			n_samples (int) : the number of samples used to approximate the dynamical impact of a node.
-				if 0 then the full STG is used to calculate the true value instead of the approximation method.
-
-			mode (str) : determines if we calculate the partial derivative over the whole trajectory
-				'matrix' returns the partial derivative after t steps
-				'tensor' : returns a tensor of the partial derivatives at each step of the t steps
 
 		Returns:
 			(vector) : the partial derivatives
 		"""
+		partial = np.zeros((t, self.Nnodes), dtype=float)
+		if n_traj ==0:
+			config_genderator = (self.num2bin(statenum) for statenum in range(self.Nstates))
+			n_traj = bn.Nstates
+		else:
+			# sample configurations
+			config_genderator = (random_binstate(self.Nnodes) for itraj in range(n_traj))
 
-		if mode == 'matrix':
-			partial = np.zeros((self.Nnodes, self.Nnodes))
-		elif mode=='tensor':
-			partial = np.zeros((t, self.Nnodes, self.Nnodes))
+		for config in config_genderator:
+			perturbed_config = flip_binstate_bit(config, node)
+			for n_step in range(t):
+				config = self.step(config)
+				perturbed_config = self.step(perturbed_config)
+				partial[n_step] += np.logical_not(binstate_compare(config, perturbed_config))
+		partial /= n_traj
+	
+		return partial
 
 
-		for inode in range(self.Nnodes):
-			if n_samples == 0:
-				# use STG
-				config_genderator = (self.num2bin(statenum) for statenum in range(self.Nstates))
-				norm_term = self.Nstates
-			else:
-				# sample configurations
-				config_genderator = (random_binstate(self.Nnodes) for isample in range(n_samples))
-				norm_term = n_samples
+	def approx_dynamic_impact(self, node, n_steps=1, mode='effective', bound='mean', bias=0.5, min_log_prob=np.log(10**(-5))):
+		"""
+		Use the network structure to approximate the dynamical impact of a perturbation to node for each of n_steps
+
+		for details see: Gates et al (2019)
+
+	#
+		Args:
+			node (int) : the node index for perturbations
+
+			n_steps (int) : the number of time steps
+			
+			mode (str) : the structural graph approximation to use
+				'effective' : use the effective graph
+				'structural' : use the structural graph
+				'bias' : use the structural graph with the bias approximation
+
+			bound (str) : the bound for the effective graph
+				'mean'
+
+			bias (float) : the average bias for the bias approximation
+
+			min_log_prob (float) : the default minimum probability
+
+		Returns:
+			(matrix) : approximate dynamical impact for each node at each step (n_steps x n_nodes)
+		"""
 
 
-			for config in config_genderator:
-				config_trajectory = self.trajectory(config, length=t)
-				perturbed_config_trajectory = self.trajectory(flip_binstate_bit(config, inode), length=t)
 
-				if mode == 'matrix':
-					partial[inode] += [float(config_trajectory[-1][jnode] != perturbed_config_trajectory[-1][jnode]) for jnode in range(self.Nnodes)]
+		# choose the underlying graph and get the log edge weight
+		if mode == 'effective':
+			G = self.effective_graph(bound='mean', threshold=0.0)
+			log_weights = {e:np.log(w) for e,w in nx.get_edge_attributes(G, 'weight').items()}
+			inv_weight_func = lambda x: np.exp(x)
 
-				elif mode=='tensor':
-					for n_step in range(1,t+1):
-						partial[n_step-1,inode] += [float(config_trajectory[n_step][jnode] != perturbed_config_trajectory[n_step][jnode]) for jnode in range(self.Nnodes)]
-		return partial / norm_term
+		elif mode == 'structural':
+			G = self.structural_graph()
+			log_weights = {e:np.log(0.5) for e,w in nx.get_edge_attributes(G, 'weight').items()}
+			inv_weight_func = lambda x: 1.0
 
+		elif mode == 'bias':
+			G = self.structural_graph()
+			log_weights = {e:np.log(bias) for e,w in nx.get_edge_attributes(G, 'weight').items()}
+			inv_weight_func = lambda x: np.exp(x)
+		
+		weight_func = lambda u, v, d: log_weights.get((u,v), min_log_prob)
+
+		# the dict to store all paths
+		paths = {node:[node]}
+		dist = probability_dijkstra_multisource(G, sources=paths[node], weight=weight_func, 
+										   pred=None, paths=paths, target=None)
+
+		# paths must be less than or equal to the number of steps 
+		# (here plus 2 because of 0 index and starting node is included)
+		return [[inv_weight_func(dist[jnode]) if ( (jnode != node) and jnode in dist.keys() and len(paths[jnode]) <= (n_step+2)) else 0 
+		for jnode in range(self.Nnodes)]  for n_step in range(n_steps)]
+
+		
 
 	#
 	# Dynamics Canalization Map (DCM)
