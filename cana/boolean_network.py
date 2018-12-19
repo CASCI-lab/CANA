@@ -494,7 +494,7 @@ class BooleanNetwork:
 		#   append output to list
 		# joins the results from each node output
 		assert len(initial) == self.Nnodes
-		return ''.join( [ str(node.step( ''.join(initial[j] for j in self.logic[i]['in']) ) ) for i,node in enumerate(self.nodes, start=0) ] )
+		return ''.join( [ node.step(node.input_mask(initial) ) for node in self.nodes] )
 
 	def trajectory(self, initial, length=2):
 		"""Computes the trajectory of ``length`` steps without the State Transition Graph (STG)."""
