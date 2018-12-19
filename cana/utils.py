@@ -1,6 +1,6 @@
 import networkx as nx
 import numpy as np
-from itertools import product
+from itertools import product, izip_longest
 import copy
 import math
 import random
@@ -62,13 +62,8 @@ def statenum_to_binstate(statenum, base):
 	See also:
 		:attr:`binstate_to_statenum`, :attr:`binstate_to_density`
 	"""
-	# binary representation
-	bstate = bin(statenum)[2::]
-	# 0 padding
-	bstate = "".join(['0' for n in range(base - len(bstate))]) + bstate
-	### Consider, and test, changing this function to just
-	# bstate = bin(statenum)[2:].zfill(base)
-	return bstate
+
+	return bin(statenum)[2:].zfill(base)
 
 def binstate_pinned_to_binstate(binstate, pinned_binstate, pinned_var):
 	"""Combines two binstates based on the locations of pinned variables.
@@ -96,6 +91,7 @@ def binstate_pinned_to_binstate(binstate, pinned_binstate, pinned_var):
 			new_binstate[istate] = binstate[ireg]
 			ireg += 1
 	return ''.join(new_binstate)
+
 
 def statenum_to_output_list(statenum, base):
 	"""Converts an interger into a list of 0 and 1, thus can feed to BooleanNode.from_output_list()
@@ -129,6 +125,37 @@ def flip_bit(bit):
 		raise TypeError("'bit' type format must be either 'string', 'int' or 'boolean'")
 
 def flip_binstate_bit(binstate, idx):
+	"""Flips the binary value of a bit in a binary state.
+		Args:
+			binstate (string) : A string of binary states.
+			idx (int) : The index of the bit to flip.
+		Returns:
+			(string) : New binary state.
+		
+		Example:
+			
+			.. code-block:: python
+				flip_bit_in_strstates('000',1) -> '010'
+		"""
+	if idx+1 > len(binstate):
+		raise TypeError("Binary state '{}' length and index position '{}' mismatch.".format(binstate, idx))
+	return binstate[:idx] + flip_bit(binstate[idx]) + binstate[idx+1:]
+
+def flip_bitset_in_strstates(strstates, idxs):
+	"""Flips the binary value for a set of bits in a binary state.
+		Args:
+			binstate (string) : The binary state to flip.
+			idxs (int) : The indexes of the bits to flip.
+		Returns:
+			(list) : The flipped states
+		Example:
+			
+			.. code-block:: python
+				flip_bit_in_strstates('000',[0,2]) -> ['100','001']
+		"""
+	return [flip_bit_in_strstates(strstates,idx) for idx in idxs]
+
+def flip_binstate_bit_old(binstate, idx):
 	"""Flips the binary value of a bit in a binary state.
 
 	Args:
@@ -336,6 +363,20 @@ def ncr(n, r):
 	return numer // denom
 
 
+def binstate_compare(binstate1, binstate2):
+	"""
+	Compare each element in two binary states 
+
+	Args:
+		binstate1, binstate2 : the two binary states to be compared
+
+	Return:
+		c (list, bool) : a list of comparisons
+	"""
+	return [ (b0==b1) for b0, b1 in izip_longest(binstate1, binstate2)]
+
+
+
 def isclose(a, b, rel_tol=1e-09, abs_tol=0.0):
 	"""Python 2 doesn't have math.isclose()
 	Here is an equivalent function
@@ -395,3 +436,52 @@ def output_transitions(eval_line, input_list):
 
 	return output_list
 
+
+def probability_dijkstra_multisource(G, sources, weight, pred=None, paths=None,
+                          target=None, min_prob=-10**10):
+    """Uses Dijkstra's algorithm to find shortest weighted paths when all values are negative
+    (shortest path is closest to 0)
+    modified from Network X
+
+    """
+    G_succ = G._succ if G.is_directed() else G._adj
+
+    push = heappush
+    pop = heappop
+    dist = {}  # dictionary of final distances
+    seen = {}
+    # fringe is heapq with 3-tuples (distance,c,node)
+    # use the count c to avoid comparing nodes (may not be able to)
+    c = count()
+    fringe = []
+    for source in sources:
+        if source not in G:
+            raise nx.NodeNotFound("Source {} not in G".format(source))
+        seen[source] = 0
+        push(fringe, (0, next(c), source))
+    while fringe:
+        (d, _, v) = pop(fringe)
+        if v in dist:
+            continue  # already searched this node.
+        dist[v] = d
+        if v == target:
+            break
+        for u, e in G_succ[v].items():
+            cost = weight(v, u, e)
+            if cost is None:
+                continue
+            vu_dist = dist[v] + cost
+            if u not in seen or vu_dist > seen[u]:  # vu_dist < seen[u]:
+                seen[u] = vu_dist
+                push(fringe, (vu_dist, next(c), u))
+                if paths is not None:
+                    paths[u] = paths[v] + [u]
+                if pred is not None:
+                    pred[u] = [v]
+            elif vu_dist == seen[u]:
+                if pred is not None:
+                    pred[u].append(v)
+
+    # The optional predecessor and path dictionaries can be accessed
+    # by the caller via the pred and paths objects passed as arguments.
+    return dist
