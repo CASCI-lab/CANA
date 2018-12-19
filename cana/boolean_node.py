@@ -15,7 +15,7 @@ Boolean Node
 from __future__ import division
 import numpy as np
 import pandas as pd
-import itertools
+from itertools import compress, combinations
 from collections import defaultdict
 from cana.canalization import boolean_canalization as BCanalization
 import warnings
@@ -29,12 +29,15 @@ class BooleanNode(object):
 
 	"""
 	def __init__(self, name='x', k=1, inputs=['i_0'], state=False, outputs=[0,1], constant=False, verbose=False, *args, **kwargs):
-		self.name = name 				# the name of the node
-		self.k = k 						# k is the number of inputs
-		self.inputs = inputs 			# the name of the input variables
-		self.state = state 				# the initial state of the node
-		self.outputs = outputs 			# the list of transition outputs
-		self.verbose = verbose 			# verbose mode
+		self.name = name 						# the name of the node
+		self.k = k 								# k is the number of inputs
+		self.inputs = list(map(int, inputs))	# the name of the input variables
+		self.state = state 						# the initial state of the node
+		self.outputs = list(map(str, outputs)) 	# the list of transition outputs
+		self.verbose = verbose 					# verbose mode
+
+		# mask for inputs
+		self.mask = [(i in self.inputs) for i in range(max(self.inputs)+1)]
 
 		# Consistency
 		if (k != 0) and (k != int(np.log2(len(outputs)))):
@@ -43,8 +46,10 @@ class BooleanNode(object):
 		# If all outputs are either positive or negative, this node can be treated as a constant.
 		if (len(set(outputs))==1) or (constant):
 			self.constant = True
+			self.step = self.constant_step
 		else:
 			self.constant = False
+			self.step = self.dynamic_step
 
 		# Canalization Variables
 		self._transition_density_tuple = None 	# A tuple of transition tables used in the first step of the QM algorithm.
@@ -434,8 +439,23 @@ class BooleanNode(object):
 		else:
 			AttributeError('The format type could not be found. Try "pandas" "latex".')
 
+	def input_mask(self, binstate):
+		""" Returns the mask applied to the binary state binstate
+		Args:
+			binstate (str) : the binary state
 
-	def step(self, input):
+		Returns:
+			output (str) : the masked state
+		"""
+		return ''.join(compress(binstate, self.mask))
+
+	def constant_step(self, input):
+		"""
+			Treat the node as a constant
+		"""
+		return self.outputs[0]
+
+	def dynamic_step(self, input):
 		""" Returns the output of the node based on a specific input
 		Args:
 			input (list) : an input to the node.
@@ -443,22 +463,7 @@ class BooleanNode(object):
 		Returns:
 			output (bool) : the output value.
 		"""
-		if self.constant:
-			return self.outputs[0]
-		else:
-			if isinstance(input, str):
-				input = ''.join(input)
-				if len(input) != self.k:
-					raise ValueError('Input length do not match number of k inputs')
-				output_idx = binstate_to_statenum(input)
-
-			elif isinstance(input, int):
-				output_idx = input
-				if input >= 2**self.k:
-					raise ValueError('Input statenum is too large for k inputs')
-
-			return self.outputs[output_idx]
-
+		return self.outputs[binstate_to_statenum(input)]
 
 	def activities(self):
 		"""
@@ -681,7 +686,7 @@ class BooleanNode(object):
 		if mode != 'forceK':
 			for j in product('01', repeat=self.k):
 				origin_config = list(j)
-				for mut in itertools.combinations(range(self.k), ic):
+				for mut in combinations(range(self.k), ic):
 					mut_config = origin_config[:]
 					for i_mut in mut:
 						mut_config[i_mut] = flip_bit(mut_config[i_mut])
@@ -695,7 +700,7 @@ class BooleanNode(object):
 			for ic in range(max(1, c + self.k - max_k), min(c, self.k) + 1):
 				for j in product('01', repeat=self.k):
 					origin_config = list(j)
-					for mut in itertools.combinations(range(self.k), ic):
+					for mut in combinations(range(self.k), ic):
 						mut_config = origin_config[:]
 						for i_mut in mut:
 							mut_config[i_mut] = flip_bit(mut_config[i_mut])
