@@ -1,6 +1,6 @@
 import networkx as nx
 import numpy as np
-from itertools import product, izip_longest
+from itertools import product, zip_longest
 import copy
 import math
 import random
@@ -327,6 +327,19 @@ def entropy(prob_vector, logbase = 2.):
 	pos_prob_vector = prob_vector[prob_vector > 0]
 	return - np.sum(pos_prob_vector * np.log(pos_prob_vector)/np.log(logbase))
 
+def binstate_compare(binstate1, binstate2):
+	"""
+	Compare each element in two binary states 
+
+	Args:
+		binstate1, binstate2 : the two binary states to be compared
+
+	Return:
+		c (list, bool) : a list of comparisons
+	"""
+	return [ (b0==b1) for b0, b1 in zip_longest(binstate1, binstate2)]
+
+
 def hamming_distance(s1, s2):
 	"""Calculates the hamming distance between two configurations strings.
 
@@ -342,7 +355,7 @@ def hamming_distance(s1, s2):
 		>>> 1
 	"""
 	assert len(s1) == len(s2) , "The two strings must have the same length"
-	return sum([s1[i] != s2[i] for i in range(len(s1))])
+	return sum(binstate_compare(s1, s2))
 
 
 def ncr(n, r):
@@ -361,21 +374,6 @@ def ncr(n, r):
 	numer = reduce(op.mul, range(n, n - r, -1))
 	denom = reduce(op.mul, range(1, r + 1))
 	return numer // denom
-
-
-def binstate_compare(binstate1, binstate2):
-	"""
-	Compare each element in two binary states 
-
-	Args:
-		binstate1, binstate2 : the two binary states to be compared
-
-	Return:
-		c (list, bool) : a list of comparisons
-	"""
-	return [ (b0==b1) for b0, b1 in izip_longest(binstate1, binstate2)]
-
-
 
 def isclose(a, b, rel_tol=1e-09, abs_tol=0.0):
 	"""Python 2 doesn't have math.isclose()
