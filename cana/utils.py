@@ -79,7 +79,7 @@ def binstate_pinned_to_binstate(binstate, pinned_binstate, pinned_var):
 		string : The combined binary state.
 
 	See also:
-	    :attr:'statenum_to_binstate'
+		:attr:'statenum_to_binstate'
 	"""
 	total_length = len(binstate) + len(pinned_binstate)
 	new_binstate = list(statenum_to_binstate(0, base=total_length))
@@ -106,7 +106,7 @@ def statenum_to_output_list(statenum, base):
 		list : a list of length base, consisting of 0 and 1
 
 	See also:
-	    :attr:'statenum_to_binstate'
+		:attr:'statenum_to_binstate'
 	"""
 	return [int(i) for i in statenum_to_binstate(statenum, base)]
 
@@ -365,11 +365,11 @@ def ncr(n, r):
 	The combination of selecting `r` items from `n` iterms, order doesn't matter.
 
 	Args:
-	    n (int): number of elements in collection
-	    r (int): length of combination
+		n (int): number of elements in collection
+		r (int): length of combination
 
 	Returns:
-	    int
+		int
 	"""
 	r = min(r, n - r)
 	if r == 0: return 1
@@ -384,10 +384,10 @@ def isclose(a, b, rel_tol=1e-09, abs_tol=0.0):
 		considering using == to compare floats is dangerous!
 		2.0*3.3 != 3.0*2.2 in python!
 	Args:
-	    a (float) : the first float number
-	    b (float) : the second float number
-	    rel_tol (float) : the relative difference threshold between a and b
-	    abs_tol (float) : absolute difference threshold. not recommended for float
+		a (float) : the first float number
+		b (float) : the second float number
+		rel_tol (float) : the relative difference threshold between a and b
+		abs_tol (float) : absolute difference threshold. not recommended for float
 
 	Returns:
 		bool
@@ -436,52 +436,65 @@ def output_transitions(eval_line, input_list):
 
 	return output_list
 
+def mindist_from_source(G, source):
+	dag = nx.bfs_tree(G, source)
+	dist = {}  # stores [node, distance] pair
+	for node in nx.topological_sort(dag):
+		# pairs of dist,node for all incoming edges
+		pairs = [(dist[v][0]+1, v) for v in dag.pred[node]]
+		if pairs:
+			dist[node] = min(pairs)
+		else:
+			dist[node] = (0, node)
+
+	return dist
+
 
 def probability_dijkstra_multisource(G, sources, weight, pred=None, paths=None,
-                          target=None, min_prob=-10**10):
-    """Uses Dijkstra's algorithm to find shortest weighted paths when all values are negative
-    (shortest path is closest to 0)
-    modified from Network X
+						  target=None, min_prob=-10**10):
+	"""Uses Dijkstra's algorithm to find shortest weighted paths when all values are negative
+	(shortest path is closest to 0)
+	modified from Network X
 
-    """
-    G_succ = G._succ if G.is_directed() else G._adj
+	"""
+	G_succ = G._succ if G.is_directed() else G._adj
 
-    push = heappush
-    pop = heappop
-    dist = {}  # dictionary of final distances
-    seen = {}
-    # fringe is heapq with 3-tuples (distance,c,node)
-    # use the count c to avoid comparing nodes (may not be able to)
-    c = count()
-    fringe = []
-    for source in sources:
-        if source not in G:
-            raise nx.NodeNotFound("Source {} not in G".format(source))
-        seen[source] = 0
-        push(fringe, (0, next(c), source))
-    while fringe:
-        (d, _, v) = pop(fringe)
-        if v in dist:
-            continue  # already searched this node.
-        dist[v] = d
-        if v == target:
-            break
-        for u, e in G_succ[v].items():
-            cost = weight(v, u, e)
-            if cost is None:
-                continue
-            vu_dist = dist[v] + cost
-            if u not in seen or vu_dist > seen[u]:  # vu_dist < seen[u]:
-                seen[u] = vu_dist
-                push(fringe, (vu_dist, next(c), u))
-                if paths is not None:
-                    paths[u] = paths[v] + [u]
-                if pred is not None:
-                    pred[u] = [v]
-            elif vu_dist == seen[u]:
-                if pred is not None:
-                    pred[u].append(v)
+	push = heappush
+	pop = heappop
+	dist = {}  # dictionary of final distances
+	seen = {}
+	# fringe is heapq with 3-tuples (distance,c,node)
+	# use the count c to avoid comparing nodes (may not be able to)
+	c = count()
+	fringe = []
+	for source in sources:
+		if source not in G:
+			raise nx.NodeNotFound("Source {} not in G".format(source))
+		seen[source] = 0
+		push(fringe, (0, next(c), source))
+	while fringe:
+		(d, _, v) = pop(fringe)
+		if v in dist:
+			continue  # already searched this node.
+		dist[v] = d
+		if v == target:
+			break
+		for u, e in G_succ[v].items():
+			cost = weight(v, u, e)
+			if cost is None:
+				continue
+			vu_dist = dist[v] + cost
+			if u not in seen or vu_dist > seen[u]:  # vu_dist < seen[u]:
+				seen[u] = vu_dist
+				push(fringe, (vu_dist, next(c), u))
+				if paths is not None:
+					paths[u] = paths[v] + [u]
+				if pred is not None:
+					pred[u] = [v]
+			elif vu_dist == seen[u]:
+				if pred is not None:
+					pred[u].append(v)
 
-    # The optional predecessor and path dictionaries can be accessed
-    # by the caller via the pred and paths objects passed as arguments.
-    return dist
+	# The optional predecessor and path dictionaries can be accessed
+	# by the caller via the pred and paths objects passed as arguments.
+	return dist

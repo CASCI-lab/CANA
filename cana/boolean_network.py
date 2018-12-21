@@ -1104,7 +1104,8 @@ class BooleanNetwork:
 		return partial
 
 
-	def approx_dynamic_impact(self, node, n_steps=1, mode='effective', bound='mean', bias=0.5, min_log_prob=np.log(10**(-5))):
+	def approx_dynamic_impact(self, node, n_steps=1, mode='effective', bound='mean', 
+		bias=0.5, min_log_prob=np.log(10**(-5))):
 		"""
 		Use the network structure to approximate the dynamical impact of a perturbation to node for each of n_steps
 
@@ -1152,15 +1153,23 @@ class BooleanNetwork:
 		
 		weight_func = lambda u, v, d: log_weights.get((u,v), min_log_prob)
 
-		# the dict to store all paths
-		paths = {node:[node]}
-		dist = probability_dijkstra_multisource(G, sources=paths[node], weight=weight_func, 
-										   pred=None, paths=paths, target=None)
+		node_distances = mindist_from_source(G, node)
 
-		# paths must be less than or equal to the number of steps 
-		# (here plus 2 because of 0 index and starting node is included)
-		return [[inv_weight_func(dist[jnode]) if ( (jnode != node) and jnode in dist.keys() and len(paths[jnode]) <= (n_step+2)) else 0 
-		for jnode in range(self.Nnodes)]  for n_step in range(n_steps)]
+		impact_matrix = np.zeros((n_steps, self.Nnodes))
+		for n_step in range(n_steps):
+			# the dict to store all paths
+			paths = {node:[node]}
+
+			# get all nodes that are topologically within the light cone of the perturbation
+			light_cone = [n for n, d in node_distances.items() if d[0]<= (n_step+1)]
+			
+			dist = probability_dijkstra_multisource(G.subgraph(light_cone), sources=paths[node], weight=weight_func, 
+											   pred=None, paths=paths, target=None)
+			impact_matrix[n_step] = [inv_weight_func(dist[jnode]) 
+			if ( (jnode != node) and jnode in dist.keys() and len(paths[jnode]) <= (n_step+2)) else 0 
+			for jnode in range(self.Nnodes)] 
+			
+		return impact_matrix
 
 		
 
