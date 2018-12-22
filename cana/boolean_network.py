@@ -57,11 +57,13 @@ class BooleanNetwork:
 		self.verbose = verbose
 
 		# Intanciate BooleanNodes
+		self.name2int = {logic[i]['name']:i for i in range(Nnodes)}
+
 		self.nodes = list()
 		for i in range(Nnodes):
 			name = logic[i]['name']
 			k = len(logic[i]['in'])
-			inputs = [logic[j]['name'] for j in logic[i]['in']]
+			inputs = [self.name2int[logic[j]['name']] for j in logic[i]['in']]
 			outputs = logic[i]['out']
 			node = BooleanNode(name=name, k=k, inputs=inputs, outputs=outputs)
 			self.nodes.append(node)
@@ -1019,7 +1021,7 @@ class BooleanNetwork:
 		if graph == 'structural':
 			dg = self.structural_graph(*args, **kwargs)
 		elif graph == 'effective':
-			dg = self.effective_graph(mode='input', bound='upper', threshold=None, *args, **kwargs)
+			dg = self.effective_graph(mode='input', bound='mean', threshold=None, *args, **kwargs)
 		else:
 			raise AttributeError("The graph type '%s' is not accepted. Try 'structural' or 'effective'." % graph)
 		#
@@ -1035,7 +1037,7 @@ class BooleanNetwork:
 	#
 	# Minimum Dominating Set
 	#
-	def minimum_dominating_set_driver_nodes(self, max_search=5, keep_self_loops=True):
+	def minimum_dominating_set_driver_nodes(self, graph='structural', max_search=5, keep_self_loops=True, *args, **kwargs):
 		"""The minimun set of necessary driver nodes to control the network based on Minimum Dominating Set (MDS) theory.
 
 		Args:
@@ -1047,12 +1049,20 @@ class BooleanNetwork:
 		"""
 		self._check_compute_variables(sg=True)
 		#
-		mdssets = mds.mds(self._sg, max_search=max_search, keep_self_loops=keep_self_loops)
+		if graph == 'structural':
+			dg = self.structural_graph(*args, **kwargs)
+		elif graph == 'effective':
+			dg = self.effective_graph(mode='input', bound='mean', threshold=None, *args, **kwargs)
+		else:
+			raise AttributeError("The graph type '%s' is not accepted. Try 'structural' or 'effective'." % graph)
+		#
+
+		mdssets = mds.mds(dg, max_search=max_search, keep_self_loops=keep_self_loops)
 		return  mdssets #[ [self.nodes[i].name for i in mdsset] for mdsset in mdssets]
 
 	# Structural Controllability
 	#
-	def structural_controllability_driver_nodes(self, keep_self_loops=True):
+	def structural_controllability_driver_nodes(self, graph='structural', keep_self_loops=True, *args, **kwargs):
 		"""The minimum set of necessary driver nodes to control the network based on Structural Controlability (SC) theory.
 
 	#
@@ -1063,8 +1073,15 @@ class BooleanNetwork:
 			(list) : A list-of-lists with SC solution nodes.
 		"""
 		self._check_compute_variables(sg=True)
+
+		if graph == 'structural':
+			dg = self.structural_graph(*args, **kwargs)
+		elif graph == 'effective':
+			dg = self.effective_graph(mode='input', bound='mean', threshold=None, *args, **kwargs)
+		else:
+			raise AttributeError("The graph type '%s' is not accepted. Try 'structural' or 'effective'." % graph)
 		#
-		scsets = sc.sc(self._sg, keep_self_loops=keep_self_loops)
+		scsets = sc.sc(dg, keep_self_loops=keep_self_loops)
 		return scsets # [ [self.nodes[i].name for i in scset] for scset in scsets]
 
 
@@ -1100,11 +1117,11 @@ class BooleanNetwork:
 				perturbed_config = self.step(perturbed_config)
 				partial[n_step] += np.logical_not(binstate_compare(config, perturbed_config))
 		partial /= n_traj
-	
+
 		return partial
 
 
-	def approx_dynamic_impact(self, node, n_steps=1, mode='effective', bound='mean', 
+	def approx_dynamic_impact(self, node, n_steps=1, mode='effective', bound='mean',
 		bias=0.5, min_log_prob=np.log(10**(-5))):
 		"""
 		Use the network structure to approximate the dynamical impact of a perturbation to node for each of n_steps
@@ -1116,7 +1133,7 @@ class BooleanNetwork:
 			node (int) : the node index for perturbations
 
 			n_steps (int) : the number of time steps
-			
+
 			mode (str) : the structural graph approximation to use
 				'effective' : use the effective graph
 				'structural' : use the structural graph
@@ -1150,7 +1167,7 @@ class BooleanNetwork:
 			G = self.structural_graph()
 			log_weights = {e:np.log(bias) for e,w in nx.get_edge_attributes(G, 'weight').items()}
 			inv_weight_func = lambda x: np.exp(x)
-		
+
 		weight_func = lambda u, v, d: log_weights.get((u,v), min_log_prob)
 
 		node_distances = mindist_from_source(G, node)
@@ -1162,16 +1179,16 @@ class BooleanNetwork:
 
 			# get all nodes that are topologically within the light cone of the perturbation
 			light_cone = [n for n, d in node_distances.items() if d[0]<= (n_step+1)]
-			
-			dist = probability_dijkstra_multisource(G.subgraph(light_cone), sources=paths[node], weight=weight_func, 
+
+			dist = probability_dijkstra_multisource(G.subgraph(light_cone), sources=paths[node], weight=weight_func,
 											   pred=None, paths=paths, target=None)
-			impact_matrix[n_step] = [inv_weight_func(dist[jnode]) 
-			if ( (jnode != node) and jnode in dist.keys() and len(paths[jnode]) <= (n_step+2)) else 0 
-			for jnode in range(self.Nnodes)] 
-			
+			impact_matrix[n_step] = [inv_weight_func(dist[jnode])
+			if ( (jnode != node) and jnode in dist.keys() and len(paths[jnode]) <= (n_step+2)) else 0
+			for jnode in range(self.Nnodes)]
+
 		return impact_matrix
 
-		
+
 
 	#
 	# Dynamics Canalization Map (DCM)
