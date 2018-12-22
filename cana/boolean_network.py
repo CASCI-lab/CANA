@@ -58,6 +58,7 @@ class BooleanNetwork:
 
 		# Intanciate BooleanNodes
 		self.name2int = {logic[i]['name']:i for i in range(Nnodes)}
+		self.Nself_loops = sum([self.name2int[logic[i]['name']] in logic[i]['in'] for i in range(Nnodes)])
 
 		self.nodes = list()
 		for i in range(Nnodes):
@@ -67,6 +68,8 @@ class BooleanNetwork:
 			outputs = logic[i]['out']
 			node = BooleanNode(name=name, k=k, inputs=inputs, outputs=outputs)
 			self.nodes.append(node)
+
+		self.input_nodes = [i for i in range(Nnodes) if (self.nodes[i].constant or ((self.nodes[i].k == 1) and (i in self.nodes[i].inputs)))]
 		#
 		self.bin2num = bin2num						# Helper function. Converts binstate to statenum. It gets updated by `_update_trans_func`
 		self.num2bin = num2bin						# Helper function. Converts statenum to binstate. It gets updated by `_update_trans_func`
@@ -716,13 +719,13 @@ class BooleanNetwork:
 		"""
 		self._check_compute_variables(attractors=True)
 
-		if self.keep_constants:
+		#if self.keep_constants:
+		if False:
 			for dv in driver_nodes:
 				if dv in self.constants:
 					warnings.warn("Cannot control a constant variable '%s'! Skipping" % self.nodes[dv].name )
 
 		attractor_states = [s for att in self._attractors for s in att]
-
 		cstg = copy.deepcopy(self._stg)
 		cstg.name = 'C-' + cstg.name +' (' + ','.join(map(str,[self.nodes[dv].name for dv in driver_nodes])) + ')'
 
@@ -1032,6 +1035,8 @@ class BooleanNetwork:
 		else:
 			raise AttributeError("The FVS method '%s' does not exist. Try 'grasp' or 'bruteforce'." % method)
 
+		fvssets = [fvc.union(set(self.input_nodes)) for fvc in fvssets]
+
 		return fvssets #[ [self.nodes[i].name for i in fvsset] for fvsset in fvssets]
 
 	#
@@ -1081,7 +1086,7 @@ class BooleanNetwork:
 		else:
 			raise AttributeError("The graph type '%s' is not accepted. Try 'structural' or 'effective'." % graph)
 		#
-		scsets = sc.sc(dg, keep_self_loops=keep_self_loops)
+		scsets = [set(scset).union(set(self.input_nodes)) for scset in sc.sc(dg, keep_self_loops=keep_self_loops)]
 		return scsets # [ [self.nodes[i].name for i in scset] for scset in scsets]
 
 
@@ -1105,7 +1110,7 @@ class BooleanNetwork:
 		partial = np.zeros((t, self.Nnodes), dtype=float)
 		if n_traj ==0:
 			config_genderator = (self.num2bin(statenum) for statenum in range(self.Nstates))
-			n_traj = bn.Nstates
+			n_traj = self.Nstates
 		else:
 			# sample configurations
 			config_genderator = (random_binstate(self.Nnodes) for itraj in range(n_traj))

@@ -37,7 +37,10 @@ class BooleanNode(object):
 		self.verbose = verbose 					# verbose mode
 
 		# mask for inputs
-		self.mask = [(i in self.inputs) for i in range(max(self.inputs)+1)]
+		if len(self.inputs) > 0:
+			self.mask = [(i in self.inputs) for i in range(max(self.inputs)+1)]
+		else:
+			self.mask = []
 
 		# Consistency
 		if (k != 0) and (k != int(np.log2(len(outputs)))):
