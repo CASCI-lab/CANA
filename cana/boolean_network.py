@@ -615,7 +615,7 @@ class BooleanNetwork:
 		"""
 
 		"""
-		if not self.keep_constants:
+		if self.keep_constants:
 			self.Nstates = 2**(self.Nnodes - self.Nconstants)
 			constant_template = [None if not (ivar in self.constants.keys()) else self.constants[ivar] for ivar in range(self.Nnodes)]
 			self.bin2num = lambda bs: constantbinstate_to_statenum(bs, constant_template)
@@ -689,8 +689,8 @@ class BooleanNetwork:
 			if verbose: print("Trying with {:d} Driver Nodes".format(nr_dvs))
 			for dvs in itertools.combinations(nodeids, nr_dvs):
 				dvs = list(dvs)
-				cstg = self.controlled_state_transition_graph(dvs)
-				cag = self.controlled_attractor_graph(cstg)
+				#cstg = self.controlled_state_transition_graph(dvs)
+				cag = self.controlled_attractor_graph(dvs)
 				att_reachable_from = self.mean_reachable_attractors(cag)
 
 				if att_reachable_from == 1.0:
@@ -856,7 +856,7 @@ class BooleanNetwork:
 			pcstg_dict[tuple(att)] = pcstg
 		return pcstg_dict
 
-	def controlled_attractor_graph(self, cstg):
+	def controlled_attractor_graph(self, driver_nodes=[]):
 		"""
 		Args:
 			cstg (networkx.DiGraph) : A Controlled State-Transition-Graph (CSTG)
@@ -868,6 +868,25 @@ class BooleanNetwork:
 			:func:`attractor_driver_nodes`, :func:`controlled_state_transition_graph`.
 		"""
 		self._check_compute_variables(attractors=True)
+
+		#if self.keep_constants:
+		if False:
+			for dv in driver_nodes:
+				if dv in self.constants:
+					warnings.warn("Cannot control a constant variable '%s'! Skipping" % self.nodes[dv].name )
+
+		attractor_states = [s for att in self._attractors for s in att]
+		cstg = copy.deepcopy(self._stg)
+		cstg.name = 'C-' + cstg.name +' Att(' + ','.join(map(str,[self.nodes[dv].name for dv in driver_nodes])) + ')'
+
+		# add the control pertubations applied to only attractor configurations
+		for statenum in attractor_states:
+			binstate = self.num2bin(statenum)
+			controlled_states = flip_binstate_bit_set(binstate, copy.copy(driver_nodes))
+			controlled_states.remove(binstate)
+
+			for constate in controlled_states:
+				cstg.add_edge(statenum, self.bin2num(constate))
 
 		Nattract = len(self._attractors)
 
