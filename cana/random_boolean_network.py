@@ -48,6 +48,25 @@ def regular_boolean_network(N=10, K=2, bias=0.5, keep_constants=True, remove_mul
 	return BooleanNetwork.from_dict(bn_dict)
 
 
+def er_boolean_network(N=10, p=0.2, bias=0.5, keep_constants=True, remove_multiedges=True, niter_remove=1000):
+
+	er_graph = nx.erdos_renyi_graph(N, p, directed=True)
+
+
+	# the configuration graph creates a multigraph with self loops
+	# the self loops are OK, but we should only have one copy of each edge
+	if remove_multiedges:
+		er_graph = _remove_duplicate_edges(graph = er_graph, niter_remove = niter_remove)
+
+
+	# A dict that contains the network logic {<id>:{'name':<string>,'in':<list-input-node-id>,'out':<list-output-transitions>},..}
+	bn_dict = {node:{'name':str(node), 'in':sorted([n for n in er_graph.predecessors(node)]),
+		'out':[int(random.random() < bias) for b in range(2**er_graph.in_degree(node))]} for node in er_graph.nodes()}
+
+	return BooleanNetwork.from_dict(bn_dict)
+
+
+	
 
 def _remove_duplicate_edges(graph, niter_remove = 100):
 	edge_list = list(graph.edges())

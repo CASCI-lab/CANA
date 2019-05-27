@@ -368,13 +368,16 @@ class BooleanNetwork:
 		self._check_compute_variables(sg=True)
 		return sorted(self._sg.out_degree().values(), reverse=True)
 
-	def effective_graph(self, mode='input', bound='upper', threshold=None):
+	def effective_graph(self, mode='input', bound='mean', threshold=None):
 		"""Computes and returns the effective graph of the network.
 		In practive it asks each :class:`~boolnets.boolean_node.BooleanNode` for their :func:`~boolnets.boolean_node.BooleanNode.effective_connectivity`.
 
 		Args:
 			mode (string) : Per "input" or per "node". Defaults to "node".
 			bound (string) : The bound to which compute input redundancy.
+				Mode "node" accepts: ["lower", "upper"].
+				Mode "input" accepts: ["lower", "mean", "upper", "tuple"].
+				Defaults to "mean".
 			threshold (float) : Only return edges above a certain effective connectivity threshold.
 				This is usefull when computing graph measures at diffent levels.
 
@@ -1145,7 +1148,8 @@ class BooleanNetwork:
 		return partial
 
 
-	def approx_dynamic_impact(self, node, n_steps=1, mode='effective', bound='mean',
+	def approx_dynamic_impact(self, node, n_steps=1, mode='effective', 
+		bound='mean', threshold=0.0,
 		bias=0.5, min_log_prob=np.log(10**(-5))):
 		"""
 		Use the network structure to approximate the dynamical impact of a perturbation to node for each of n_steps
@@ -1178,7 +1182,7 @@ class BooleanNetwork:
 
 		# choose the underlying graph and get the log edge weight
 		if mode == 'effective':
-			G = self.effective_graph(bound='mean', threshold=0.0)
+			G = self.effective_graph(bound=bound, threshold=threshold)
 			log_weights = {e:np.log(w) for e,w in nx.get_edge_attributes(G, 'weight').items()}
 			inv_weight_func = lambda x: np.exp(x)
 
