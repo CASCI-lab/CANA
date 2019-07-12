@@ -67,6 +67,14 @@ def statenum_to_binstate(statenum, base):
 
 	return bin(statenum)[2:].zfill(base)
 
+def random_binstate(base, random_seed=None):
+	"""
+		create a random binary state
+	"""
+	random.seed(random_seed)
+
+	return statenum_to_binstate(random.randint(0,2**base), base)
+
 def binstate_pinned_to_binstate(binstate, pinned_binstate, pinned_var):
 	"""Combines two binstates based on the locations of pinned variables.
 
@@ -357,7 +365,7 @@ def hamming_distance(s1, s2):
 		>>> 1
 	"""
 	assert len(s1) == len(s2) , "The two strings must have the same length"
-	return sum(binstate_compare(s1, s2))
+	return sum([ (b0!=b1) for b0, b1 in zip_longest(s1, s2)])
 
 
 def ncr(n, r):

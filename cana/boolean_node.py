@@ -28,7 +28,7 @@ class BooleanNode(object):
 
 
 	"""
-	def __init__(self, name='x', k=1, inputs=['i_0'], state=False, outputs=[0,1], constant=False, verbose=False, *args, **kwargs):
+	def __init__(self, name='x', k=1, inputs=['0'], state=False, outputs=[0,1], constant=False, verbose=False, *args, **kwargs):
 		self.name = name 						# the name of the node
 		self.k = k 								# k is the number of inputs
 		self.inputs = list(map(int, inputs))	# the name of the input variables
@@ -82,7 +82,7 @@ class BooleanNode(object):
 		"""
 		name = kwargs.pop('name') if 'name' in kwargs else 'x'
 		k = int(np.log2(len(outputs)))
-		inputs = kwargs.pop('inputs') if 'inputs' in kwargs else ['i%d' % (x+1) for x in range(k)]
+		inputs = kwargs.pop('inputs') if 'inputs' in kwargs else [str(x+1) for x in range(k)]
 		state = kwargs.pop('state') if 'state' in kwargs else False
 
 		return BooleanNode(name=name, k=k, inputs=inputs, state=state, outputs=outputs, *args, **kwargs)
@@ -452,13 +452,13 @@ class BooleanNode(object):
 		"""
 		return ''.join(compress(binstate, self.mask))
 
-	def constant_step(self, input):
+	def constant_step(self, input_state):
 		"""
 			Treat the node as a constant
 		"""
 		return self.outputs[0]
 
-	def dynamic_step(self, input):
+	def dynamic_step(self, input_state):
 		""" Returns the output of the node based on a specific input
 		Args:
 			input (list) : an input to the node.
@@ -466,17 +466,19 @@ class BooleanNode(object):
 		Returns:
 			output (bool) : the output value.
 		"""
-		return self.outputs[binstate_to_statenum(input)]
+		return self.outputs[binstate_to_statenum(input_state)]
 
-	def activities(self):
+	def activities_old(self):
 		"""
 		Ghanbarnejad & Klemm (2012) EPL, 99
 
 		ToDo: there is likely a more efficent way to do this because we are double counting perturbations
 		"""
-		return [2**(-self.k) * np.abs([self.step(statenum) - self.step(flip_binstate_bit(statenum_to_binstate(statenum, base=self.k), inode))
+		return [2**(-self.k) * np.abs([self.step(statenum_to_binstate(statenum, base=self.k)) - self.step(flip_binstate_bit(statenum_to_binstate(statenum, base=self.k), inode))
 			for statenum in range(2**self.k)]).sum() for inode in range(self.k)]
 
+	def activities(self):
+		return self.effective_connectivity(mode='input', bound='upper')
 
 	def canalizing_map(self, output=None):
 		""" Computes the node Canalizing Map (CM).
@@ -661,7 +663,7 @@ class BooleanNode(object):
 		See Also:
 			:func:`~boolnets.boolean_network.network_bias`
 		"""
-		return sum(self.outputs) / 2**self.k
+		return sum(map(int, self.outputs)) / 2**self.k
 
 	def c_sensitivity(self, c, mode="default", max_k=0):
 		""" Node c-sensitivity.

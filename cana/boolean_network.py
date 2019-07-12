@@ -1372,7 +1372,7 @@ class BooleanNetwork:
 
 				# sample nsample times
 				for isample in range(nsamples):
-					rnd_config = [random.choice(['0', '1']) for b in range(self.Nnodes)]
+					rnd_config = random_binstate(self.Nnodes)
 					perturbed_var = random.sample(range(self.Nnodes), hamm_dist)
 					perturbed_config = [flip_bit(rnd_config[ivar]) if ivar in perturbed_var else rnd_config[ivar] for ivar in range(self.Nnodes)]
 					dy[hamm_dist-1] += hamming_distance(self.step(rnd_config), self.step(perturbed_config))
