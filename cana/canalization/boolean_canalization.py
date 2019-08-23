@@ -42,6 +42,9 @@ def make_transition_density_tables(k=1, outputs=[0,1]):
 	Returns:
 		tables (tuple) : a tuple where [0] is the negative table and [1] is the positive table.
 	"""
+	# make sure outputs are integers
+	outputs = list(map(int, outputs))
+
 	# we need to split up the LUT based on the transition (to either 0 or 1) and the density of 1s in the binstate
 	transition_density_tuple = [ [ [] for density in range(k+1) ] for transition in [0,1] ]
 	for statenum in range(2**k):
@@ -158,6 +161,9 @@ def computes_pi_coverage(k, outputs, prime_implicants):
 	
 	Note: based on code from Alex Gates and Etienne Nzabarushimana.
 	"""
+	# make sure outputs are integers
+	outputs = list(map(int, outputs))
+	
 	pi_coverage = {}
 	for statenum in range(2**k):
 		binstate = statenum_to_binstate(statenum, base=k)

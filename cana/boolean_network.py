@@ -14,9 +14,9 @@ Boolean Network
 #	MIT license.
 from collections import defaultdict
 try:
-    import cStringIO.StringIO
+	import cStringIO.StringIO as StringIO
 except ImportError:
-    from io import StringIO
+	from io import StringIO
 import numpy as np
 import networkx as nx
 import random
@@ -55,16 +55,21 @@ class BooleanNetwork:
 		self.Nstates = 2**Nnodes 					# Number of possible states in the network 2^N
 		#
 		self.verbose = verbose
-		
+
 		# Intanciate BooleanNodes
+		self.name2int = {logic[i]['name']:i for i in range(Nnodes)}
+		self.Nself_loops = sum([self.name2int[logic[i]['name']] in logic[i]['in'] for i in range(Nnodes)])
+
 		self.nodes = list()
 		for i in range(Nnodes):
 			name = logic[i]['name']
 			k = len(logic[i]['in'])
-			inputs = [logic[j]['name'] for j in logic[i]['in']]
+			inputs = [self.name2int[logic[j]['name']] for j in logic[i]['in']]
 			outputs = logic[i]['out']
 			node = BooleanNode(name=name, k=k, inputs=inputs, outputs=outputs)
 			self.nodes.append(node)
+
+		self.input_nodes = [i for i in range(Nnodes) if (self.nodes[i].constant or ((self.nodes[i].k == 1) and (i in self.nodes[i].inputs)))]
 		#
 		self.bin2num = bin2num						# Helper function. Converts binstate to statenum. It gets updated by `_update_trans_func`
 		self.num2bin = num2bin						# Helper function. Converts statenum to binstate. It gets updated by `_update_trans_func`
@@ -129,7 +134,7 @@ class BooleanNetwork:
 		"""
 		network_file = StringIO(string)
 		logic = defaultdict(dict)
-		
+
 		line = network_file.readline()
 		while line != "":
 			if line[0] != '#' and line != '\n':
@@ -147,7 +152,7 @@ class BooleanNetwork:
 					indegree = int(line.split()[2])
 					for jnode in range(indegree):
 						logic[inode]['in'].append(int(line.split()[3 + jnode])-1)
-					
+
 					logic[inode]['out'] = [0 for i in range(2**indegree) if indegree > 0]
 
 					logic_line = network_file.readline().strip()
@@ -234,7 +239,7 @@ class BooleanNetwork:
 
 		Args:
 			logic (dict) : The logic dict.
-			keep_constants (bool) : 
+			keep_constants (bool) :
 
 		Returns:
 			(BooleanNetwork)
@@ -312,12 +317,12 @@ class BooleanNetwork:
 
 		Args:
 			remove_constants (bool) : Remove constants from the graph. Defaults to ``False``.
-		
+
 		Returns:
 			G (networkx.Digraph) : The boolean network structural graph.
 		"""
 		self._sg = nx.DiGraph(name="Structural Graph: " + self.name)
-	
+
 		# Add Nodes
 		self._sg.add_nodes_from( (i, {'label':n.name}) for i,n in enumerate(self.nodes) )
 		for target in range(self.Nnodes):
@@ -332,7 +337,7 @@ class BooleanNetwork:
 	def number_interactions(self):
 		"""Returns the number of interactions in the Structural Graph (SG).
 		Practically, it returns the number of edges of the SG.
-		
+
 		Returns:
 			int
 		"""
@@ -341,10 +346,10 @@ class BooleanNetwork:
 
 	def structural_indegrees(self):
 		"""Returns the in-degrees of the Structural Graph. Sorted.
-		
+
 		Returns:
 			(int) : the number of in-degrees.
-		
+
 		See also:
 			:func:`structural_outdegrees`, :func:`effective_indegrees`, :func:`effective_outdegrees`
 		"""
@@ -363,19 +368,22 @@ class BooleanNetwork:
 		self._check_compute_variables(sg=True)
 		return sorted(self._sg.out_degree().values(), reverse=True)
 
-	def effective_graph(self, mode='input', bound='upper', threshold=None):
+	def effective_graph(self, mode='input', bound='mean', threshold=None):
 		"""Computes and returns the effective graph of the network.
 		In practive it asks each :class:`~boolnets.boolean_node.BooleanNode` for their :func:`~boolnets.boolean_node.BooleanNode.effective_connectivity`.
-	
+
 		Args:
 			mode (string) : Per "input" or per "node". Defaults to "node".
 			bound (string) : The bound to which compute input redundancy.
+				Mode "node" accepts: ["lower", "upper"].
+				Mode "input" accepts: ["lower", "mean", "upper", "tuple"].
+				Defaults to "mean".
 			threshold (float) : Only return edges above a certain effective connectivity threshold.
 				This is usefull when computing graph measures at diffent levels.
 
 		Returns:
 			(networkx.DiGraph) : directed graph
-		
+
 		See Also:
 			:func:`~boolnets.boolean_node.BooleanNode.effective_connectivity`
 		"""
@@ -398,8 +406,8 @@ class BooleanNetwork:
 				e_is = node.effective_connectivity(mode=mode, bound=bound, norm=False)
 				for inputs,e_i in zip(self.logic[i]['in'], e_is):
 					# If there is a threshold, only return those number above the threshold. Else, return all edges.
-					if (threshold is None) or ((threshold is not None) and (e_i > threshold)):
-						self._eg.add_edge(inputs, i, **{'weight':e_i})						
+					if ((threshold is None) and (e_i > 0)) or ((threshold is not None) and (e_i > threshold)):
+						self._eg.add_edge(inputs, i, **{'weight':e_i})
 			else:
 				raise AttributeError('The mode you selected does not exist. Try "node" or "input".')
 
@@ -410,7 +418,7 @@ class BooleanNetwork:
 
 		Returns:
 			(list)
-		
+
 		See also:
 			:func:`effective_outdegrees`, :func:`structural_indegrees`, :func:`structural_outdegrees`
 		"""
@@ -419,15 +427,41 @@ class BooleanNetwork:
 
 	def effective_outdegrees(self):
 		"""Returns the out-degrees of the Effective Graph. Sorted.
-		
+
 		Returns:
 			(list)
-		
+
 		See also:
 			:func:`effective_indegrees`, :func:`structural_indegrees`, :func:`structural_outdegrees`
 		"""
 		self._check_compute_variables(eg=True)
 		return sorted(self._eg.out_degree().values(), reverse=True)
+
+
+	def activity_graph(self, threshold=None):
+		"""
+		Ghanbarnejad & Klemm (2012) EPL, 99
+		"""
+
+		if threshold is not None:
+			act_g = nx.DiGraph(name="Activity Graph: " + self.name + "(Threshold: %.2f)" % threshold)
+		else:
+			act_g = nx.DiGraph(name="Activity Graph: " + self.name + "(Threshold: None)")
+
+		# Add Nodes
+		for i, node in enumerate(self.nodes, start=0):
+			act_g.add_node(i, **{'label': node.name})
+
+		# Add Edges
+		for i, node in enumerate(self.nodes, start=0):
+
+			a_is = node.activities()
+			for inputs, a_i in zip(self.logic[i]['in'], a_is):
+				# If there is a threshold, only return those number above the threshold. Else, return all edges.
+				if ((threshold is None) and (a_i > 0)) or ((threshold is not None) and (a_i > threshold)):
+					act_g.add_edge(inputs, i, **{'weight': a_i})
+
+		return act_g
 
 	def state_transition_graph(self):
 		"""Creates and returns the full State Transition Graph (STG) for the Boolean Network.
@@ -440,25 +474,25 @@ class BooleanNetwork:
 		for i in range(self.Nstates):
 			b = self.num2bin(i)
 			self._stg.add_edge(i, self.bin2num(self.step(b)))
-		# 
+		#
 		return self._stg
 
 	def stg_indegree(self):
 		"""Returns the In-degrees of the State-Transition-Graph (STG). Sorted.
-		
+
 		Returns:
 			list
 		"""
 		self._check_compute_variables(stg=True)
 		return sorted(self._stg.in_degree().values(), reverse=True)
 
-	def step(self, initial, n=1):
+	def step(self, initial):
 		"""Steps the boolean network 'n' step from the given initial input condition.
 
 		Args:
 			initial (string) : the initial state.
 			n (int) : the number of steps.
-		
+
 		Returns:
 			(string) : The stepped binary state.
 		"""
@@ -468,7 +502,7 @@ class BooleanNetwork:
 		#   append output to list
 		# joins the results from each node output
 		assert len(initial) == self.Nnodes
-		return ''.join( [ str(node.step( ''.join(initial[j] for j in self.logic[i]['in']) ) ) for i,node in enumerate(self.nodes, start=0) ] )
+		return ''.join( [ node.step(node.input_mask(initial) ) for node in self.nodes] )
 
 	def trajectory(self, initial, length=2):
 		"""Computes the trajectory of ``length`` steps without the State Transition Graph (STG)."""
@@ -487,7 +521,7 @@ class BooleanNetwork:
 		"""
 		self._check_compute_variables(attractors=True)
 		attractor_states = [s for att in self._attractors for s in att]
-		
+
 		trajectory = [initial]
 		while (trajectory[-1] not in attractor_states):
 			trajectory.append(self.step(trajectory[-1]))
@@ -525,7 +559,7 @@ class BooleanNetwork:
 
 		if mode == 'stg':
 			self._attractors = [list(a) for a in nx.attracting_components(self._stg)]
-		
+
 		elif mode == 'bns':
 			self._attractors = bns.attractors(self.to_cnet(file=None, adjust_no_input=False))
 		else:
@@ -554,13 +588,13 @@ class BooleanNetwork:
 
 		prob_vec = np.array([len(wcc) for wcc in nx.weakly_connected_components(self._stg)])/2.0**self.Nnodes
 		return entropy(prob_vec, base=base)
-				
+
 	def set_constant(self, node, value=None):
 		"""Sets or unsets a node as a constant.
 
 		Args:
 			node (int) : The node ``id`` in the logic dict.
-		
+
 		Todo:
 			This functions needs to better handle node_id and node_name
 		"""
@@ -584,7 +618,7 @@ class BooleanNetwork:
 		"""
 
 		"""
-		if not self.keep_constants:
+		if self.keep_constants:
 			self.Nstates = 2**(self.Nnodes - self.Nconstants)
 			constant_template = [None if not (ivar in self.constants.keys()) else self.constants[ivar] for ivar in range(self.Nnodes)]
 			self.bin2num = lambda bs: constantbinstate_to_statenum(bs, constant_template)
@@ -610,7 +644,7 @@ class BooleanNetwork:
 			(dict) : The STG-R in dict format.
 		"""
 		self._check_compute_variables(stg=True)
-	
+
 		self._stg_r = {}
 
 		if (filename is None):
@@ -630,20 +664,20 @@ class BooleanNetwork:
 
 	def attractor_driver_nodes(self, min_dvs=1, max_dvs=4, verbose=False):
 		"""Get the minimum necessary driver nodes by iterating the combination of all possible driver nodes of length :math:`min <= x <= max`.
-		
+
 		Args:
 			min_dvs (int) : Mininum number of driver nodes to search.
 			max_dvs (int) : Maximum number of driver nodes to search.
-		
+
 		Returns:
 			(list) : The list of driver nodes found in the search.
-		
+
 		Note:
 			This is an inefficient bruit force search, maybe we can think of better ways to do this?
-		
+
 		TODO:
 			Parallelize the search on each combination. Each CSTG is independent and can be searched in parallel.
-		
+
 		See also:
 			:func:`controlled_state_transition_graph`, :func:`controlled_attractor_graph`.
 		"""
@@ -651,18 +685,18 @@ class BooleanNetwork:
 		if self.keep_constants:
 			for cv in self.constants.keys():
 				nodeids.remove(cv)
-		
+
 		attractor_controllers_found = []
 		nr_dvs = min_dvs
 		while (len(attractor_controllers_found) == 0) and (nr_dvs <= max_dvs):
 			if verbose: print("Trying with {:d} Driver Nodes".format(nr_dvs))
 			for dvs in itertools.combinations(nodeids, nr_dvs):
 				dvs = list(dvs)
-				cstg = self.controlled_state_transition_graph(dvs)
-				cag = self.controlled_attractor_graph(cstg)
+				#cstg = self.controlled_state_transition_graph(dvs)
+				cag = self.controlled_attractor_graph(dvs)
 				att_reachable_from = self.mean_reachable_attractors(cag)
-				
-				if att_reachable_from == 1.0: 
+
+				if att_reachable_from == 1.0:
 					attractor_controllers_found.append(dvs)
 			# Add another driver node
 			nr_dvs += 1
@@ -676,15 +710,67 @@ class BooleanNetwork:
 	def controlled_state_transition_graph(self, driver_nodes=[]):
 		"""Returns the Controlled State-Transition-Graph (CSTG).
 		In practice, it copies the original STG, flips driver nodes (variables), and updates the CSTG.
-		
+
 		Args:
 			driver_nodes (list) : The list of driver nodes.
-		
+
 		Returns:
 			(networkx.DiGraph) : The Controlled State-Transition-Graph.
-		
+
 		See also:
 			:func:`attractor_driver_nodes`, :func:`controlled_attractor_graph`.
+		"""
+		self._check_compute_variables(attractors=True)
+
+		#if self.keep_constants:
+		if False:
+			for dv in driver_nodes:
+				if dv in self.constants:
+					warnings.warn("Cannot control a constant variable '%s'! Skipping" % self.nodes[dv].name )
+
+		attractor_states = [s for att in self._attractors for s in att]
+		cstg = copy.deepcopy(self._stg)
+		cstg.name = 'C-' + cstg.name +' (' + ','.join(map(str,[self.nodes[dv].name for dv in driver_nodes])) + ')'
+
+		# add the control pertubations applied to all other configurations
+		for statenum in range(self.Nstates):
+			binstate = self.num2bin(statenum)
+			controlled_states = flip_binstate_bit_set(binstate, copy.copy(driver_nodes))
+			controlled_states.remove(binstate)
+
+			for constate in controlled_states:
+				cstg.add_edge(statenum, self.bin2num(constate))
+
+		return cstg
+
+	def pinned_step(self, initial, pinned_binstate, pinned_var):
+		""" Steps the boolean network 1 step from the given initial input condition when the driver variables are pinned
+		to their controlled states.
+		Args:
+			initial (string) : the initial state.
+			n (int) : the number of steps.
+		Returns:
+			(string) : The stepped binary state.
+		"""
+		# for every node:
+		#   node input = breaks down initial by node input
+		#   asks node to step with the input
+		#   append output to list
+		# joins the results from each node output
+		assert len(initial) == self.Nnodes
+		return ''.join( [ str(node.step( ''.join(initial[j] for j in self.logic[i]['in']) ) ) if not (i in pinned_var) else initial[i] for i,node in enumerate(self.nodes, start=0) ] )
+
+	def pinning_controlled_state_transition_graph(self, driver_nodes=[]):
+		"""Returns a dictionary of Controlled State-Transition-Graph (CSTG) under the assumptions of
+		pinning controllability:
+		In practice, it copies the original STG, flips driver nodes (variables), and updates the CSTG.
+
+		Args:
+			driver_nodes (list) : The list of driver nodes.
+		Returns:
+			(networkx.DiGraph) : The Pinning Controlled State-Transition-Graph.
+		See also:
+			:func: `controlled_state_transition_graph`, :func:`attractor_driver_nodes`, :func:`controlled_attractor_graph`.
 		"""
 		self._check_compute_variables(attractors=True)
 
@@ -693,22 +779,30 @@ class BooleanNetwork:
 				if dv in self.constants:
 					warnings.warn("Cannot control a constant variable '%s'! Skipping" % self.nodes[dv].name )
 
-		attractor_states = [s for att in self._attractors for s in att]
+		uncontrolled_system_size = self.Nnodes - len(driver_nodes)
 
-		cstg = copy.deepcopy(self._stg)
-		cstg.name = 'C-' + cstg.name +' (' + ','.join(map(str,[self.nodes[dv].name for dv in driver_nodes])) + ')'
+		pcstg_dict = {}
+		for att in self._attractors:
+			dn_attractor_transitions = [tuple(''.join([self.num2bin(s)[dn] for dn in driver_nodes]) for s in att_edge)
+			for att_edge in self._stg.subgraph(att).edges()]
 
-		# add the control pertubations applied to all other configurations
-		for statenum in range(self.Nstates):
-			if not (statenum in attractor_states):
-				binstate = self.num2bin(statenum)
-				controlled_states = flip_binstate_bit_set(binstate, copy.copy(driver_nodes))
-				controlled_states.remove(binstate)
+			pcstg_states = [self.bin2num(binstate_pinned_to_binstate(
+				statenum_to_binstate(statenum, base=uncontrolled_system_size), attsource, pinned_var=driver_nodes) )
+			for statenum in range(2**uncontrolled_system_size) for attsource, attsink in dn_attractor_transitions]
 
-				for constate in controlled_states:
-					cstg.add_edge(statenum, self.bin2num(constate))
+			pcstg = nx.DiGraph(name='STG: '+self.name)
+			pcstg.name = 'PC-' + pcstg.name +' (' + ','.join(map(str,[self.nodes[dv].name for dv in driver_nodes])) + ')'
 
-		return cstg
+			pcstg.add_nodes_from( (ps, {'label':ps}) for ps in pcstg_states)
+
+			for attsource, attsink in dn_attractor_transitions:
+				for statenum in range(2**uncontrolled_system_size):
+					initial = binstate_pinned_to_binstate(statenum_to_binstate(statenum, base=uncontrolled_system_size), attsource, pinned_var=driver_nodes)
+					pcstg.add_edge(self.bin2num(initial), self.bin2num(self.pinned_step(initial, pinned_binstate=attsink, pinned_var=driver_nodes)))
+
+			pcstg_dict[tuple(att)] = pcstg
+
+		return pcstg_dict
 
 	def pinned_step(self, initial, pinned_binstate, pinned_var):
 		"""Steps the boolean network 1 step from the given initial input condition when the driver variables are pinned
@@ -730,15 +824,15 @@ class BooleanNetwork:
 	def pinning_controlled_state_transition_graph(self, driver_nodes=[]):
 		"""Returns a dictionary of Controlled State-Transition-Graph (CSTG) under the assumptions of
 		pinning controllability.
-		
+
 		In practice, it copies the original STG, flips driver nodes (variables), and updates the CSTG.
-		
+
 		Args:
 			driver_nodes (list) : The list of driver nodes.
-		
+
 		Returns:
 			(networkx.DiGraph) : The Pinning Controlled State-Transition-Graph.
-		
+
 		See also:
 			:func: `controlled_state_transition_graph`, :func:`attractor_driver_nodes`, :func:`controlled_attractor_graph`.
 		"""
@@ -765,18 +859,37 @@ class BooleanNetwork:
 			pcstg_dict[tuple(att)] = pcstg
 		return pcstg_dict
 
-	def controlled_attractor_graph(self, cstg):
+	def controlled_attractor_graph(self, driver_nodes=[]):
 		"""
 		Args:
 			cstg (networkx.DiGraph) : A Controlled State-Transition-Graph (CSTG)
-		
+
 		Returns:
 			(networkx.DiGraph) : The Controlled Attractor Graph (CAG)
-		
+
 		See also:
 			:func:`attractor_driver_nodes`, :func:`controlled_state_transition_graph`.
 		"""
 		self._check_compute_variables(attractors=True)
+
+		#if self.keep_constants:
+		if False:
+			for dv in driver_nodes:
+				if dv in self.constants:
+					warnings.warn("Cannot control a constant variable '%s'! Skipping" % self.nodes[dv].name )
+
+		attractor_states = [s for att in self._attractors for s in att]
+		cstg = copy.deepcopy(self._stg)
+		cstg.name = 'C-' + cstg.name +' Att(' + ','.join(map(str,[self.nodes[dv].name for dv in driver_nodes])) + ')'
+
+		# add the control pertubations applied to only attractor configurations
+		for statenum in attractor_states:
+			binstate = self.num2bin(statenum)
+			controlled_states = flip_binstate_bit_set(binstate, copy.copy(driver_nodes))
+			controlled_states.remove(binstate)
+
+			for constate in controlled_states:
+				cstg.add_edge(statenum, self.bin2num(constate))
 
 		Nattract = len(self._attractors)
 
@@ -803,11 +916,11 @@ class BooleanNetwork:
 			(float) : Mean Fraction of Reachable Configurations
 		"""
 		reachable_from = []
-		
+
 		for source in cstg:
 			control_reach = len(self._dfs_reachable(cstg, source)) - 1.0
 			reachable_from.append(control_reach)
-		
+
 		norm = (2.0**self.Nnodes - 1.0) * len(reachable_from)
 		reachable_from = sum(reachable_from) / (norm)
 
@@ -829,7 +942,7 @@ class BooleanNetwork:
 			control_reach = len(self._dfs_reachable(cstg, source)) - 1.0
 			control_from.append(control_reach - self._stg_r[source])
 			reachable_from.append(control_reach)
-		
+
 		norm = (2.0**self.Nnodes - 1.0) * len(reachable_from)
 		control_from = sum(control_from) / (norm)
 
@@ -858,10 +971,9 @@ class BooleanNetwork:
 
 	def fraction_pinned_attractors(self, pcstg_dict):
 		"""Returns the Number of Accessible Attractors
-		
 		Args:
 			pcstg_dict (dict of networkx.DiGraph) : The dictionary of Pinned Controlled State-Transition-Graphs.
-		
+
 		Returns:
 			(int) : Number of Accessible Attractors
 		"""
@@ -874,10 +986,10 @@ class BooleanNetwork:
 
 	def fraction_pinned_configurations(self, pcstg_dict):
 		"""Returns the Fraction of successfully Pinned Configurations
-		
+
 		Args:
 			pcstg_dict (dict of networkx.DiGraph) : The dictionary of Pinned Controlled State-Transition-Graphs.
-		
+
 		Returns:
 			(list) : the Fraction of successfully Pinned Configurations to each attractor
 		"""
@@ -890,12 +1002,15 @@ class BooleanNetwork:
 					att_reached = True
 			if not att_reached:
 				pinned_configurations.append(0)
+
 		return pinned_configurations
 
 	def mean_fraction_pinned_configurations(self, pcstg_dict):
 		"""Returns the mean Fraction of successfully Pinned Configurations
+
 		Args:
 			pcstg_dict (dict of networkx.DiGraph) : The dictionary of Pinned Controlled State-Transition-Graphs.
+
 		Returns:
 			(int) : the mean Fraction of successfully Pinned Configurations
 		"""
@@ -931,7 +1046,7 @@ class BooleanNetwork:
 		if graph == 'structural':
 			dg = self.structural_graph(*args, **kwargs)
 		elif graph == 'effective':
-			dg = self.effective_graph(mode='input', bound='upper', threshold=None, *args, **kwargs)
+			dg = self.effective_graph(mode='input', bound='mean', threshold=None, *args, **kwargs)
 		else:
 			raise AttributeError("The graph type '%s' is not accepted. Try 'structural' or 'effective'." % graph)
 		#
@@ -942,42 +1057,166 @@ class BooleanNetwork:
 		else:
 			raise AttributeError("The FVS method '%s' does not exist. Try 'grasp' or 'bruteforce'." % method)
 
+		fvssets = [fvc.union(set(self.input_nodes)) for fvc in fvssets]
+
 		return fvssets #[ [self.nodes[i].name for i in fvsset] for fvsset in fvssets]
 
 	#
 	# Minimum Dominating Set
 	#
-	def minimum_dominating_set_driver_nodes(self, max_search=5, keep_self_loops=True):
+	def minimum_dominating_set_driver_nodes(self, graph='structural', max_search=5, keep_self_loops=True, *args, **kwargs):
 		"""The minimun set of necessary driver nodes to control the network based on Minimum Dominating Set (MDS) theory.
 
 		Args:
 			max_search (int) : Maximum search of additional variables. Defaults to 5.
 			keep_self_loops (bool) : If self-loops are used in the computation.
-		
+
 		Returns:
 			(list) : A list-of-lists with MDS solution nodes.
 		"""
 		self._check_compute_variables(sg=True)
 		#
-		mdssets = mds.mds(self._sg, max_search=max_search, keep_self_loops=keep_self_loops)
+		if graph == 'structural':
+			dg = self.structural_graph(*args, **kwargs)
+		elif graph == 'effective':
+			dg = self.effective_graph(mode='input', bound='mean', threshold=None, *args, **kwargs)
+		else:
+			raise AttributeError("The graph type '%s' is not accepted. Try 'structural' or 'effective'." % graph)
+		#
+
+		mdssets = mds.mds(dg, max_search=max_search, keep_self_loops=keep_self_loops)
 		return  mdssets #[ [self.nodes[i].name for i in mdsset] for mdsset in mdssets]
 
-	#
 	# Structural Controllability
 	#
-	def structural_controllability_driver_nodes(self, keep_self_loops=True):
+	def structural_controllability_driver_nodes(self, graph='structural', keep_self_loops=True, *args, **kwargs):
 		"""The minimum set of necessary driver nodes to control the network based on Structural Controlability (SC) theory.
 
+	#
 		Args:
 			keep_self_loops (bool) : If self-loops are used in the computation.
-		
+
 		Returns:
 			(list) : A list-of-lists with SC solution nodes.
 		"""
 		self._check_compute_variables(sg=True)
+
+		if graph == 'structural':
+			dg = self.structural_graph(*args, **kwargs)
+		elif graph == 'effective':
+			dg = self.effective_graph(mode='input', bound='mean', threshold=None, *args, **kwargs)
+		else:
+			raise AttributeError("The graph type '%s' is not accepted. Try 'structural' or 'effective'." % graph)
 		#
-		scsets = sc.sc(self._sg, keep_self_loops=keep_self_loops)
+		scsets = [set(scset).union(set(self.input_nodes)) for scset in sc.sc(dg, keep_self_loops=keep_self_loops)]
 		return scsets # [ [self.nodes[i].name for i in scset] for scset in scsets]
+
+
+	# Dynamical Impact
+	#
+	def partial_derative_node(self, node, n_traj=10, t=1):
+		"""The partial derivative of node on all other nodes after t steps
+
+	#
+		Args:
+			node (int) : the node index for perturbations
+
+			t (int) : the number of time steps the system is run before impact is calculated.
+
+			n_traj (int) : the number of trajectories used to approximate the dynamical impact of a node.
+				if 0 then the full STG is used to calculate the true value instead of the approximation method.
+
+		Returns:
+			(vector) : the partial derivatives
+		"""
+		partial = np.zeros((t, self.Nnodes), dtype=float)
+		if n_traj ==0:
+			config_genderator = (self.num2bin(statenum) for statenum in range(self.Nstates))
+			n_traj = self.Nstates
+		else:
+			# sample configurations
+			config_genderator = (random_binstate(self.Nnodes) for itraj in range(n_traj))
+
+		for config in config_genderator:
+			perturbed_config = flip_binstate_bit(config, node)
+			for n_step in range(t):
+				config = self.step(config)
+				perturbed_config = self.step(perturbed_config)
+				partial[n_step] += np.logical_not(binstate_compare(config, perturbed_config))
+		partial /= n_traj
+
+		return partial
+
+
+	def approx_dynamic_impact(self, node, n_steps=1, mode='effective', 
+		bound='mean', threshold=0.0,
+		bias=0.5, min_log_prob=np.log(10**(-5))):
+		"""
+		Use the network structure to approximate the dynamical impact of a perturbation to node for each of n_steps
+
+		for details see: Gates et al (2019)
+
+	#
+		Args:
+			node (int) : the node index for perturbations
+
+			n_steps (int) : the number of time steps
+
+			mode (str) : the structural graph approximation to use
+				'effective' : use the effective graph
+				'structural' : use the structural graph
+				'bias' : use the structural graph with the bias approximation
+
+			bound (str) : the bound for the effective graph
+				'mean'
+
+			bias (float) : the average bias for the bias approximation
+
+			min_log_prob (float) : the default minimum probability
+
+		Returns:
+			(matrix) : approximate dynamical impact for each node at each step (n_steps x n_nodes)
+		"""
+
+
+
+		# choose the underlying graph and get the log edge weight
+		if mode == 'effective':
+			G = self.effective_graph(bound=bound, threshold=threshold)
+			log_weights = {e:np.log(w) for e,w in nx.get_edge_attributes(G, 'weight').items()}
+			inv_weight_func = lambda x: np.exp(x)
+
+		elif mode == 'structural':
+			G = self.structural_graph()
+			log_weights = {e:np.log(0.5) for e,w in nx.get_edge_attributes(G, 'weight').items()}
+			inv_weight_func = lambda x: 1.0
+
+		elif mode == 'bias':
+			G = self.structural_graph()
+			log_weights = {e:np.log(bias) for e,w in nx.get_edge_attributes(G, 'weight').items()}
+			inv_weight_func = lambda x: np.exp(x)
+
+		weight_func = lambda u, v, d: log_weights.get((u,v), min_log_prob)
+
+		node_distances = mindist_from_source(G, node)
+
+		impact_matrix = np.zeros((n_steps, self.Nnodes))
+		for n_step in range(n_steps):
+			# the dict to store all paths
+			paths = {node:[node]}
+
+			# get all nodes that are topologically within the light cone of the perturbation
+			light_cone = [n for n, d in node_distances.items() if d[0]<= (n_step+1)]
+
+			dist = probability_dijkstra_multisource(G.subgraph(light_cone), sources=paths[node], weight=weight_func,
+											   pred=None, paths=paths, target=None)
+			impact_matrix[n_step] = [inv_weight_func(dist[jnode])
+			if ( (jnode != node) and jnode in dist.keys() and len(paths[jnode]) <= (n_step+2)) else 0
+			for jnode in range(self.Nnodes)]
+
+		return impact_matrix
+
+
 
 	#
 	# Dynamics Canalization Map (DCM)
@@ -990,10 +1229,10 @@ class BooleanNetwork:
 			output (int) : The output DCM to return. Default is ``None``, retuning both [0,1].
 			simplify (bool) : Attemps to simpify the DCM by removing thresholds nodes with :math:`\tao=1`.
 			keep_constants (bool) : Keep or remove constants from the DCM.
-		
+
 		Returns:
 			DCM (networkx.DiGraph) : a directed graph representation of the DCM.
-		
+
 		See Also:
 			:func:`boolean_node.canalizing_map` for the CM and :func:`drawing.draw_dynamics_canalizing_map_graphviz` for plotting.
 		"""
@@ -1076,7 +1315,7 @@ class BooleanNetwork:
 
 		Args:
 			id (int): id of the node.
-		
+
 		Returns:
 			name (string): name of the node.
 		"""
@@ -1092,7 +1331,7 @@ class BooleanNetwork:
 
 		Args:
 			iterable (int,list, optional) : The id (or list of ids) of nodes to which return their names.
-		
+
 		Returns:
 			names (list) : The name of the nodes.
 		"""
@@ -1113,12 +1352,12 @@ class BooleanNetwork:
 		When "mode" is set as "random" (default), it would use random sampling to estimate Derrida value
 		If "mode" is set as "sensitivity", it would use c-sensitivity to calculate Derrida value (slower)
 		You can refer to :cite:'kadelka2017influence' about why c-sensitivity can be used to caculate Derrida value
-		
+
 		Args:
 			nsamples (int) : The number of samples per hammimg distance to get.
 			random_seed (int) : The random state seed.
 			method (string) : specify the method you want. either 'random' or 'sensitivity'
-		
+
 		Returns:
 			(dx,dy) (tuple) : The dx and dy of the curve.
 		"""
@@ -1133,7 +1372,7 @@ class BooleanNetwork:
 
 				# sample nsample times
 				for isample in range(nsamples):
-					rnd_config = [random.choice(['0', '1']) for b in range(self.Nnodes)]
+					rnd_config = random_binstate(self.Nnodes)
 					perturbed_var = random.sample(range(self.Nnodes), hamm_dist)
 					perturbed_config = [flip_bit(rnd_config[ivar]) if ivar in perturbed_var else rnd_config[ivar] for ivar in range(self.Nnodes)]
 					dy[hamm_dist-1] += hamming_distance(self.step(rnd_config), self.step(perturbed_config))

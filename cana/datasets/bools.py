@@ -7,7 +7,7 @@ Commonly used boolean node functions.
 
 """
 #   Copyright (C) 2017 by
-#   Alex Gates <ajgates@gmail.com>
+#   Alex Gates <ajgates42@gmail.com>
 #   Rion Brattig Correia <rionbr@gmail.com>
 #   All rights reserved.
 #   MIT license.
