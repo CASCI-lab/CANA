@@ -8,7 +8,7 @@ Some of the commonly used biological boolean networks
 
 """
 #   Copyright (C) 2017 by
-#   Alex Gates <ajgates@gmail.com>
+#   Alex Gates <ajgates42@gmail.com>
 #   Rion Brattig Correia <rionbr@gmail.com>
 #   Thomas Parmer <tjparmer@indiana.edu>
 #   All rights reserved.
@@ -23,7 +23,7 @@ _path = os.path.dirname(os.path.realpath(__file__))
 
 
 def THALIANA():
-	"""Boolean network model of the control of flower morphogenesis in Arabidopsis thaliana 
+	"""Boolean network model of the control of flower morphogenesis in Arabidopsis thaliana
 
 	The network is defined in :cite:`Chaos:2006`.
 
@@ -39,7 +39,7 @@ def DROSOPHILA(cells=1):
 	In this single cell network, they are condensed (nhhnHH) and treated as constants.
 
 	There is currently only one model available, where the original neighboring cell signals are treated as constants.
-	
+
 	Args:
 		cells (int) : Which model to return.
 
@@ -52,10 +52,10 @@ def DROSOPHILA(cells=1):
 		raise AttributeException('Only single (1) cell drosophila boolean model currently available.')
 
 def BUDDING_YEAST():
-	""" 
+	"""
 
 	The network is defined in :cite:`Fangting:2004`.
-	
+
 	Returns:
 		(BooleanNetwork)
 	"""
@@ -73,7 +73,7 @@ def MARQUESPITA():
 
 
 def LEUKEMIA():
-	"""Boolean network model of survival signaling in T-LGL leukemia  
+	"""Boolean network model of survival signaling in T-LGL leukemia
 
 	The network is defined in :cite:`Zhang:2008`.
 
@@ -83,7 +83,7 @@ def LEUKEMIA():
 	return BooleanNetwork.from_file(_path + '/leukemia.txt', type='logical', name="Leukemia", keep_constants=True)
 
 def BREAST_CANCER():
-	"""Boolean network model of signal transduction in ER+ breast cancer 
+	"""Boolean network model of signal transduction in ER+ breast cancer
 
 	The network is defined in :cite:`Zanudo:2017`.
 

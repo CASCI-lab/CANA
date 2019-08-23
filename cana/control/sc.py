@@ -52,13 +52,13 @@ def sc_min_size(directed_graph, keep_self_loops=True):
 	Parameters:
 		directed_graph (networkx.DiGraph) : The directed graph capturing the network structure.
 		keep_self_loops (bool) : Determines if the self loops are kept in the determination of structural control.
-	
+
 	TODO:
 		Implement the removal of self loops
 
 	Returns:
 		(int) : The number of driver variables necessary to render the graph structurally controlled.
-	
+
 	See also:
 		:func:`sc`
 	"""
@@ -67,7 +67,7 @@ def sc_min_size(directed_graph, keep_self_loops=True):
 
 	# do the maximum matching on the bipartite representation
 	max_matching = nx.bipartite.hopcroft_karp_matching(bipartite_graph)
-	
+
 	# find the vertex set whose in-coming vertices were matched
 	matched_incoming = set(vertex_in) & set(max_matching.keys())
 	matched_original_vertices = set([sink[0] for sink in matched_incoming])
@@ -83,8 +83,8 @@ def _directed_to_bipartite(directed_graph, keep_self_loops = True):
 	"""Create the undirected Bipartite representation of a directed graph.
 
 	In this represtation, each vertex is a tuple (n, direction)
-	where  one vertex set (labeled with "+") denotes the out-going 
-	directed edges while the other vertex set (labeled with "-") denotes the 
+	where  one vertex set (labeled with "+") denotes the out-going
+	directed edges while the other vertex set (labeled with "-") denotes the
 	in-coming directed edges.  Two vertices are connected with an undirected edge
 	if a directed edge exsisted in the original graph.
 
@@ -114,7 +114,7 @@ def _directed_to_bipartite(directed_graph, keep_self_loops = True):
 				bipartite_graph.add_edge( (n, True), (v, False) )
 
 	return bipartite_graph, vertex_out, vertex_in
-		
+
 def _bipartite_to_directed(bipartite_graph):
 	"""Recover the directed graph from its bipartite representation.
 
@@ -124,7 +124,7 @@ def _bipartite_to_directed(bipartite_graph):
 
 	Returns:
 		directed_graph (networkx.DiGraph) : The directed graph.
-	
+
 	See also:
 		:attr:`_directed_to_bipartite`.
 	"""
@@ -147,7 +147,7 @@ def _enumerate_maximum_matchings(bipartite_graph, vertex_out, vertex_in, max_mat
 	"""
 	# this is the first matching in our list
 	matchings_list = [max_matching]
-		
+
 	D = _make_matching_digraph(bipartite_graph, vertex_out, vertex_in, max_matching)
 	D = _trim_unnecessary_edges(D)
 	matchings_list = _enumerate_maximum_matchings_iter(bipartite_graph, vertex_out, vertex_in, max_matching, D, matchings_list)
@@ -178,7 +178,7 @@ def _make_matching_digraph(bipartite_graph, U, V, M):
 			else:
 				# otherwise, place a directed edge from V to U
 				matching_digraph.add_edge(v, u)
-						
+
 	return matching_digraph
 
 def _trim_unnecessary_edges(matching_digraph):
@@ -195,7 +195,7 @@ def _enumerate_maximum_matchings_iter(G, U, V, M, D, matchings_list):
 
 	"""
 	if len(G) > 0 and not (D is None):
-		
+
 		# find the cycles in the matching digraph
 		cycles = [c for c in nx.simple_cycles(D)]
 
@@ -297,7 +297,7 @@ def _swap_edges_in_cycle(cycle, M):
 	Mprime = dict(M)
 	e = None
 	cycle = cycle + [cycle[0]]
-	for i in xrange(len(cycle) - 1):
+	for i in range(len(cycle) - 1):
 		if cycle[i] in Mprime:
 			if M[cycle[i]] == cycle[i+1]:
 				e = (cycle[i], cycle[i+1])

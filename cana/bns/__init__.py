@@ -68,8 +68,7 @@ def attractors(cnet, bnspath=_path, cleanup=True):
 		current_attractor = []
 		for i,line in enumerate(p.stdout):
 			# Strip line
-			cleanline = line.decode('ascii').strip().replace('\n', "")
-			#DEBUG: print "{:d}: '{:s}'".format(i ,cleanline)
+			cleanline = line.decode('ascii').strip().replace('\n', '')
 			
 			if 'Attractor' in cleanline:
 				attractors.append(current_attractor)

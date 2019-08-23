@@ -1,9 +1,12 @@
 import networkx as nx
 import numpy as np
-from itertools import product
+from itertools import product, zip_longest, count
 import copy
 import math
+import random
 import operator as op
+
+from heapq import heappush, heappop
 
 def recursive_map(f,d):
 	"""Normal python map, but recursive
@@ -19,10 +22,10 @@ def binstate_to_statenum(binstate):
 
 	Args:
 		binstate (string) : The binary state.
-	
+
 	Returns:
 		int : The state number.
-	
+
 	Example:
 
 		.. code-block:: python
@@ -61,13 +64,16 @@ def statenum_to_binstate(statenum, base):
 	See also:
 		:attr:`binstate_to_statenum`, :attr:`binstate_to_density`
 	"""
-	# binary representation
-	bstate = bin(statenum)[2::]
-	# 0 padding
-	bstate = "".join(['0' for n in range(base - len(bstate))]) + bstate
-	### Consider, and test, changing this function to just
-	# bstate = bin(statenum)[2:].zfill(base)
-	return bstate
+
+	return bin(statenum)[2:].zfill(base)
+
+def random_binstate(base, random_seed=None):
+	"""
+		create a random binary state
+	"""
+	random.seed(random_seed)
+
+	return statenum_to_binstate(random.randint(0,2**base), base)
 
 def binstate_pinned_to_binstate(binstate, pinned_binstate, pinned_var):
 	"""Combines two binstates based on the locations of pinned variables.
@@ -81,7 +87,7 @@ def binstate_pinned_to_binstate(binstate, pinned_binstate, pinned_var):
 		string : The combined binary state.
 
 	See also:
-	    :attr:'statenum_to_binstate'
+		:attr:'statenum_to_binstate'
 	"""
 	total_length = len(binstate) + len(pinned_binstate)
 	new_binstate = list(statenum_to_binstate(0, base=total_length))
@@ -96,18 +102,19 @@ def binstate_pinned_to_binstate(binstate, pinned_binstate, pinned_var):
 			ireg += 1
 	return ''.join(new_binstate)
 
+
 def statenum_to_output_list(statenum, base):
 	"""Converts an interger into a list of 0 and 1, thus can feed to BooleanNode.from_output_list()
-	
+
 	Args:
 		statenum (int) : the state number
 		base (int) : the length of output list
-	
+
 	Returns:
 		list : a list of length base, consisting of 0 and 1
-	
+
 	See also:
-	    :attr:'statenum_to_binstate'
+		:attr:'statenum_to_binstate'
 	"""
 	return [int(i) for i in statenum_to_binstate(statenum, base)]
 
@@ -129,6 +136,37 @@ def flip_bit(bit):
 
 def flip_binstate_bit(binstate, idx):
 	"""Flips the binary value of a bit in a binary state.
+		Args:
+			binstate (string) : A string of binary states.
+			idx (int) : The index of the bit to flip.
+		Returns:
+			(string) : New binary state.
+		
+		Example:
+			
+			.. code-block:: python
+				flip_bit_in_strstates('000',1) -> '010'
+		"""
+	if idx+1 > len(binstate):
+		raise TypeError("Binary state '{}' length and index position '{}' mismatch.".format(binstate, idx))
+	return binstate[:idx] + flip_bit(binstate[idx]) + binstate[idx+1:]
+
+def flip_bitset_in_strstates(strstates, idxs):
+	"""Flips the binary value for a set of bits in a binary state.
+		Args:
+			binstate (string) : The binary state to flip.
+			idxs (int) : The indexes of the bits to flip.
+		Returns:
+			(list) : The flipped states
+		Example:
+			
+			.. code-block:: python
+				flip_bit_in_strstates('000',[0,2]) -> ['100','001']
+		"""
+	return [flip_bit_in_strstates(strstates,idx) for idx in idxs]
+
+def flip_binstate_bit_old(binstate, idx):
+	"""Flips the binary value of a bit in a binary state.
 
 	Args:
 		binstate (string) : The binary state.
@@ -147,11 +185,11 @@ def flip_binstate_bit(binstate, idx):
 
 def flip_binstate_bit_set(binstate, idxs):
 	"""Flips the binary value for a set of bits in a binary state.
-	
+
 	Args:
 		binstate (string) : The binary state to flip.
 		idxs (int) : The indexes of the bits to flip.
-	
+
 	Returns:
 		(list) : The flipped states
 	"""
@@ -168,7 +206,7 @@ def statenum_to_density(statenum):
 	"""Converts from state number to density
 
 	Args:
-		statenum (int): The state number 
+		statenum (int): The state number
 
 	Returns:
 		int: The density of ``1`` in that specific binary state number.
@@ -186,10 +224,10 @@ def binstate_to_density(binstate):
 
 	Args:
 		binstate (string) : The binary state
-	
+
 	Returns:
 		int
-	
+
 	Example:
 		>>> binstate_to_density('1110')
 		>>> 3
@@ -221,15 +259,28 @@ def constantbinstate_to_statenum(constantbinstate, constant_template):
 	binstate = ''.join([constantbinstate[ivar] for ivar in range(len(constant_template)) if constant_template[ivar] is None])
 	return binstate_to_statenum(binstate)
 
+def random_binstate(N):
+	"""
+	generates a random binary state over N variables
+
+	Args:
+		N (int) : the length of the binary state
+
+	Returns:
+		binstate (str) : a random binary state
+	"""
+
+	return"".join([random.choice(['0', '1']) for bit in range(N)])
+
 def expand_logic_line(line):
 	"""This generator expands a logic line containing ``-`` (ie. ``00- 0`` or ``0-0 1``) to a series of logic lines containing only ``0`` and ``1``.
 
 	Args:
 		line (string) : The logic line. Format is <binary-state><space><output>.
-	
+
 	Returns:
 		generator : a series of logic lines
-	
+
 	Example:
 		>>> expand_logic_line('1-- 0')
 		>>> 100 0
@@ -260,10 +311,10 @@ def print_logic_table(outputs):
 
 	Args:
 		outputs (list) : The transition outputs of the function.
-	
+
 	Returns:
 		print : a print-out of the logic table.
-	
+
 	Example:
 		>>> print_logic_table([0,0,1,1])
 		>>> 00 : 0
@@ -278,7 +329,7 @@ def print_logic_table(outputs):
 
 def entropy(prob_vector, logbase = 2.):
 	"""Calculates the entropy given a probability vector
-	
+
 	Todo:
 		This should be calculated using ``scipy.entropy``
 	"""
@@ -286,22 +337,35 @@ def entropy(prob_vector, logbase = 2.):
 	pos_prob_vector = prob_vector[prob_vector > 0]
 	return - np.sum(pos_prob_vector * np.log(pos_prob_vector)/np.log(logbase))
 
+def binstate_compare(binstate1, binstate2):
+	"""
+	Compare each element in two binary states 
+
+	Args:
+		binstate1, binstate2 : the two binary states to be compared
+
+	Return:
+		c (list, bool) : a list of comparisons
+	"""
+	return [ (b0==b1) for b0, b1 in zip_longest(binstate1, binstate2)]
+
+
 def hamming_distance(s1, s2):
 	"""Calculates the hamming distance between two configurations strings.
 
 	Args:
 		s1 (string): First string
 		s2 (string): Second string
-	
+
 	Returns:
 		float : The Hamming distance
-	
+
 	Example:
 		>>> hamming_distance('001','101')
 		>>> 1
 	"""
 	assert len(s1) == len(s2) , "The two strings must have the same length"
-	return sum([s1[i] != s2[i] for i in range(len(s1))])
+	return sum([ (b0!=b1) for b0, b1 in zip_longest(s1, s2)])
 
 
 def ncr(n, r):
@@ -309,18 +373,17 @@ def ncr(n, r):
 	The combination of selecting `r` items from `n` iterms, order doesn't matter.
 
 	Args:
-	    n (int): number of elements in collection
-	    r (int): length of combination
-	
+		n (int): number of elements in collection
+		r (int): length of combination
+
 	Returns:
-	    int
+		int
 	"""
 	r = min(r, n - r)
 	if r == 0: return 1
 	numer = reduce(op.mul, range(n, n - r, -1))
 	denom = reduce(op.mul, range(1, r + 1))
 	return numer // denom
-
 
 def isclose(a, b, rel_tol=1e-09, abs_tol=0.0):
 	"""Python 2 doesn't have math.isclose()
@@ -329,10 +392,10 @@ def isclose(a, b, rel_tol=1e-09, abs_tol=0.0):
 		considering using == to compare floats is dangerous!
 		2.0*3.3 != 3.0*2.2 in python!
 	Args:
-	    a (float) : the first float number
-	    b (float) : the second float number
-	    rel_tol (float) : the relative difference threshold between a and b
-	    abs_tol (float) : absolute difference threshold. not recommended for float
+		a (float) : the first float number
+		b (float) : the second float number
+		rel_tol (float) : the relative difference threshold between a and b
+		abs_tol (float) : absolute difference threshold. not recommended for float
 
 	Returns:
 		bool
@@ -342,7 +405,7 @@ def isclose(a, b, rel_tol=1e-09, abs_tol=0.0):
 
 def output_transitions(eval_line, input_list):
 	"""Returns an output list from combinatorically trying all input values
-	
+
 	Args:
 		eval_line (string) : logic or arithmetic line to evaluate
 		input_list (list) : list of input variables
@@ -381,3 +444,65 @@ def output_transitions(eval_line, input_list):
 
 	return output_list
 
+def mindist_from_source(G, source):
+	dag = nx.bfs_tree(G, source)
+	dist = {}  # stores [node, distance] pair
+	for node in nx.topological_sort(dag):
+		# pairs of dist,node for all incoming edges
+		pairs = [(dist[v][0]+1, v) for v in dag.pred[node]]
+		if pairs:
+			dist[node] = min(pairs)
+		else:
+			dist[node] = (0, node)
+
+	return dist
+
+
+def probability_dijkstra_multisource(G, sources, weight, pred=None, paths=None,
+						  target=None, min_prob=-10**10):
+	"""Uses Dijkstra's algorithm to find shortest weighted paths when all values are negative
+	(shortest path is closest to 0)
+	modified from Network X
+
+	"""
+	G_succ = G._succ if G.is_directed() else G._adj
+
+	push = heappush
+	pop = heappop
+	dist = {}  # dictionary of final distances
+	seen = {}
+	# fringe is heapq with 3-tuples (distance,c,node)
+	# use the count c to avoid comparing nodes (may not be able to)
+	c = count()
+	fringe = []
+	for source in sources:
+		if source not in G:
+			raise nx.NodeNotFound("Source {} not in G".format(source))
+		seen[source] = 0
+		push(fringe, (0, next(c), source))
+	while fringe:
+		(d, _, v) = pop(fringe)
+		if v in dist:
+			continue  # already searched this node.
+		dist[v] = d
+		if v == target:
+			break
+		for u, e in G_succ[v].items():
+			cost = weight(v, u, e)
+			if cost is None:
+				continue
+			vu_dist = dist[v] + cost
+			if u not in seen or vu_dist > seen[u]:  # vu_dist < seen[u]:
+				seen[u] = vu_dist
+				push(fringe, (vu_dist, next(c), u))
+				if paths is not None:
+					paths[u] = paths[v] + [u]
+				if pred is not None:
+					pred[u] = [v]
+			elif vu_dist == seen[u]:
+				if pred is not None:
+					pred[u].append(v)
+
+	# The optional predecessor and path dictionaries can be accessed
+	# by the caller via the pred and paths objects passed as arguments.
+	return dist
