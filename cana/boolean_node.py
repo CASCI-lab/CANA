@@ -345,7 +345,7 @@ class BooleanNode(object):
 			k = 2
 		else:
 			k = self.k
-		for statenum, output in zip( range(k**2), self.outputs):
+		for statenum, output in zip( range(2**k), self.outputs):
 			# Binary State, Transition
 			d.append( (statenum_to_binstate(statenum, base=self.k), output) )
 		df = pd.DataFrame(d, columns=['In:','Out:'])
