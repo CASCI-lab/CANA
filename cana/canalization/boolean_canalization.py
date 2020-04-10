@@ -34,11 +34,11 @@ __author__ = """\n""".join([
 def make_transition_density_tables(k=1, outputs=[0,1]):
 	""" This method creates a tuple-of-lists that is used to calculate Prime Implicants in the first step of the Quine-McCluskey algorithm :cite:`Quine:1955`.
 	In practice it separates the positive and negative transitions (tuple), then further separates it by counting the number of 1's in each (lists).
-	
+
 	Args:
 		k (int) : the ``k`` number of inputs
 		outputs (list) : a list of ``[0,1]`` output for each state number.
-	
+
 	Returns:
 		tables (tuple) : a tuple where [0] is the negative table and [1] is the positive table.
 	"""
@@ -71,11 +71,11 @@ def find_implicants_qm(column, verbose=False):
 
 	# Authors: Alex Gates and Etienne Nzabarushimana
 	"""
-	
+
 	N = len(column) - 1
 
 	# we start with an empty set of implicants
-	prime_implicants = set()   
+	prime_implicants = set()
 	done = False
 
 	# repeat the following until no matches are found
@@ -101,12 +101,12 @@ def find_implicants_qm(column, verbose=False):
 						next_column[matches_density].add(match)
 						done = False
 
-		# now add back the implicants that were not matched 
+		# now add back the implicants that were not matched
 		for i in range(N+1):
 			for j in range(len(matches[i])):
 				if not matches[i][j]:
 					prime_implicants.add(column[i][j])
-		
+
 		# use the simplified table as the starting point of the next pass
 		column = [list(g) for g in next_column]
 
@@ -150,7 +150,7 @@ def __pi_covers(implicant, input, symbol=['2','#',2]):
 
 def computes_pi_coverage(k, outputs, prime_implicants):
 	"""Computes the input coverage by Prime Implicant schematas.
-	
+
 	Args:
 		k (int): the number of inputs.
 		outpus (list): the list of transition outputs.
@@ -158,12 +158,12 @@ def computes_pi_coverage(k, outputs, prime_implicants):
 			This is returned by `find_implicants_qm`.
 	Returns:
 		pi_coverage (dict) : a dictionary of coverage where keys are input states and values are lists of the Prime Implicants covering that input.
-	
+
 	Note: based on code from Alex Gates and Etienne Nzabarushimana.
 	"""
 	# make sure outputs are integers
 	outputs = list(map(int, outputs))
-	
+
 	pi_coverage = {}
 	for statenum in range(2**k):
 		binstate = statenum_to_binstate(statenum, base=k)
@@ -190,22 +190,22 @@ def find_two_symbols_v2(k=1, prime_implicants=None, verbose=False, verbose_level
 	Args:
 		k (int): The number of inputs.
 		prime_implicants (list): The prime implicants computed.
-	
+
 	Returns:
 		final_list (list) : The list of two-symbol schematas.
-	
+
 	Note: This is a modification of the original algorithm that can be found in Marques-Pita & Rocha [2013].
 	"""
 	if not len(prime_implicants):
 		return []
-	
+
 	# If this node has no input, yet it affects other nodes (fixed variable)
 	if k==0:
 		TSf = []
 		for pi in prime_implicants:
 			TSf.append( (pi,[],[]) )
 		return TSf
-	
+
 	# Init
 	n_pi = len(prime_implicants)
 	pi_matrix = np.array(tuple(map(tuple, prime_implicants)), dtype=int)
@@ -226,7 +226,7 @@ def find_two_symbols_v2(k=1, prime_implicants=None, verbose=False, verbose_level
 		schematas = Q.popleft()
 		n_schematas = schematas.shape[0]
 		i += 1
-		
+
 		if verbose:
 			if verbose_level == 1:
 				if i%500==0:
@@ -235,14 +235,14 @@ def find_two_symbols_v2(k=1, prime_implicants=None, verbose=False, verbose_level
 				print('>>> QUEUE: pop | A (m=%d) | Queue size: %d' % (n_schematas, len(Q) ))
 			if verbose_level>10:
 				print(schematas)
-		
+
 		# count the number of [0's, 1's, 2's] in each column
 		column_counts = _count_cols_symbols_v2(pi_matrix=schematas, verbose=verbose, verbose_level=verbose_level)
 		if verbose and verbose_level>10:
 			print('>>> COLUMN Schema Counts:')
 		# find the permutation groups based on column counts
 		perm_groups = _check_col_counts_v3(counts_matrix=column_counts, verbose=verbose, verbose_level=verbose_level)
-		
+
 		if (perm_groups != -1):
 			if verbose and verbose_level>10: print('>>> There are permutable groups! Lets loop them')
 			for x_group in perm_groups:
@@ -276,7 +276,7 @@ def find_two_symbols_v2(k=1, prime_implicants=None, verbose=False, verbose_level
 		else:
 			if verbose and verbose_level>10: print('>>> Generate combinations of schematas (m-1) and add to Queue')
 			if schematas.shape[0] > 2:
-				for idxs_subset in itertools.combinations(np.arange(0,n_schematas), (n_schematas - 1)):					
+				for idxs_subset in itertools.combinations(np.arange(0,n_schematas), (n_schematas - 1)):
 					idxs_subset = list(idxs_subset)
 					schemata_subset = schematas[ idxs_subset , : ]
 					# This schemata has already been inserted onto the Queue before?
@@ -299,13 +299,13 @@ def find_two_symbols_v2(k=1, prime_implicants=None, verbose=False, verbose_level
 	# 'ts' = Two-Symbol
 	# 'cx' = Complexity
 	# 'xs' = Expanded Logic
-	TSs = { 
+	TSs = {
 		i : {
 				'tss':tss,
 				'perms':perms,
 				'cx':_calc_ts_complexity(tss,perms),
 				'xl':_expand_ts_logic(tss,perms)
-			} 
+			}
 			for i, (tss,perms) in enumerate(TS)
 		}
 
@@ -331,7 +331,7 @@ def find_two_symbols_v2(k=1, prime_implicants=None, verbose=False, verbose_level
 					del TSs[j]
 				else:
 					# they are equal, delete either one
-					del TSs[i] 
+					del TSs[i]
 
 	if verbose:
 		print('>>> TWO-SYMBOLS (simplified):')
@@ -362,7 +362,7 @@ def find_two_symbols_v2(k=1, prime_implicants=None, verbose=False, verbose_level
 
 		# Makes the F'' into a Collum Array so it can be used by '_count_cols_symbols_vX'
 		ts_matrix = np.array([ts]).T
-		
+
 		# Remove Inputs (columns) that already have permutable symbols. Only if there are permutables
 		if len(idxs):
 			rmask = np.array(idxs)
@@ -370,14 +370,14 @@ def find_two_symbols_v2(k=1, prime_implicants=None, verbose=False, verbose_level
 		else:
 			ts_matrix_left = ts_matrix
 
-		
+
 		if verbose and verbose_level>10:
 			print("> F'' Original:")
 			print(ts_matrix)
 			print("> Permutables: %s" % (perms))
 			print("> F'' without permutables:")
 			print(ts_matrix_left)
-		
+
 
 		counts_matrix = _count_cols_symbols_v2(pi_matrix=ts_matrix_left.T, verbose=False, verbose_level=verbose_level)
 		perm_groups = _check_identical_cols_count_symbols_v2(counts_matrix=counts_matrix, verbose=verbose, verbose_level=verbose_level)
@@ -425,10 +425,10 @@ def _check_schema_within_schema(la, lb, dir=None, verbose=False):
 			print('%s in %s : %s' % (lb,la,b_in_a))
 	#
 	return a_in_b, b_in_a
-		
+
 def _expand_ts_logic(two_symbols, permut_indexes):
 	""" Expands the Two-Symbol logic to all possible prime-implicants variations being covered.
-	
+
 	Args:
 		two_symbols (list) : Two-Symbol schematas list-of-lists.
 	Returns:
@@ -510,7 +510,7 @@ def _check_col_counts_v3(counts_matrix, verbose=False, verbose_level=0):
 	"""
 	if verbose and verbose_level>30:
 		print('-- Check Col Counts (v3) --')
-	
+
 	counts = {} 		# Multi Counts
 	perm_groups = [] 	# A list of groups of Permutable Indexes
 
@@ -556,7 +556,7 @@ def _check_identical_cols_count_symbols_v2(counts_matrix, verbose=False, verbose
 	"""
 	if verbose and verbose_level>20:
 		print('-- Check Identical Col Counts (v2) --')
-	
+
 	counts = {} 		# Multi Counts
 	perm_groups = [] 	# A list of groups of Permutable Indexes
 
@@ -612,7 +612,7 @@ def _count_cols_symbols_v2(pi_matrix=None, verbose=False, verbose_level=0):
 
 ############ START OF TWO SYMBOL v.1 ############
 # This version does not conside '11' and '00' as permutable symbols and had other bugs solved by v2
-def find_two_symbols_v1(k=1, prime_implicants=None, verbose=False):	
+def find_two_symbols_v1(k=1, prime_implicants=None, verbose=False):
 	two_symbol_schemata_list = []
 
 	Partition_Options = [prime_implicants]
@@ -629,7 +629,7 @@ def find_two_symbols_v1(k=1, prime_implicants=None, verbose=False):
 
 		# find the permutation groups based on column counts
 		permutation_groups = _check_counts_v1(column_counts)
-		
+
 		if (permutation_groups != -1):
 			if verbose: print('>>> There are permutable groups! Lets loop them')
 			for x_group in permutation_groups:
@@ -676,7 +676,7 @@ def find_two_symbols_v1(k=1, prime_implicants=None, verbose=False):
 							prime_accounted.append(list(account_prime))
 		if not (p_implicant in prime_accounted):
 			final_list.append((p_implicant, []))
-	
+
 	return final_list
 
 def _check_schemata_permutations_v1(schemata_list, permutation_groups):
@@ -690,7 +690,7 @@ def _check_schemata_permutations_v1(schemata_list, permutation_groups):
 		for i_index in range(len(x_group) - 1):
 			x_index = x_group[i_index]
 			small_group = [x_index]
-		
+
 			if not (x_index in sofar):
 				sofar.append(x_index)
 
@@ -796,7 +796,7 @@ def __ts_covers(two_symbol, permut_indexes, input, verbose=False):
 
 def computes_ts_coverage(k, outputs, two_symbols):
 	""" Computes the input coverage by Two Symbol schematas.
-	
+
 	Args:
 		k (int): the number of inputs.
 		outpus (list): the list of transition outputs.
@@ -809,11 +809,11 @@ def computes_ts_coverage(k, outputs, two_symbols):
 	for statenum in range(2**k):
 		binstate = statenum_to_binstate(statenum, base=k)
 		ts_coverage[binstate] = covering_twosymbols = []
-		output = outputs[statenum]
+		output = int(outputs[statenum])
 		if output == 2:
 			output = [0,1]
 		else:
-			output = [outputs[statenum]]
+			output = [int(outputs[statenum])]
 		for t in output:
 			for implicant, permut_indxs, same_symbols_indxs in two_symbols[t]:
 				if __ts_covers(implicant, permut_indxs, binstate):
