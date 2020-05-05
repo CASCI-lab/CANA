@@ -354,7 +354,7 @@ class BooleanNetwork:
 			:func:`structural_outdegrees`, :func:`effective_indegrees`, :func:`effective_outdegrees`
 		"""
 		self._check_compute_variables(sg=True)
-		return sorted(self._sg.in_degree().values(), reverse=True)
+		return sorted([d for n,d in self._sg.in_degree()], reverse=True)
 
 	def structural_outdegrees(self):
 		"""Returns the out-degrees of the Structural Graph. Sorted.
@@ -366,7 +366,7 @@ class BooleanNetwork:
 			:func:`structural_indegrees`, :func:`effective_indegrees`, :func:`effective_outdegrees`
 		"""
 		self._check_compute_variables(sg=True)
-		return sorted(self._sg.out_degree().values(), reverse=True)
+		return sorted([d for n,d in self._sg.out_degree()], reverse=True)
 
 	def effective_graph(self, mode='input', bound='mean', threshold=None):
 		"""Computes and returns the effective graph of the network.
@@ -423,7 +423,7 @@ class BooleanNetwork:
 			:func:`effective_outdegrees`, :func:`structural_indegrees`, :func:`structural_outdegrees`
 		"""
 		self._check_compute_variables(eg=True)
-		return sorted(self._eg.in_degree().values(), reverse=True)
+		return sorted([d for n,d in self._eg.in_degree()], reverse=True)
 
 	def effective_outdegrees(self):
 		"""Returns the out-degrees of the Effective Graph. Sorted.
@@ -435,7 +435,7 @@ class BooleanNetwork:
 			:func:`effective_indegrees`, :func:`structural_indegrees`, :func:`structural_outdegrees`
 		"""
 		self._check_compute_variables(eg=True)
-		return sorted(self._eg.out_degree().values(), reverse=True)
+		return sorted([d for n,d in self._eg.out_degree()], reverse=True)
 
 
 	def activity_graph(self, threshold=None):
@@ -520,7 +520,7 @@ class BooleanNetwork:
 			(list): the state trajectory between initial and the final attractor state.
 		"""
 		self._check_compute_variables(attractors=True)
-		attractor_states = [s for att in self._attractors for s in att]
+		attractor_states = [self.num2bin(s) for att in self._attractors for s in att]
 
 		trajectory = [initial]
 		while (trajectory[-1] not in attractor_states):
@@ -540,7 +540,7 @@ class BooleanNetwork:
 
 		trajectory = self.trajectory_to_attractor(initial)
 		for attractor in self._attractors:
-			if trajectory[-1] in attractor:
+			if self.bin2num(trajectory[-1]) in attractor:
 				return attractor
 
 	def attractors(self, mode='stg'):
@@ -1148,7 +1148,7 @@ class BooleanNetwork:
 		return partial
 
 
-	def approx_dynamic_impact(self, node, n_steps=1, mode='effective', 
+	def approx_dynamic_impact(self, node, n_steps=1, mode='effective',
 		bound='mean', threshold=0.0,
 		bias=0.5, min_log_prob=np.log(10**(-5))):
 		"""
@@ -1288,20 +1288,20 @@ class BooleanNetwork:
 				self._eg = self.effective_graph()
 
 		elif 'stg' in kwargs:
-			self._check_compute_variables(sg=True)
 			if self._stg is None:
+				self._check_compute_variables(sg=True)
 				if self.verbose: print("Computing: State-Transition-Graph")
 				self._stg = self.state_transition_graph()
 
 		elif 'attractors' in kwargs:
-			self._check_compute_variables(stg=True)
 			if self._attractors is None:
+				self._check_compute_variables(stg=True)
 				if self.verbose: print("Computing: Attractors")
 				self._attractors = self.attractors()
 
 		elif 'stg_r' in kwargs:
-			self._check_compute_variables(stg=True)
 			if self._stg_r is None:
+				self._check_compute_variables(stg=True)
 				self._stg_r = self.state_transition_graph_reachability()
 		else:
 			raise Exception('Control variable name not found. %s' % kwargs)
@@ -1344,10 +1344,25 @@ class BooleanNetwork:
 		# otherwise, use the recursive map to change ids to names
 		else:
 			return recursive_map(self._get_node_name, iterable)
-	#
-	# Plotting Methods
-	#
-	def derrida_curve(self, nsamples=10, random_seed=None, method='random'):
+
+	def average_trajectory_length(self, nsamples=10, random_seed=None, method = 'random'):
+		"""The average length of trajectories from a random initial configuration to its attractor.
+
+		Args:
+			nsamples (int) : The number of samples per hammimg distance to get.
+			random_seed (int) : The random state seed.
+			method (string) : specify the method you want. either 'random' or ....
+
+		Returns:
+			trajlen (float) : The average trajectory length to an attractor.
+		"""
+		trajlen = 0
+		for isample in range(nsamples):
+			rnd_config = random_binstate(self.Nnodes)
+			trajlen += len(self.trajectory_to_attractor(rnd_config))
+		return trajlen/nsamples
+
+	def derrida_curve(self, nsamples=10, max_hamm = None, random_seed=None, method='random'):
 		"""The Derrida Curve (also reffered as criticality measure :math:`D_s`).
 		When "mode" is set as "random" (default), it would use random sampling to estimate Derrida value
 		If "mode" is set as "sensitivity", it would use c-sensitivity to calculate Derrida value (slower)
@@ -1355,6 +1370,7 @@ class BooleanNetwork:
 
 		Args:
 			nsamples (int) : The number of samples per hammimg distance to get.
+			max_hamm (int) : The maximum Hamming distance between starting states. default: self.Nnodes
 			random_seed (int) : The random state seed.
 			method (string) : specify the method you want. either 'random' or 'sensitivity'
 
@@ -1363,12 +1379,15 @@ class BooleanNetwork:
 		"""
 		random.seed(random_seed)
 
-		dx = np.linspace(0,1,self.Nnodes)
-		dy = np.zeros(self.Nnodes)
+		if max_hamm is None or (max_hamm > self.Nnodes):
+			max_hamm = self.Nnodes
+
+		dx = np.linspace(0,1,max_hamm)
+		dy = np.zeros(max_hamm)
 
 		if method == 'random':
 			# for each possible hamming distance between the starting states
-			for hamm_dist in range(1, self.Nnodes + 1):
+			for hamm_dist in range(1, max_hamm + 1):
 
 				# sample nsample times
 				for isample in range(nsamples):
@@ -1379,7 +1398,7 @@ class BooleanNetwork:
 
 			dy /= float(self.Nnodes * nsamples)
 		elif method == 'sensitivity':
-			for hamm_dist in range(1,self.Nnodes +1):
+			for hamm_dist in range(1, max_hamm +1):
 				dy[hamm_dist-1] = sum([node.c_sensitivity(hamm_dist,mode='forceK',max_k=self.Nnodes) for node in self.nodes])/self.Nnodes
 
 		return dx, dy
