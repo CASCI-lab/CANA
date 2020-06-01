@@ -1356,11 +1356,7 @@ class BooleanNetwork:
 		Returns:
 			trajlen (float) : The average trajectory length to an attractor.
 		"""
-		trajlen = 0
-		for isample in range(nsamples):
-			rnd_config = random_binstate(self.Nnodes)
-			trajlen += len(self.trajectory_to_attractor(rnd_config))
-		return trajlen/nsamples
+		return sum(len(self.trajectory_to_attractor(random_binstate(self.Nnodes))) for isample in range(nsamples) )/nsamples
 
 	def derrida_curve(self, nsamples=10, max_hamm = None, random_seed=None, method='random'):
 		"""The Derrida Curve (also reffered as criticality measure :math:`D_s`).
