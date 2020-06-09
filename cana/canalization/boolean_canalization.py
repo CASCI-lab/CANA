@@ -441,19 +441,23 @@ def _expand_ts_logic(two_symbols, permut_indexes):
 	Q = deque()
 	Q.extend(two_symbols)
 	logics = []
-	#
-	while Q:
-		implicant = np.array( Q.pop() )
-		for idxs in permut_indexes:
-			# Permutation of all possible combinations of the values that are permutable.
-			for vals in itertools.permutations(implicant[idxs], len(idxs)):
-				# Generate a new schema
+	# For each set of permutable elements
+	for idxs in permut_indexes:
+		Qnext = []
+		# we go through each implicant in the Queue
+		for implicant in Q:
+			implicant = np.array(implicant)
+			# We then determine the set of combintaions of implicants (no duplicates due to permutation on index values)
+			for vals in set(itertools.permutations(implicant[idxs],len(idxs))):
 				_implicant = copy.copy(implicant)
+				# We create that new implicant based on that the permutation value that we are at. 
 				_implicant[idxs] = vals
-				# Insert to list of logics if not already there
+				# if we haven't seen this implicant before, we add it to the possible implicants
 				if not(_implicant.tolist() in logics):
 					logics.append(_implicant.tolist())
-					Q.append(_implicant.tolist())
+					#we also add it to the list of implicants to look over for the next idxs. 
+					Qnext.append(_implicant.tolist())
+		Q.extend(Qnext)
 	return logics
 
 def _check_schemata_permutations_v2(schematas, perm_groups, verbose=False, verbose_level=0):
