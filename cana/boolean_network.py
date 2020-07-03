@@ -1359,6 +1359,7 @@ class BooleanNetwork:
 		return sum(len(self.trajectory_to_attractor(random_binstate(self.Nnodes))) for isample in range(nsamples) )/nsamples
 
 	def derrida_curve(self, nsamples=10, max_hamm = None, random_seed=None, method='random'):
+
 		"""The Derrida Curve (also reffered as criticality measure :math:`D_s`).
 		When "mode" is set as "random" (default), it would use random sampling to estimate Derrida value
 		If "mode" is set as "sensitivity", it would use c-sensitivity to calculate Derrida value (slower)
@@ -1378,8 +1379,8 @@ class BooleanNetwork:
 		if max_hamm is None or (max_hamm > self.Nnodes):
 			max_hamm = self.Nnodes
 
-		dx = np.linspace(0,1,max_hamm)
-		dy = np.zeros(max_hamm)
+		dx = np.linspace(0,1,max_hamm, endpoint=True)
+		dy = np.zeros(max_hamm+1)
 
 		if method == 'random':
 			# for each possible hamming distance between the starting states
@@ -1390,14 +1391,50 @@ class BooleanNetwork:
 					rnd_config = random_binstate(self.Nnodes)
 					perturbed_var = random.sample(range(self.Nnodes), hamm_dist)
 					perturbed_config = [flip_bit(rnd_config[ivar]) if ivar in perturbed_var else rnd_config[ivar] for ivar in range(self.Nnodes)]
-					dy[hamm_dist-1] += hamming_distance(self.step(rnd_config), self.step(perturbed_config))
+					dy[hamm_dist] += hamming_distance(self.step(rnd_config), self.step(perturbed_config)) / self.Nnodes # normalized Hamming Distance
 
-			dy /= float(self.Nnodes * nsamples)
+			dy /= nsamples
+
 		elif method == 'sensitivity':
+
 			for hamm_dist in range(1, max_hamm +1):
-				dy[hamm_dist-1] = sum([node.c_sensitivity(hamm_dist,mode='forceK',max_k=self.Nnodes) for node in self.nodes])/self.Nnodes
+				dy[hamm_dist] = sum([node.c_sensitivity(hamm_dist,mode='forceK',max_k=self.Nnodes) for node in self.nodes])/self.Nnodes
 
 		return dx, dy
+
+	def derrida_coefficient(self, nsamples=10, random_seed=None, method='random'):
+		"""The Derrida Coefficient.
+		When "mode" is set as "random" (default), it would use random sampling to estimate Derrida value
+		If "mode" is set as "sensitivity", it would use c-sensitivity to calculate Derrida value (slower)
+		You can refer to :cite:'kadelka2017influence' about why c-sensitivity can be used to caculate Derrida value
+
+		Args:
+			nsamples (int) : The number of samples per hammimg distance to get.
+			random_seed (int) : The random state seed.
+			method (string) : specify the method you want. either 'random' or 'sensitivity'
+
+		Returns:
+			(dx,dy) (tuple) : The dx and dy of the curve.
+		"""
+		random.seed(random_seed)
+		hamm_dist = 1
+
+		if method == 'random':
+			# for each possible hamming distance between the starting states
+			
+			dy = 0
+			# sample nsample times
+			for isample in range(nsamples):
+				rnd_config = random_binstate(self.Nnodes)
+				perturbed_var = random.sample(range(self.Nnodes), hamm_dist)
+				perturbed_config = [flip_bit(rnd_config[ivar]) if ivar in perturbed_var else rnd_config[ivar] for ivar in range(self.Nnodes)]
+				dy += hamming_distance(self.step(rnd_config), self.step(perturbed_config)) / self.Nnodes # normalized Hamming Distance
+
+			dy /= float(nsamples)
+		elif method == 'sensitivity':
+			dy = sum([node.c_sensitivity(hamm_dist,mode='forceK',max_k=self.Nnodes) for node in self.nodes])
+
+		return dy * self.Nnodes
 
 
 
