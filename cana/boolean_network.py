@@ -406,7 +406,7 @@ class BooleanNetwork:
 				e_is = node.effective_connectivity(mode=mode, bound=bound, norm=False)
 				for inputs,e_i in zip(self.logic[i]['in'], e_is):
 					# If there is a threshold, only return those number above the threshold. Else, return all edges.
-					if ((threshold is None) and (e_i > 0)) or ((threshold is not None) and (e_i > threshold)):
+					if (threshold is None)  or ((threshold is not None) and (e_i > threshold)):
 						self._eg.add_edge(inputs, i, **{'weight':e_i})
 			else:
 				raise AttributeError('The mode you selected does not exist. Try "node" or "input".')
@@ -511,22 +511,46 @@ class BooleanNetwork:
 			trajectory.append(self.step(trajectory[-1]))
 		return trajectory
 
-	def trajectory_to_attractor(self, initial):
+	def trajectory_to_attractor(self, initial, precompute_attractors=True, return_attractor=False):
 		"""Computes the trajectory starting at ``initial`` until it reaches an attracor (this is garanteed)
 
 		Args:
-			initial (string): the initial state.
+			initial (string): the initial binstate.
+			precompute_attractors (bool): use precomputed attractors, default True
+			return_attractor (bool): also return the attractor reached, default False
 		Returns:
 			(list): the state trajectory between initial and the final attractor state.
+			if return_attractor:
+				(list): the attractor
 		"""
-		self._check_compute_variables(attractors=True)
-		attractor_states = [self.num2bin(s) for att in self._attractors for s in att]
+		
+		# if the attractors are already precomputed, then we can check when we reach a known state
+		if precompute_attractors:
+			self._check_compute_variables(attractors=True)
+			attractor_states = [self.num2bin(s) for att in self._attractors for s in att]
 
-		trajectory = [initial]
-		while (trajectory[-1] not in attractor_states):
-			trajectory.append(self.step(trajectory[-1]))
+			trajectory = [initial]
+			while (trajectory[-1] not in attractor_states):
+				trajectory.append(self.step(trajectory[-1]))
 
-		return trajectory
+			if return_attractor:
+				attractor = self.attractor(trajectory[-1])
+
+		else:
+			trajectory = [initial]
+			while (trajectory[-1] not in trajectory[:-1]):
+				trajectory.append(self.step(trajectory[-1]))
+
+			# the attractor starts at the first occurence of the element
+			idxatt = trajectory.index(trajectory[-1])
+			if return_attractor:
+				attractor = [self.bin2num(s) for s in trajectory[idxatt:-1]]
+			trajectory = trajectory[:(idxatt+1)]
+
+		if return_attractor:
+			return trajectory, attractor
+		else:
+			return trajectory
 
 	def attractor(self, initial):
 		"""Computes the trajectory starting at ``initial`` until it reaches an attracor (this is garanteed)
@@ -1148,9 +1172,8 @@ class BooleanNetwork:
 		return partial
 
 
-	def approx_dynamic_impact(self, node, n_steps=1, mode='effective',
-		bound='mean', threshold=0.0,
-		bias=0.5, min_log_prob=np.log(10**(-5))):
+	def approx_dynamic_impact(self, node, n_steps=1, mode='effective', target_set=None,
+		bound='mean', threshold=0.0):
 		"""
 		Use the network structure to approximate the dynamical impact of a perturbation to node for each of n_steps
 
@@ -1165,58 +1188,69 @@ class BooleanNetwork:
 			mode (str) : the structural graph approximation to use
 				'effective' : use the effective graph
 				'structural' : use the structural graph
-				'bias' : use the structural graph with the bias approximation
 
 			bound (str) : the bound for the effective graph
 				'mean'
-
-			bias (float) : the average bias for the bias approximation
-
-			min_log_prob (float) : the default minimum probability
 
 		Returns:
 			(matrix) : approximate dynamical impact for each node at each step (n_steps x n_nodes)
 		"""
 
+		if target_set is None:
+			target_set = range(self.Nnodes)
 
-
-		# choose the underlying graph and get the log edge weight
+		# choose the underlying graph and get the edge weights
 		if mode == 'effective':
 			G = self.effective_graph(bound=bound, threshold=threshold)
-			log_weights = {e:np.log(w) for e,w in nx.get_edge_attributes(G, 'weight').items()}
-			inv_weight_func = lambda x: np.exp(x)
+			weights = {e:w for e,w in nx.get_edge_attributes(G, 'weight').items()}
 
 		elif mode == 'structural':
 			G = self.structural_graph()
-			log_weights = {e:np.log(0.5) for e,w in nx.get_edge_attributes(G, 'weight').items()}
-			inv_weight_func = lambda x: 1.0
+			weights = {e:0.5 for e,w in nx.get_edge_attributes(G, 'weight').items()}
 
-		elif mode == 'bias':
-			G = self.structural_graph()
-			log_weights = {e:np.log(bias) for e,w in nx.get_edge_attributes(G, 'weight').items()}
-			inv_weight_func = lambda x: np.exp(x)
+		
+		impact_matrix = np.zeros((n_steps, len(target_set)))
 
-		weight_func = lambda u, v, d: log_weights.get((u,v), min_log_prob)
+		for itarget, target in enumerate(target_set):
 
-		node_distances = mindist_from_source(G, node)
+			if target != node:
+				# the dict to store all paths
+				allpaths = nx.all_simple_paths(G, source=node, target=target, cutoff=(n_steps))
+				
+				for path in allpaths:
+					length = pathlength(path, weights, rule='prod')
+					for istep in range(1, n_steps):
+						if len(path) <= (istep + 1): # impose the light-code restriction
+							impact_matrix[istep, itarget] = max([length, impact_matrix[istep, itarget]])
 
-		impact_matrix = np.zeros((n_steps, self.Nnodes))
-		for n_step in range(n_steps):
-			# the dict to store all paths
-			paths = {node:[node]}
-
-			# get all nodes that are topologically within the light cone of the perturbation
-			light_cone = [n for n, d in node_distances.items() if d[0]<= (n_step+1)]
-
-			dist = probability_dijkstra_multisource(G.subgraph(light_cone), sources=paths[node], weight=weight_func,
-											   pred=None, paths=paths, target=None)
-			impact_matrix[n_step] = [inv_weight_func(dist[jnode])
-			if ( (jnode != node) and jnode in dist.keys() and len(paths[jnode]) <= (n_step+2)) else 0
-			for jnode in range(self.Nnodes)]
+		
+		
 
 		return impact_matrix
 
+	def dist_from_attractor(self):
+		"Find the distance from attractor for each configuration"
+		self._check_compute_variables(attractors=True)
 
+		dist = {}  # stores [node, distance] pair
+		for att in self._attractors:
+			dist.update({a:(0, a) for a in att})
+			dag = nx.bfs_tree(self._stg, att[0], reverse=True)
+			attractor_states = set(att)
+			for node in nx.topological_sort(dag):
+				# pairs of dist,node for all incoming edges
+				if not node in attractor_states:
+					pairs = [(dist[v][0]+1, v) for v in dag.pred[node]]
+					if pairs:
+						dist[node] = min(pairs)
+					else:
+						dist[node] = (0, node)
+
+		return dist
+
+	def average_dist_from_attractor(self):
+		dist = self.dist_from_attractor()
+		return np.mean([d[0] for d in dist.values() if d[0] > 0])
 
 	#
 	# Dynamics Canalization Map (DCM)
@@ -1431,10 +1465,9 @@ class BooleanNetwork:
 				dy += hamming_distance(self.step(rnd_config), self.step(perturbed_config)) / self.Nnodes # normalized Hamming Distance
 
 			dy /= float(nsamples)
+
 		elif method == 'sensitivity':
+			raise NotImplementedError
 			dy = sum([node.c_sensitivity(hamm_dist,mode='forceK',max_k=self.Nnodes) for node in self.nodes])
 
 		return dy * self.Nnodes
-
-
-
