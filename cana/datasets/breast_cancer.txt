@@ -1,5 +1,5 @@
 #Boolean network model of signal transduction in ER+ breast cancer
-#From Zañudo, Jorge Gómez Tejeda, Maurizio Scaltriti, and Réka Albert. 
+#From Zaoudo, Jorge Gumez Tejeda, Maurizio Scaltriti, and Reka Albert. 
 #"A network modeling approach to elucidate drug resistance mechanisms and predict combinatorial drug treatments in breast cancer." 
 #Cancer Convergence 1.1 (2017): 5.
 #BOOLEAN RULES

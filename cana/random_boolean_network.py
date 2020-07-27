@@ -27,7 +27,7 @@ import re
 #
 #
 
-def regular_boolean_network(N=10, K=2, bias=0.5, keep_constants=True, remove_multiedges=True, niter_remove=1000):
+def regular_boolean_network(N=10, K=2, bias=0.5, bias_constraint='soft', keep_constants=True, remove_multiedges=True, niter_remove=1000):
 
 
 	din = [K]*N   # in-degree distrubtion
@@ -43,12 +43,12 @@ def regular_boolean_network(N=10, K=2, bias=0.5, keep_constants=True, remove_mul
 
 	# A dict that contains the network logic {<id>:{'name':<string>,'in':<list-input-node-id>,'out':<list-output-transitions>},..}
 	bn_dict = {node:{'name':str(node), 'in':sorted([n for n in regular_graph.predecessors(node)]),
-		'out':[int(random.random() < bias) for b in range(2**regular_graph.in_degree(node))]} for node in regular_graph.nodes()}
+		'out':random_automata_table(regular_graph.in_degree(node), bias, bias_constraint)} for node in range(N)}
 
 	return BooleanNetwork.from_dict(bn_dict)
 
 
-def er_boolean_network(N=10, p=0.2, bias=0.5, keep_constants=True, remove_multiedges=True, niter_remove=1000):
+def er_boolean_network(N=10, p=0.2, bias=0.5, bias_constraint='soft', remove_multiedges=True, niter_remove=1000):
 
 	er_graph = nx.erdos_renyi_graph(N, p, directed=True)
 
@@ -61,9 +61,27 @@ def er_boolean_network(N=10, p=0.2, bias=0.5, keep_constants=True, remove_multie
 
 	# A dict that contains the network logic {<id>:{'name':<string>,'in':<list-input-node-id>,'out':<list-output-transitions>},..}
 	bn_dict = {node:{'name':str(node), 'in':sorted([n for n in er_graph.predecessors(node)]),
-		'out':[int(random.random() < bias) for b in range(2**er_graph.in_degree(node))]} for node in er_graph.nodes()}
+		'out':random_automata_table(er_graph.in_degree(node), bias, bias_constraint)} for node in range(N)}
 
 	return BooleanNetwork.from_dict(bn_dict)
+
+
+def random_automata_table(indegree, bias, bias_constraint='soft'):
+	if bias_constraint == 'soft':
+		return [int(random.random() < bias) for b in range(2**indegree)]
+
+	elif bias_constraint == 'hard':
+		n_ones = int(bias*(2**indegree))
+		output = [0]*(2**indegree - n_ones) + [1]*n_ones
+		random.shuffle(output)
+		return output
+
+	elif bias_constraint == 'soft_no_constant':
+		output = [int(random.random() < bias) for b in range(2**indegree)]
+		if sum(output) == 0:
+			output[0] = 1
+			random.shuffle(output)
+		return output
 
 
 	

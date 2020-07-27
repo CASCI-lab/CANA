@@ -354,7 +354,7 @@ class BooleanNetwork:
 			:func:`structural_outdegrees`, :func:`effective_indegrees`, :func:`effective_outdegrees`
 		"""
 		self._check_compute_variables(sg=True)
-		return sorted(self._sg.in_degree().values(), reverse=True)
+		return sorted([d for n,d in self._sg.in_degree()], reverse=True)
 
 	def structural_outdegrees(self):
 		"""Returns the out-degrees of the Structural Graph. Sorted.
@@ -366,7 +366,7 @@ class BooleanNetwork:
 			:func:`structural_indegrees`, :func:`effective_indegrees`, :func:`effective_outdegrees`
 		"""
 		self._check_compute_variables(sg=True)
-		return sorted(self._sg.out_degree().values(), reverse=True)
+		return sorted([d for n,d in self._sg.out_degree()], reverse=True)
 
 	def effective_graph(self, mode='input', bound='mean', threshold=None):
 		"""Computes and returns the effective graph of the network.
@@ -406,7 +406,7 @@ class BooleanNetwork:
 				e_is = node.effective_connectivity(mode=mode, bound=bound, norm=False)
 				for inputs,e_i in zip(self.logic[i]['in'], e_is):
 					# If there is a threshold, only return those number above the threshold. Else, return all edges.
-					if ((threshold is None) and (e_i > 0)) or ((threshold is not None) and (e_i > threshold)):
+					if (threshold is None)  or ((threshold is not None) and (e_i > threshold)):
 						self._eg.add_edge(inputs, i, **{'weight':e_i})
 			else:
 				raise AttributeError('The mode you selected does not exist. Try "node" or "input".')
@@ -423,7 +423,7 @@ class BooleanNetwork:
 			:func:`effective_outdegrees`, :func:`structural_indegrees`, :func:`structural_outdegrees`
 		"""
 		self._check_compute_variables(eg=True)
-		return sorted(self._eg.in_degree().values(), reverse=True)
+		return sorted([d for n,d in self._eg.in_degree()], reverse=True)
 
 	def effective_outdegrees(self):
 		"""Returns the out-degrees of the Effective Graph. Sorted.
@@ -435,7 +435,7 @@ class BooleanNetwork:
 			:func:`effective_indegrees`, :func:`structural_indegrees`, :func:`structural_outdegrees`
 		"""
 		self._check_compute_variables(eg=True)
-		return sorted(self._eg.out_degree().values(), reverse=True)
+		return sorted([d for n,d in self._eg.out_degree()], reverse=True)
 
 
 	def activity_graph(self, threshold=None):
@@ -511,22 +511,46 @@ class BooleanNetwork:
 			trajectory.append(self.step(trajectory[-1]))
 		return trajectory
 
-	def trajectory_to_attractor(self, initial):
+	def trajectory_to_attractor(self, initial, precompute_attractors=True, return_attractor=False):
 		"""Computes the trajectory starting at ``initial`` until it reaches an attracor (this is garanteed)
 
 		Args:
-			initial (string): the initial state.
+			initial (string): the initial binstate.
+			precompute_attractors (bool): use precomputed attractors, default True
+			return_attractor (bool): also return the attractor reached, default False
 		Returns:
 			(list): the state trajectory between initial and the final attractor state.
+			if return_attractor:
+				(list): the attractor
 		"""
-		self._check_compute_variables(attractors=True)
-		attractor_states = [s for att in self._attractors for s in att]
+		
+		# if the attractors are already precomputed, then we can check when we reach a known state
+		if precompute_attractors:
+			self._check_compute_variables(attractors=True)
+			attractor_states = [self.num2bin(s) for att in self._attractors for s in att]
 
-		trajectory = [initial]
-		while (trajectory[-1] not in attractor_states):
-			trajectory.append(self.step(trajectory[-1]))
+			trajectory = [initial]
+			while (trajectory[-1] not in attractor_states):
+				trajectory.append(self.step(trajectory[-1]))
 
-		return trajectory
+			if return_attractor:
+				attractor = self.attractor(trajectory[-1])
+
+		else:
+			trajectory = [initial]
+			while (trajectory[-1] not in trajectory[:-1]):
+				trajectory.append(self.step(trajectory[-1]))
+
+			# the attractor starts at the first occurence of the element
+			idxatt = trajectory.index(trajectory[-1])
+			if return_attractor:
+				attractor = [self.bin2num(s) for s in trajectory[idxatt:-1]]
+			trajectory = trajectory[:(idxatt+1)]
+
+		if return_attractor:
+			return trajectory, attractor
+		else:
+			return trajectory
 
 	def attractor(self, initial):
 		"""Computes the trajectory starting at ``initial`` until it reaches an attracor (this is garanteed)
@@ -540,7 +564,7 @@ class BooleanNetwork:
 
 		trajectory = self.trajectory_to_attractor(initial)
 		for attractor in self._attractors:
-			if trajectory[-1] in attractor:
+			if self.bin2num(trajectory[-1]) in attractor:
 				return attractor
 
 	def attractors(self, mode='stg'):
@@ -1148,9 +1172,8 @@ class BooleanNetwork:
 		return partial
 
 
-	def approx_dynamic_impact(self, node, n_steps=1, mode='effective', 
-		bound='mean', threshold=0.0,
-		bias=0.5, min_log_prob=np.log(10**(-5))):
+	def approx_dynamic_impact(self, node, n_steps=1, mode='effective', target_set=None,
+		bound='mean', threshold=0.0):
 		"""
 		Use the network structure to approximate the dynamical impact of a perturbation to node for each of n_steps
 
@@ -1165,58 +1188,69 @@ class BooleanNetwork:
 			mode (str) : the structural graph approximation to use
 				'effective' : use the effective graph
 				'structural' : use the structural graph
-				'bias' : use the structural graph with the bias approximation
 
 			bound (str) : the bound for the effective graph
 				'mean'
-
-			bias (float) : the average bias for the bias approximation
-
-			min_log_prob (float) : the default minimum probability
 
 		Returns:
 			(matrix) : approximate dynamical impact for each node at each step (n_steps x n_nodes)
 		"""
 
+		if target_set is None:
+			target_set = range(self.Nnodes)
 
-
-		# choose the underlying graph and get the log edge weight
+		# choose the underlying graph and get the edge weights
 		if mode == 'effective':
 			G = self.effective_graph(bound=bound, threshold=threshold)
-			log_weights = {e:np.log(w) for e,w in nx.get_edge_attributes(G, 'weight').items()}
-			inv_weight_func = lambda x: np.exp(x)
+			weights = {e:w for e,w in nx.get_edge_attributes(G, 'weight').items()}
 
 		elif mode == 'structural':
 			G = self.structural_graph()
-			log_weights = {e:np.log(0.5) for e,w in nx.get_edge_attributes(G, 'weight').items()}
-			inv_weight_func = lambda x: 1.0
+			weights = {e:0.5 for e,w in nx.get_edge_attributes(G, 'weight').items()}
 
-		elif mode == 'bias':
-			G = self.structural_graph()
-			log_weights = {e:np.log(bias) for e,w in nx.get_edge_attributes(G, 'weight').items()}
-			inv_weight_func = lambda x: np.exp(x)
+		
+		impact_matrix = np.zeros((n_steps, len(target_set)))
 
-		weight_func = lambda u, v, d: log_weights.get((u,v), min_log_prob)
+		for itarget, target in enumerate(target_set):
 
-		node_distances = mindist_from_source(G, node)
+			if target != node:
+				# the dict to store all paths
+				allpaths = nx.all_simple_paths(G, source=node, target=target, cutoff=(n_steps))
+				
+				for path in allpaths:
+					length = pathlength(path, weights, rule='prod')
+					for istep in range(1, n_steps):
+						if len(path) <= (istep + 1): # impose the light-code restriction
+							impact_matrix[istep, itarget] = max([length, impact_matrix[istep, itarget]])
 
-		impact_matrix = np.zeros((n_steps, self.Nnodes))
-		for n_step in range(n_steps):
-			# the dict to store all paths
-			paths = {node:[node]}
-
-			# get all nodes that are topologically within the light cone of the perturbation
-			light_cone = [n for n, d in node_distances.items() if d[0]<= (n_step+1)]
-
-			dist = probability_dijkstra_multisource(G.subgraph(light_cone), sources=paths[node], weight=weight_func,
-											   pred=None, paths=paths, target=None)
-			impact_matrix[n_step] = [inv_weight_func(dist[jnode])
-			if ( (jnode != node) and jnode in dist.keys() and len(paths[jnode]) <= (n_step+2)) else 0
-			for jnode in range(self.Nnodes)]
+		
+		
 
 		return impact_matrix
 
+	def dist_from_attractor(self):
+		"Find the distance from attractor for each configuration"
+		self._check_compute_variables(attractors=True)
 
+		dist = {}  # stores [node, distance] pair
+		for att in self._attractors:
+			dist.update({a:(0, a) for a in att})
+			dag = nx.bfs_tree(self._stg, att[0], reverse=True)
+			attractor_states = set(att)
+			for node in nx.topological_sort(dag):
+				# pairs of dist,node for all incoming edges
+				if not node in attractor_states:
+					pairs = [(dist[v][0]+1, v) for v in dag.pred[node]]
+					if pairs:
+						dist[node] = min(pairs)
+					else:
+						dist[node] = (0, node)
+
+		return dist
+
+	def average_dist_from_attractor(self):
+		dist = self.dist_from_attractor()
+		return np.mean([d[0] for d in dist.values() if d[0] > 0])
 
 	#
 	# Dynamics Canalization Map (DCM)
@@ -1288,20 +1322,20 @@ class BooleanNetwork:
 				self._eg = self.effective_graph()
 
 		elif 'stg' in kwargs:
-			self._check_compute_variables(sg=True)
 			if self._stg is None:
+				self._check_compute_variables(sg=True)
 				if self.verbose: print("Computing: State-Transition-Graph")
 				self._stg = self.state_transition_graph()
 
 		elif 'attractors' in kwargs:
-			self._check_compute_variables(stg=True)
 			if self._attractors is None:
+				self._check_compute_variables(stg=True)
 				if self.verbose: print("Computing: Attractors")
 				self._attractors = self.attractors()
 
 		elif 'stg_r' in kwargs:
-			self._check_compute_variables(stg=True)
 			if self._stg_r is None:
+				self._check_compute_variables(stg=True)
 				self._stg_r = self.state_transition_graph_reachability()
 		else:
 			raise Exception('Control variable name not found. %s' % kwargs)
@@ -1344,11 +1378,66 @@ class BooleanNetwork:
 		# otherwise, use the recursive map to change ids to names
 		else:
 			return recursive_map(self._get_node_name, iterable)
-	#
-	# Plotting Methods
-	#
-	def derrida_curve(self, nsamples=10, random_seed=None, method='random'):
+
+	def average_trajectory_length(self, nsamples=10, random_seed=None, method = 'random'):
+		"""The average length of trajectories from a random initial configuration to its attractor.
+
+		Args:
+			nsamples (int) : The number of samples per hammimg distance to get.
+			random_seed (int) : The random state seed.
+			method (string) : specify the method you want. either 'random' or ....
+
+		Returns:
+			trajlen (float) : The average trajectory length to an attractor.
+		"""
+		return sum(len(self.trajectory_to_attractor(random_binstate(self.Nnodes))) for isample in range(nsamples) )/nsamples
+
+	def derrida_curve(self, nsamples=10, max_hamm = None, random_seed=None, method='random'):
+
 		"""The Derrida Curve (also reffered as criticality measure :math:`D_s`).
+		When "mode" is set as "random" (default), it would use random sampling to estimate Derrida value
+		If "mode" is set as "sensitivity", it would use c-sensitivity to calculate Derrida value (slower)
+		You can refer to :cite:'kadelka2017influence' about why c-sensitivity can be used to caculate Derrida value
+
+		Args:
+			nsamples (int) : The number of samples per hammimg distance to get.
+			max_hamm (int) : The maximum Hamming distance between starting states. default: self.Nnodes
+			random_seed (int) : The random state seed.
+			method (string) : specify the method you want. either 'random' or 'sensitivity'
+
+		Returns:
+			(dx,dy) (tuple) : The dx and dy of the curve.
+		"""
+		random.seed(random_seed)
+
+		if max_hamm is None or (max_hamm > self.Nnodes):
+			max_hamm = self.Nnodes
+
+		dx = np.linspace(0,1,max_hamm, endpoint=True)
+		dy = np.zeros(max_hamm+1)
+
+		if method == 'random':
+			# for each possible hamming distance between the starting states
+			for hamm_dist in range(1, max_hamm + 1):
+
+				# sample nsample times
+				for isample in range(nsamples):
+					rnd_config = random_binstate(self.Nnodes)
+					perturbed_var = random.sample(range(self.Nnodes), hamm_dist)
+					perturbed_config = [flip_bit(rnd_config[ivar]) if ivar in perturbed_var else rnd_config[ivar] for ivar in range(self.Nnodes)]
+					dy[hamm_dist] += hamming_distance(self.step(rnd_config), self.step(perturbed_config)) / self.Nnodes # normalized Hamming Distance
+
+			dy /= nsamples
+
+		elif method == 'sensitivity':
+
+			for hamm_dist in range(1, max_hamm +1):
+				dy[hamm_dist] = sum([node.c_sensitivity(hamm_dist,mode='forceK',max_k=self.Nnodes) for node in self.nodes])/self.Nnodes
+
+		return dx, dy
+
+	def derrida_coefficient(self, nsamples=10, random_seed=None, method='random'):
+		"""The Derrida Coefficient.
 		When "mode" is set as "random" (default), it would use random sampling to estimate Derrida value
 		If "mode" is set as "sensitivity", it would use c-sensitivity to calculate Derrida value (slower)
 		You can refer to :cite:'kadelka2017influence' about why c-sensitivity can be used to caculate Derrida value
@@ -1362,27 +1451,23 @@ class BooleanNetwork:
 			(dx,dy) (tuple) : The dx and dy of the curve.
 		"""
 		random.seed(random_seed)
-
-		dx = np.linspace(0,1,self.Nnodes)
-		dy = np.zeros(self.Nnodes)
+		hamm_dist = 1
 
 		if method == 'random':
 			# for each possible hamming distance between the starting states
-			for hamm_dist in range(1, self.Nnodes + 1):
+			
+			dy = 0
+			# sample nsample times
+			for isample in range(nsamples):
+				rnd_config = random_binstate(self.Nnodes)
+				perturbed_var = random.sample(range(self.Nnodes), hamm_dist)
+				perturbed_config = [flip_bit(rnd_config[ivar]) if ivar in perturbed_var else rnd_config[ivar] for ivar in range(self.Nnodes)]
+				dy += hamming_distance(self.step(rnd_config), self.step(perturbed_config)) / self.Nnodes # normalized Hamming Distance
 
-				# sample nsample times
-				for isample in range(nsamples):
-					rnd_config = random_binstate(self.Nnodes)
-					perturbed_var = random.sample(range(self.Nnodes), hamm_dist)
-					perturbed_config = [flip_bit(rnd_config[ivar]) if ivar in perturbed_var else rnd_config[ivar] for ivar in range(self.Nnodes)]
-					dy[hamm_dist-1] += hamming_distance(self.step(rnd_config), self.step(perturbed_config))
+			dy /= float(nsamples)
 
-			dy /= float(self.Nnodes * nsamples)
 		elif method == 'sensitivity':
-			for hamm_dist in range(1,self.Nnodes +1):
-				dy[hamm_dist-1] = sum([node.c_sensitivity(hamm_dist,mode='forceK',max_k=self.Nnodes) for node in self.nodes])/self.Nnodes
+			raise NotImplementedError
+			dy = sum([node.c_sensitivity(hamm_dist,mode='forceK',max_k=self.Nnodes) for node in self.nodes])
 
-		return dx, dy
-
-
-
+		return dy * self.Nnodes

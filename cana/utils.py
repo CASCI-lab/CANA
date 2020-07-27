@@ -1,10 +1,11 @@
 import networkx as nx
 import numpy as np
-from itertools import product, zip_longest, count
+from itertools import product, zip_longest, count, takewhile
 import copy
 import math
 import random
 import operator as op
+from functools import reduce
 
 from heapq import heappush, heappop
 
@@ -444,6 +445,9 @@ def output_transitions(eval_line, input_list):
 
 	return output_list
 
+def seq_upto(seq, obj):
+	return takewhile(lambda el: el != obj, iter(seq))
+
 def mindist_from_source(G, source):
 	dag = nx.bfs_tree(G, source)
 	dist = {}  # stores [node, distance] pair
@@ -457,52 +461,19 @@ def mindist_from_source(G, source):
 
 	return dist
 
-
-def probability_dijkstra_multisource(G, sources, weight, pred=None, paths=None,
-						  target=None, min_prob=-10**10):
-	"""Uses Dijkstra's algorithm to find shortest weighted paths when all values are negative
-	(shortest path is closest to 0)
-	modified from Network X
-
+def pathlength(p, weights, rule='sum'):
 	"""
-	G_succ = G._succ if G.is_directed() else G._adj
-
-	push = heappush
-	pop = heappop
-	dist = {}  # dictionary of final distances
-	seen = {}
-	# fringe is heapq with 3-tuples (distance,c,node)
-	# use the count c to avoid comparing nodes (may not be able to)
-	c = count()
-	fringe = []
-	for source in sources:
-		if source not in G:
-			raise nx.NodeNotFound("Source {} not in G".format(source))
-		seen[source] = 0
-		push(fringe, (0, next(c), source))
-	while fringe:
-		(d, _, v) = pop(fringe)
-		if v in dist:
-			continue  # already searched this node.
-		dist[v] = d
-		if v == target:
-			break
-		for u, e in G_succ[v].items():
-			cost = weight(v, u, e)
-			if cost is None:
-				continue
-			vu_dist = dist[v] + cost
-			if u not in seen or vu_dist > seen[u]:  # vu_dist < seen[u]:
-				seen[u] = vu_dist
-				push(fringe, (vu_dist, next(c), u))
-				if paths is not None:
-					paths[u] = paths[v] + [u]
-				if pred is not None:
-					pred[u] = [v]
-			elif vu_dist == seen[u]:
-				if pred is not None:
-					pred[u].append(v)
-
-	# The optional predecessor and path dictionaries can be accessed
-	# by the caller via the pred and paths objects passed as arguments.
-	return dist
+	Calculate the length of path p, with weighted edges, given the length rule of:
+		'sum' - sum of edge weights along path
+		'prod' - product of edge weights along path
+		'min' - minimum of edge weights along path (weakest-link)
+		'max' - maximum of edge weights along path
+	"""
+	if rule == 'sum':
+		return sum(weights[(p[ie], p[ie+1])] for ie in range(len(p)-1))
+	elif rule == 'prod':
+		return np.prod([weights[(p[ie], p[ie+1])] for ie in range(len(p)-1)])
+	elif rule== 'min':
+		return min(weights[(p[ie], p[ie+1])] for ie in range(len(p)-1))
+	elif rule == 'max':
+		return max(weights[(p[ie], p[ie+1])] for ie in range(len(p)-1))
