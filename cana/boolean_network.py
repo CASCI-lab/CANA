@@ -1527,12 +1527,12 @@ class BooleanNetwork:
 				rnd_config = random_binstate(self.Nnodes)
 				perturbed_var = random.sample(range(self.Nnodes), hamm_dist)
 				perturbed_config = [flip_bit(rnd_config[ivar]) if ivar in perturbed_var else rnd_config[ivar] for ivar in range(self.Nnodes)]
-				dy += hamming_distance(self.step(rnd_config), self.step(perturbed_config)) / self.Nnodes # normalized Hamming Distance
+				dy += hamming_distance(self.step(rnd_config), self.step(perturbed_config))
 
 			dy /= float(nsamples)
 
 		elif method == 'sensitivity':
-			raise NotImplementedError
+			# raise NotImplementedError
 			dy = sum([node.c_sensitivity(hamm_dist,mode='forceK',max_k=self.Nnodes) for node in self.nodes])
 
 		return dy * self.Nnodes
