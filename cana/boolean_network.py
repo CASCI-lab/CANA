@@ -1535,4 +1535,4 @@ class BooleanNetwork:
 			# raise NotImplementedError
 			dy = sum([node.c_sensitivity(hamm_dist,mode='forceK',max_k=self.Nnodes) for node in self.nodes])
 
-		return dy * self.Nnodes
+		return dy / float(self.Nnodes)
