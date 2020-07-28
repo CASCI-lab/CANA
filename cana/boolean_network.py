@@ -1171,8 +1171,76 @@ class BooleanNetwork:
 
 		return partial
 
+	def approx_dynamic_impact(self, source, n_steps=1, target_set=None, bound='mean', threshold=0.0):
+		"""
+			Use the network structure to approximate the dynamical impact of a perturbation to node for each of n_steps
 
-	def approx_dynamic_impact(self, node, n_steps=1, mode='effective', target_set=None,
+			for details see: Gates et al (2020)
+
+		#
+			Args:
+			source (int) : the source index for perturbations
+
+			n_steps (int) : the number of time steps
+
+			bound (str) : the bound for the effective graph
+				'mean' - edge effectiveness
+				'upper' - activity
+
+		Returns:
+			(matrix) : approximate dynamical impact for each node at each step (2 x n_steps x n_nodes)
+		"""
+
+		if target_set is None:
+			target_set = range(self.Nnodes)
+
+		Gstr = self.structural_graph()
+		
+		Geff = self.effective_graph(bound=bound, threshold=threshold)
+		# the maximum path with length given by product of weights is the same as minimal path of negative log weight
+		def eff_weight_func(u, v, e):
+			return -np.log(e['weight'])
+		
+		impact_matrix = np.zeros((2, n_steps+1, len(target_set)))
+		impact_matrix[0, :, :] = self.Nnodes + 1 # if we can't reach the node, then the paths cant be longer than the number of nodes in the graph
+
+		Gstr_shortest_dist, Gstr_shortest_paths = nx.single_source_dijkstra(Gstr, source, target=None, cutoff=n_steps)
+		Gstr_shortest_dist = {n:int(l) for n, l in Gstr_shortest_dist.items()}
+
+		Geff_shortest_dist, Geff_shortest_paths = nx.single_source_dijkstra(Geff, source, target=None, cutoff=n_steps, weight=eff_weight_func)
+		
+		for itar, target in enumerate(target_set):
+
+			if target != source and not Gstr_shortest_dist.get(target, None) is None:
+				impact_matrix[0, list(range(Gstr_shortest_dist[target], n_steps+1)), itar] = Gstr_shortest_dist[target]
+
+				# the number is edges in the path is one less than the number of nodes
+				eff_path_steps = len(Geff_shortest_paths.get(itar, range(n_steps+1))) - 1 
+				
+				# check to see if the effective path is longer than the light cone
+				if eff_path_steps > Gstr_shortest_dist[target] and eff_path_steps < n_steps + 1:
+					#allpaths = nx.all_simple_paths(Geff, source=source, target=target, cutoff=eff_path_steps - 1)
+					#for path in allpaths:
+					#	length = pathlength(path, nx.get_edge_attributes(Geff, 'weight'), rule='prod')
+					#print("Redo", target, Gstr_shortest_dist[target], eff_path_steps)
+
+					for istep in range(Gstr_shortest_dist[target], eff_path_steps):
+						
+						# bc the effective graph has fully redundant edges, there may actually not be a path
+						try:
+							redo_dijkstra_dist, _ = nx.single_source_dijkstra(Geff, source, target=target, cutoff=istep, weight=eff_weight_func)
+							impact_matrix[1, istep, itar] = np.exp(-redo_dijkstra_dist) 
+						except nx.NetworkXNoPath:
+							pass
+
+				# for all other steps the effective path is the best
+				if not Geff_shortest_dist.get(target, None) is None and eff_path_steps < n_steps + 1:
+					impact_matrix[1, list(range(eff_path_steps, n_steps+1)), itar] = np.exp(-Geff_shortest_dist[target])
+
+		return impact_matrix[:,1:]
+		
+
+	def approx_dynamic_impact2(self, node, n_steps=1, mode='effective', target_set=None,
 		bound='mean', threshold=0.0):
 		"""
 		Use the network structure to approximate the dynamical impact of a perturbation to node for each of n_steps
@@ -1222,9 +1290,6 @@ class BooleanNetwork:
 					for istep in range(1, n_steps):
 						if len(path) <= (istep + 1): # impose the light-code restriction
 							impact_matrix[istep, itarget] = max([length, impact_matrix[istep, itarget]])
-
-		
-		
 
 		return impact_matrix
 
