@@ -209,7 +209,7 @@ def find_two_symbols_v2(k=1, prime_implicants=None, verbose=False, verbose_level
 	# Init
 	n_pi = len(prime_implicants)
 	pi_matrix = np.array(tuple(map(tuple, prime_implicants)), dtype=int)
-
+	
 	# List of the Two-Symbol Schematas
 	TS = []
 
@@ -217,7 +217,7 @@ def find_two_symbols_v2(k=1, prime_implicants=None, verbose=False, verbose_level
 	#Qpi = []
 	#Qpi = Queue()
 	Q = deque()
-	Q_history = set()
+	Q_history = {}
 	Q.append( pi_matrix )
 	i = 0
 
@@ -280,16 +280,16 @@ def find_two_symbols_v2(k=1, prime_implicants=None, verbose=False, verbose_level
 					idxs_subset = list(idxs_subset)
 					schemata_subset = schematas[ idxs_subset , : ]
 					# This schemata has already been inserted onto the Queue before?
-					if schemata_subset.tostring() not in Q_history:
+					if find_scheme_in_Q_history(schemata_subset,Q_history)==False:
 						if verbose and verbose_level>25:
 							print('>>> QUEUE: appending (idxs: %s)' % (idxs_subset))
 							print(schemata_subset)
 						Q.append( schemata_subset )
-						Q_history.add(schemata_subset.tostring())
+						Q_history = add_scheme_to_Q_history(schemata_subset,Q_history)
 					else:
 						if verbose and verbose_level>25:
 							print('>>> QUEUE: duplicate, skip (idxs: %s)' % (idxs_subset))
-
+	
 	if verbose:
 		print('>>> TWO-SYMBOLS:')
 		for i,(tss,perms) in enumerate(TS):
@@ -441,19 +441,23 @@ def _expand_ts_logic(two_symbols, permut_indexes):
 	Q = deque()
 	Q.extend(two_symbols)
 	logics = []
-	#
-	while Q:
-		implicant = np.array( Q.pop() )
-		for idxs in permut_indexes:
-			# Permutation of all possible combinations of the values that are permutable.
-			for vals in itertools.permutations(implicant[idxs], len(idxs)):
-				# Generate a new schema
+	# For each set of permutable elements
+	for idxs in permut_indexes:
+		Qnext = []
+		# we go through each implicant in the Queue
+		for implicant in Q:
+			implicant = np.array(implicant)
+			# We then determine the set of combintaions of implicants (no duplicates due to permutation on index values)
+			for vals in set(itertools.permutations(implicant[idxs],len(idxs))):
 				_implicant = copy.copy(implicant)
+				# We create that new implicant based on that the permutation value that we are at. 
 				_implicant[idxs] = vals
-				# Insert to list of logics if not already there
+				# if we haven't seen this implicant before, we add it to the possible implicants
 				if not(_implicant.tolist() in logics):
 					logics.append(_implicant.tolist())
-					Q.append(_implicant.tolist())
+					#we also add it to the list of implicants to look over for the next idxs. 
+					Qnext.append(_implicant.tolist())
+		Q.extend(Qnext)
 	return logics
 
 def _check_schemata_permutations_v2(schematas, perm_groups, verbose=False, verbose_level=0):
@@ -609,6 +613,41 @@ def _count_cols_symbols_v2(pi_matrix=None, verbose=False, verbose_level=0):
 
 	return counts
 
+def find_scheme_in_Q_history(schemata_subset,Q_history):
+	""" The history of Q is searched for a specific schemata subset using a tree storage pattern.
+	Inputs:
+		schemata_subsets
+		Q_history
+	Return:
+		True if it is in Q_history
+		False if it is not in Q_history
+	"""
+	Q_level = Q_history
+	for schemata in schemata_subset:
+		schemata = schemata.tostring()
+		if schemata not in Q_level:
+			return False
+		else:
+			Q_level=Q_level[schemata]
+	return True
+
+def add_scheme_to_Q_history(schemata_subset,Q_history):
+	""" Adds to the Q_history the given subset using a tree storage pattern.
+	Inputs:
+		schemata_subsets
+		Q_history
+	Return:
+		Q_history, modified with the addition of the subset. 
+	"""
+	Q_level = Q_history
+	for schemata in schemata_subset:
+		schemata = schemata.tostring()
+		if schemata in Q_level:
+			Q_level=Q_level[schemata]
+		else: 
+			Q_level[schemata]={}
+			Q_level=Q_level[schemata]
+	return Q_history
 
 ############ START OF TWO SYMBOL v.1 ############
 # This version does not conside '11' and '00' as permutable symbols and had other bugs solved by v2
