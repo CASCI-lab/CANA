@@ -368,14 +368,12 @@ class BooleanNetwork:
 		self._check_compute_variables(sg=True)
 		return sorted([d for n,d in self._sg.out_degree()], reverse=True)
 
-	def effective_graph(self, mode='input', bound='mean', threshold=None):
+	def effective_graph(self, bound='mean', threshold=None):
 		"""Computes and returns the effective graph of the network.
 		In practive it asks each :class:`~boolnets.boolean_node.BooleanNode` for their :func:`~boolnets.boolean_node.BooleanNode.effective_connectivity`.
 
 		Args:
-			mode (string) : Per "input" or per "node". Defaults to "node".
 			bound (string) : The bound to which compute input redundancy.
-				Mode "node" accepts: ["lower", "upper"].
 				Mode "input" accepts: ["lower", "mean", "upper", "tuple"].
 				Defaults to "mean".
 			threshold (float) : Only return edges above a certain effective connectivity threshold.
@@ -398,18 +396,11 @@ class BooleanNetwork:
 
 		# Add Edges
 		for i, node in enumerate(self.nodes, start=0):
-
-			if mode == 'node':
-				raise Exception('TODO')
-
-			elif mode == 'input':
-				e_is = node.effective_connectivity(mode=mode, bound=bound, norm=False)
-				for inputs,e_i in zip(self.logic[i]['in'], e_is):
-					# If there is a threshold, only return those number above the threshold. Else, return all edges.
-					if (threshold is None)  or ((threshold is not None) and (e_i > threshold)):
-						self._eg.add_edge(inputs, i, **{'weight':e_i})
-			else:
-				raise AttributeError('The mode you selected does not exist. Try "node" or "input".')
+			e_is = node.edge_effectiveness(bound=bound)
+			for inputs,e_i in zip(self.logic[i]['in'], e_is):
+				# If there is a threshold, only return those number above the threshold. Else, return all edges.
+				if (threshold is None)  or ((threshold is not None) and (e_i > threshold)):
+					self._eg.add_edge(inputs, i, **{'weight':e_i})
 
 		return self._eg
 
@@ -440,7 +431,16 @@ class BooleanNetwork:
 
 	def activity_graph(self, threshold=None):
 		"""
+		Returns the activity graph as proposed in 
 		Ghanbarnejad & Klemm (2012) EPL, 99
+		
+		Args:
+			threshold (float) : Only return edges above a certain activity threshold.
+				This is usefull when computing graph measures at diffent levels.
+
+		Returns:
+			(networkx.DiGraph) : directed graph
+
 		"""
 
 		if threshold is not None:
