@@ -11,15 +11,12 @@ Boolean Canalization
 #	Etienne Nzabarushimana <enzabaru@indiana.edu>
 #   All rights reserved.
 #   MIT license.
-import networkx as nx
+
 import numpy as np
-import pandas as pd
+
 import itertools
 from .. utils import *
-try:
-	from Queue import Queue, PriorityQueue
-except ImportError:
-	from queue import Queue, PriorityQueue
+
 from collections import deque
 
 __author__ = """\n""".join([
@@ -34,11 +31,9 @@ __author__ = """\n""".join([
 def make_transition_density_tables(k=1, outputs=[0,1]):
 	""" This method creates a tuple-of-lists that is used to calculate Prime Implicants in the first step of the Quine-McCluskey algorithm :cite:`Quine:1955`.
 	In practice it separates the positive and negative transitions (tuple), then further separates it by counting the number of 1's in each (lists).
-
 	Args:
 		k (int) : the ``k`` number of inputs
 		outputs (list) : a list of ``[0,1]`` output for each state number.
-
 	Returns:
 		tables (tuple) : a tuple where [0] is the negative table and [1] is the positive table.
 	"""
@@ -60,15 +55,13 @@ def make_transition_density_tables(k=1, outputs=[0,1]):
 	#
 	return transition_density_tuple
 
-def find_implicants_qm(column, verbose=False):
+def find_implicants_qmOLD(column, verbose=False):
 	""" Finds the prime implicants (PI) using the Quine-McCluskey algorithm :cite:`Quine:1955`.
-
 	Args:
 		column (list) : A list-of-lists containing the counts of ``1`` for each input.
 			This is given by `make_transition_density_tables`.
 	Returns:
 		PI (set): a set of prime implicants.
-
 	# Authors: Alex Gates and Etienne Nzabarushimana
 	"""
 

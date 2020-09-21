@@ -1,10 +1,14 @@
 from setuptools import setup, find_packages
+from distutils.extension import Extension
 from cana import __package__, __title__, __description__, __version__
-
+from Cython.Build import cythonize
 
 def readme():
 	with open('README.md') as f:
 		return f.read()
+
+# cythonize awesomeness
+ext_modules=["cana/cutils.pyx", "cana/canalization/cboolean_canalization.pyx"]
 
 setup(
 	name=__package__,
@@ -35,8 +39,10 @@ setup(
 		'numpy',
 		'scipy',
 		'networkx',
-		'pandas'
+		'pandas',
+		'cython'
 	],
 	include_package_data=True,
 	zip_safe=False,
+	ext_modules = cythonize(ext_modules, include_path=['']) # cython awesomeness
 	)

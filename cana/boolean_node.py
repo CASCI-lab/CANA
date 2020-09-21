@@ -17,7 +17,7 @@ import numpy as np
 import pandas as pd
 from itertools import compress, combinations
 from collections import defaultdict
-from cana.canalization import boolean_canalization as BCanalization
+from cana.canalization import cboolean_canalization as BCanalization
 import warnings
 from cana.utils import *
 #
@@ -55,7 +55,7 @@ class BooleanNode(object):
 			self.step = self.dynamic_step
 
 		# Canalization Variables
-		self._transition_density_tuple = None 	# A tuple of transition tables used in the first step of the QM algorithm.
+		self._transition_density_groups = None 	# A tuple of transition tables used in the first step of the QM algorithm.
 		self._prime_implicants = None 			# A tuple of negative and positive prime implicants.
 		self._two_symbols = None 				# The Two Symbol (TS) Schemata
 		self._pi_coverage = None 				# The Coverage of inputs by Prime Implicants schemata
@@ -87,27 +87,20 @@ class BooleanNode(object):
 
 		return BooleanNode(name=name, k=k, inputs=inputs, state=state, outputs=outputs, *args, **kwargs)
 
-	def input_redundancy(self, mode='node', bound='upper', norm=True):
+	def input_redundancy(self, bound='upper', norm=True):
 		r""" The Input Redundancy :math:`k_{r}` is the mean number of unnecessary inputs (or ``#``) in the Prime Implicants Look Up Table (LUT).
 		Since there may be more than one redescription schema for each input entry, the input redundancy is bounded by an upper and lower limit.
-		It can also be computed per input :math:`r_i`.
 
 
 		.. math::
 
 			k_{r}(x) = \frac{ \sum_{f_{\alpha} \in F} \Phi_{\theta:f_{\alpha} \in \Theta_{\theta}} (n^{\#}_{\theta} ) }{ |F| }
 
-		.. math::
-
-			r_i(x_i) = \frac{ \sum_{f_{\alpha} \in F} \Phi_{\theta:f_{\alpha} \in \Theta_{\theta}} (X^{\#}_{\theta_i} ) }{ |F| }
-
 		where :math:`\Phi` is a function (:math:`min` or :math:`max`) and :math:`F` is the node LUT.
 
 		Args:
-			mode (string) : Per "input" or per "node". Defaults to "node".
 			bound (string) : The bound to which compute input redundancy.
-				Mode "node" accepts: ["lower", "upper"].
-				Mode "input" accepts: ["lower", "mean", "upper", "tuple"].
+				["lower", "upper"].
 				Defaults to "upper".
 			norm (bool) : Normalized between [0,1].
 				Use this value when comparing nodes with different input sizes. (Defaults to "True".)
@@ -116,124 +109,150 @@ class BooleanNode(object):
 
 
 		Returns:
-			(float / list) : The :math:`k_r` value or a list of :math:`r_i`.
+			(float) : The :math:`k_r` value.
 
 		Note:
 			The complete mathematical description can be found in :cite:`Marques-Pita:2013`.
+
+		See also:
+			:func:`effective_connectivity`, :func:`input_symmetry`, :func:`edge_redundancy`.
+		"""
+		# Canalization can only occur when k>= 2
+		if self.k < 2:
+			return 0.0
+
+		self._check_compute_canalization_variables(pi_coverage=True)
+		
+		if bound == 'upper':
+			minmax = max
+		elif bound == 'lower':
+			minmax = min
+		else:
+			raise AttributeError('The bound you selected does not exist. Try "upper", or "lower"')
+
+		redundancy = [minmax([pi.count('#') for pi in self._pi_coverage[binstate]]) for binstate in self._pi_coverage]
+
+		k_r = sum(redundancy) / 2**self.k
+
+		if (norm):
+			# Normalizes
+			k_r = k_r / self.k
+
+		return k_r
+
+	def edge_redundancy(self, bound = 'mean'):
+		r""" The Edge Redundancy :math:`r_i` is the mean number of unnecessary inputs (or ``#``) in the Prime Implicants Look Up Table (LUT) for that input.
+		Since there may be more than one redescription schema for each input entry, the input redundancy is bounded by an upper and lower limit.
+
+		.. math::
+
+			r_i(x_i) = \frac{ \sum_{f_{\alpha} \in F} \Phi_{\theta:f_{\alpha} \in \Theta_{\theta}} (X^{\#}_{\theta_i} ) }{ |F| }
+
+		where :math:`\Phi` is a function (:math:`min` or :math:`max`) and :math:`F` is the node LUT.
+
+		Args:
+			bound (string) : The bound to which compute input redundancy.
+				Mode "input" accepts: ["lower", "mean", "ave", upper", "tuple"].
+				Defaults to "mean".
+
+
+		Returns:
+			(list) : The list of :math:`r_i` for inputs.
+
+		Note:
+			The complete mathematical description can be found in :cite:Gates:2020`.
 
 		See also:
 			:func:`effective_connectivity`, :func:`input_symmetry`.
 		"""
 		# Canalization can only occur when k>= 2
 		if self.k < 2:
-			if mode == 'node':
-				return 0.0
-			elif mode == 'input':
-				return [0.0]
-			else:
-				raise AttributeError('The mode you selected does not exist. Try "node" or "input".')
+			return [0.0]
 
 		self._check_compute_canalization_variables(pi_coverage=True)
 
-		# Per Node
-		if mode == 'node':
-
-			if bound == 'upper':
-				minmax = max
-			elif bound == 'lower':
-				minmax = min
+		redundancies = []
+		# Generate a per input coverage
+		# ex: {0: {'11': [], '10': [], '00': [], '01': []}, 1: {'11': [], '10': [], '00': [], '01': []}}
+		#pi_edge_coverage = { input : { binstate: [ pi[input] for pi in pis ] for binstate,pis in self._pi_coverage.items() } for input in range(self.k) }
+		pi_edge_coverage = BCanalization.input_wildcard_coverage(self._pi_coverage)
+		# Loop ever input node
+		for edge, binstates2wildcard in pi_edge_coverage.items():
+			# {'numstate': [matches], '10': [True,False,True,...] ...}
+			
+			#countslenghts = {binstate_to_statenum(binstate): ([pi=='#' for pi in pis]) for binstate,pis in binstates.items() }
+			# A triplet of (min, mean, max) values
+			if bound == 'lower':
+				redundancy = sum( [all(pi) for pi in binstates2wildcard.values()] ) / 2**self.k  # min(r_i)
+			elif bound == 'mean' or bound=='ave':
+				redundancy = sum( [sum(pi)/len(pi) for pi in binstates2wildcard.values()] ) / 2**self.k  # <r_i>
+			elif bound == 'upper':
+				redundancy = sum( [any(pi) for pi in binstates2wildcard.values()] ) / 2**self.k # max(r_i)
+			elif bound == 'tuple':
+				redundancy = ( sum([all(pi) for pi in binstates2wildcard.values()]) / 2**self.k , sum([any(pi) for pi in binstates2wildcard.values()]) / 2**self.k ) # (min,max)
 			else:
-				raise AttributeError('The bound you selected does not exist. Try "upper", or "lower"')
+				raise AttributeError('The bound you selected does not exist. Try "upper", "mean", "lower" or "tuple".')
 
-			redundancy = [minmax([pi.count('2') for pi in self._pi_coverage[binstate]]) for binstate in self._pi_coverage]
+			redundancies.append(redundancy)
 
-			k_r = sum(redundancy) / 2**self.k
+		return redundancies # r_i
 
-			if (norm):
-				# Normalizes
-				k_r = k_r / self.k
-
-			return k_r
-
-		# Per Input
-		elif mode == 'input':
-
-			redundancies = []
-			# Generate a per input coverage
-			# ex: {0: {'11': [], '10': [], '00': [], '01': []}, 1: {'11': [], '10': [], '00': [], '01': []}}
-			pi_input_coverage = { input : { binstate: [ pi[input] for pi in pis ] for binstate,pis in self._pi_coverage.items() } for input in range(self.k) }
-
-			# Loop ever input node
-			for input,binstates in pi_input_coverage.items():
-				# {'numstate': [matches], '10': [True,False,True,...] ...}
-				countslenghts = {binstate_to_statenum(binstate): ([pi=='2' for pi in pis]) for binstate,pis in binstates.items() }
-				# A triplet of (min, mean, max) values
-				if bound == 'lower':
-					redundancy = sum( [all(pi) for pi in countslenghts.values()] ) / 2**self.k  # min(r_i)
-				elif bound == 'mean':
-					redundancy = sum( [sum(pi)/len(pi) for pi in countslenghts.values()] ) / 2**self.k  # <r_i>
-				elif bound == 'upper':
-					redundancy = sum( [any(pi) for pi in countslenghts.values()] ) / 2**self.k # max(r_i)
-				elif bound == 'tuple':
-					redundancy = ( sum([all(pi) for pi in countslenghts.values()]) / 2**self.k , sum([any(pi) for pi in countslenghts.values()]) / 2**self.k ) # (min,max)
-				else:
-					raise AttributeError('The bound you selected does not exist. Try "upper", "mean", "lower" or "tuple".')
-
-				redundancies.append(redundancy)
-
-			return redundancies # r_i
-
-		else:
-			raise AttributeError('The mode you selected does not exist. Try "node" or "input".')
-
-	def effective_connectivity(self, mode='node', bound='upper', norm=True):
+	def effective_connectivity(self, bound='upper', norm=True):
 		r"""The Effective Connectiviy is the mean number of input nodes needed to determine the transition of the node.
 
 		.. math::
 
 			k_e(x) = k(x) - k_r(x)
 
-		.. math::
-
-			e_i(x_i) = k(x_i) - k_r(x_i)
 
 		Args:
-			mode (string) : Per "input" or per "node". Default is "node".
 			bound (string) : The bound for the :math:`k_r` Input Redundancy
 			norm (bool) : Normalized between [0,1].
 				Use this value when comparing nodes with different input sizes. (Defaults to "True".)
 
 				:math:`k^{*}_e(x) = \frac{ k_e(x) }{ k(x) }`.
 
-
 		Returns:
-			(float/list) : The :math:`k_e` value or a list of :math:`e_r`.
+			(float) : The :math:`k_e` value.
 
 		See Also:
 			:func:`input_redundancy`, :func:`input_symmetry`, :func:`~boolnets.boolean_network.BooleanNetwork.effective_graph`.
 		"""
 		# Canalization can only occur when k>= 2
 		if self.k < 2:
-			if mode == 'node':
-				return 1.0
-			elif mode == 'input':
-				return [1.0]
-			else:
-				raise AttributeError('The mode you selected does not exist. Try "node" or "input".')
+			return 1.0
 
-		if mode == 'node':
+		k_r = self.input_redundancy(bound=bound, norm=False)
+		k_e = self.k - k_r
+		if (norm):
+			k_e = k_e / self.k
+		return k_e
 
-			k_r = self.input_redundancy(mode=mode, bound=bound, norm=False)
-			k_e = self.k - k_r
-			if (norm):
-				k_e = k_e / self.k
-			return k_e
 
-		elif mode == 'input':
-			e_i = [1 - x_i for x_i in self.input_redundancy(mode=mode, bound=bound, norm=False)]
-			return e_i
-		else:
-			raise AttributeError('The mode you selected does not exist. Try "node" or "input".')
+	def edge_effectiveness(self, bound = 'mean'):
+		r"""The Edge Effectiveness is the mean number of an input's states needed to determine the transition of the node.
+
+		.. math::
+
+			e_i(x_i) = 1 - r_i(x_i)
+
+		Args:
+			bound (string) : The bound for the :math:`k_r` Input Redundancy
+
+		Returns:
+			(list) : The list of :math:`e_r` values.
+
+		See Also:
+			:func:`input_redundancy`, :func:`input_symmetry`, :func:`~boolnets.boolean_network.BooleanNetwork.effective_graph`.
+		"""
+		# Canalization can only occur when k>= 2
+		if self.k < 2:
+			return [1.0]
+			
+		e_i = [1.0 - x_i for x_i in self.edge_redundancy(bound=bound)]
+		return e_i
+		
+
 
 	def input_symmetry(self, mode='node', bound='upper', norm=True):
 		r"""The Input Symmetry is a measure of permutation redundancy.
@@ -267,6 +286,7 @@ class BooleanNode(object):
 			:func:`input_redundancy`, :func:`effective_connectivity`
 		"""
 		# Canalization can only occur when k>= 2
+		raise ImplementationError('Not Error Checked. Will Do this on the next update.')
 		if self.k < 2:
 			if mode == 'node':
 				return 0.0
@@ -608,30 +628,35 @@ class BooleanNode(object):
 	def _check_compute_canalization_variables(self, **kwargs):
 		""" Recursevely check if the requested canalization variables are instantiated/computed, otherwise computes them in order.
 		For example: to compute `two_symbols` we need `prime_implicants` first.
-		Likewise, to compute `prime_implicants` we need the `transition_density_tuple` first.
+		Likewise, to compute `prime_implicants` we need the `transition_density_table` first.
 		"""
-		if 'transition_density_tuple' in kwargs:
-			if self._transition_density_tuple is None:
-				if self.verbose: print("Computing: Transition Density Tuple Table")
-				self._transition_density_tuple = BCanalization.make_transition_density_tables(self.k, self.outputs)
+		if 'transition_density_group' in kwargs:
+			if self._transition_density_groups is None:
+				if self.verbose: print("Computing: Transition Density Tuple Groups")
+				#self._transition_density_groups = BCanalization.make_transition_density_groups(self.k, self.outputs)
 
 		elif 'prime_implicants' in kwargs:
-			self._check_compute_canalization_variables(transition_density_tuple=True)
+			#self._check_compute_canalization_variables(transition_density_group=True)
 			if self._prime_implicants is None:
 				if self.verbose: print("Computing: Prime Implicants")
-				self._prime_implicants = \
-					(
-						BCanalization.find_implicants_qm(column=self._transition_density_tuple[0]),
-						BCanalization.find_implicants_qm(column=self._transition_density_tuple[1])
-					)
+				self._prime_implicants = dict()
+				for output in set(self.outputs):
+					out_binstates = [statenum_to_binstate(statenum, self.k) for statenum in range(2**self.k) if self.outputs[statenum] == output ]
+					self._prime_implicants[output] = BCanalization.find_implicants_qm(input_binstates=out_binstates)
 
 		elif 'pi_coverage' in kwargs:
 			self._check_compute_canalization_variables(prime_implicants=True)
 			if self._pi_coverage is None:
 				if self.verbose: print("Computing: Coverage of Prime Implicants")
-				self._pi_coverage = BCanalization.computes_pi_coverage(self.k, self.outputs, self._prime_implicants)
+				self._pi_coverage = dict()
+				for output, piset in self._prime_implicants.items():
+					self._pi_coverage.update(BCanalization.return_pi_coverage(piset))
+
+				# make sure every inputstate was covered by at least one prime implicant
+				assert len(self._pi_coverage) == 2**self.k
 
 		elif 'two_symbols' in kwargs:
+			raise Exception('Two Symbol Error. %s' % kwargs)
 			self._check_compute_canalization_variables(prime_implicants=True)
 			if self._two_symbols is None:
 				if self.verbose: print("Computing: Two Symbols")
@@ -641,6 +666,7 @@ class BooleanNode(object):
 						BCanalization.find_two_symbols_v2(k=self.k, prime_implicants=self._prime_implicants[1])
 					)
 		elif 'ts_coverage' in kwargs:
+			raise Exception('Two Symbol Error. %s' % kwargs)
 			self._check_compute_canalization_variables(two_symbols=True)
 			if self._ts_coverage is None:
 				if self.verbose: print("Computing: Coverage of Two Symbols")

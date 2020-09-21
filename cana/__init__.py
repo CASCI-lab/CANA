@@ -4,7 +4,7 @@ __description__ = u'This package implements a series of methods used to study co
 
 __author__ = """\n""".join([
 	'Rion Brattig Correia <rionbr@gmail.com>',
-	'Alex Gates <ajgates@umail.iu.edu>',
+	'Alex Gates <ajgates42@gmail.com>',
 	'Xuan Wang <xw47@indiana.edu>'
 	'Thomas Parmer <tjparmer@indiana.edu>',
 	'Etienne Nzabarushimana <enzabaru@indiana.edu>',
@@ -13,7 +13,7 @@ __author__ = """\n""".join([
 
 __copyright__ = u'2017, Correia, R. B., Gates, A., Rocha, L. M.'
 
-__version__ = '0.0.4'
-__release__ = '0.0.4-alpha'
+__version__ = '0.1'
+__release__ = '0.1'
 #
 __all__ = ['boolean_network','boolean_node']
