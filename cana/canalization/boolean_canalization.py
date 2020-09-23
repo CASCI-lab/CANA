@@ -3,6 +3,7 @@
 Boolean Canalization
 =====================
 
+Functions to compute the Quine-McCluskey algorithm.
 
 """
 #   Copyright (C) 2017 by

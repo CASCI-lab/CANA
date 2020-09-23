@@ -21,7 +21,7 @@ END: Cython Metadata */
 #else
 #define CYTHON_ABI "0_29_21"
 #define CYTHON_HEX_VERSION 0x001D15F0
-#define CYTHON_FUTURE_DIVISION 0
+#define CYTHON_FUTURE_DIVISION 1
 #include <stddef.h>
 #ifndef offsetof
   #define offsetof(type, member) ( (size_t) & ((type*)0) -> member )
@@ -834,12 +834,12 @@ struct __pyx_obj_4cana_12canalization_21cboolean_canalization___pyx_scope_struct
 struct __pyx_obj_4cana_12canalization_21cboolean_canalization___pyx_scope_struct_2_input_wildcard_coverage;
 struct __pyx_obj_4cana_12canalization_21cboolean_canalization___pyx_scope_struct_3_genexpr;
 
-/* "cana/canalization/cboolean_canalization.pyx":138
- * 	return prime_implicants
+/* "cana/canalization/cboolean_canalization.pyx":137
+ * 
  * 
  * def __pi_covers(implicant, binstate):             # <<<<<<<<<<<<<<
- * 	"""Determines if a binarystate is covered by a specific implicant.
- * 	Args:
+ *     """Determines if a binarystate is covered by a specific implicant.
+ *     Args:
  */
 struct __pyx_obj_4cana_12canalization_21cboolean_canalization___pyx_scope_struct____pi_covers {
   PyObject_HEAD
@@ -847,12 +847,12 @@ struct __pyx_obj_4cana_12canalization_21cboolean_canalization___pyx_scope_struct
 };
 
 
-/* "cana/canalization/cboolean_canalization.pyx":147
+/* "cana/canalization/cboolean_canalization.pyx":146
  * 
- * 	"""
- * 	return all(i==WILDCARD_SYMBOL or m==i for i, m in zip(implicant, input))             # <<<<<<<<<<<<<<
+ *     """
+ *     return all(i == WILDCARD_SYMBOL or m == i for i, m in zip(implicant, input))             # <<<<<<<<<<<<<<
  * 
- * def expand_wildcard_schemata(schemata):
+ * 
  */
 struct __pyx_obj_4cana_12canalization_21cboolean_canalization___pyx_scope_struct_1_genexpr {
   PyObject_HEAD
@@ -862,11 +862,11 @@ struct __pyx_obj_4cana_12canalization_21cboolean_canalization___pyx_scope_struct
 };
 
 
-/* "cana/canalization/cboolean_canalization.pyx":199
- * 	return pi_coverage
+/* "cana/canalization/cboolean_canalization.pyx":201
+ * 
  * 
  * def input_wildcard_coverage(pi_coverage):             # <<<<<<<<<<<<<<
- * 	"""Computes the binary states coverage by Prime Implicant schematas.
+ *     """Computes the binary states coverage by Prime Implicant schematas.
  * 
  */
 struct __pyx_obj_4cana_12canalization_21cboolean_canalization___pyx_scope_struct_2_input_wildcard_coverage {
@@ -876,12 +876,12 @@ struct __pyx_obj_4cana_12canalization_21cboolean_canalization___pyx_scope_struct
 };
 
 
-/* "cana/canalization/cboolean_canalization.pyx":215
- * 	for binstate, piset in pi_coverage.items():
- * 		for i in range(k):
- * 			input_to_wildcards[i][binstate] = tuple(pi[i] == WILDCARD_SYMBOL for pi in piset)             # <<<<<<<<<<<<<<
+/* "cana/canalization/cboolean_canalization.pyx":217
+ *     for binstate, piset in pi_coverage.items():
+ *         for i in range(k):
+ *             input_to_wildcards[i][binstate] = tuple(pi[i] == WILDCARD_SYMBOL for pi in piset)             # <<<<<<<<<<<<<<
  * 
- * 	return input_to_wildcards
+ *     return input_to_wildcards
  */
 struct __pyx_obj_4cana_12canalization_21cboolean_canalization___pyx_scope_struct_3_genexpr {
   PyObject_HEAD
@@ -1091,24 +1091,6 @@ static int __Pyx_ParseOptionalKeywords(PyObject *kwds, PyObject **argnames[],\
     PyObject *kwds2, PyObject *values[], Py_ssize_t num_pos_args,\
     const char* function_name);
 
-/* StringJoin.proto */
-#if PY_MAJOR_VERSION < 3
-#define __Pyx_PyString_Join __Pyx_PyBytes_Join
-#define __Pyx_PyBaseString_Join(s, v) (PyUnicode_CheckExact(s) ? PyUnicode_Join(s, v) : __Pyx_PyBytes_Join(s, v))
-#else
-#define __Pyx_PyString_Join PyUnicode_Join
-#define __Pyx_PyBaseString_Join PyUnicode_Join
-#endif
-#if CYTHON_COMPILING_IN_CPYTHON
-    #if PY_MAJOR_VERSION < 3
-    #define __Pyx_PyBytes_Join _PyString_Join
-    #else
-    #define __Pyx_PyBytes_Join _PyBytes_Join
-    #endif
-#else
-static CYTHON_INLINE PyObject* __Pyx_PyBytes_Join(PyObject* sep, PyObject* values);
-#endif
-
 /* RaiseTooManyValuesToUnpack.proto */
 static CYTHON_INLINE void __Pyx_RaiseTooManyValuesError(Py_ssize_t expected);
 
@@ -1196,13 +1178,6 @@ static CYTHON_INLINE int __Pyx_PyBytes_Equals(PyObject* s1, PyObject* s2, int eq
 /* UnicodeEquals.proto */
 static CYTHON_INLINE int __Pyx_PyUnicode_Equals(PyObject* s1, PyObject* s2, int equals);
 
-/* StrEquals.proto */
-#if PY_MAJOR_VERSION >= 3
-#define __Pyx_PyString_Equals __Pyx_PyUnicode_Equals
-#else
-#define __Pyx_PyString_Equals __Pyx_PyBytes_Equals
-#endif
-
 /* PyObjectCallNoArg.proto */
 #if CYTHON_COMPILING_IN_CPYTHON
 static CYTHON_INLINE PyObject* __Pyx_PyObject_CallNoArg(PyObject *func);
@@ -1281,6 +1256,36 @@ static CYTHON_INLINE void __Pyx_ErrFetchInState(PyThreadState *tstate, PyObject 
 #define __Pyx_PyIter_Next(obj) __Pyx_PyIter_Next2(obj, NULL)
 static CYTHON_INLINE PyObject *__Pyx_PyIter_Next2(PyObject *, PyObject *);
 
+/* PyObjectGetMethod.proto */
+static int __Pyx_PyObject_GetMethod(PyObject *obj, PyObject *name, PyObject **method);
+
+/* PyObjectCallMethod0.proto */
+static PyObject* __Pyx_PyObject_CallMethod0(PyObject* obj, PyObject* method_name);
+
+/* RaiseNoneIterError.proto */
+static CYTHON_INLINE void __Pyx_RaiseNoneNotIterableError(void);
+
+/* UnpackTupleError.proto */
+static void __Pyx_UnpackTupleError(PyObject *, Py_ssize_t index);
+
+/* UnpackTuple2.proto */
+#define __Pyx_unpack_tuple2(tuple, value1, value2, is_tuple, has_known_size, decref_tuple)\
+    (likely(is_tuple || PyTuple_Check(tuple)) ?\
+        (likely(has_known_size || PyTuple_GET_SIZE(tuple) == 2) ?\
+            __Pyx_unpack_tuple2_exact(tuple, value1, value2, decref_tuple) :\
+            (__Pyx_UnpackTupleError(tuple, 2), -1)) :\
+        __Pyx_unpack_tuple2_generic(tuple, value1, value2, has_known_size, decref_tuple))
+static CYTHON_INLINE int __Pyx_unpack_tuple2_exact(
+    PyObject* tuple, PyObject** value1, PyObject** value2, int decref_tuple);
+static int __Pyx_unpack_tuple2_generic(
+    PyObject* tuple, PyObject** value1, PyObject** value2, int has_known_size, int decref_tuple);
+
+/* dict_iter.proto */
+static CYTHON_INLINE PyObject* __Pyx_dict_iterator(PyObject* dict, int is_dict, PyObject* method_name,
+                                                   Py_ssize_t* p_orig_length, int* p_is_dict);
+static CYTHON_INLINE int __Pyx_dict_iter_next(PyObject* dict_or_iter, Py_ssize_t orig_length, Py_ssize_t* ppos,
+                                              PyObject** pkey, PyObject** pvalue, PyObject** pitem, int is_dict);
+
 /* PyObject_GenericGetAttrNoDict.proto */
 #if CYTHON_USE_TYPE_SLOTS && CYTHON_USE_PYTYPE_LOOKUP && PY_VERSION_HEX < 0x03070000
 static CYTHON_INLINE PyObject* __Pyx_PyObject_GenericGetAttrNoDict(PyObject* obj, PyObject* attr_name);
@@ -1290,9 +1295,6 @@ static CYTHON_INLINE PyObject* __Pyx_PyObject_GenericGetAttrNoDict(PyObject* obj
 
 /* Import.proto */
 static PyObject *__Pyx_Import(PyObject *name, PyObject *from_list, int level);
-
-/* ImportFrom.proto */
-static PyObject* __Pyx_ImportFrom(PyObject* module, PyObject* name);
 
 /* CLineInTraceback.proto */
 #ifdef CYTHON_CLINE_IN_TRACEBACK
@@ -1371,9 +1373,6 @@ static CYTHON_INLINE void __Pyx__ExceptionSwap(PyThreadState *tstate, PyObject *
 #else
 static CYTHON_INLINE void __Pyx_ExceptionSwap(PyObject **type, PyObject **value, PyObject **tb);
 #endif
-
-/* PyObjectGetMethod.proto */
-static int __Pyx_PyObject_GetMethod(PyObject *obj, PyObject *name, PyObject **method);
 
 /* PyObjectCallMethod1.proto */
 static PyObject* __Pyx_PyObject_CallMethod1(PyObject* obj, PyObject* method_name, PyObject* arg);
@@ -1493,7 +1492,6 @@ static const char __pyx_k_idx[] = "idx";
 static const char __pyx_k_zip[] = "zip";
 static const char __pyx_k_args[] = "args";
 static const char __pyx_k_done[] = "done";
-static const char __pyx_k_join[] = "join";
 static const char __pyx_k_main[] = "__main__";
 static const char __pyx_k_name[] = "__name__";
 static const char __pyx_k_send[] = "send";
@@ -1502,7 +1500,6 @@ static const char __pyx_k_used[] = "used";
 static const char __pyx_k_wnum[] = "wnum";
 static const char __pyx_k_close[] = "close";
 static const char __pyx_k_count[] = "count";
-static const char __pyx_k_deque[] = "deque";
 static const char __pyx_k_input[] = "input";
 static const char __pyx_k_items[] = "items";
 static const char __pyx_k_piset[] = "piset";
@@ -1522,12 +1519,10 @@ static const char __pyx_k_binstate1[] = "binstate1";
 static const char __pyx_k_binstate2[] = "binstate2";
 static const char __pyx_k_enumerate[] = "enumerate";
 static const char __pyx_k_implicant[] = "implicant";
-static const char __pyx_k_itertools[] = "itertools";
 static const char __pyx_k_pi_covers[] = "__pi_covers";
 static const char __pyx_k_nwildcards[] = "nwildcards";
 static const char __pyx_k_wildstates[] = "wildstates";
 static const char __pyx_k_cana_cutils[] = "cana.cutils";
-static const char __pyx_k_collections[] = "collections";
 static const char __pyx_k_pi_coverage[] = "pi_coverage";
 static const char __pyx_k_wildstatenum[] = "wildstatenum";
 static const char __pyx_k_binary_states[] = "binary_states";
@@ -1545,22 +1540,23 @@ static const char __pyx_k_input_to_wildcards[] = "input_to_wildcards";
 static const char __pyx_k_matched_implicants[] = "matched_implicants";
 static const char __pyx_k_return_pi_coverage[] = "return_pi_coverage";
 static const char __pyx_k_make_density_groups[] = "make_density_groups";
-static const char __pyx_k_Boolean_Canalization[] = "\nBoolean Canalization\n=====================\n\n\n";
 static const char __pyx_k_statenum_to_binstate[] = "statenum_to_binstate";
 static const char __pyx_k_input_wildcard_coverage[] = "input_wildcard_coverage";
 static const char __pyx_k_expand_wildcard_schemata[] = "expand_wildcard_schemata";
 static const char __pyx_k_pi_covers_locals_genexpr[] = "__pi_covers.<locals>.genexpr";
 static const char __pyx_k_SYMMETRIC_WILDCARD_SYMBOL[] = "SYMMETRIC_WILDCARD_SYMBOL";
+static const char __pyx_k_Cythonized_Boolean_Canalization[] = "\n(Cythonized) Boolean Canalization\n=====================\n\nFunctions to compute the Quine-McCluskey algorithm in cython for increaed computation speed.\n\n";
 static const char __pyx_k_cana_canalization_cboolean_canal[] = "cana.canalization.cboolean_canalization";
 static const char __pyx_k_input_wildcard_coverage_locals_g[] = "input_wildcard_coverage.<locals>.genexpr";
 static const char __pyx_k_cana_canalization_cboolean_canal_2[] = "cana/canalization/cboolean_canalization.pyx";
-static PyObject *__pyx_kp_s_;
-static PyObject *__pyx_kp_s_0;
-static PyObject *__pyx_kp_s_1;
+static PyObject *__pyx_kp_u_;
+static PyObject *__pyx_kp_u_0;
+static PyObject *__pyx_kp_u_1;
 static PyObject *__pyx_n_s_SYMMETRIC_WILDCARD_SYMBOL;
 static PyObject *__pyx_n_s_WILDCARD_SYMBOL;
 static PyObject *__pyx_n_s__2;
-static PyObject *__pyx_kp_s__3;
+static PyObject *__pyx_kp_u__2;
+static PyObject *__pyx_kp_u__3;
 static PyObject *__pyx_n_s_add;
 static PyObject *__pyx_n_s_args;
 static PyObject *__pyx_n_s_b;
@@ -1577,11 +1573,9 @@ static PyObject *__pyx_kp_s_cana_canalization_cboolean_canal_2;
 static PyObject *__pyx_n_s_cana_cutils;
 static PyObject *__pyx_n_s_cline_in_traceback;
 static PyObject *__pyx_n_s_close;
-static PyObject *__pyx_n_s_collections;
 static PyObject *__pyx_n_s_count;
 static PyObject *__pyx_n_s_density;
 static PyObject *__pyx_n_s_density_groups;
-static PyObject *__pyx_n_s_deque;
 static PyObject *__pyx_n_s_done;
 static PyObject *__pyx_n_s_enumerate;
 static PyObject *__pyx_n_s_expand_wildcard_schemata;
@@ -1600,8 +1594,6 @@ static PyObject *__pyx_n_s_input_to_wildcards;
 static PyObject *__pyx_n_s_input_wildcard_coverage;
 static PyObject *__pyx_n_s_input_wildcard_coverage_locals_g;
 static PyObject *__pyx_n_s_items;
-static PyObject *__pyx_n_s_itertools;
-static PyObject *__pyx_n_s_join;
 static PyObject *__pyx_n_s_k;
 static PyObject *__pyx_n_s_main;
 static PyObject *__pyx_n_s_make_density_groups;
@@ -1668,17 +1660,17 @@ static PyObject *__pyx_codeobj__19;
 static PyObject *__pyx_codeobj__21;
 /* Late includes */
 
-/* "cana/canalization/cboolean_canalization.pyx":27
+/* "cana/canalization/cboolean_canalization.pyx":24
  * # Quine-McCluskey Functions
  * #
  * def make_density_groups(input_binstates):             # <<<<<<<<<<<<<<
- * 	"""
- * 
+ *     """
+ *     """
  */
 
 /* Python wrapper */
 static PyObject *__pyx_pw_4cana_12canalization_21cboolean_canalization_1make_density_groups(PyObject *__pyx_self, PyObject *__pyx_v_input_binstates); /*proto*/
-static char __pyx_doc_4cana_12canalization_21cboolean_canalization_make_density_groups[] = " \n\n\t";
+static char __pyx_doc_4cana_12canalization_21cboolean_canalization_make_density_groups[] = "\n    ";
 static PyMethodDef __pyx_mdef_4cana_12canalization_21cboolean_canalization_1make_density_groups = {"make_density_groups", (PyCFunction)__pyx_pw_4cana_12canalization_21cboolean_canalization_1make_density_groups, METH_O, __pyx_doc_4cana_12canalization_21cboolean_canalization_make_density_groups};
 static PyObject *__pyx_pw_4cana_12canalization_21cboolean_canalization_1make_density_groups(PyObject *__pyx_self, PyObject *__pyx_v_input_binstates) {
   PyObject *__pyx_r = 0;
@@ -1710,49 +1702,49 @@ static PyObject *__pyx_pf_4cana_12canalization_21cboolean_canalization_make_dens
   int __pyx_clineno = 0;
   __Pyx_RefNannySetupContext("make_density_groups", 0);
 
-  /* "cana/canalization/cboolean_canalization.pyx":32
- * 	"""
+  /* "cana/canalization/cboolean_canalization.pyx":28
+ *     """
  * 
- * 	density_groups = dict()             # <<<<<<<<<<<<<<
- * 	for binstate in input_binstates:
- * 		density = binary_density(binstate)
+ *     density_groups = dict()             # <<<<<<<<<<<<<<
+ *     for binstate in input_binstates:
+ *         density = binary_density(binstate)
  */
-  __pyx_t_1 = __Pyx_PyDict_NewPresized(0); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 32, __pyx_L1_error)
+  __pyx_t_1 = __Pyx_PyDict_NewPresized(0); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 28, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_1);
   __pyx_v_density_groups = ((PyObject*)__pyx_t_1);
   __pyx_t_1 = 0;
 
-  /* "cana/canalization/cboolean_canalization.pyx":33
+  /* "cana/canalization/cboolean_canalization.pyx":29
  * 
- * 	density_groups = dict()
- * 	for binstate in input_binstates:             # <<<<<<<<<<<<<<
- * 		density = binary_density(binstate)
- * 		if not density in density_groups:
+ *     density_groups = dict()
+ *     for binstate in input_binstates:             # <<<<<<<<<<<<<<
+ *         density = binary_density(binstate)
+ *         if density not in density_groups:
  */
   if (likely(PyList_CheckExact(__pyx_v_input_binstates)) || PyTuple_CheckExact(__pyx_v_input_binstates)) {
     __pyx_t_1 = __pyx_v_input_binstates; __Pyx_INCREF(__pyx_t_1); __pyx_t_2 = 0;
     __pyx_t_3 = NULL;
   } else {
-    __pyx_t_2 = -1; __pyx_t_1 = PyObject_GetIter(__pyx_v_input_binstates); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 33, __pyx_L1_error)
+    __pyx_t_2 = -1; __pyx_t_1 = PyObject_GetIter(__pyx_v_input_binstates); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 29, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_1);
-    __pyx_t_3 = Py_TYPE(__pyx_t_1)->tp_iternext; if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 33, __pyx_L1_error)
+    __pyx_t_3 = Py_TYPE(__pyx_t_1)->tp_iternext; if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 29, __pyx_L1_error)
   }
   for (;;) {
     if (likely(!__pyx_t_3)) {
       if (likely(PyList_CheckExact(__pyx_t_1))) {
         if (__pyx_t_2 >= PyList_GET_SIZE(__pyx_t_1)) break;
         #if CYTHON_ASSUME_SAFE_MACROS && !CYTHON_AVOID_BORROWED_REFS
-        __pyx_t_4 = PyList_GET_ITEM(__pyx_t_1, __pyx_t_2); __Pyx_INCREF(__pyx_t_4); __pyx_t_2++; if (unlikely(0 < 0)) __PYX_ERR(0, 33, __pyx_L1_error)
+        __pyx_t_4 = PyList_GET_ITEM(__pyx_t_1, __pyx_t_2); __Pyx_INCREF(__pyx_t_4); __pyx_t_2++; if (unlikely(0 < 0)) __PYX_ERR(0, 29, __pyx_L1_error)
         #else
-        __pyx_t_4 = PySequence_ITEM(__pyx_t_1, __pyx_t_2); __pyx_t_2++; if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 33, __pyx_L1_error)
+        __pyx_t_4 = PySequence_ITEM(__pyx_t_1, __pyx_t_2); __pyx_t_2++; if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 29, __pyx_L1_error)
         __Pyx_GOTREF(__pyx_t_4);
         #endif
       } else {
         if (__pyx_t_2 >= PyTuple_GET_SIZE(__pyx_t_1)) break;
         #if CYTHON_ASSUME_SAFE_MACROS && !CYTHON_AVOID_BORROWED_REFS
-        __pyx_t_4 = PyTuple_GET_ITEM(__pyx_t_1, __pyx_t_2); __Pyx_INCREF(__pyx_t_4); __pyx_t_2++; if (unlikely(0 < 0)) __PYX_ERR(0, 33, __pyx_L1_error)
+        __pyx_t_4 = PyTuple_GET_ITEM(__pyx_t_1, __pyx_t_2); __Pyx_INCREF(__pyx_t_4); __pyx_t_2++; if (unlikely(0 < 0)) __PYX_ERR(0, 29, __pyx_L1_error)
         #else
-        __pyx_t_4 = PySequence_ITEM(__pyx_t_1, __pyx_t_2); __pyx_t_2++; if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 33, __pyx_L1_error)
+        __pyx_t_4 = PySequence_ITEM(__pyx_t_1, __pyx_t_2); __pyx_t_2++; if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 29, __pyx_L1_error)
         __Pyx_GOTREF(__pyx_t_4);
         #endif
       }
@@ -1762,7 +1754,7 @@ static PyObject *__pyx_pf_4cana_12canalization_21cboolean_canalization_make_dens
         PyObject* exc_type = PyErr_Occurred();
         if (exc_type) {
           if (likely(__Pyx_PyErr_GivenExceptionMatches(exc_type, PyExc_StopIteration))) PyErr_Clear();
-          else __PYX_ERR(0, 33, __pyx_L1_error)
+          else __PYX_ERR(0, 29, __pyx_L1_error)
         }
         break;
       }
@@ -1771,14 +1763,14 @@ static PyObject *__pyx_pf_4cana_12canalization_21cboolean_canalization_make_dens
     __Pyx_XDECREF_SET(__pyx_v_binstate, __pyx_t_4);
     __pyx_t_4 = 0;
 
-    /* "cana/canalization/cboolean_canalization.pyx":34
- * 	density_groups = dict()
- * 	for binstate in input_binstates:
- * 		density = binary_density(binstate)             # <<<<<<<<<<<<<<
- * 		if not density in density_groups:
- * 			density_groups[density] = set()
+    /* "cana/canalization/cboolean_canalization.pyx":30
+ *     density_groups = dict()
+ *     for binstate in input_binstates:
+ *         density = binary_density(binstate)             # <<<<<<<<<<<<<<
+ *         if density not in density_groups:
+ *             density_groups[density] = set()
  */
-    __Pyx_GetModuleGlobalName(__pyx_t_5, __pyx_n_s_binary_density); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 34, __pyx_L1_error)
+    __Pyx_GetModuleGlobalName(__pyx_t_5, __pyx_n_s_binary_density); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 30, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_5);
     __pyx_t_6 = NULL;
     if (CYTHON_UNPACK_METHODS && unlikely(PyMethod_Check(__pyx_t_5))) {
@@ -1792,54 +1784,54 @@ static PyObject *__pyx_pf_4cana_12canalization_21cboolean_canalization_make_dens
     }
     __pyx_t_4 = (__pyx_t_6) ? __Pyx_PyObject_Call2Args(__pyx_t_5, __pyx_t_6, __pyx_v_binstate) : __Pyx_PyObject_CallOneArg(__pyx_t_5, __pyx_v_binstate);
     __Pyx_XDECREF(__pyx_t_6); __pyx_t_6 = 0;
-    if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 34, __pyx_L1_error)
+    if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 30, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_4);
     __Pyx_DECREF(__pyx_t_5); __pyx_t_5 = 0;
     __Pyx_XDECREF_SET(__pyx_v_density, __pyx_t_4);
     __pyx_t_4 = 0;
 
-    /* "cana/canalization/cboolean_canalization.pyx":35
- * 	for binstate in input_binstates:
- * 		density = binary_density(binstate)
- * 		if not density in density_groups:             # <<<<<<<<<<<<<<
- * 			density_groups[density] = set()
- * 		density_groups[density].add(binstate)
+    /* "cana/canalization/cboolean_canalization.pyx":31
+ *     for binstate in input_binstates:
+ *         density = binary_density(binstate)
+ *         if density not in density_groups:             # <<<<<<<<<<<<<<
+ *             density_groups[density] = set()
+ *         density_groups[density].add(binstate)
  */
-    __pyx_t_7 = (__Pyx_PyDict_ContainsTF(__pyx_v_density, __pyx_v_density_groups, Py_NE)); if (unlikely(__pyx_t_7 < 0)) __PYX_ERR(0, 35, __pyx_L1_error)
+    __pyx_t_7 = (__Pyx_PyDict_ContainsTF(__pyx_v_density, __pyx_v_density_groups, Py_NE)); if (unlikely(__pyx_t_7 < 0)) __PYX_ERR(0, 31, __pyx_L1_error)
     __pyx_t_8 = (__pyx_t_7 != 0);
     if (__pyx_t_8) {
 
-      /* "cana/canalization/cboolean_canalization.pyx":36
- * 		density = binary_density(binstate)
- * 		if not density in density_groups:
- * 			density_groups[density] = set()             # <<<<<<<<<<<<<<
- * 		density_groups[density].add(binstate)
+      /* "cana/canalization/cboolean_canalization.pyx":32
+ *         density = binary_density(binstate)
+ *         if density not in density_groups:
+ *             density_groups[density] = set()             # <<<<<<<<<<<<<<
+ *         density_groups[density].add(binstate)
  * 
  */
-      __pyx_t_4 = PySet_New(0); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 36, __pyx_L1_error)
+      __pyx_t_4 = PySet_New(0); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 32, __pyx_L1_error)
       __Pyx_GOTREF(__pyx_t_4);
-      if (unlikely(PyDict_SetItem(__pyx_v_density_groups, __pyx_v_density, __pyx_t_4) < 0)) __PYX_ERR(0, 36, __pyx_L1_error)
+      if (unlikely(PyDict_SetItem(__pyx_v_density_groups, __pyx_v_density, __pyx_t_4) < 0)) __PYX_ERR(0, 32, __pyx_L1_error)
       __Pyx_DECREF(__pyx_t_4); __pyx_t_4 = 0;
 
-      /* "cana/canalization/cboolean_canalization.pyx":35
- * 	for binstate in input_binstates:
- * 		density = binary_density(binstate)
- * 		if not density in density_groups:             # <<<<<<<<<<<<<<
- * 			density_groups[density] = set()
- * 		density_groups[density].add(binstate)
+      /* "cana/canalization/cboolean_canalization.pyx":31
+ *     for binstate in input_binstates:
+ *         density = binary_density(binstate)
+ *         if density not in density_groups:             # <<<<<<<<<<<<<<
+ *             density_groups[density] = set()
+ *         density_groups[density].add(binstate)
  */
     }
 
-    /* "cana/canalization/cboolean_canalization.pyx":37
- * 		if not density in density_groups:
- * 			density_groups[density] = set()
- * 		density_groups[density].add(binstate)             # <<<<<<<<<<<<<<
+    /* "cana/canalization/cboolean_canalization.pyx":33
+ *         if density not in density_groups:
+ *             density_groups[density] = set()
+ *         density_groups[density].add(binstate)             # <<<<<<<<<<<<<<
  * 
- * 	return density_groups
+ *     return density_groups
  */
-    __pyx_t_5 = __Pyx_PyDict_GetItem(__pyx_v_density_groups, __pyx_v_density); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 37, __pyx_L1_error)
+    __pyx_t_5 = __Pyx_PyDict_GetItem(__pyx_v_density_groups, __pyx_v_density); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 33, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_5);
-    __pyx_t_6 = __Pyx_PyObject_GetAttrStr(__pyx_t_5, __pyx_n_s_add); if (unlikely(!__pyx_t_6)) __PYX_ERR(0, 37, __pyx_L1_error)
+    __pyx_t_6 = __Pyx_PyObject_GetAttrStr(__pyx_t_5, __pyx_n_s_add); if (unlikely(!__pyx_t_6)) __PYX_ERR(0, 33, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_6);
     __Pyx_DECREF(__pyx_t_5); __pyx_t_5 = 0;
     __pyx_t_5 = NULL;
@@ -1854,39 +1846,39 @@ static PyObject *__pyx_pf_4cana_12canalization_21cboolean_canalization_make_dens
     }
     __pyx_t_4 = (__pyx_t_5) ? __Pyx_PyObject_Call2Args(__pyx_t_6, __pyx_t_5, __pyx_v_binstate) : __Pyx_PyObject_CallOneArg(__pyx_t_6, __pyx_v_binstate);
     __Pyx_XDECREF(__pyx_t_5); __pyx_t_5 = 0;
-    if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 37, __pyx_L1_error)
+    if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 33, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_4);
     __Pyx_DECREF(__pyx_t_6); __pyx_t_6 = 0;
     __Pyx_DECREF(__pyx_t_4); __pyx_t_4 = 0;
 
-    /* "cana/canalization/cboolean_canalization.pyx":33
+    /* "cana/canalization/cboolean_canalization.pyx":29
  * 
- * 	density_groups = dict()
- * 	for binstate in input_binstates:             # <<<<<<<<<<<<<<
- * 		density = binary_density(binstate)
- * 		if not density in density_groups:
+ *     density_groups = dict()
+ *     for binstate in input_binstates:             # <<<<<<<<<<<<<<
+ *         density = binary_density(binstate)
+ *         if density not in density_groups:
  */
   }
   __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
 
-  /* "cana/canalization/cboolean_canalization.pyx":39
- * 		density_groups[density].add(binstate)
+  /* "cana/canalization/cboolean_canalization.pyx":35
+ *         density_groups[density].add(binstate)
  * 
- * 	return density_groups             # <<<<<<<<<<<<<<
+ *     return density_groups             # <<<<<<<<<<<<<<
  * 
- * def find_wildcards(binstate1, binstate2):
+ * 
  */
   __Pyx_XDECREF(__pyx_r);
   __Pyx_INCREF(__pyx_v_density_groups);
   __pyx_r = __pyx_v_density_groups;
   goto __pyx_L0;
 
-  /* "cana/canalization/cboolean_canalization.pyx":27
+  /* "cana/canalization/cboolean_canalization.pyx":24
  * # Quine-McCluskey Functions
  * #
  * def make_density_groups(input_binstates):             # <<<<<<<<<<<<<<
- * 	"""
- * 
+ *     """
+ *     """
  */
 
   /* function exit code */
@@ -1906,17 +1898,17 @@ static PyObject *__pyx_pf_4cana_12canalization_21cboolean_canalization_make_dens
   return __pyx_r;
 }
 
-/* "cana/canalization/cboolean_canalization.pyx":41
- * 	return density_groups
+/* "cana/canalization/cboolean_canalization.pyx":38
+ * 
  * 
  * def find_wildcards(binstate1, binstate2):             # <<<<<<<<<<<<<<
- * 	"""
- * 	Compare two binary states and replace any differing bits by a wildcard.
+ *     """
+ *     Compare two binary states and replace any differing bits by a wildcard.
  */
 
 /* Python wrapper */
 static PyObject *__pyx_pw_4cana_12canalization_21cboolean_canalization_3find_wildcards(PyObject *__pyx_self, PyObject *__pyx_args, PyObject *__pyx_kwds); /*proto*/
-static char __pyx_doc_4cana_12canalization_21cboolean_canalization_2find_wildcards[] = "\n\tCompare two binary states and replace any differing bits by a wildcard.\n\tArgs:\n\t\tbinstate1, binstate2 : the two binary states to be compared\n\n\tReturn:\n\t\tc (list, bool) : a list of comparisons\n\n\t";
+static char __pyx_doc_4cana_12canalization_21cboolean_canalization_2find_wildcards[] = "\n    Compare two binary states and replace any differing bits by a wildcard.\n    Args:\n        binstate1, binstate2 : the two binary states to be compared\n\n    Return:\n        c (list, bool) : a list of comparisons\n\n    ";
 static PyMethodDef __pyx_mdef_4cana_12canalization_21cboolean_canalization_3find_wildcards = {"find_wildcards", (PyCFunction)(void*)(PyCFunctionWithKeywords)__pyx_pw_4cana_12canalization_21cboolean_canalization_3find_wildcards, METH_VARARGS|METH_KEYWORDS, __pyx_doc_4cana_12canalization_21cboolean_canalization_2find_wildcards};
 static PyObject *__pyx_pw_4cana_12canalization_21cboolean_canalization_3find_wildcards(PyObject *__pyx_self, PyObject *__pyx_args, PyObject *__pyx_kwds) {
   PyObject *__pyx_v_binstate1 = 0;
@@ -1950,11 +1942,11 @@ static PyObject *__pyx_pw_4cana_12canalization_21cboolean_canalization_3find_wil
         case  1:
         if (likely((values[1] = __Pyx_PyDict_GetItemStr(__pyx_kwds, __pyx_n_s_binstate2)) != 0)) kw_args--;
         else {
-          __Pyx_RaiseArgtupleInvalid("find_wildcards", 1, 2, 2, 1); __PYX_ERR(0, 41, __pyx_L3_error)
+          __Pyx_RaiseArgtupleInvalid("find_wildcards", 1, 2, 2, 1); __PYX_ERR(0, 38, __pyx_L3_error)
         }
       }
       if (unlikely(kw_args > 0)) {
-        if (unlikely(__Pyx_ParseOptionalKeywords(__pyx_kwds, __pyx_pyargnames, 0, values, pos_args, "find_wildcards") < 0)) __PYX_ERR(0, 41, __pyx_L3_error)
+        if (unlikely(__Pyx_ParseOptionalKeywords(__pyx_kwds, __pyx_pyargnames, 0, values, pos_args, "find_wildcards") < 0)) __PYX_ERR(0, 38, __pyx_L3_error)
       }
     } else if (PyTuple_GET_SIZE(__pyx_args) != 2) {
       goto __pyx_L5_argtuple_error;
@@ -1967,7 +1959,7 @@ static PyObject *__pyx_pw_4cana_12canalization_21cboolean_canalization_3find_wil
   }
   goto __pyx_L4_argument_unpacking_done;
   __pyx_L5_argtuple_error:;
-  __Pyx_RaiseArgtupleInvalid("find_wildcards", 1, 2, 2, PyTuple_GET_SIZE(__pyx_args)); __PYX_ERR(0, 41, __pyx_L3_error)
+  __Pyx_RaiseArgtupleInvalid("find_wildcards", 1, 2, 2, PyTuple_GET_SIZE(__pyx_args)); __PYX_ERR(0, 38, __pyx_L3_error)
   __pyx_L3_error:;
   __Pyx_AddTraceback("cana.canalization.cboolean_canalization.find_wildcards", __pyx_clineno, __pyx_lineno, __pyx_filename);
   __Pyx_RefNannyFinishContext();
@@ -1981,8 +1973,8 @@ static PyObject *__pyx_pw_4cana_12canalization_21cboolean_canalization_3find_wil
 }
 
 static PyObject *__pyx_pf_4cana_12canalization_21cboolean_canalization_2find_wildcards(CYTHON_UNUSED PyObject *__pyx_self, PyObject *__pyx_v_binstate1, PyObject *__pyx_v_binstate2) {
-  PyObject *__pyx_v_b0 = NULL;
-  PyObject *__pyx_v_b1 = NULL;
+  PyObject *__pyx_7genexpr__pyx_v_b0 = NULL;
+  PyObject *__pyx_7genexpr__pyx_v_b1 = NULL;
   PyObject *__pyx_r = NULL;
   __Pyx_RefNannyDeclarations
   PyObject *__pyx_t_1 = NULL;
@@ -2000,146 +1992,156 @@ static PyObject *__pyx_pf_4cana_12canalization_21cboolean_canalization_2find_wil
   int __pyx_clineno = 0;
   __Pyx_RefNannySetupContext("find_wildcards", 0);
 
-  /* "cana/canalization/cboolean_canalization.pyx":52
- * 	"""
- * 	#assert len(s1) == len(s2) , "The two binstates must have the same length"
- * 	return "".join([b0 if (b0==b1) else WILDCARD_SYMBOL for b0, b1 in zip(binstate1, binstate2)])             # <<<<<<<<<<<<<<
+  /* "cana/canalization/cboolean_canalization.pyx":49
+ *     """
+ *     # assert len(s1) == len(s2) , "The two binstates must have the same length"
+ *     return "".join([b0 if (b0 == b1) else WILDCARD_SYMBOL for b0, b1 in zip(binstate1, binstate2)])             # <<<<<<<<<<<<<<
  * 
- * def binary_density(binstate):
+ * 
  */
   __Pyx_XDECREF(__pyx_r);
-  __pyx_t_1 = PyList_New(0); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 52, __pyx_L1_error)
-  __Pyx_GOTREF(__pyx_t_1);
-  __pyx_t_2 = PyTuple_New(2); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 52, __pyx_L1_error)
-  __Pyx_GOTREF(__pyx_t_2);
-  __Pyx_INCREF(__pyx_v_binstate1);
-  __Pyx_GIVEREF(__pyx_v_binstate1);
-  PyTuple_SET_ITEM(__pyx_t_2, 0, __pyx_v_binstate1);
-  __Pyx_INCREF(__pyx_v_binstate2);
-  __Pyx_GIVEREF(__pyx_v_binstate2);
-  PyTuple_SET_ITEM(__pyx_t_2, 1, __pyx_v_binstate2);
-  __pyx_t_3 = __Pyx_PyObject_Call(__pyx_builtin_zip, __pyx_t_2, NULL); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 52, __pyx_L1_error)
-  __Pyx_GOTREF(__pyx_t_3);
-  __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
-  if (likely(PyList_CheckExact(__pyx_t_3)) || PyTuple_CheckExact(__pyx_t_3)) {
-    __pyx_t_2 = __pyx_t_3; __Pyx_INCREF(__pyx_t_2); __pyx_t_4 = 0;
-    __pyx_t_5 = NULL;
-  } else {
-    __pyx_t_4 = -1; __pyx_t_2 = PyObject_GetIter(__pyx_t_3); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 52, __pyx_L1_error)
+  { /* enter inner scope */
+    __pyx_t_1 = PyList_New(0); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 49, __pyx_L5_error)
+    __Pyx_GOTREF(__pyx_t_1);
+    __pyx_t_2 = PyTuple_New(2); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 49, __pyx_L5_error)
     __Pyx_GOTREF(__pyx_t_2);
-    __pyx_t_5 = Py_TYPE(__pyx_t_2)->tp_iternext; if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 52, __pyx_L1_error)
-  }
-  __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
-  for (;;) {
-    if (likely(!__pyx_t_5)) {
-      if (likely(PyList_CheckExact(__pyx_t_2))) {
-        if (__pyx_t_4 >= PyList_GET_SIZE(__pyx_t_2)) break;
-        #if CYTHON_ASSUME_SAFE_MACROS && !CYTHON_AVOID_BORROWED_REFS
-        __pyx_t_3 = PyList_GET_ITEM(__pyx_t_2, __pyx_t_4); __Pyx_INCREF(__pyx_t_3); __pyx_t_4++; if (unlikely(0 < 0)) __PYX_ERR(0, 52, __pyx_L1_error)
-        #else
-        __pyx_t_3 = PySequence_ITEM(__pyx_t_2, __pyx_t_4); __pyx_t_4++; if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 52, __pyx_L1_error)
-        __Pyx_GOTREF(__pyx_t_3);
-        #endif
-      } else {
-        if (__pyx_t_4 >= PyTuple_GET_SIZE(__pyx_t_2)) break;
-        #if CYTHON_ASSUME_SAFE_MACROS && !CYTHON_AVOID_BORROWED_REFS
-        __pyx_t_3 = PyTuple_GET_ITEM(__pyx_t_2, __pyx_t_4); __Pyx_INCREF(__pyx_t_3); __pyx_t_4++; if (unlikely(0 < 0)) __PYX_ERR(0, 52, __pyx_L1_error)
-        #else
-        __pyx_t_3 = PySequence_ITEM(__pyx_t_2, __pyx_t_4); __pyx_t_4++; if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 52, __pyx_L1_error)
-        __Pyx_GOTREF(__pyx_t_3);
-        #endif
-      }
+    __Pyx_INCREF(__pyx_v_binstate1);
+    __Pyx_GIVEREF(__pyx_v_binstate1);
+    PyTuple_SET_ITEM(__pyx_t_2, 0, __pyx_v_binstate1);
+    __Pyx_INCREF(__pyx_v_binstate2);
+    __Pyx_GIVEREF(__pyx_v_binstate2);
+    PyTuple_SET_ITEM(__pyx_t_2, 1, __pyx_v_binstate2);
+    __pyx_t_3 = __Pyx_PyObject_Call(__pyx_builtin_zip, __pyx_t_2, NULL); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 49, __pyx_L5_error)
+    __Pyx_GOTREF(__pyx_t_3);
+    __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
+    if (likely(PyList_CheckExact(__pyx_t_3)) || PyTuple_CheckExact(__pyx_t_3)) {
+      __pyx_t_2 = __pyx_t_3; __Pyx_INCREF(__pyx_t_2); __pyx_t_4 = 0;
+      __pyx_t_5 = NULL;
     } else {
-      __pyx_t_3 = __pyx_t_5(__pyx_t_2);
-      if (unlikely(!__pyx_t_3)) {
-        PyObject* exc_type = PyErr_Occurred();
-        if (exc_type) {
-          if (likely(__Pyx_PyErr_GivenExceptionMatches(exc_type, PyExc_StopIteration))) PyErr_Clear();
-          else __PYX_ERR(0, 52, __pyx_L1_error)
-        }
-        break;
-      }
-      __Pyx_GOTREF(__pyx_t_3);
+      __pyx_t_4 = -1; __pyx_t_2 = PyObject_GetIter(__pyx_t_3); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 49, __pyx_L5_error)
+      __Pyx_GOTREF(__pyx_t_2);
+      __pyx_t_5 = Py_TYPE(__pyx_t_2)->tp_iternext; if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 49, __pyx_L5_error)
     }
-    if ((likely(PyTuple_CheckExact(__pyx_t_3))) || (PyList_CheckExact(__pyx_t_3))) {
-      PyObject* sequence = __pyx_t_3;
-      Py_ssize_t size = __Pyx_PySequence_SIZE(sequence);
-      if (unlikely(size != 2)) {
-        if (size > 2) __Pyx_RaiseTooManyValuesError(2);
-        else if (size >= 0) __Pyx_RaiseNeedMoreValuesError(size);
-        __PYX_ERR(0, 52, __pyx_L1_error)
-      }
-      #if CYTHON_ASSUME_SAFE_MACROS && !CYTHON_AVOID_BORROWED_REFS
-      if (likely(PyTuple_CheckExact(sequence))) {
-        __pyx_t_6 = PyTuple_GET_ITEM(sequence, 0); 
-        __pyx_t_7 = PyTuple_GET_ITEM(sequence, 1); 
-      } else {
-        __pyx_t_6 = PyList_GET_ITEM(sequence, 0); 
-        __pyx_t_7 = PyList_GET_ITEM(sequence, 1); 
-      }
-      __Pyx_INCREF(__pyx_t_6);
-      __Pyx_INCREF(__pyx_t_7);
-      #else
-      __pyx_t_6 = PySequence_ITEM(sequence, 0); if (unlikely(!__pyx_t_6)) __PYX_ERR(0, 52, __pyx_L1_error)
-      __Pyx_GOTREF(__pyx_t_6);
-      __pyx_t_7 = PySequence_ITEM(sequence, 1); if (unlikely(!__pyx_t_7)) __PYX_ERR(0, 52, __pyx_L1_error)
-      __Pyx_GOTREF(__pyx_t_7);
-      #endif
-      __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
-    } else {
-      Py_ssize_t index = -1;
-      __pyx_t_8 = PyObject_GetIter(__pyx_t_3); if (unlikely(!__pyx_t_8)) __PYX_ERR(0, 52, __pyx_L1_error)
-      __Pyx_GOTREF(__pyx_t_8);
-      __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
-      __pyx_t_9 = Py_TYPE(__pyx_t_8)->tp_iternext;
-      index = 0; __pyx_t_6 = __pyx_t_9(__pyx_t_8); if (unlikely(!__pyx_t_6)) goto __pyx_L5_unpacking_failed;
-      __Pyx_GOTREF(__pyx_t_6);
-      index = 1; __pyx_t_7 = __pyx_t_9(__pyx_t_8); if (unlikely(!__pyx_t_7)) goto __pyx_L5_unpacking_failed;
-      __Pyx_GOTREF(__pyx_t_7);
-      if (__Pyx_IternextUnpackEndCheck(__pyx_t_9(__pyx_t_8), 2) < 0) __PYX_ERR(0, 52, __pyx_L1_error)
-      __pyx_t_9 = NULL;
-      __Pyx_DECREF(__pyx_t_8); __pyx_t_8 = 0;
-      goto __pyx_L6_unpacking_done;
-      __pyx_L5_unpacking_failed:;
-      __Pyx_DECREF(__pyx_t_8); __pyx_t_8 = 0;
-      __pyx_t_9 = NULL;
-      if (__Pyx_IterFinish() == 0) __Pyx_RaiseNeedMoreValuesError(index);
-      __PYX_ERR(0, 52, __pyx_L1_error)
-      __pyx_L6_unpacking_done:;
-    }
-    __Pyx_XDECREF_SET(__pyx_v_b0, __pyx_t_6);
-    __pyx_t_6 = 0;
-    __Pyx_XDECREF_SET(__pyx_v_b1, __pyx_t_7);
-    __pyx_t_7 = 0;
-    __pyx_t_7 = PyObject_RichCompare(__pyx_v_b0, __pyx_v_b1, Py_EQ); __Pyx_XGOTREF(__pyx_t_7); if (unlikely(!__pyx_t_7)) __PYX_ERR(0, 52, __pyx_L1_error)
-    __pyx_t_10 = __Pyx_PyObject_IsTrue(__pyx_t_7); if (unlikely(__pyx_t_10 < 0)) __PYX_ERR(0, 52, __pyx_L1_error)
-    __Pyx_DECREF(__pyx_t_7); __pyx_t_7 = 0;
-    if (__pyx_t_10) {
-      __Pyx_INCREF(__pyx_v_b0);
-      __pyx_t_3 = __pyx_v_b0;
-    } else {
-      __Pyx_GetModuleGlobalName(__pyx_t_7, __pyx_n_s_WILDCARD_SYMBOL); if (unlikely(!__pyx_t_7)) __PYX_ERR(0, 52, __pyx_L1_error)
-      __Pyx_GOTREF(__pyx_t_7);
-      __pyx_t_3 = __pyx_t_7;
-      __pyx_t_7 = 0;
-    }
-    if (unlikely(__Pyx_ListComp_Append(__pyx_t_1, (PyObject*)__pyx_t_3))) __PYX_ERR(0, 52, __pyx_L1_error)
     __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
-  }
-  __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
-  __pyx_t_2 = __Pyx_PyString_Join(__pyx_kp_s_, __pyx_t_1); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 52, __pyx_L1_error)
+    for (;;) {
+      if (likely(!__pyx_t_5)) {
+        if (likely(PyList_CheckExact(__pyx_t_2))) {
+          if (__pyx_t_4 >= PyList_GET_SIZE(__pyx_t_2)) break;
+          #if CYTHON_ASSUME_SAFE_MACROS && !CYTHON_AVOID_BORROWED_REFS
+          __pyx_t_3 = PyList_GET_ITEM(__pyx_t_2, __pyx_t_4); __Pyx_INCREF(__pyx_t_3); __pyx_t_4++; if (unlikely(0 < 0)) __PYX_ERR(0, 49, __pyx_L5_error)
+          #else
+          __pyx_t_3 = PySequence_ITEM(__pyx_t_2, __pyx_t_4); __pyx_t_4++; if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 49, __pyx_L5_error)
+          __Pyx_GOTREF(__pyx_t_3);
+          #endif
+        } else {
+          if (__pyx_t_4 >= PyTuple_GET_SIZE(__pyx_t_2)) break;
+          #if CYTHON_ASSUME_SAFE_MACROS && !CYTHON_AVOID_BORROWED_REFS
+          __pyx_t_3 = PyTuple_GET_ITEM(__pyx_t_2, __pyx_t_4); __Pyx_INCREF(__pyx_t_3); __pyx_t_4++; if (unlikely(0 < 0)) __PYX_ERR(0, 49, __pyx_L5_error)
+          #else
+          __pyx_t_3 = PySequence_ITEM(__pyx_t_2, __pyx_t_4); __pyx_t_4++; if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 49, __pyx_L5_error)
+          __Pyx_GOTREF(__pyx_t_3);
+          #endif
+        }
+      } else {
+        __pyx_t_3 = __pyx_t_5(__pyx_t_2);
+        if (unlikely(!__pyx_t_3)) {
+          PyObject* exc_type = PyErr_Occurred();
+          if (exc_type) {
+            if (likely(__Pyx_PyErr_GivenExceptionMatches(exc_type, PyExc_StopIteration))) PyErr_Clear();
+            else __PYX_ERR(0, 49, __pyx_L5_error)
+          }
+          break;
+        }
+        __Pyx_GOTREF(__pyx_t_3);
+      }
+      if ((likely(PyTuple_CheckExact(__pyx_t_3))) || (PyList_CheckExact(__pyx_t_3))) {
+        PyObject* sequence = __pyx_t_3;
+        Py_ssize_t size = __Pyx_PySequence_SIZE(sequence);
+        if (unlikely(size != 2)) {
+          if (size > 2) __Pyx_RaiseTooManyValuesError(2);
+          else if (size >= 0) __Pyx_RaiseNeedMoreValuesError(size);
+          __PYX_ERR(0, 49, __pyx_L5_error)
+        }
+        #if CYTHON_ASSUME_SAFE_MACROS && !CYTHON_AVOID_BORROWED_REFS
+        if (likely(PyTuple_CheckExact(sequence))) {
+          __pyx_t_6 = PyTuple_GET_ITEM(sequence, 0); 
+          __pyx_t_7 = PyTuple_GET_ITEM(sequence, 1); 
+        } else {
+          __pyx_t_6 = PyList_GET_ITEM(sequence, 0); 
+          __pyx_t_7 = PyList_GET_ITEM(sequence, 1); 
+        }
+        __Pyx_INCREF(__pyx_t_6);
+        __Pyx_INCREF(__pyx_t_7);
+        #else
+        __pyx_t_6 = PySequence_ITEM(sequence, 0); if (unlikely(!__pyx_t_6)) __PYX_ERR(0, 49, __pyx_L5_error)
+        __Pyx_GOTREF(__pyx_t_6);
+        __pyx_t_7 = PySequence_ITEM(sequence, 1); if (unlikely(!__pyx_t_7)) __PYX_ERR(0, 49, __pyx_L5_error)
+        __Pyx_GOTREF(__pyx_t_7);
+        #endif
+        __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
+      } else {
+        Py_ssize_t index = -1;
+        __pyx_t_8 = PyObject_GetIter(__pyx_t_3); if (unlikely(!__pyx_t_8)) __PYX_ERR(0, 49, __pyx_L5_error)
+        __Pyx_GOTREF(__pyx_t_8);
+        __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
+        __pyx_t_9 = Py_TYPE(__pyx_t_8)->tp_iternext;
+        index = 0; __pyx_t_6 = __pyx_t_9(__pyx_t_8); if (unlikely(!__pyx_t_6)) goto __pyx_L8_unpacking_failed;
+        __Pyx_GOTREF(__pyx_t_6);
+        index = 1; __pyx_t_7 = __pyx_t_9(__pyx_t_8); if (unlikely(!__pyx_t_7)) goto __pyx_L8_unpacking_failed;
+        __Pyx_GOTREF(__pyx_t_7);
+        if (__Pyx_IternextUnpackEndCheck(__pyx_t_9(__pyx_t_8), 2) < 0) __PYX_ERR(0, 49, __pyx_L5_error)
+        __pyx_t_9 = NULL;
+        __Pyx_DECREF(__pyx_t_8); __pyx_t_8 = 0;
+        goto __pyx_L9_unpacking_done;
+        __pyx_L8_unpacking_failed:;
+        __Pyx_DECREF(__pyx_t_8); __pyx_t_8 = 0;
+        __pyx_t_9 = NULL;
+        if (__Pyx_IterFinish() == 0) __Pyx_RaiseNeedMoreValuesError(index);
+        __PYX_ERR(0, 49, __pyx_L5_error)
+        __pyx_L9_unpacking_done:;
+      }
+      __Pyx_XDECREF_SET(__pyx_7genexpr__pyx_v_b0, __pyx_t_6);
+      __pyx_t_6 = 0;
+      __Pyx_XDECREF_SET(__pyx_7genexpr__pyx_v_b1, __pyx_t_7);
+      __pyx_t_7 = 0;
+      __pyx_t_7 = PyObject_RichCompare(__pyx_7genexpr__pyx_v_b0, __pyx_7genexpr__pyx_v_b1, Py_EQ); __Pyx_XGOTREF(__pyx_t_7); if (unlikely(!__pyx_t_7)) __PYX_ERR(0, 49, __pyx_L5_error)
+      __pyx_t_10 = __Pyx_PyObject_IsTrue(__pyx_t_7); if (unlikely(__pyx_t_10 < 0)) __PYX_ERR(0, 49, __pyx_L5_error)
+      __Pyx_DECREF(__pyx_t_7); __pyx_t_7 = 0;
+      if (__pyx_t_10) {
+        __Pyx_INCREF(__pyx_7genexpr__pyx_v_b0);
+        __pyx_t_3 = __pyx_7genexpr__pyx_v_b0;
+      } else {
+        __Pyx_GetModuleGlobalName(__pyx_t_7, __pyx_n_s_WILDCARD_SYMBOL); if (unlikely(!__pyx_t_7)) __PYX_ERR(0, 49, __pyx_L5_error)
+        __Pyx_GOTREF(__pyx_t_7);
+        __pyx_t_3 = __pyx_t_7;
+        __pyx_t_7 = 0;
+      }
+      if (unlikely(__Pyx_ListComp_Append(__pyx_t_1, (PyObject*)__pyx_t_3))) __PYX_ERR(0, 49, __pyx_L5_error)
+      __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
+    }
+    __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
+    __Pyx_XDECREF(__pyx_7genexpr__pyx_v_b0); __pyx_7genexpr__pyx_v_b0 = 0;
+    __Pyx_XDECREF(__pyx_7genexpr__pyx_v_b1); __pyx_7genexpr__pyx_v_b1 = 0;
+    goto __pyx_L10_exit_scope;
+    __pyx_L5_error:;
+    __Pyx_XDECREF(__pyx_7genexpr__pyx_v_b0); __pyx_7genexpr__pyx_v_b0 = 0;
+    __Pyx_XDECREF(__pyx_7genexpr__pyx_v_b1); __pyx_7genexpr__pyx_v_b1 = 0;
+    goto __pyx_L1_error;
+    __pyx_L10_exit_scope:;
+  } /* exit inner scope */
+  __pyx_t_2 = PyUnicode_Join(__pyx_kp_u_, __pyx_t_1); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 49, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_2);
   __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
   __pyx_r = __pyx_t_2;
   __pyx_t_2 = 0;
   goto __pyx_L0;
 
-  /* "cana/canalization/cboolean_canalization.pyx":41
- * 	return density_groups
+  /* "cana/canalization/cboolean_canalization.pyx":38
+ * 
  * 
  * def find_wildcards(binstate1, binstate2):             # <<<<<<<<<<<<<<
- * 	"""
- * 	Compare two binary states and replace any differing bits by a wildcard.
+ *     """
+ *     Compare two binary states and replace any differing bits by a wildcard.
  */
 
   /* function exit code */
@@ -2153,24 +2155,24 @@ static PyObject *__pyx_pf_4cana_12canalization_21cboolean_canalization_2find_wil
   __Pyx_AddTraceback("cana.canalization.cboolean_canalization.find_wildcards", __pyx_clineno, __pyx_lineno, __pyx_filename);
   __pyx_r = NULL;
   __pyx_L0:;
-  __Pyx_XDECREF(__pyx_v_b0);
-  __Pyx_XDECREF(__pyx_v_b1);
+  __Pyx_XDECREF(__pyx_7genexpr__pyx_v_b0);
+  __Pyx_XDECREF(__pyx_7genexpr__pyx_v_b1);
   __Pyx_XGIVEREF(__pyx_r);
   __Pyx_RefNannyFinishContext();
   return __pyx_r;
 }
 
-/* "cana/canalization/cboolean_canalization.pyx":54
- * 	return "".join([b0 if (b0==b1) else WILDCARD_SYMBOL for b0, b1 in zip(binstate1, binstate2)])
+/* "cana/canalization/cboolean_canalization.pyx":52
+ * 
  * 
  * def binary_density(binstate):             # <<<<<<<<<<<<<<
- * 	"""
- * 	Find the density (number of 1s) for a term with possible wildcards.
+ *     """
+ *     Find the density (number of 1s) for a term with possible wildcards.
  */
 
 /* Python wrapper */
 static PyObject *__pyx_pw_4cana_12canalization_21cboolean_canalization_5binary_density(PyObject *__pyx_self, PyObject *__pyx_v_binstate); /*proto*/
-static char __pyx_doc_4cana_12canalization_21cboolean_canalization_4binary_density[] = "\n\tFind the density (number of 1s) for a term with possible wildcards.\n\t";
+static char __pyx_doc_4cana_12canalization_21cboolean_canalization_4binary_density[] = "\n    Find the density (number of 1s) for a term with possible wildcards.\n    ";
 static PyMethodDef __pyx_mdef_4cana_12canalization_21cboolean_canalization_5binary_density = {"binary_density", (PyCFunction)__pyx_pw_4cana_12canalization_21cboolean_canalization_5binary_density, METH_O, __pyx_doc_4cana_12canalization_21cboolean_canalization_4binary_density};
 static PyObject *__pyx_pw_4cana_12canalization_21cboolean_canalization_5binary_density(PyObject *__pyx_self, PyObject *__pyx_v_binstate) {
   PyObject *__pyx_r = 0;
@@ -2194,15 +2196,15 @@ static PyObject *__pyx_pf_4cana_12canalization_21cboolean_canalization_4binary_d
   int __pyx_clineno = 0;
   __Pyx_RefNannySetupContext("binary_density", 0);
 
-  /* "cana/canalization/cboolean_canalization.pyx":58
- * 	Find the density (number of 1s) for a term with possible wildcards.
- * 	"""
- * 	return binstate.count('1')             # <<<<<<<<<<<<<<
+  /* "cana/canalization/cboolean_canalization.pyx":56
+ *     Find the density (number of 1s) for a term with possible wildcards.
+ *     """
+ *     return binstate.count('1')             # <<<<<<<<<<<<<<
  * 
- * def replace_wildcard(binstate, idx):
+ * 
  */
   __Pyx_XDECREF(__pyx_r);
-  __pyx_t_2 = __Pyx_PyObject_GetAttrStr(__pyx_v_binstate, __pyx_n_s_count); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 58, __pyx_L1_error)
+  __pyx_t_2 = __Pyx_PyObject_GetAttrStr(__pyx_v_binstate, __pyx_n_s_count); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 56, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_2);
   __pyx_t_3 = NULL;
   if (CYTHON_UNPACK_METHODS && likely(PyMethod_Check(__pyx_t_2))) {
@@ -2214,21 +2216,21 @@ static PyObject *__pyx_pf_4cana_12canalization_21cboolean_canalization_4binary_d
       __Pyx_DECREF_SET(__pyx_t_2, function);
     }
   }
-  __pyx_t_1 = (__pyx_t_3) ? __Pyx_PyObject_Call2Args(__pyx_t_2, __pyx_t_3, __pyx_kp_s_1) : __Pyx_PyObject_CallOneArg(__pyx_t_2, __pyx_kp_s_1);
+  __pyx_t_1 = (__pyx_t_3) ? __Pyx_PyObject_Call2Args(__pyx_t_2, __pyx_t_3, __pyx_kp_u_1) : __Pyx_PyObject_CallOneArg(__pyx_t_2, __pyx_kp_u_1);
   __Pyx_XDECREF(__pyx_t_3); __pyx_t_3 = 0;
-  if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 58, __pyx_L1_error)
+  if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 56, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_1);
   __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
   __pyx_r = __pyx_t_1;
   __pyx_t_1 = 0;
   goto __pyx_L0;
 
-  /* "cana/canalization/cboolean_canalization.pyx":54
- * 	return "".join([b0 if (b0==b1) else WILDCARD_SYMBOL for b0, b1 in zip(binstate1, binstate2)])
+  /* "cana/canalization/cboolean_canalization.pyx":52
+ * 
  * 
  * def binary_density(binstate):             # <<<<<<<<<<<<<<
- * 	"""
- * 	Find the density (number of 1s) for a term with possible wildcards.
+ *     """
+ *     Find the density (number of 1s) for a term with possible wildcards.
  */
 
   /* function exit code */
@@ -2244,17 +2246,17 @@ static PyObject *__pyx_pf_4cana_12canalization_21cboolean_canalization_4binary_d
   return __pyx_r;
 }
 
-/* "cana/canalization/cboolean_canalization.pyx":60
- * 	return binstate.count('1')
+/* "cana/canalization/cboolean_canalization.pyx":59
+ * 
  * 
  * def replace_wildcard(binstate, idx):             # <<<<<<<<<<<<<<
- * 	"""
- * 	Return the binary state with a wildcard at the idx position.
+ *     """
+ *     Return the binary state with a wildcard at the idx position.
  */
 
 /* Python wrapper */
 static PyObject *__pyx_pw_4cana_12canalization_21cboolean_canalization_7replace_wildcard(PyObject *__pyx_self, PyObject *__pyx_args, PyObject *__pyx_kwds); /*proto*/
-static char __pyx_doc_4cana_12canalization_21cboolean_canalization_6replace_wildcard[] = "\n\tReturn the binary state with a wildcard at the idx position.\n\t";
+static char __pyx_doc_4cana_12canalization_21cboolean_canalization_6replace_wildcard[] = "\n    Return the binary state with a wildcard at the idx position.\n    ";
 static PyMethodDef __pyx_mdef_4cana_12canalization_21cboolean_canalization_7replace_wildcard = {"replace_wildcard", (PyCFunction)(void*)(PyCFunctionWithKeywords)__pyx_pw_4cana_12canalization_21cboolean_canalization_7replace_wildcard, METH_VARARGS|METH_KEYWORDS, __pyx_doc_4cana_12canalization_21cboolean_canalization_6replace_wildcard};
 static PyObject *__pyx_pw_4cana_12canalization_21cboolean_canalization_7replace_wildcard(PyObject *__pyx_self, PyObject *__pyx_args, PyObject *__pyx_kwds) {
   PyObject *__pyx_v_binstate = 0;
@@ -2288,11 +2290,11 @@ static PyObject *__pyx_pw_4cana_12canalization_21cboolean_canalization_7replace_
         case  1:
         if (likely((values[1] = __Pyx_PyDict_GetItemStr(__pyx_kwds, __pyx_n_s_idx)) != 0)) kw_args--;
         else {
-          __Pyx_RaiseArgtupleInvalid("replace_wildcard", 1, 2, 2, 1); __PYX_ERR(0, 60, __pyx_L3_error)
+          __Pyx_RaiseArgtupleInvalid("replace_wildcard", 1, 2, 2, 1); __PYX_ERR(0, 59, __pyx_L3_error)
         }
       }
       if (unlikely(kw_args > 0)) {
-        if (unlikely(__Pyx_ParseOptionalKeywords(__pyx_kwds, __pyx_pyargnames, 0, values, pos_args, "replace_wildcard") < 0)) __PYX_ERR(0, 60, __pyx_L3_error)
+        if (unlikely(__Pyx_ParseOptionalKeywords(__pyx_kwds, __pyx_pyargnames, 0, values, pos_args, "replace_wildcard") < 0)) __PYX_ERR(0, 59, __pyx_L3_error)
       }
     } else if (PyTuple_GET_SIZE(__pyx_args) != 2) {
       goto __pyx_L5_argtuple_error;
@@ -2305,7 +2307,7 @@ static PyObject *__pyx_pw_4cana_12canalization_21cboolean_canalization_7replace_
   }
   goto __pyx_L4_argument_unpacking_done;
   __pyx_L5_argtuple_error:;
-  __Pyx_RaiseArgtupleInvalid("replace_wildcard", 1, 2, 2, PyTuple_GET_SIZE(__pyx_args)); __PYX_ERR(0, 60, __pyx_L3_error)
+  __Pyx_RaiseArgtupleInvalid("replace_wildcard", 1, 2, 2, PyTuple_GET_SIZE(__pyx_args)); __PYX_ERR(0, 59, __pyx_L3_error)
   __pyx_L3_error:;
   __Pyx_AddTraceback("cana.canalization.cboolean_canalization.replace_wildcard", __pyx_clineno, __pyx_lineno, __pyx_filename);
   __Pyx_RefNannyFinishContext();
@@ -2329,28 +2331,28 @@ static PyObject *__pyx_pf_4cana_12canalization_21cboolean_canalization_6replace_
   int __pyx_clineno = 0;
   __Pyx_RefNannySetupContext("replace_wildcard", 0);
 
-  /* "cana/canalization/cboolean_canalization.pyx":64
- * 	Return the binary state with a wildcard at the idx position.
- * 	"""
- * 	return binstate[:idx] + WILDCARD_SYMBOL + binstate[idx+1:]             # <<<<<<<<<<<<<<
+  /* "cana/canalization/cboolean_canalization.pyx":63
+ *     Return the binary state with a wildcard at the idx position.
+ *     """
+ *     return binstate[:idx] + WILDCARD_SYMBOL + binstate[idx + 1:]             # <<<<<<<<<<<<<<
  * 
- * def find_implicants_qm(input_binstates, verbose=False):
+ * 
  */
   __Pyx_XDECREF(__pyx_r);
-  __pyx_t_1 = __Pyx_PyObject_GetSlice(__pyx_v_binstate, 0, 0, NULL, &__pyx_v_idx, NULL, 0, 0, 1); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 64, __pyx_L1_error)
+  __pyx_t_1 = __Pyx_PyObject_GetSlice(__pyx_v_binstate, 0, 0, NULL, &__pyx_v_idx, NULL, 0, 0, 1); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 63, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_1);
-  __Pyx_GetModuleGlobalName(__pyx_t_2, __pyx_n_s_WILDCARD_SYMBOL); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 64, __pyx_L1_error)
+  __Pyx_GetModuleGlobalName(__pyx_t_2, __pyx_n_s_WILDCARD_SYMBOL); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 63, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_2);
-  __pyx_t_3 = PyNumber_Add(__pyx_t_1, __pyx_t_2); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 64, __pyx_L1_error)
+  __pyx_t_3 = PyNumber_Add(__pyx_t_1, __pyx_t_2); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 63, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_3);
   __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
   __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
-  __pyx_t_2 = __Pyx_PyInt_AddObjC(__pyx_v_idx, __pyx_int_1, 1, 0, 0); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 64, __pyx_L1_error)
+  __pyx_t_2 = __Pyx_PyInt_AddObjC(__pyx_v_idx, __pyx_int_1, 1, 0, 0); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 63, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_2);
-  __pyx_t_1 = __Pyx_PyObject_GetSlice(__pyx_v_binstate, 0, 0, &__pyx_t_2, NULL, NULL, 0, 0, 1); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 64, __pyx_L1_error)
+  __pyx_t_1 = __Pyx_PyObject_GetSlice(__pyx_v_binstate, 0, 0, &__pyx_t_2, NULL, NULL, 0, 0, 1); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 63, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_1);
   __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
-  __pyx_t_2 = PyNumber_Add(__pyx_t_3, __pyx_t_1); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 64, __pyx_L1_error)
+  __pyx_t_2 = PyNumber_Add(__pyx_t_3, __pyx_t_1); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 63, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_2);
   __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
   __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
@@ -2358,12 +2360,12 @@ static PyObject *__pyx_pf_4cana_12canalization_21cboolean_canalization_6replace_
   __pyx_t_2 = 0;
   goto __pyx_L0;
 
-  /* "cana/canalization/cboolean_canalization.pyx":60
- * 	return binstate.count('1')
+  /* "cana/canalization/cboolean_canalization.pyx":59
+ * 
  * 
  * def replace_wildcard(binstate, idx):             # <<<<<<<<<<<<<<
- * 	"""
- * 	Return the binary state with a wildcard at the idx position.
+ *     """
+ *     Return the binary state with a wildcard at the idx position.
  */
 
   /* function exit code */
@@ -2380,16 +2382,16 @@ static PyObject *__pyx_pf_4cana_12canalization_21cboolean_canalization_6replace_
 }
 
 /* "cana/canalization/cboolean_canalization.pyx":66
- * 	return binstate[:idx] + WILDCARD_SYMBOL + binstate[idx+1:]
+ * 
  * 
  * def find_implicants_qm(input_binstates, verbose=False):             # <<<<<<<<<<<<<<
- * 	""" Finds the prime implicants (PI) using the Quine-McCluskey algorithm :cite:`Quine:1955`.
+ *     """ Finds the prime implicants (PI) using the Quine-McCluskey algorithm :cite:`Quine:1955`.
  * 
  */
 
 /* Python wrapper */
 static PyObject *__pyx_pw_4cana_12canalization_21cboolean_canalization_9find_implicants_qm(PyObject *__pyx_self, PyObject *__pyx_args, PyObject *__pyx_kwds); /*proto*/
-static char __pyx_doc_4cana_12canalization_21cboolean_canalization_8find_implicants_qm[] = " Finds the prime implicants (PI) using the Quine-McCluskey algorithm :cite:`Quine:1955`.\n\n\tArgs:\n\t\tinput_binstates (list / set) : A the binstates to condense.\n\n\tReturns:\n\t\tPI (set): a set of prime implicants.\n\n\t# Authors: Alex Gates\n\t";
+static char __pyx_doc_4cana_12canalization_21cboolean_canalization_8find_implicants_qm[] = " Finds the prime implicants (PI) using the Quine-McCluskey algorithm :cite:`Quine:1955`.\n\n    Args:\n        input_binstates (list / set) : A the binstates to condense.\n\n    Returns:\n        PI (set): a set of prime implicants.\n\n    # Authors: Alex Gates\n    ";
 static PyMethodDef __pyx_mdef_4cana_12canalization_21cboolean_canalization_9find_implicants_qm = {"find_implicants_qm", (PyCFunction)(void*)(PyCFunctionWithKeywords)__pyx_pw_4cana_12canalization_21cboolean_canalization_9find_implicants_qm, METH_VARARGS|METH_KEYWORDS, __pyx_doc_4cana_12canalization_21cboolean_canalization_8find_implicants_qm};
 static PyObject *__pyx_pw_4cana_12canalization_21cboolean_canalization_9find_implicants_qm(PyObject *__pyx_self, PyObject *__pyx_args, PyObject *__pyx_kwds) {
   PyObject *__pyx_v_input_binstates = 0;
@@ -2499,9 +2501,9 @@ static PyObject *__pyx_pf_4cana_12canalization_21cboolean_canalization_8find_imp
 
   /* "cana/canalization/cboolean_canalization.pyx":79
  * 
- * 	# we start with an empty set of implicants
- * 	matched_implicants = set()             # <<<<<<<<<<<<<<
- * 	done = False
+ *     # we start with an empty set of implicants
+ *     matched_implicants = set()             # <<<<<<<<<<<<<<
+ *     done = False
  * 
  */
   __pyx_t_1 = PySet_New(0); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 79, __pyx_L1_error)
@@ -2510,33 +2512,33 @@ static PyObject *__pyx_pf_4cana_12canalization_21cboolean_canalization_8find_imp
   __pyx_t_1 = 0;
 
   /* "cana/canalization/cboolean_canalization.pyx":80
- * 	# we start with an empty set of implicants
- * 	matched_implicants = set()
- * 	done = False             # <<<<<<<<<<<<<<
+ *     # we start with an empty set of implicants
+ *     matched_implicants = set()
+ *     done = False             # <<<<<<<<<<<<<<
  * 
- * 
+ *     # repeat the following until no matches are found
  */
   __pyx_v_done = 0;
 
-  /* "cana/canalization/cboolean_canalization.pyx":85
+  /* "cana/canalization/cboolean_canalization.pyx":83
  * 
- * 	# repeat the following until no matches are found
- * 	while not done:             # <<<<<<<<<<<<<<
+ *     # repeat the following until no matches are found
+ *     while not done:             # <<<<<<<<<<<<<<
  * 
- * 		# split up the input_binstates into groups based on the number of 1s (density)
+ *         # split up the input_binstates into groups based on the number of 1s (density)
  */
   while (1) {
     __pyx_t_2 = ((!(__pyx_v_done != 0)) != 0);
     if (!__pyx_t_2) break;
 
-    /* "cana/canalization/cboolean_canalization.pyx":88
+    /* "cana/canalization/cboolean_canalization.pyx":86
  * 
- * 		# split up the input_binstates into groups based on the number of 1s (density)
- * 		density_groups = make_density_groups(input_binstates)             # <<<<<<<<<<<<<<
+ *         # split up the input_binstates into groups based on the number of 1s (density)
+ *         density_groups = make_density_groups(input_binstates)             # <<<<<<<<<<<<<<
  * 
- * 		# now clear everything for the new pass
+ *         # now clear everything for the new pass
  */
-    __Pyx_GetModuleGlobalName(__pyx_t_3, __pyx_n_s_make_density_groups); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 88, __pyx_L1_error)
+    __Pyx_GetModuleGlobalName(__pyx_t_3, __pyx_n_s_make_density_groups); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 86, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_3);
     __pyx_t_4 = NULL;
     if (CYTHON_UNPACK_METHODS && unlikely(PyMethod_Check(__pyx_t_3))) {
@@ -2550,67 +2552,67 @@ static PyObject *__pyx_pf_4cana_12canalization_21cboolean_canalization_8find_imp
     }
     __pyx_t_1 = (__pyx_t_4) ? __Pyx_PyObject_Call2Args(__pyx_t_3, __pyx_t_4, __pyx_v_input_binstates) : __Pyx_PyObject_CallOneArg(__pyx_t_3, __pyx_v_input_binstates);
     __Pyx_XDECREF(__pyx_t_4); __pyx_t_4 = 0;
-    if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 88, __pyx_L1_error)
+    if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 86, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_1);
     __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
     __Pyx_XDECREF_SET(__pyx_v_density_groups, __pyx_t_1);
     __pyx_t_1 = 0;
 
-    /* "cana/canalization/cboolean_canalization.pyx":91
+    /* "cana/canalization/cboolean_canalization.pyx":89
  * 
- * 		# now clear everything for the new pass
- * 		input_binstates = set()             # <<<<<<<<<<<<<<
- * 		used = set()
+ *         # now clear everything for the new pass
+ *         input_binstates = set()             # <<<<<<<<<<<<<<
+ *         used = set()
  * 
  */
-    __pyx_t_1 = PySet_New(0); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 91, __pyx_L1_error)
+    __pyx_t_1 = PySet_New(0); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 89, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_1);
     __Pyx_DECREF_SET(__pyx_v_input_binstates, __pyx_t_1);
     __pyx_t_1 = 0;
 
-    /* "cana/canalization/cboolean_canalization.pyx":92
- * 		# now clear everything for the new pass
- * 		input_binstates = set()
- * 		used = set()             # <<<<<<<<<<<<<<
+    /* "cana/canalization/cboolean_canalization.pyx":90
+ *         # now clear everything for the new pass
+ *         input_binstates = set()
+ *         used = set()             # <<<<<<<<<<<<<<
  * 
- * 		#Find the prime implicants
+ *         # Find the prime implicants
  */
-    __pyx_t_1 = PySet_New(0); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 92, __pyx_L1_error)
+    __pyx_t_1 = PySet_New(0); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 90, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_1);
     __Pyx_XDECREF_SET(__pyx_v_used, ((PyObject*)__pyx_t_1));
     __pyx_t_1 = 0;
 
-    /* "cana/canalization/cboolean_canalization.pyx":97
+    /* "cana/canalization/cboolean_canalization.pyx":95
  * 
- * 		# for each possible density
- * 		for density in density_groups:             # <<<<<<<<<<<<<<
- * 			# first make sure there are other binstates with the next density
- * 			if density+1 in density_groups:
+ *         # for each possible density
+ *         for density in density_groups:             # <<<<<<<<<<<<<<
+ *             # first make sure there are other binstates with the next density
+ *             if density + 1 in density_groups:
  */
     if (likely(PyList_CheckExact(__pyx_v_density_groups)) || PyTuple_CheckExact(__pyx_v_density_groups)) {
       __pyx_t_1 = __pyx_v_density_groups; __Pyx_INCREF(__pyx_t_1); __pyx_t_5 = 0;
       __pyx_t_6 = NULL;
     } else {
-      __pyx_t_5 = -1; __pyx_t_1 = PyObject_GetIter(__pyx_v_density_groups); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 97, __pyx_L1_error)
+      __pyx_t_5 = -1; __pyx_t_1 = PyObject_GetIter(__pyx_v_density_groups); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 95, __pyx_L1_error)
       __Pyx_GOTREF(__pyx_t_1);
-      __pyx_t_6 = Py_TYPE(__pyx_t_1)->tp_iternext; if (unlikely(!__pyx_t_6)) __PYX_ERR(0, 97, __pyx_L1_error)
+      __pyx_t_6 = Py_TYPE(__pyx_t_1)->tp_iternext; if (unlikely(!__pyx_t_6)) __PYX_ERR(0, 95, __pyx_L1_error)
     }
     for (;;) {
       if (likely(!__pyx_t_6)) {
         if (likely(PyList_CheckExact(__pyx_t_1))) {
           if (__pyx_t_5 >= PyList_GET_SIZE(__pyx_t_1)) break;
           #if CYTHON_ASSUME_SAFE_MACROS && !CYTHON_AVOID_BORROWED_REFS
-          __pyx_t_3 = PyList_GET_ITEM(__pyx_t_1, __pyx_t_5); __Pyx_INCREF(__pyx_t_3); __pyx_t_5++; if (unlikely(0 < 0)) __PYX_ERR(0, 97, __pyx_L1_error)
+          __pyx_t_3 = PyList_GET_ITEM(__pyx_t_1, __pyx_t_5); __Pyx_INCREF(__pyx_t_3); __pyx_t_5++; if (unlikely(0 < 0)) __PYX_ERR(0, 95, __pyx_L1_error)
           #else
-          __pyx_t_3 = PySequence_ITEM(__pyx_t_1, __pyx_t_5); __pyx_t_5++; if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 97, __pyx_L1_error)
+          __pyx_t_3 = PySequence_ITEM(__pyx_t_1, __pyx_t_5); __pyx_t_5++; if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 95, __pyx_L1_error)
           __Pyx_GOTREF(__pyx_t_3);
           #endif
         } else {
           if (__pyx_t_5 >= PyTuple_GET_SIZE(__pyx_t_1)) break;
           #if CYTHON_ASSUME_SAFE_MACROS && !CYTHON_AVOID_BORROWED_REFS
-          __pyx_t_3 = PyTuple_GET_ITEM(__pyx_t_1, __pyx_t_5); __Pyx_INCREF(__pyx_t_3); __pyx_t_5++; if (unlikely(0 < 0)) __PYX_ERR(0, 97, __pyx_L1_error)
+          __pyx_t_3 = PyTuple_GET_ITEM(__pyx_t_1, __pyx_t_5); __Pyx_INCREF(__pyx_t_3); __pyx_t_5++; if (unlikely(0 < 0)) __PYX_ERR(0, 95, __pyx_L1_error)
           #else
-          __pyx_t_3 = PySequence_ITEM(__pyx_t_1, __pyx_t_5); __pyx_t_5++; if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 97, __pyx_L1_error)
+          __pyx_t_3 = PySequence_ITEM(__pyx_t_1, __pyx_t_5); __pyx_t_5++; if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 95, __pyx_L1_error)
           __Pyx_GOTREF(__pyx_t_3);
           #endif
         }
@@ -2620,7 +2622,7 @@ static PyObject *__pyx_pf_4cana_12canalization_21cboolean_canalization_8find_imp
           PyObject* exc_type = PyErr_Occurred();
           if (exc_type) {
             if (likely(__Pyx_PyErr_GivenExceptionMatches(exc_type, PyExc_StopIteration))) PyErr_Clear();
-            else __PYX_ERR(0, 97, __pyx_L1_error)
+            else __PYX_ERR(0, 95, __pyx_L1_error)
           }
           break;
         }
@@ -2629,36 +2631,36 @@ static PyObject *__pyx_pf_4cana_12canalization_21cboolean_canalization_8find_imp
       __Pyx_XDECREF_SET(__pyx_v_density, __pyx_t_3);
       __pyx_t_3 = 0;
 
-      /* "cana/canalization/cboolean_canalization.pyx":99
- * 		for density in density_groups:
- * 			# first make sure there are other binstates with the next density
- * 			if density+1 in density_groups:             # <<<<<<<<<<<<<<
+      /* "cana/canalization/cboolean_canalization.pyx":97
+ *         for density in density_groups:
+ *             # first make sure there are other binstates with the next density
+ *             if density + 1 in density_groups:             # <<<<<<<<<<<<<<
  * 
- * 				# then we pass through the binstates
+ *                 # then we pass through the binstates
  */
-      __pyx_t_3 = __Pyx_PyInt_AddObjC(__pyx_v_density, __pyx_int_1, 1, 0, 0); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 99, __pyx_L1_error)
+      __pyx_t_3 = __Pyx_PyInt_AddObjC(__pyx_v_density, __pyx_int_1, 1, 0, 0); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 97, __pyx_L1_error)
       __Pyx_GOTREF(__pyx_t_3);
-      __pyx_t_2 = (__Pyx_PySequence_ContainsTF(__pyx_t_3, __pyx_v_density_groups, Py_EQ)); if (unlikely(__pyx_t_2 < 0)) __PYX_ERR(0, 99, __pyx_L1_error)
+      __pyx_t_2 = (__Pyx_PySequence_ContainsTF(__pyx_t_3, __pyx_v_density_groups, Py_EQ)); if (unlikely(__pyx_t_2 < 0)) __PYX_ERR(0, 97, __pyx_L1_error)
       __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
       __pyx_t_7 = (__pyx_t_2 != 0);
       if (__pyx_t_7) {
 
-        /* "cana/canalization/cboolean_canalization.pyx":102
+        /* "cana/canalization/cboolean_canalization.pyx":100
  * 
- * 				# then we pass through the binstates
- * 				for binstate0 in density_groups[density]:             # <<<<<<<<<<<<<<
+ *                 # then we pass through the binstates
+ *                 for binstate0 in density_groups[density]:             # <<<<<<<<<<<<<<
  * 
- * 					# An optimization due to Thomas Pircher, https://github.com/tpircher/quine-mccluskey/blob/master/quine_mccluskey/qm.py
+ *                     # An optimization due to Thomas Pircher, https://github.com/tpircher/quine-mccluskey/blob/master/quine_mccluskey/qm.py
  */
-        __pyx_t_3 = __Pyx_PyObject_GetItem(__pyx_v_density_groups, __pyx_v_density); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 102, __pyx_L1_error)
+        __pyx_t_3 = __Pyx_PyObject_GetItem(__pyx_v_density_groups, __pyx_v_density); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 100, __pyx_L1_error)
         __Pyx_GOTREF(__pyx_t_3);
         if (likely(PyList_CheckExact(__pyx_t_3)) || PyTuple_CheckExact(__pyx_t_3)) {
           __pyx_t_4 = __pyx_t_3; __Pyx_INCREF(__pyx_t_4); __pyx_t_8 = 0;
           __pyx_t_9 = NULL;
         } else {
-          __pyx_t_8 = -1; __pyx_t_4 = PyObject_GetIter(__pyx_t_3); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 102, __pyx_L1_error)
+          __pyx_t_8 = -1; __pyx_t_4 = PyObject_GetIter(__pyx_t_3); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 100, __pyx_L1_error)
           __Pyx_GOTREF(__pyx_t_4);
-          __pyx_t_9 = Py_TYPE(__pyx_t_4)->tp_iternext; if (unlikely(!__pyx_t_9)) __PYX_ERR(0, 102, __pyx_L1_error)
+          __pyx_t_9 = Py_TYPE(__pyx_t_4)->tp_iternext; if (unlikely(!__pyx_t_9)) __PYX_ERR(0, 100, __pyx_L1_error)
         }
         __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
         for (;;) {
@@ -2666,17 +2668,17 @@ static PyObject *__pyx_pf_4cana_12canalization_21cboolean_canalization_8find_imp
             if (likely(PyList_CheckExact(__pyx_t_4))) {
               if (__pyx_t_8 >= PyList_GET_SIZE(__pyx_t_4)) break;
               #if CYTHON_ASSUME_SAFE_MACROS && !CYTHON_AVOID_BORROWED_REFS
-              __pyx_t_3 = PyList_GET_ITEM(__pyx_t_4, __pyx_t_8); __Pyx_INCREF(__pyx_t_3); __pyx_t_8++; if (unlikely(0 < 0)) __PYX_ERR(0, 102, __pyx_L1_error)
+              __pyx_t_3 = PyList_GET_ITEM(__pyx_t_4, __pyx_t_8); __Pyx_INCREF(__pyx_t_3); __pyx_t_8++; if (unlikely(0 < 0)) __PYX_ERR(0, 100, __pyx_L1_error)
               #else
-              __pyx_t_3 = PySequence_ITEM(__pyx_t_4, __pyx_t_8); __pyx_t_8++; if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 102, __pyx_L1_error)
+              __pyx_t_3 = PySequence_ITEM(__pyx_t_4, __pyx_t_8); __pyx_t_8++; if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 100, __pyx_L1_error)
               __Pyx_GOTREF(__pyx_t_3);
               #endif
             } else {
               if (__pyx_t_8 >= PyTuple_GET_SIZE(__pyx_t_4)) break;
               #if CYTHON_ASSUME_SAFE_MACROS && !CYTHON_AVOID_BORROWED_REFS
-              __pyx_t_3 = PyTuple_GET_ITEM(__pyx_t_4, __pyx_t_8); __Pyx_INCREF(__pyx_t_3); __pyx_t_8++; if (unlikely(0 < 0)) __PYX_ERR(0, 102, __pyx_L1_error)
+              __pyx_t_3 = PyTuple_GET_ITEM(__pyx_t_4, __pyx_t_8); __Pyx_INCREF(__pyx_t_3); __pyx_t_8++; if (unlikely(0 < 0)) __PYX_ERR(0, 100, __pyx_L1_error)
               #else
-              __pyx_t_3 = PySequence_ITEM(__pyx_t_4, __pyx_t_8); __pyx_t_8++; if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 102, __pyx_L1_error)
+              __pyx_t_3 = PySequence_ITEM(__pyx_t_4, __pyx_t_8); __pyx_t_8++; if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 100, __pyx_L1_error)
               __Pyx_GOTREF(__pyx_t_3);
               #endif
             }
@@ -2686,7 +2688,7 @@ static PyObject *__pyx_pf_4cana_12canalization_21cboolean_canalization_8find_imp
               PyObject* exc_type = PyErr_Occurred();
               if (exc_type) {
                 if (likely(__Pyx_PyErr_GivenExceptionMatches(exc_type, PyExc_StopIteration))) PyErr_Clear();
-                else __PYX_ERR(0, 102, __pyx_L1_error)
+                else __PYX_ERR(0, 100, __pyx_L1_error)
               }
               break;
             }
@@ -2695,12 +2697,12 @@ static PyObject *__pyx_pf_4cana_12canalization_21cboolean_canalization_8find_imp
           __Pyx_XDECREF_SET(__pyx_v_binstate0, __pyx_t_3);
           __pyx_t_3 = 0;
 
-          /* "cana/canalization/cboolean_canalization.pyx":112
- * 					# contained in the set groups[key_next].
+          /* "cana/canalization/cboolean_canalization.pyx":110
+ *                     # contained in the set groups[key_next].
  * 
- * 					for idx,b0 in enumerate(binstate0):             # <<<<<<<<<<<<<<
- * 						if b0 =='0':
- * 							binstate1 = flip_binstate_bit(binstate0, idx)
+ *                     for idx, b0 in enumerate(binstate0):             # <<<<<<<<<<<<<<
+ *                         if b0 == '0':
+ *                             binstate1 = flip_binstate_bit(binstate0, idx)
  */
           __Pyx_INCREF(__pyx_int_0);
           __pyx_t_3 = __pyx_int_0;
@@ -2708,26 +2710,26 @@ static PyObject *__pyx_pf_4cana_12canalization_21cboolean_canalization_8find_imp
             __pyx_t_10 = __pyx_v_binstate0; __Pyx_INCREF(__pyx_t_10); __pyx_t_11 = 0;
             __pyx_t_12 = NULL;
           } else {
-            __pyx_t_11 = -1; __pyx_t_10 = PyObject_GetIter(__pyx_v_binstate0); if (unlikely(!__pyx_t_10)) __PYX_ERR(0, 112, __pyx_L1_error)
+            __pyx_t_11 = -1; __pyx_t_10 = PyObject_GetIter(__pyx_v_binstate0); if (unlikely(!__pyx_t_10)) __PYX_ERR(0, 110, __pyx_L1_error)
             __Pyx_GOTREF(__pyx_t_10);
-            __pyx_t_12 = Py_TYPE(__pyx_t_10)->tp_iternext; if (unlikely(!__pyx_t_12)) __PYX_ERR(0, 112, __pyx_L1_error)
+            __pyx_t_12 = Py_TYPE(__pyx_t_10)->tp_iternext; if (unlikely(!__pyx_t_12)) __PYX_ERR(0, 110, __pyx_L1_error)
           }
           for (;;) {
             if (likely(!__pyx_t_12)) {
               if (likely(PyList_CheckExact(__pyx_t_10))) {
                 if (__pyx_t_11 >= PyList_GET_SIZE(__pyx_t_10)) break;
                 #if CYTHON_ASSUME_SAFE_MACROS && !CYTHON_AVOID_BORROWED_REFS
-                __pyx_t_13 = PyList_GET_ITEM(__pyx_t_10, __pyx_t_11); __Pyx_INCREF(__pyx_t_13); __pyx_t_11++; if (unlikely(0 < 0)) __PYX_ERR(0, 112, __pyx_L1_error)
+                __pyx_t_13 = PyList_GET_ITEM(__pyx_t_10, __pyx_t_11); __Pyx_INCREF(__pyx_t_13); __pyx_t_11++; if (unlikely(0 < 0)) __PYX_ERR(0, 110, __pyx_L1_error)
                 #else
-                __pyx_t_13 = PySequence_ITEM(__pyx_t_10, __pyx_t_11); __pyx_t_11++; if (unlikely(!__pyx_t_13)) __PYX_ERR(0, 112, __pyx_L1_error)
+                __pyx_t_13 = PySequence_ITEM(__pyx_t_10, __pyx_t_11); __pyx_t_11++; if (unlikely(!__pyx_t_13)) __PYX_ERR(0, 110, __pyx_L1_error)
                 __Pyx_GOTREF(__pyx_t_13);
                 #endif
               } else {
                 if (__pyx_t_11 >= PyTuple_GET_SIZE(__pyx_t_10)) break;
                 #if CYTHON_ASSUME_SAFE_MACROS && !CYTHON_AVOID_BORROWED_REFS
-                __pyx_t_13 = PyTuple_GET_ITEM(__pyx_t_10, __pyx_t_11); __Pyx_INCREF(__pyx_t_13); __pyx_t_11++; if (unlikely(0 < 0)) __PYX_ERR(0, 112, __pyx_L1_error)
+                __pyx_t_13 = PyTuple_GET_ITEM(__pyx_t_10, __pyx_t_11); __Pyx_INCREF(__pyx_t_13); __pyx_t_11++; if (unlikely(0 < 0)) __PYX_ERR(0, 110, __pyx_L1_error)
                 #else
-                __pyx_t_13 = PySequence_ITEM(__pyx_t_10, __pyx_t_11); __pyx_t_11++; if (unlikely(!__pyx_t_13)) __PYX_ERR(0, 112, __pyx_L1_error)
+                __pyx_t_13 = PySequence_ITEM(__pyx_t_10, __pyx_t_11); __pyx_t_11++; if (unlikely(!__pyx_t_13)) __PYX_ERR(0, 110, __pyx_L1_error)
                 __Pyx_GOTREF(__pyx_t_13);
                 #endif
               }
@@ -2737,7 +2739,7 @@ static PyObject *__pyx_pf_4cana_12canalization_21cboolean_canalization_8find_imp
                 PyObject* exc_type = PyErr_Occurred();
                 if (exc_type) {
                   if (likely(__Pyx_PyErr_GivenExceptionMatches(exc_type, PyExc_StopIteration))) PyErr_Clear();
-                  else __PYX_ERR(0, 112, __pyx_L1_error)
+                  else __PYX_ERR(0, 110, __pyx_L1_error)
                 }
                 break;
               }
@@ -2747,30 +2749,30 @@ static PyObject *__pyx_pf_4cana_12canalization_21cboolean_canalization_8find_imp
             __pyx_t_13 = 0;
             __Pyx_INCREF(__pyx_t_3);
             __Pyx_XDECREF_SET(__pyx_v_idx, __pyx_t_3);
-            __pyx_t_13 = __Pyx_PyInt_AddObjC(__pyx_t_3, __pyx_int_1, 1, 0, 0); if (unlikely(!__pyx_t_13)) __PYX_ERR(0, 112, __pyx_L1_error)
+            __pyx_t_13 = __Pyx_PyInt_AddObjC(__pyx_t_3, __pyx_int_1, 1, 0, 0); if (unlikely(!__pyx_t_13)) __PYX_ERR(0, 110, __pyx_L1_error)
             __Pyx_GOTREF(__pyx_t_13);
             __Pyx_DECREF(__pyx_t_3);
             __pyx_t_3 = __pyx_t_13;
             __pyx_t_13 = 0;
 
-            /* "cana/canalization/cboolean_canalization.pyx":113
+            /* "cana/canalization/cboolean_canalization.pyx":111
  * 
- * 					for idx,b0 in enumerate(binstate0):
- * 						if b0 =='0':             # <<<<<<<<<<<<<<
- * 							binstate1 = flip_binstate_bit(binstate0, idx)
- * 							if binstate1 in density_groups[density+1]:
+ *                     for idx, b0 in enumerate(binstate0):
+ *                         if b0 == '0':             # <<<<<<<<<<<<<<
+ *                             binstate1 = flip_binstate_bit(binstate0, idx)
+ *                             if binstate1 in density_groups[density + 1]:
  */
-            __pyx_t_7 = (__Pyx_PyString_Equals(__pyx_v_b0, __pyx_kp_s_0, Py_EQ)); if (unlikely(__pyx_t_7 < 0)) __PYX_ERR(0, 113, __pyx_L1_error)
+            __pyx_t_7 = (__Pyx_PyUnicode_Equals(__pyx_v_b0, __pyx_kp_u_0, Py_EQ)); if (unlikely(__pyx_t_7 < 0)) __PYX_ERR(0, 111, __pyx_L1_error)
             if (__pyx_t_7) {
 
-              /* "cana/canalization/cboolean_canalization.pyx":114
- * 					for idx,b0 in enumerate(binstate0):
- * 						if b0 =='0':
- * 							binstate1 = flip_binstate_bit(binstate0, idx)             # <<<<<<<<<<<<<<
- * 							if binstate1 in density_groups[density+1]:
- * 								# keep track of the covered binary states
+              /* "cana/canalization/cboolean_canalization.pyx":112
+ *                     for idx, b0 in enumerate(binstate0):
+ *                         if b0 == '0':
+ *                             binstate1 = flip_binstate_bit(binstate0, idx)             # <<<<<<<<<<<<<<
+ *                             if binstate1 in density_groups[density + 1]:
+ *                                 # keep track of the covered binary states
  */
-              __Pyx_GetModuleGlobalName(__pyx_t_14, __pyx_n_s_flip_binstate_bit); if (unlikely(!__pyx_t_14)) __PYX_ERR(0, 114, __pyx_L1_error)
+              __Pyx_GetModuleGlobalName(__pyx_t_14, __pyx_n_s_flip_binstate_bit); if (unlikely(!__pyx_t_14)) __PYX_ERR(0, 112, __pyx_L1_error)
               __Pyx_GOTREF(__pyx_t_14);
               __pyx_t_15 = NULL;
               __pyx_t_16 = 0;
@@ -2787,7 +2789,7 @@ static PyObject *__pyx_pf_4cana_12canalization_21cboolean_canalization_8find_imp
               #if CYTHON_FAST_PYCALL
               if (PyFunction_Check(__pyx_t_14)) {
                 PyObject *__pyx_temp[3] = {__pyx_t_15, __pyx_v_binstate0, __pyx_v_idx};
-                __pyx_t_13 = __Pyx_PyFunction_FastCall(__pyx_t_14, __pyx_temp+1-__pyx_t_16, 2+__pyx_t_16); if (unlikely(!__pyx_t_13)) __PYX_ERR(0, 114, __pyx_L1_error)
+                __pyx_t_13 = __Pyx_PyFunction_FastCall(__pyx_t_14, __pyx_temp+1-__pyx_t_16, 2+__pyx_t_16); if (unlikely(!__pyx_t_13)) __PYX_ERR(0, 112, __pyx_L1_error)
                 __Pyx_XDECREF(__pyx_t_15); __pyx_t_15 = 0;
                 __Pyx_GOTREF(__pyx_t_13);
               } else
@@ -2795,13 +2797,13 @@ static PyObject *__pyx_pf_4cana_12canalization_21cboolean_canalization_8find_imp
               #if CYTHON_FAST_PYCCALL
               if (__Pyx_PyFastCFunction_Check(__pyx_t_14)) {
                 PyObject *__pyx_temp[3] = {__pyx_t_15, __pyx_v_binstate0, __pyx_v_idx};
-                __pyx_t_13 = __Pyx_PyCFunction_FastCall(__pyx_t_14, __pyx_temp+1-__pyx_t_16, 2+__pyx_t_16); if (unlikely(!__pyx_t_13)) __PYX_ERR(0, 114, __pyx_L1_error)
+                __pyx_t_13 = __Pyx_PyCFunction_FastCall(__pyx_t_14, __pyx_temp+1-__pyx_t_16, 2+__pyx_t_16); if (unlikely(!__pyx_t_13)) __PYX_ERR(0, 112, __pyx_L1_error)
                 __Pyx_XDECREF(__pyx_t_15); __pyx_t_15 = 0;
                 __Pyx_GOTREF(__pyx_t_13);
               } else
               #endif
               {
-                __pyx_t_17 = PyTuple_New(2+__pyx_t_16); if (unlikely(!__pyx_t_17)) __PYX_ERR(0, 114, __pyx_L1_error)
+                __pyx_t_17 = PyTuple_New(2+__pyx_t_16); if (unlikely(!__pyx_t_17)) __PYX_ERR(0, 112, __pyx_L1_error)
                 __Pyx_GOTREF(__pyx_t_17);
                 if (__pyx_t_15) {
                   __Pyx_GIVEREF(__pyx_t_15); PyTuple_SET_ITEM(__pyx_t_17, 0, __pyx_t_15); __pyx_t_15 = NULL;
@@ -2812,7 +2814,7 @@ static PyObject *__pyx_pf_4cana_12canalization_21cboolean_canalization_8find_imp
                 __Pyx_INCREF(__pyx_v_idx);
                 __Pyx_GIVEREF(__pyx_v_idx);
                 PyTuple_SET_ITEM(__pyx_t_17, 1+__pyx_t_16, __pyx_v_idx);
-                __pyx_t_13 = __Pyx_PyObject_Call(__pyx_t_14, __pyx_t_17, NULL); if (unlikely(!__pyx_t_13)) __PYX_ERR(0, 114, __pyx_L1_error)
+                __pyx_t_13 = __Pyx_PyObject_Call(__pyx_t_14, __pyx_t_17, NULL); if (unlikely(!__pyx_t_13)) __PYX_ERR(0, 112, __pyx_L1_error)
                 __Pyx_GOTREF(__pyx_t_13);
                 __Pyx_DECREF(__pyx_t_17); __pyx_t_17 = 0;
               }
@@ -2820,51 +2822,51 @@ static PyObject *__pyx_pf_4cana_12canalization_21cboolean_canalization_8find_imp
               __Pyx_XDECREF_SET(__pyx_v_binstate1, __pyx_t_13);
               __pyx_t_13 = 0;
 
-              /* "cana/canalization/cboolean_canalization.pyx":115
- * 						if b0 =='0':
- * 							binstate1 = flip_binstate_bit(binstate0, idx)
- * 							if binstate1 in density_groups[density+1]:             # <<<<<<<<<<<<<<
- * 								# keep track of the covered binary states
- * 								used.add(binstate0)
+              /* "cana/canalization/cboolean_canalization.pyx":113
+ *                         if b0 == '0':
+ *                             binstate1 = flip_binstate_bit(binstate0, idx)
+ *                             if binstate1 in density_groups[density + 1]:             # <<<<<<<<<<<<<<
+ *                                 # keep track of the covered binary states
+ *                                 used.add(binstate0)
  */
-              __pyx_t_13 = __Pyx_PyInt_AddObjC(__pyx_v_density, __pyx_int_1, 1, 0, 0); if (unlikely(!__pyx_t_13)) __PYX_ERR(0, 115, __pyx_L1_error)
+              __pyx_t_13 = __Pyx_PyInt_AddObjC(__pyx_v_density, __pyx_int_1, 1, 0, 0); if (unlikely(!__pyx_t_13)) __PYX_ERR(0, 113, __pyx_L1_error)
               __Pyx_GOTREF(__pyx_t_13);
-              __pyx_t_14 = __Pyx_PyObject_GetItem(__pyx_v_density_groups, __pyx_t_13); if (unlikely(!__pyx_t_14)) __PYX_ERR(0, 115, __pyx_L1_error)
+              __pyx_t_14 = __Pyx_PyObject_GetItem(__pyx_v_density_groups, __pyx_t_13); if (unlikely(!__pyx_t_14)) __PYX_ERR(0, 113, __pyx_L1_error)
               __Pyx_GOTREF(__pyx_t_14);
               __Pyx_DECREF(__pyx_t_13); __pyx_t_13 = 0;
-              __pyx_t_7 = (__Pyx_PySequence_ContainsTF(__pyx_v_binstate1, __pyx_t_14, Py_EQ)); if (unlikely(__pyx_t_7 < 0)) __PYX_ERR(0, 115, __pyx_L1_error)
+              __pyx_t_7 = (__Pyx_PySequence_ContainsTF(__pyx_v_binstate1, __pyx_t_14, Py_EQ)); if (unlikely(__pyx_t_7 < 0)) __PYX_ERR(0, 113, __pyx_L1_error)
               __Pyx_DECREF(__pyx_t_14); __pyx_t_14 = 0;
               __pyx_t_2 = (__pyx_t_7 != 0);
               if (__pyx_t_2) {
 
-                /* "cana/canalization/cboolean_canalization.pyx":117
- * 							if binstate1 in density_groups[density+1]:
- * 								# keep track of the covered binary states
- * 								used.add(binstate0)             # <<<<<<<<<<<<<<
- * 								used.add(binstate1)
- * 								# keep the new wildcard binstate for the next round
+                /* "cana/canalization/cboolean_canalization.pyx":115
+ *                             if binstate1 in density_groups[density + 1]:
+ *                                 # keep track of the covered binary states
+ *                                 used.add(binstate0)             # <<<<<<<<<<<<<<
+ *                                 used.add(binstate1)
+ *                                 # keep the new wildcard binstate for the next round
  */
-                __pyx_t_18 = PySet_Add(__pyx_v_used, __pyx_v_binstate0); if (unlikely(__pyx_t_18 == ((int)-1))) __PYX_ERR(0, 117, __pyx_L1_error)
+                __pyx_t_18 = PySet_Add(__pyx_v_used, __pyx_v_binstate0); if (unlikely(__pyx_t_18 == ((int)-1))) __PYX_ERR(0, 115, __pyx_L1_error)
+
+                /* "cana/canalization/cboolean_canalization.pyx":116
+ *                                 # keep track of the covered binary states
+ *                                 used.add(binstate0)
+ *                                 used.add(binstate1)             # <<<<<<<<<<<<<<
+ *                                 # keep the new wildcard binstate for the next round
+ *                                 input_binstates.add(replace_wildcard(binstate0, idx))
+ */
+                __pyx_t_18 = PySet_Add(__pyx_v_used, __pyx_v_binstate1); if (unlikely(__pyx_t_18 == ((int)-1))) __PYX_ERR(0, 116, __pyx_L1_error)
 
                 /* "cana/canalization/cboolean_canalization.pyx":118
- * 								# keep track of the covered binary states
- * 								used.add(binstate0)
- * 								used.add(binstate1)             # <<<<<<<<<<<<<<
- * 								# keep the new wildcard binstate for the next round
- * 								input_binstates.add(replace_wildcard(binstate0, idx))
- */
-                __pyx_t_18 = PySet_Add(__pyx_v_used, __pyx_v_binstate1); if (unlikely(__pyx_t_18 == ((int)-1))) __PYX_ERR(0, 118, __pyx_L1_error)
-
-                /* "cana/canalization/cboolean_canalization.pyx":120
- * 								used.add(binstate1)
- * 								# keep the new wildcard binstate for the next round
- * 								input_binstates.add(replace_wildcard(binstate0, idx))             # <<<<<<<<<<<<<<
+ *                                 used.add(binstate1)
+ *                                 # keep the new wildcard binstate for the next round
+ *                                 input_binstates.add(replace_wildcard(binstate0, idx))             # <<<<<<<<<<<<<<
  * 
- * 		# now add back the implicants that were not matched
+ *         # now add back the implicants that were not matched
  */
-                __pyx_t_13 = __Pyx_PyObject_GetAttrStr(__pyx_v_input_binstates, __pyx_n_s_add); if (unlikely(!__pyx_t_13)) __PYX_ERR(0, 120, __pyx_L1_error)
+                __pyx_t_13 = __Pyx_PyObject_GetAttrStr(__pyx_v_input_binstates, __pyx_n_s_add); if (unlikely(!__pyx_t_13)) __PYX_ERR(0, 118, __pyx_L1_error)
                 __Pyx_GOTREF(__pyx_t_13);
-                __Pyx_GetModuleGlobalName(__pyx_t_15, __pyx_n_s_replace_wildcard); if (unlikely(!__pyx_t_15)) __PYX_ERR(0, 120, __pyx_L1_error)
+                __Pyx_GetModuleGlobalName(__pyx_t_15, __pyx_n_s_replace_wildcard); if (unlikely(!__pyx_t_15)) __PYX_ERR(0, 118, __pyx_L1_error)
                 __Pyx_GOTREF(__pyx_t_15);
                 __pyx_t_19 = NULL;
                 __pyx_t_16 = 0;
@@ -2881,7 +2883,7 @@ static PyObject *__pyx_pf_4cana_12canalization_21cboolean_canalization_8find_imp
                 #if CYTHON_FAST_PYCALL
                 if (PyFunction_Check(__pyx_t_15)) {
                   PyObject *__pyx_temp[3] = {__pyx_t_19, __pyx_v_binstate0, __pyx_v_idx};
-                  __pyx_t_17 = __Pyx_PyFunction_FastCall(__pyx_t_15, __pyx_temp+1-__pyx_t_16, 2+__pyx_t_16); if (unlikely(!__pyx_t_17)) __PYX_ERR(0, 120, __pyx_L1_error)
+                  __pyx_t_17 = __Pyx_PyFunction_FastCall(__pyx_t_15, __pyx_temp+1-__pyx_t_16, 2+__pyx_t_16); if (unlikely(!__pyx_t_17)) __PYX_ERR(0, 118, __pyx_L1_error)
                   __Pyx_XDECREF(__pyx_t_19); __pyx_t_19 = 0;
                   __Pyx_GOTREF(__pyx_t_17);
                 } else
@@ -2889,13 +2891,13 @@ static PyObject *__pyx_pf_4cana_12canalization_21cboolean_canalization_8find_imp
                 #if CYTHON_FAST_PYCCALL
                 if (__Pyx_PyFastCFunction_Check(__pyx_t_15)) {
                   PyObject *__pyx_temp[3] = {__pyx_t_19, __pyx_v_binstate0, __pyx_v_idx};
-                  __pyx_t_17 = __Pyx_PyCFunction_FastCall(__pyx_t_15, __pyx_temp+1-__pyx_t_16, 2+__pyx_t_16); if (unlikely(!__pyx_t_17)) __PYX_ERR(0, 120, __pyx_L1_error)
+                  __pyx_t_17 = __Pyx_PyCFunction_FastCall(__pyx_t_15, __pyx_temp+1-__pyx_t_16, 2+__pyx_t_16); if (unlikely(!__pyx_t_17)) __PYX_ERR(0, 118, __pyx_L1_error)
                   __Pyx_XDECREF(__pyx_t_19); __pyx_t_19 = 0;
                   __Pyx_GOTREF(__pyx_t_17);
                 } else
                 #endif
                 {
-                  __pyx_t_20 = PyTuple_New(2+__pyx_t_16); if (unlikely(!__pyx_t_20)) __PYX_ERR(0, 120, __pyx_L1_error)
+                  __pyx_t_20 = PyTuple_New(2+__pyx_t_16); if (unlikely(!__pyx_t_20)) __PYX_ERR(0, 118, __pyx_L1_error)
                   __Pyx_GOTREF(__pyx_t_20);
                   if (__pyx_t_19) {
                     __Pyx_GIVEREF(__pyx_t_19); PyTuple_SET_ITEM(__pyx_t_20, 0, __pyx_t_19); __pyx_t_19 = NULL;
@@ -2906,7 +2908,7 @@ static PyObject *__pyx_pf_4cana_12canalization_21cboolean_canalization_8find_imp
                   __Pyx_INCREF(__pyx_v_idx);
                   __Pyx_GIVEREF(__pyx_v_idx);
                   PyTuple_SET_ITEM(__pyx_t_20, 1+__pyx_t_16, __pyx_v_idx);
-                  __pyx_t_17 = __Pyx_PyObject_Call(__pyx_t_15, __pyx_t_20, NULL); if (unlikely(!__pyx_t_17)) __PYX_ERR(0, 120, __pyx_L1_error)
+                  __pyx_t_17 = __Pyx_PyObject_Call(__pyx_t_15, __pyx_t_20, NULL); if (unlikely(!__pyx_t_17)) __PYX_ERR(0, 118, __pyx_L1_error)
                   __Pyx_GOTREF(__pyx_t_17);
                   __Pyx_DECREF(__pyx_t_20); __pyx_t_20 = 0;
                 }
@@ -2924,77 +2926,77 @@ static PyObject *__pyx_pf_4cana_12canalization_21cboolean_canalization_8find_imp
                 __pyx_t_14 = (__pyx_t_15) ? __Pyx_PyObject_Call2Args(__pyx_t_13, __pyx_t_15, __pyx_t_17) : __Pyx_PyObject_CallOneArg(__pyx_t_13, __pyx_t_17);
                 __Pyx_XDECREF(__pyx_t_15); __pyx_t_15 = 0;
                 __Pyx_DECREF(__pyx_t_17); __pyx_t_17 = 0;
-                if (unlikely(!__pyx_t_14)) __PYX_ERR(0, 120, __pyx_L1_error)
+                if (unlikely(!__pyx_t_14)) __PYX_ERR(0, 118, __pyx_L1_error)
                 __Pyx_GOTREF(__pyx_t_14);
                 __Pyx_DECREF(__pyx_t_13); __pyx_t_13 = 0;
                 __Pyx_DECREF(__pyx_t_14); __pyx_t_14 = 0;
 
-                /* "cana/canalization/cboolean_canalization.pyx":115
- * 						if b0 =='0':
- * 							binstate1 = flip_binstate_bit(binstate0, idx)
- * 							if binstate1 in density_groups[density+1]:             # <<<<<<<<<<<<<<
- * 								# keep track of the covered binary states
- * 								used.add(binstate0)
+                /* "cana/canalization/cboolean_canalization.pyx":113
+ *                         if b0 == '0':
+ *                             binstate1 = flip_binstate_bit(binstate0, idx)
+ *                             if binstate1 in density_groups[density + 1]:             # <<<<<<<<<<<<<<
+ *                                 # keep track of the covered binary states
+ *                                 used.add(binstate0)
  */
               }
 
-              /* "cana/canalization/cboolean_canalization.pyx":113
+              /* "cana/canalization/cboolean_canalization.pyx":111
  * 
- * 					for idx,b0 in enumerate(binstate0):
- * 						if b0 =='0':             # <<<<<<<<<<<<<<
- * 							binstate1 = flip_binstate_bit(binstate0, idx)
- * 							if binstate1 in density_groups[density+1]:
+ *                     for idx, b0 in enumerate(binstate0):
+ *                         if b0 == '0':             # <<<<<<<<<<<<<<
+ *                             binstate1 = flip_binstate_bit(binstate0, idx)
+ *                             if binstate1 in density_groups[density + 1]:
  */
             }
 
-            /* "cana/canalization/cboolean_canalization.pyx":112
- * 					# contained in the set groups[key_next].
+            /* "cana/canalization/cboolean_canalization.pyx":110
+ *                     # contained in the set groups[key_next].
  * 
- * 					for idx,b0 in enumerate(binstate0):             # <<<<<<<<<<<<<<
- * 						if b0 =='0':
- * 							binstate1 = flip_binstate_bit(binstate0, idx)
+ *                     for idx, b0 in enumerate(binstate0):             # <<<<<<<<<<<<<<
+ *                         if b0 == '0':
+ *                             binstate1 = flip_binstate_bit(binstate0, idx)
  */
           }
           __Pyx_DECREF(__pyx_t_10); __pyx_t_10 = 0;
           __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
 
-          /* "cana/canalization/cboolean_canalization.pyx":102
+          /* "cana/canalization/cboolean_canalization.pyx":100
  * 
- * 				# then we pass through the binstates
- * 				for binstate0 in density_groups[density]:             # <<<<<<<<<<<<<<
+ *                 # then we pass through the binstates
+ *                 for binstate0 in density_groups[density]:             # <<<<<<<<<<<<<<
  * 
- * 					# An optimization due to Thomas Pircher, https://github.com/tpircher/quine-mccluskey/blob/master/quine_mccluskey/qm.py
+ *                     # An optimization due to Thomas Pircher, https://github.com/tpircher/quine-mccluskey/blob/master/quine_mccluskey/qm.py
  */
         }
         __Pyx_DECREF(__pyx_t_4); __pyx_t_4 = 0;
 
-        /* "cana/canalization/cboolean_canalization.pyx":99
- * 		for density in density_groups:
- * 			# first make sure there are other binstates with the next density
- * 			if density+1 in density_groups:             # <<<<<<<<<<<<<<
+        /* "cana/canalization/cboolean_canalization.pyx":97
+ *         for density in density_groups:
+ *             # first make sure there are other binstates with the next density
+ *             if density + 1 in density_groups:             # <<<<<<<<<<<<<<
  * 
- * 				# then we pass through the binstates
+ *                 # then we pass through the binstates
  */
       }
 
-      /* "cana/canalization/cboolean_canalization.pyx":97
+      /* "cana/canalization/cboolean_canalization.pyx":95
  * 
- * 		# for each possible density
- * 		for density in density_groups:             # <<<<<<<<<<<<<<
- * 			# first make sure there are other binstates with the next density
- * 			if density+1 in density_groups:
+ *         # for each possible density
+ *         for density in density_groups:             # <<<<<<<<<<<<<<
+ *             # first make sure there are other binstates with the next density
+ *             if density + 1 in density_groups:
  */
     }
     __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
 
-    /* "cana/canalization/cboolean_canalization.pyx":123
+    /* "cana/canalization/cboolean_canalization.pyx":121
  * 
- * 		# now add back the implicants that were not matched
- * 		for groups in list(density_groups.values()):             # <<<<<<<<<<<<<<
- * 			matched_implicants |= groups - used
+ *         # now add back the implicants that were not matched
+ *         for groups in list(density_groups.values()):             # <<<<<<<<<<<<<<
+ *             matched_implicants |= groups - used
  * 
  */
-    __pyx_t_4 = __Pyx_PyObject_GetAttrStr(__pyx_v_density_groups, __pyx_n_s_values); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 123, __pyx_L1_error)
+    __pyx_t_4 = __Pyx_PyObject_GetAttrStr(__pyx_v_density_groups, __pyx_n_s_values); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 121, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_4);
     __pyx_t_3 = NULL;
     if (CYTHON_UNPACK_METHODS && likely(PyMethod_Check(__pyx_t_4))) {
@@ -3008,10 +3010,10 @@ static PyObject *__pyx_pf_4cana_12canalization_21cboolean_canalization_8find_imp
     }
     __pyx_t_1 = (__pyx_t_3) ? __Pyx_PyObject_CallOneArg(__pyx_t_4, __pyx_t_3) : __Pyx_PyObject_CallNoArg(__pyx_t_4);
     __Pyx_XDECREF(__pyx_t_3); __pyx_t_3 = 0;
-    if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 123, __pyx_L1_error)
+    if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 121, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_1);
     __Pyx_DECREF(__pyx_t_4); __pyx_t_4 = 0;
-    __pyx_t_4 = PySequence_List(__pyx_t_1); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 123, __pyx_L1_error)
+    __pyx_t_4 = PySequence_List(__pyx_t_1); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 121, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_4);
     __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
     __pyx_t_1 = __pyx_t_4; __Pyx_INCREF(__pyx_t_1); __pyx_t_5 = 0;
@@ -3019,88 +3021,88 @@ static PyObject *__pyx_pf_4cana_12canalization_21cboolean_canalization_8find_imp
     for (;;) {
       if (__pyx_t_5 >= PyList_GET_SIZE(__pyx_t_1)) break;
       #if CYTHON_ASSUME_SAFE_MACROS && !CYTHON_AVOID_BORROWED_REFS
-      __pyx_t_4 = PyList_GET_ITEM(__pyx_t_1, __pyx_t_5); __Pyx_INCREF(__pyx_t_4); __pyx_t_5++; if (unlikely(0 < 0)) __PYX_ERR(0, 123, __pyx_L1_error)
+      __pyx_t_4 = PyList_GET_ITEM(__pyx_t_1, __pyx_t_5); __Pyx_INCREF(__pyx_t_4); __pyx_t_5++; if (unlikely(0 < 0)) __PYX_ERR(0, 121, __pyx_L1_error)
       #else
-      __pyx_t_4 = PySequence_ITEM(__pyx_t_1, __pyx_t_5); __pyx_t_5++; if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 123, __pyx_L1_error)
+      __pyx_t_4 = PySequence_ITEM(__pyx_t_1, __pyx_t_5); __pyx_t_5++; if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 121, __pyx_L1_error)
       __Pyx_GOTREF(__pyx_t_4);
       #endif
       __Pyx_XDECREF_SET(__pyx_v_groups, __pyx_t_4);
       __pyx_t_4 = 0;
 
-      /* "cana/canalization/cboolean_canalization.pyx":124
- * 		# now add back the implicants that were not matched
- * 		for groups in list(density_groups.values()):
- * 			matched_implicants |= groups - used             # <<<<<<<<<<<<<<
+      /* "cana/canalization/cboolean_canalization.pyx":122
+ *         # now add back the implicants that were not matched
+ *         for groups in list(density_groups.values()):
+ *             matched_implicants |= groups - used             # <<<<<<<<<<<<<<
  * 
- * 		# finally, check if this pass actually compressed any terms
+ *         # finally, check if this pass actually compressed any terms
  */
-      __pyx_t_4 = PyNumber_Subtract(__pyx_v_groups, __pyx_v_used); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 124, __pyx_L1_error)
+      __pyx_t_4 = PyNumber_Subtract(__pyx_v_groups, __pyx_v_used); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 122, __pyx_L1_error)
       __Pyx_GOTREF(__pyx_t_4);
-      __pyx_t_3 = PyNumber_InPlaceOr(__pyx_v_matched_implicants, __pyx_t_4); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 124, __pyx_L1_error)
+      __pyx_t_3 = PyNumber_InPlaceOr(__pyx_v_matched_implicants, __pyx_t_4); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 122, __pyx_L1_error)
       __Pyx_GOTREF(__pyx_t_3);
       __Pyx_DECREF(__pyx_t_4); __pyx_t_4 = 0;
       __Pyx_DECREF_SET(__pyx_v_matched_implicants, __pyx_t_3);
       __pyx_t_3 = 0;
 
-      /* "cana/canalization/cboolean_canalization.pyx":123
+      /* "cana/canalization/cboolean_canalization.pyx":121
  * 
- * 		# now add back the implicants that were not matched
- * 		for groups in list(density_groups.values()):             # <<<<<<<<<<<<<<
- * 			matched_implicants |= groups - used
+ *         # now add back the implicants that were not matched
+ *         for groups in list(density_groups.values()):             # <<<<<<<<<<<<<<
+ *             matched_implicants |= groups - used
  * 
  */
     }
     __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
 
-    /* "cana/canalization/cboolean_canalization.pyx":128
- * 		# finally, check if this pass actually compressed any terms
- * 		# we finish when we cant make any further compressions
- * 		if len(used) == 0:             # <<<<<<<<<<<<<<
- * 			done = True
+    /* "cana/canalization/cboolean_canalization.pyx":126
+ *         # finally, check if this pass actually compressed any terms
+ *         # we finish when we cant make any further compressions
+ *         if len(used) == 0:             # <<<<<<<<<<<<<<
+ *             done = True
  * 
  */
-    __pyx_t_5 = PySet_GET_SIZE(__pyx_v_used); if (unlikely(__pyx_t_5 == ((Py_ssize_t)-1))) __PYX_ERR(0, 128, __pyx_L1_error)
+    __pyx_t_5 = PySet_GET_SIZE(__pyx_v_used); if (unlikely(__pyx_t_5 == ((Py_ssize_t)-1))) __PYX_ERR(0, 126, __pyx_L1_error)
     __pyx_t_2 = ((__pyx_t_5 == 0) != 0);
     if (__pyx_t_2) {
 
-      /* "cana/canalization/cboolean_canalization.pyx":129
- * 		# we finish when we cant make any further compressions
- * 		if len(used) == 0:
- * 			done = True             # <<<<<<<<<<<<<<
+      /* "cana/canalization/cboolean_canalization.pyx":127
+ *         # we finish when we cant make any further compressions
+ *         if len(used) == 0:
+ *             done = True             # <<<<<<<<<<<<<<
  * 
- * 	# finish up by adding back all of the uncovered binary states
+ *     # finish up by adding back all of the uncovered binary states
  */
       __pyx_v_done = 1;
 
-      /* "cana/canalization/cboolean_canalization.pyx":128
- * 		# finally, check if this pass actually compressed any terms
- * 		# we finish when we cant make any further compressions
- * 		if len(used) == 0:             # <<<<<<<<<<<<<<
- * 			done = True
+      /* "cana/canalization/cboolean_canalization.pyx":126
+ *         # finally, check if this pass actually compressed any terms
+ *         # we finish when we cant make any further compressions
+ *         if len(used) == 0:             # <<<<<<<<<<<<<<
+ *             done = True
  * 
  */
     }
   }
 
-  /* "cana/canalization/cboolean_canalization.pyx":132
+  /* "cana/canalization/cboolean_canalization.pyx":130
  * 
- * 	# finish up by adding back all of the uncovered binary states
- * 	prime_implicants = matched_implicants             # <<<<<<<<<<<<<<
- * 	for groups in list(density_groups.values()):
- * 		prime_implicants |= groups
+ *     # finish up by adding back all of the uncovered binary states
+ *     prime_implicants = matched_implicants             # <<<<<<<<<<<<<<
+ *     for groups in list(density_groups.values()):
+ *         prime_implicants |= groups
  */
   __Pyx_INCREF(__pyx_v_matched_implicants);
   __pyx_v_prime_implicants = __pyx_v_matched_implicants;
 
-  /* "cana/canalization/cboolean_canalization.pyx":133
- * 	# finish up by adding back all of the uncovered binary states
- * 	prime_implicants = matched_implicants
- * 	for groups in list(density_groups.values()):             # <<<<<<<<<<<<<<
- * 		prime_implicants |= groups
+  /* "cana/canalization/cboolean_canalization.pyx":131
+ *     # finish up by adding back all of the uncovered binary states
+ *     prime_implicants = matched_implicants
+ *     for groups in list(density_groups.values()):             # <<<<<<<<<<<<<<
+ *         prime_implicants |= groups
  * 
  */
-  if (unlikely(!__pyx_v_density_groups)) { __Pyx_RaiseUnboundLocalError("density_groups"); __PYX_ERR(0, 133, __pyx_L1_error) }
-  __pyx_t_3 = __Pyx_PyObject_GetAttrStr(__pyx_v_density_groups, __pyx_n_s_values); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 133, __pyx_L1_error)
+  if (unlikely(!__pyx_v_density_groups)) { __Pyx_RaiseUnboundLocalError("density_groups"); __PYX_ERR(0, 131, __pyx_L1_error) }
+  __pyx_t_3 = __Pyx_PyObject_GetAttrStr(__pyx_v_density_groups, __pyx_n_s_values); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 131, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_3);
   __pyx_t_4 = NULL;
   if (CYTHON_UNPACK_METHODS && likely(PyMethod_Check(__pyx_t_3))) {
@@ -3114,10 +3116,10 @@ static PyObject *__pyx_pf_4cana_12canalization_21cboolean_canalization_8find_imp
   }
   __pyx_t_1 = (__pyx_t_4) ? __Pyx_PyObject_CallOneArg(__pyx_t_3, __pyx_t_4) : __Pyx_PyObject_CallNoArg(__pyx_t_3);
   __Pyx_XDECREF(__pyx_t_4); __pyx_t_4 = 0;
-  if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 133, __pyx_L1_error)
+  if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 131, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_1);
   __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
-  __pyx_t_3 = PySequence_List(__pyx_t_1); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 133, __pyx_L1_error)
+  __pyx_t_3 = PySequence_List(__pyx_t_1); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 131, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_3);
   __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
   __pyx_t_1 = __pyx_t_3; __Pyx_INCREF(__pyx_t_1); __pyx_t_5 = 0;
@@ -3125,42 +3127,42 @@ static PyObject *__pyx_pf_4cana_12canalization_21cboolean_canalization_8find_imp
   for (;;) {
     if (__pyx_t_5 >= PyList_GET_SIZE(__pyx_t_1)) break;
     #if CYTHON_ASSUME_SAFE_MACROS && !CYTHON_AVOID_BORROWED_REFS
-    __pyx_t_3 = PyList_GET_ITEM(__pyx_t_1, __pyx_t_5); __Pyx_INCREF(__pyx_t_3); __pyx_t_5++; if (unlikely(0 < 0)) __PYX_ERR(0, 133, __pyx_L1_error)
+    __pyx_t_3 = PyList_GET_ITEM(__pyx_t_1, __pyx_t_5); __Pyx_INCREF(__pyx_t_3); __pyx_t_5++; if (unlikely(0 < 0)) __PYX_ERR(0, 131, __pyx_L1_error)
     #else
-    __pyx_t_3 = PySequence_ITEM(__pyx_t_1, __pyx_t_5); __pyx_t_5++; if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 133, __pyx_L1_error)
+    __pyx_t_3 = PySequence_ITEM(__pyx_t_1, __pyx_t_5); __pyx_t_5++; if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 131, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_3);
     #endif
     __Pyx_XDECREF_SET(__pyx_v_groups, __pyx_t_3);
     __pyx_t_3 = 0;
 
-    /* "cana/canalization/cboolean_canalization.pyx":134
- * 	prime_implicants = matched_implicants
- * 	for groups in list(density_groups.values()):
- * 		prime_implicants |= groups             # <<<<<<<<<<<<<<
+    /* "cana/canalization/cboolean_canalization.pyx":132
+ *     prime_implicants = matched_implicants
+ *     for groups in list(density_groups.values()):
+ *         prime_implicants |= groups             # <<<<<<<<<<<<<<
  * 
- * 	return prime_implicants
+ *     return prime_implicants
  */
-    __pyx_t_3 = PyNumber_InPlaceOr(__pyx_v_prime_implicants, __pyx_v_groups); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 134, __pyx_L1_error)
+    __pyx_t_3 = PyNumber_InPlaceOr(__pyx_v_prime_implicants, __pyx_v_groups); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 132, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_3);
     __Pyx_DECREF_SET(__pyx_v_prime_implicants, __pyx_t_3);
     __pyx_t_3 = 0;
 
-    /* "cana/canalization/cboolean_canalization.pyx":133
- * 	# finish up by adding back all of the uncovered binary states
- * 	prime_implicants = matched_implicants
- * 	for groups in list(density_groups.values()):             # <<<<<<<<<<<<<<
- * 		prime_implicants |= groups
+    /* "cana/canalization/cboolean_canalization.pyx":131
+ *     # finish up by adding back all of the uncovered binary states
+ *     prime_implicants = matched_implicants
+ *     for groups in list(density_groups.values()):             # <<<<<<<<<<<<<<
+ *         prime_implicants |= groups
  * 
  */
   }
   __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
 
-  /* "cana/canalization/cboolean_canalization.pyx":136
- * 		prime_implicants |= groups
+  /* "cana/canalization/cboolean_canalization.pyx":134
+ *         prime_implicants |= groups
  * 
- * 	return prime_implicants             # <<<<<<<<<<<<<<
+ *     return prime_implicants             # <<<<<<<<<<<<<<
  * 
- * def __pi_covers(implicant, binstate):
+ * 
  */
   __Pyx_XDECREF(__pyx_r);
   __Pyx_INCREF(__pyx_v_prime_implicants);
@@ -3168,10 +3170,10 @@ static PyObject *__pyx_pf_4cana_12canalization_21cboolean_canalization_8find_imp
   goto __pyx_L0;
 
   /* "cana/canalization/cboolean_canalization.pyx":66
- * 	return binstate[:idx] + WILDCARD_SYMBOL + binstate[idx+1:]
+ * 
  * 
  * def find_implicants_qm(input_binstates, verbose=False):             # <<<<<<<<<<<<<<
- * 	""" Finds the prime implicants (PI) using the Quine-McCluskey algorithm :cite:`Quine:1955`.
+ *     """ Finds the prime implicants (PI) using the Quine-McCluskey algorithm :cite:`Quine:1955`.
  * 
  */
 
@@ -3206,17 +3208,17 @@ static PyObject *__pyx_pf_4cana_12canalization_21cboolean_canalization_8find_imp
   return __pyx_r;
 }
 
-/* "cana/canalization/cboolean_canalization.pyx":138
- * 	return prime_implicants
+/* "cana/canalization/cboolean_canalization.pyx":137
+ * 
  * 
  * def __pi_covers(implicant, binstate):             # <<<<<<<<<<<<<<
- * 	"""Determines if a binarystate is covered by a specific implicant.
- * 	Args:
+ *     """Determines if a binarystate is covered by a specific implicant.
+ *     Args:
  */
 
 /* Python wrapper */
 static PyObject *__pyx_pw_4cana_12canalization_21cboolean_canalization_11__pi_covers(PyObject *__pyx_self, PyObject *__pyx_args, PyObject *__pyx_kwds); /*proto*/
-static char __pyx_doc_4cana_12canalization_21cboolean_canalization_10__pi_covers[] = "Determines if a binarystate is covered by a specific implicant.\n\tArgs:\n\t\timplicant (string): the implicant.\n\t\tminterm (string): the minterm.\n\tReturns:\n\t\tx (bool): True if covered else False.\n\n\t";
+static char __pyx_doc_4cana_12canalization_21cboolean_canalization_10__pi_covers[] = "Determines if a binarystate is covered by a specific implicant.\n    Args:\n        implicant (string): the implicant.\n        minterm (string): the minterm.\n    Returns:\n        x (bool): True if covered else False.\n\n    ";
 static PyMethodDef __pyx_mdef_4cana_12canalization_21cboolean_canalization_11__pi_covers = {"__pi_covers", (PyCFunction)(void*)(PyCFunctionWithKeywords)__pyx_pw_4cana_12canalization_21cboolean_canalization_11__pi_covers, METH_VARARGS|METH_KEYWORDS, __pyx_doc_4cana_12canalization_21cboolean_canalization_10__pi_covers};
 static PyObject *__pyx_pw_4cana_12canalization_21cboolean_canalization_11__pi_covers(PyObject *__pyx_self, PyObject *__pyx_args, PyObject *__pyx_kwds) {
   PyObject *__pyx_v_implicant = 0;
@@ -3250,11 +3252,11 @@ static PyObject *__pyx_pw_4cana_12canalization_21cboolean_canalization_11__pi_co
         case  1:
         if (likely((values[1] = __Pyx_PyDict_GetItemStr(__pyx_kwds, __pyx_n_s_binstate)) != 0)) kw_args--;
         else {
-          __Pyx_RaiseArgtupleInvalid("__pi_covers", 1, 2, 2, 1); __PYX_ERR(0, 138, __pyx_L3_error)
+          __Pyx_RaiseArgtupleInvalid("__pi_covers", 1, 2, 2, 1); __PYX_ERR(0, 137, __pyx_L3_error)
         }
       }
       if (unlikely(kw_args > 0)) {
-        if (unlikely(__Pyx_ParseOptionalKeywords(__pyx_kwds, __pyx_pyargnames, 0, values, pos_args, "__pi_covers") < 0)) __PYX_ERR(0, 138, __pyx_L3_error)
+        if (unlikely(__Pyx_ParseOptionalKeywords(__pyx_kwds, __pyx_pyargnames, 0, values, pos_args, "__pi_covers") < 0)) __PYX_ERR(0, 137, __pyx_L3_error)
       }
     } else if (PyTuple_GET_SIZE(__pyx_args) != 2) {
       goto __pyx_L5_argtuple_error;
@@ -3267,7 +3269,7 @@ static PyObject *__pyx_pw_4cana_12canalization_21cboolean_canalization_11__pi_co
   }
   goto __pyx_L4_argument_unpacking_done;
   __pyx_L5_argtuple_error:;
-  __Pyx_RaiseArgtupleInvalid("__pi_covers", 1, 2, 2, PyTuple_GET_SIZE(__pyx_args)); __PYX_ERR(0, 138, __pyx_L3_error)
+  __Pyx_RaiseArgtupleInvalid("__pi_covers", 1, 2, 2, PyTuple_GET_SIZE(__pyx_args)); __PYX_ERR(0, 137, __pyx_L3_error)
   __pyx_L3_error:;
   __Pyx_AddTraceback("cana.canalization.cboolean_canalization.__pi_covers", __pyx_clineno, __pyx_lineno, __pyx_filename);
   __Pyx_RefNannyFinishContext();
@@ -3281,12 +3283,12 @@ static PyObject *__pyx_pw_4cana_12canalization_21cboolean_canalization_11__pi_co
 }
 static PyObject *__pyx_gb_4cana_12canalization_21cboolean_canalization_11__pi_covers_2generator(__pyx_CoroutineObject *__pyx_generator, CYTHON_UNUSED PyThreadState *__pyx_tstate, PyObject *__pyx_sent_value); /* proto */
 
-/* "cana/canalization/cboolean_canalization.pyx":147
+/* "cana/canalization/cboolean_canalization.pyx":146
  * 
- * 	"""
- * 	return all(i==WILDCARD_SYMBOL or m==i for i, m in zip(implicant, input))             # <<<<<<<<<<<<<<
+ *     """
+ *     return all(i == WILDCARD_SYMBOL or m == i for i, m in zip(implicant, input))             # <<<<<<<<<<<<<<
  * 
- * def expand_wildcard_schemata(schemata):
+ * 
  */
 
 static PyObject *__pyx_pf_4cana_12canalization_21cboolean_canalization_11__pi_covers_genexpr(PyObject *__pyx_self) {
@@ -3301,7 +3303,7 @@ static PyObject *__pyx_pf_4cana_12canalization_21cboolean_canalization_11__pi_co
   if (unlikely(!__pyx_cur_scope)) {
     __pyx_cur_scope = ((struct __pyx_obj_4cana_12canalization_21cboolean_canalization___pyx_scope_struct_1_genexpr *)Py_None);
     __Pyx_INCREF(Py_None);
-    __PYX_ERR(0, 147, __pyx_L1_error)
+    __PYX_ERR(0, 146, __pyx_L1_error)
   } else {
     __Pyx_GOTREF(__pyx_cur_scope);
   }
@@ -3309,7 +3311,7 @@ static PyObject *__pyx_pf_4cana_12canalization_21cboolean_canalization_11__pi_co
   __Pyx_INCREF(((PyObject *)__pyx_cur_scope->__pyx_outer_scope));
   __Pyx_GIVEREF(__pyx_cur_scope->__pyx_outer_scope);
   {
-    __pyx_CoroutineObject *gen = __Pyx_Generator_New((__pyx_coroutine_body_t) __pyx_gb_4cana_12canalization_21cboolean_canalization_11__pi_covers_2generator, NULL, (PyObject *) __pyx_cur_scope, __pyx_n_s_genexpr, __pyx_n_s_pi_covers_locals_genexpr, __pyx_n_s_cana_canalization_cboolean_canal); if (unlikely(!gen)) __PYX_ERR(0, 147, __pyx_L1_error)
+    __pyx_CoroutineObject *gen = __Pyx_Generator_New((__pyx_coroutine_body_t) __pyx_gb_4cana_12canalization_21cboolean_canalization_11__pi_covers_2generator, NULL, (PyObject *) __pyx_cur_scope, __pyx_n_s_genexpr, __pyx_n_s_pi_covers_locals_genexpr, __pyx_n_s_cana_canalization_cboolean_canal); if (unlikely(!gen)) __PYX_ERR(0, 146, __pyx_L1_error)
     __Pyx_DECREF(__pyx_cur_scope);
     __Pyx_RefNannyFinishContext();
     return (PyObject *) gen;
@@ -3351,9 +3353,9 @@ static PyObject *__pyx_gb_4cana_12canalization_21cboolean_canalization_11__pi_co
     return NULL;
   }
   __pyx_L3_first_run:;
-  if (unlikely(!__pyx_sent_value)) __PYX_ERR(0, 147, __pyx_L1_error)
-  if (unlikely(!__pyx_cur_scope->__pyx_outer_scope->__pyx_v_implicant)) { __Pyx_RaiseClosureNameError("implicant"); __PYX_ERR(0, 147, __pyx_L1_error) }
-  __pyx_t_1 = PyTuple_New(2); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 147, __pyx_L1_error)
+  if (unlikely(!__pyx_sent_value)) __PYX_ERR(0, 146, __pyx_L1_error)
+  if (unlikely(!__pyx_cur_scope->__pyx_outer_scope->__pyx_v_implicant)) { __Pyx_RaiseClosureNameError("implicant"); __PYX_ERR(0, 146, __pyx_L1_error) }
+  __pyx_t_1 = PyTuple_New(2); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 146, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_1);
   __Pyx_INCREF(__pyx_cur_scope->__pyx_outer_scope->__pyx_v_implicant);
   __Pyx_GIVEREF(__pyx_cur_scope->__pyx_outer_scope->__pyx_v_implicant);
@@ -3361,16 +3363,16 @@ static PyObject *__pyx_gb_4cana_12canalization_21cboolean_canalization_11__pi_co
   __Pyx_INCREF(__pyx_builtin_input);
   __Pyx_GIVEREF(__pyx_builtin_input);
   PyTuple_SET_ITEM(__pyx_t_1, 1, __pyx_builtin_input);
-  __pyx_t_2 = __Pyx_PyObject_Call(__pyx_builtin_zip, __pyx_t_1, NULL); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 147, __pyx_L1_error)
+  __pyx_t_2 = __Pyx_PyObject_Call(__pyx_builtin_zip, __pyx_t_1, NULL); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 146, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_2);
   __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
   if (likely(PyList_CheckExact(__pyx_t_2)) || PyTuple_CheckExact(__pyx_t_2)) {
     __pyx_t_1 = __pyx_t_2; __Pyx_INCREF(__pyx_t_1); __pyx_t_3 = 0;
     __pyx_t_4 = NULL;
   } else {
-    __pyx_t_3 = -1; __pyx_t_1 = PyObject_GetIter(__pyx_t_2); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 147, __pyx_L1_error)
+    __pyx_t_3 = -1; __pyx_t_1 = PyObject_GetIter(__pyx_t_2); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 146, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_1);
-    __pyx_t_4 = Py_TYPE(__pyx_t_1)->tp_iternext; if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 147, __pyx_L1_error)
+    __pyx_t_4 = Py_TYPE(__pyx_t_1)->tp_iternext; if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 146, __pyx_L1_error)
   }
   __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
   for (;;) {
@@ -3378,17 +3380,17 @@ static PyObject *__pyx_gb_4cana_12canalization_21cboolean_canalization_11__pi_co
       if (likely(PyList_CheckExact(__pyx_t_1))) {
         if (__pyx_t_3 >= PyList_GET_SIZE(__pyx_t_1)) break;
         #if CYTHON_ASSUME_SAFE_MACROS && !CYTHON_AVOID_BORROWED_REFS
-        __pyx_t_2 = PyList_GET_ITEM(__pyx_t_1, __pyx_t_3); __Pyx_INCREF(__pyx_t_2); __pyx_t_3++; if (unlikely(0 < 0)) __PYX_ERR(0, 147, __pyx_L1_error)
+        __pyx_t_2 = PyList_GET_ITEM(__pyx_t_1, __pyx_t_3); __Pyx_INCREF(__pyx_t_2); __pyx_t_3++; if (unlikely(0 < 0)) __PYX_ERR(0, 146, __pyx_L1_error)
         #else
-        __pyx_t_2 = PySequence_ITEM(__pyx_t_1, __pyx_t_3); __pyx_t_3++; if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 147, __pyx_L1_error)
+        __pyx_t_2 = PySequence_ITEM(__pyx_t_1, __pyx_t_3); __pyx_t_3++; if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 146, __pyx_L1_error)
         __Pyx_GOTREF(__pyx_t_2);
         #endif
       } else {
         if (__pyx_t_3 >= PyTuple_GET_SIZE(__pyx_t_1)) break;
         #if CYTHON_ASSUME_SAFE_MACROS && !CYTHON_AVOID_BORROWED_REFS
-        __pyx_t_2 = PyTuple_GET_ITEM(__pyx_t_1, __pyx_t_3); __Pyx_INCREF(__pyx_t_2); __pyx_t_3++; if (unlikely(0 < 0)) __PYX_ERR(0, 147, __pyx_L1_error)
+        __pyx_t_2 = PyTuple_GET_ITEM(__pyx_t_1, __pyx_t_3); __Pyx_INCREF(__pyx_t_2); __pyx_t_3++; if (unlikely(0 < 0)) __PYX_ERR(0, 146, __pyx_L1_error)
         #else
-        __pyx_t_2 = PySequence_ITEM(__pyx_t_1, __pyx_t_3); __pyx_t_3++; if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 147, __pyx_L1_error)
+        __pyx_t_2 = PySequence_ITEM(__pyx_t_1, __pyx_t_3); __pyx_t_3++; if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 146, __pyx_L1_error)
         __Pyx_GOTREF(__pyx_t_2);
         #endif
       }
@@ -3398,7 +3400,7 @@ static PyObject *__pyx_gb_4cana_12canalization_21cboolean_canalization_11__pi_co
         PyObject* exc_type = PyErr_Occurred();
         if (exc_type) {
           if (likely(__Pyx_PyErr_GivenExceptionMatches(exc_type, PyExc_StopIteration))) PyErr_Clear();
-          else __PYX_ERR(0, 147, __pyx_L1_error)
+          else __PYX_ERR(0, 146, __pyx_L1_error)
         }
         break;
       }
@@ -3410,7 +3412,7 @@ static PyObject *__pyx_gb_4cana_12canalization_21cboolean_canalization_11__pi_co
       if (unlikely(size != 2)) {
         if (size > 2) __Pyx_RaiseTooManyValuesError(2);
         else if (size >= 0) __Pyx_RaiseNeedMoreValuesError(size);
-        __PYX_ERR(0, 147, __pyx_L1_error)
+        __PYX_ERR(0, 146, __pyx_L1_error)
       }
       #if CYTHON_ASSUME_SAFE_MACROS && !CYTHON_AVOID_BORROWED_REFS
       if (likely(PyTuple_CheckExact(sequence))) {
@@ -3423,15 +3425,15 @@ static PyObject *__pyx_gb_4cana_12canalization_21cboolean_canalization_11__pi_co
       __Pyx_INCREF(__pyx_t_5);
       __Pyx_INCREF(__pyx_t_6);
       #else
-      __pyx_t_5 = PySequence_ITEM(sequence, 0); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 147, __pyx_L1_error)
+      __pyx_t_5 = PySequence_ITEM(sequence, 0); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 146, __pyx_L1_error)
       __Pyx_GOTREF(__pyx_t_5);
-      __pyx_t_6 = PySequence_ITEM(sequence, 1); if (unlikely(!__pyx_t_6)) __PYX_ERR(0, 147, __pyx_L1_error)
+      __pyx_t_6 = PySequence_ITEM(sequence, 1); if (unlikely(!__pyx_t_6)) __PYX_ERR(0, 146, __pyx_L1_error)
       __Pyx_GOTREF(__pyx_t_6);
       #endif
       __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
     } else {
       Py_ssize_t index = -1;
-      __pyx_t_7 = PyObject_GetIter(__pyx_t_2); if (unlikely(!__pyx_t_7)) __PYX_ERR(0, 147, __pyx_L1_error)
+      __pyx_t_7 = PyObject_GetIter(__pyx_t_2); if (unlikely(!__pyx_t_7)) __PYX_ERR(0, 146, __pyx_L1_error)
       __Pyx_GOTREF(__pyx_t_7);
       __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
       __pyx_t_8 = Py_TYPE(__pyx_t_7)->tp_iternext;
@@ -3439,7 +3441,7 @@ static PyObject *__pyx_gb_4cana_12canalization_21cboolean_canalization_11__pi_co
       __Pyx_GOTREF(__pyx_t_5);
       index = 1; __pyx_t_6 = __pyx_t_8(__pyx_t_7); if (unlikely(!__pyx_t_6)) goto __pyx_L6_unpacking_failed;
       __Pyx_GOTREF(__pyx_t_6);
-      if (__Pyx_IternextUnpackEndCheck(__pyx_t_8(__pyx_t_7), 2) < 0) __PYX_ERR(0, 147, __pyx_L1_error)
+      if (__Pyx_IternextUnpackEndCheck(__pyx_t_8(__pyx_t_7), 2) < 0) __PYX_ERR(0, 146, __pyx_L1_error)
       __pyx_t_8 = NULL;
       __Pyx_DECREF(__pyx_t_7); __pyx_t_7 = 0;
       goto __pyx_L7_unpacking_done;
@@ -3447,7 +3449,7 @@ static PyObject *__pyx_gb_4cana_12canalization_21cboolean_canalization_11__pi_co
       __Pyx_DECREF(__pyx_t_7); __pyx_t_7 = 0;
       __pyx_t_8 = NULL;
       if (__Pyx_IterFinish() == 0) __Pyx_RaiseNeedMoreValuesError(index);
-      __PYX_ERR(0, 147, __pyx_L1_error)
+      __PYX_ERR(0, 146, __pyx_L1_error)
       __pyx_L7_unpacking_done:;
     }
     __Pyx_XGOTREF(__pyx_cur_scope->__pyx_v_i);
@@ -3458,19 +3460,19 @@ static PyObject *__pyx_gb_4cana_12canalization_21cboolean_canalization_11__pi_co
     __Pyx_XDECREF_SET(__pyx_cur_scope->__pyx_v_m, __pyx_t_6);
     __Pyx_GIVEREF(__pyx_t_6);
     __pyx_t_6 = 0;
-    __Pyx_GetModuleGlobalName(__pyx_t_2, __pyx_n_s_WILDCARD_SYMBOL); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 147, __pyx_L1_error)
+    __Pyx_GetModuleGlobalName(__pyx_t_2, __pyx_n_s_WILDCARD_SYMBOL); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 146, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_2);
-    __pyx_t_6 = PyObject_RichCompare(__pyx_cur_scope->__pyx_v_i, __pyx_t_2, Py_EQ); __Pyx_XGOTREF(__pyx_t_6); if (unlikely(!__pyx_t_6)) __PYX_ERR(0, 147, __pyx_L1_error)
+    __pyx_t_6 = PyObject_RichCompare(__pyx_cur_scope->__pyx_v_i, __pyx_t_2, Py_EQ); __Pyx_XGOTREF(__pyx_t_6); if (unlikely(!__pyx_t_6)) __PYX_ERR(0, 146, __pyx_L1_error)
     __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
-    __pyx_t_10 = __Pyx_PyObject_IsTrue(__pyx_t_6); if (unlikely(__pyx_t_10 < 0)) __PYX_ERR(0, 147, __pyx_L1_error)
+    __pyx_t_10 = __Pyx_PyObject_IsTrue(__pyx_t_6); if (unlikely(__pyx_t_10 < 0)) __PYX_ERR(0, 146, __pyx_L1_error)
     __Pyx_DECREF(__pyx_t_6); __pyx_t_6 = 0;
     if (!__pyx_t_10) {
     } else {
       __pyx_t_9 = __pyx_t_10;
       goto __pyx_L9_bool_binop_done;
     }
-    __pyx_t_6 = PyObject_RichCompare(__pyx_cur_scope->__pyx_v_m, __pyx_cur_scope->__pyx_v_i, Py_EQ); __Pyx_XGOTREF(__pyx_t_6); if (unlikely(!__pyx_t_6)) __PYX_ERR(0, 147, __pyx_L1_error)
-    __pyx_t_10 = __Pyx_PyObject_IsTrue(__pyx_t_6); if (unlikely(__pyx_t_10 < 0)) __PYX_ERR(0, 147, __pyx_L1_error)
+    __pyx_t_6 = PyObject_RichCompare(__pyx_cur_scope->__pyx_v_m, __pyx_cur_scope->__pyx_v_i, Py_EQ); __Pyx_XGOTREF(__pyx_t_6); if (unlikely(!__pyx_t_6)) __PYX_ERR(0, 146, __pyx_L1_error)
+    __pyx_t_10 = __Pyx_PyObject_IsTrue(__pyx_t_6); if (unlikely(__pyx_t_10 < 0)) __PYX_ERR(0, 146, __pyx_L1_error)
     __Pyx_DECREF(__pyx_t_6); __pyx_t_6 = 0;
     __pyx_t_9 = __pyx_t_10;
     __pyx_L9_bool_binop_done:;
@@ -3513,12 +3515,12 @@ static PyObject *__pyx_gb_4cana_12canalization_21cboolean_canalization_11__pi_co
   return __pyx_r;
 }
 
-/* "cana/canalization/cboolean_canalization.pyx":138
- * 	return prime_implicants
+/* "cana/canalization/cboolean_canalization.pyx":137
+ * 
  * 
  * def __pi_covers(implicant, binstate):             # <<<<<<<<<<<<<<
- * 	"""Determines if a binarystate is covered by a specific implicant.
- * 	Args:
+ *     """Determines if a binarystate is covered by a specific implicant.
+ *     Args:
  */
 
 static PyObject *__pyx_pf_4cana_12canalization_21cboolean_canalization_10__pi_covers(CYTHON_UNUSED PyObject *__pyx_self, PyObject *__pyx_v_implicant, CYTHON_UNUSED PyObject *__pyx_v_binstate) {
@@ -3535,7 +3537,7 @@ static PyObject *__pyx_pf_4cana_12canalization_21cboolean_canalization_10__pi_co
   if (unlikely(!__pyx_cur_scope)) {
     __pyx_cur_scope = ((struct __pyx_obj_4cana_12canalization_21cboolean_canalization___pyx_scope_struct____pi_covers *)Py_None);
     __Pyx_INCREF(Py_None);
-    __PYX_ERR(0, 138, __pyx_L1_error)
+    __PYX_ERR(0, 137, __pyx_L1_error)
   } else {
     __Pyx_GOTREF(__pyx_cur_scope);
   }
@@ -3543,29 +3545,29 @@ static PyObject *__pyx_pf_4cana_12canalization_21cboolean_canalization_10__pi_co
   __Pyx_INCREF(__pyx_cur_scope->__pyx_v_implicant);
   __Pyx_GIVEREF(__pyx_cur_scope->__pyx_v_implicant);
 
-  /* "cana/canalization/cboolean_canalization.pyx":147
+  /* "cana/canalization/cboolean_canalization.pyx":146
  * 
- * 	"""
- * 	return all(i==WILDCARD_SYMBOL or m==i for i, m in zip(implicant, input))             # <<<<<<<<<<<<<<
+ *     """
+ *     return all(i == WILDCARD_SYMBOL or m == i for i, m in zip(implicant, input))             # <<<<<<<<<<<<<<
  * 
- * def expand_wildcard_schemata(schemata):
+ * 
  */
   __Pyx_XDECREF(__pyx_r);
-  __pyx_t_1 = __pyx_pf_4cana_12canalization_21cboolean_canalization_11__pi_covers_genexpr(((PyObject*)__pyx_cur_scope)); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 147, __pyx_L1_error)
+  __pyx_t_1 = __pyx_pf_4cana_12canalization_21cboolean_canalization_11__pi_covers_genexpr(((PyObject*)__pyx_cur_scope)); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 146, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_1);
-  __pyx_t_2 = __Pyx_Generator_Next(__pyx_t_1); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 147, __pyx_L1_error)
+  __pyx_t_2 = __Pyx_Generator_Next(__pyx_t_1); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 146, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_2);
   __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
   __pyx_r = __pyx_t_2;
   __pyx_t_2 = 0;
   goto __pyx_L0;
 
-  /* "cana/canalization/cboolean_canalization.pyx":138
- * 	return prime_implicants
+  /* "cana/canalization/cboolean_canalization.pyx":137
+ * 
  * 
  * def __pi_covers(implicant, binstate):             # <<<<<<<<<<<<<<
- * 	"""Determines if a binarystate is covered by a specific implicant.
- * 	Args:
+ *     """Determines if a binarystate is covered by a specific implicant.
+ *     Args:
  */
 
   /* function exit code */
@@ -3582,16 +3584,16 @@ static PyObject *__pyx_pf_4cana_12canalization_21cboolean_canalization_10__pi_co
 }
 
 /* "cana/canalization/cboolean_canalization.pyx":149
- * 	return all(i==WILDCARD_SYMBOL or m==i for i, m in zip(implicant, input))
+ * 
  * 
  * def expand_wildcard_schemata(schemata):             # <<<<<<<<<<<<<<
- * 	"""
- * 	Expand a wildcard schemata to list all binary states it covers.
+ *     """
+ *     Expand a wildcard schemata to list all binary states it covers.
  */
 
 /* Python wrapper */
 static PyObject *__pyx_pw_4cana_12canalization_21cboolean_canalization_13expand_wildcard_schemata(PyObject *__pyx_self, PyObject *__pyx_v_schemata); /*proto*/
-static char __pyx_doc_4cana_12canalization_21cboolean_canalization_12expand_wildcard_schemata[] = "\n\tExpand a wildcard schemata to list all binary states it covers.\n\n\tArgs:\n\t\tschemata (string): the wildcard shemata\n\tReturns:\n\t\tbinary_states (list): list of all binary states covered by the schemata\n\t";
+static char __pyx_doc_4cana_12canalization_21cboolean_canalization_12expand_wildcard_schemata[] = "\n    Expand a wildcard schemata to list all binary states it covers.\n\n    Args:\n        schemata (string): the wildcard shemata\n    Returns:\n        binary_states (list): list of all binary states covered by the schemata\n    ";
 static PyMethodDef __pyx_mdef_4cana_12canalization_21cboolean_canalization_13expand_wildcard_schemata = {"expand_wildcard_schemata", (PyCFunction)__pyx_pw_4cana_12canalization_21cboolean_canalization_13expand_wildcard_schemata, METH_O, __pyx_doc_4cana_12canalization_21cboolean_canalization_12expand_wildcard_schemata};
 static PyObject *__pyx_pw_4cana_12canalization_21cboolean_canalization_13expand_wildcard_schemata(PyObject *__pyx_self, PyObject *__pyx_v_schemata) {
   PyObject *__pyx_r = 0;
@@ -3633,10 +3635,10 @@ static PyObject *__pyx_pf_4cana_12canalization_21cboolean_canalization_12expand_
 
   /* "cana/canalization/cboolean_canalization.pyx":160
  * 
- * 	# count the number of wildcard symbols
- * 	nwildcards = schemata.count(WILDCARD_SYMBOL)             # <<<<<<<<<<<<<<
+ *     # count the number of wildcard symbols
+ *     nwildcards = schemata.count(WILDCARD_SYMBOL)             # <<<<<<<<<<<<<<
  * 
- * 	# if there arent any symbols, return the original schemata
+ *     # if there arent any symbols, return the original schemata
  */
   __pyx_t_2 = __Pyx_PyObject_GetAttrStr(__pyx_v_schemata, __pyx_n_s_count); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 160, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_2);
@@ -3663,10 +3665,10 @@ static PyObject *__pyx_pf_4cana_12canalization_21cboolean_canalization_12expand_
 
   /* "cana/canalization/cboolean_canalization.pyx":163
  * 
- * 	# if there arent any symbols, return the original schemata
- * 	if nwildcards == 0:             # <<<<<<<<<<<<<<
- * 		return [schemata]
- * 	else:
+ *     # if there arent any symbols, return the original schemata
+ *     if nwildcards == 0:             # <<<<<<<<<<<<<<
+ *         return [schemata]
+ *     else:
  */
   __pyx_t_1 = __Pyx_PyInt_EqObjC(__pyx_v_nwildcards, __pyx_int_0, 0, 0); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 163, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_1);
@@ -3675,11 +3677,11 @@ static PyObject *__pyx_pf_4cana_12canalization_21cboolean_canalization_12expand_
   if (__pyx_t_5) {
 
     /* "cana/canalization/cboolean_canalization.pyx":164
- * 	# if there arent any symbols, return the original schemata
- * 	if nwildcards == 0:
- * 		return [schemata]             # <<<<<<<<<<<<<<
- * 	else:
- * 		binary_states = []
+ *     # if there arent any symbols, return the original schemata
+ *     if nwildcards == 0:
+ *         return [schemata]             # <<<<<<<<<<<<<<
+ *     else:
+ *         binary_states = []
  */
     __Pyx_XDECREF(__pyx_r);
     __pyx_t_1 = PyList_New(1); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 164, __pyx_L1_error)
@@ -3693,19 +3695,19 @@ static PyObject *__pyx_pf_4cana_12canalization_21cboolean_canalization_12expand_
 
     /* "cana/canalization/cboolean_canalization.pyx":163
  * 
- * 	# if there arent any symbols, return the original schemata
- * 	if nwildcards == 0:             # <<<<<<<<<<<<<<
- * 		return [schemata]
- * 	else:
+ *     # if there arent any symbols, return the original schemata
+ *     if nwildcards == 0:             # <<<<<<<<<<<<<<
+ *         return [schemata]
+ *     else:
  */
   }
 
   /* "cana/canalization/cboolean_canalization.pyx":166
- * 		return [schemata]
- * 	else:
- * 		binary_states = []             # <<<<<<<<<<<<<<
- * 		for wildstatenum in range(2**nwildcards):
- * 			wildstates = statenum_to_binstate(wildstatenum, nwildcards)
+ *         return [schemata]
+ *     else:
+ *         binary_states = []             # <<<<<<<<<<<<<<
+ *         for wildstatenum in range(2**nwildcards):
+ *             wildstates = statenum_to_binstate(wildstatenum, nwildcards)
  */
   /*else*/ {
     __pyx_t_1 = PyList_New(0); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 166, __pyx_L1_error)
@@ -3714,11 +3716,11 @@ static PyObject *__pyx_pf_4cana_12canalization_21cboolean_canalization_12expand_
     __pyx_t_1 = 0;
 
     /* "cana/canalization/cboolean_canalization.pyx":167
- * 	else:
- * 		binary_states = []
- * 		for wildstatenum in range(2**nwildcards):             # <<<<<<<<<<<<<<
- * 			wildstates = statenum_to_binstate(wildstatenum, nwildcards)
- * 			wnum = 0
+ *     else:
+ *         binary_states = []
+ *         for wildstatenum in range(2**nwildcards):             # <<<<<<<<<<<<<<
+ *             wildstates = statenum_to_binstate(wildstatenum, nwildcards)
+ *             wnum = 0
  */
     __pyx_t_1 = __Pyx_PyNumber_PowerOf2(__pyx_int_2, __pyx_v_nwildcards, Py_None); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 167, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_1);
@@ -3769,11 +3771,11 @@ static PyObject *__pyx_pf_4cana_12canalization_21cboolean_canalization_12expand_
       __pyx_t_2 = 0;
 
       /* "cana/canalization/cboolean_canalization.pyx":168
- * 		binary_states = []
- * 		for wildstatenum in range(2**nwildcards):
- * 			wildstates = statenum_to_binstate(wildstatenum, nwildcards)             # <<<<<<<<<<<<<<
- * 			wnum = 0
- * 			newstate=''
+ *         binary_states = []
+ *         for wildstatenum in range(2**nwildcards):
+ *             wildstates = statenum_to_binstate(wildstatenum, nwildcards)             # <<<<<<<<<<<<<<
+ *             wnum = 0
+ *             newstate = ''
  */
       __Pyx_GetModuleGlobalName(__pyx_t_3, __pyx_n_s_statenum_to_binstate); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 168, __pyx_L1_error)
       __Pyx_GOTREF(__pyx_t_3);
@@ -3826,31 +3828,31 @@ static PyObject *__pyx_pf_4cana_12canalization_21cboolean_canalization_12expand_
       __pyx_t_2 = 0;
 
       /* "cana/canalization/cboolean_canalization.pyx":169
- * 		for wildstatenum in range(2**nwildcards):
- * 			wildstates = statenum_to_binstate(wildstatenum, nwildcards)
- * 			wnum = 0             # <<<<<<<<<<<<<<
- * 			newstate=''
- * 			for b in schemata:
+ *         for wildstatenum in range(2**nwildcards):
+ *             wildstates = statenum_to_binstate(wildstatenum, nwildcards)
+ *             wnum = 0             # <<<<<<<<<<<<<<
+ *             newstate = ''
+ *             for b in schemata:
  */
       __Pyx_INCREF(__pyx_int_0);
       __Pyx_XDECREF_SET(__pyx_v_wnum, __pyx_int_0);
 
       /* "cana/canalization/cboolean_canalization.pyx":170
- * 			wildstates = statenum_to_binstate(wildstatenum, nwildcards)
- * 			wnum = 0
- * 			newstate=''             # <<<<<<<<<<<<<<
- * 			for b in schemata:
- * 				if b==WILDCARD_SYMBOL:
+ *             wildstates = statenum_to_binstate(wildstatenum, nwildcards)
+ *             wnum = 0
+ *             newstate = ''             # <<<<<<<<<<<<<<
+ *             for b in schemata:
+ *                 if b == WILDCARD_SYMBOL:
  */
-      __Pyx_INCREF(__pyx_kp_s_);
-      __Pyx_XDECREF_SET(__pyx_v_newstate, __pyx_kp_s_);
+      __Pyx_INCREF(__pyx_kp_u_);
+      __Pyx_XDECREF_SET(__pyx_v_newstate, __pyx_kp_u_);
 
       /* "cana/canalization/cboolean_canalization.pyx":171
- * 			wnum = 0
- * 			newstate=''
- * 			for b in schemata:             # <<<<<<<<<<<<<<
- * 				if b==WILDCARD_SYMBOL:
- * 					newstate += wildstates[wnum]
+ *             wnum = 0
+ *             newstate = ''
+ *             for b in schemata:             # <<<<<<<<<<<<<<
+ *                 if b == WILDCARD_SYMBOL:
+ *                     newstate += wildstates[wnum]
  */
       if (likely(PyList_CheckExact(__pyx_v_schemata)) || PyTuple_CheckExact(__pyx_v_schemata)) {
         __pyx_t_2 = __pyx_v_schemata; __Pyx_INCREF(__pyx_t_2); __pyx_t_10 = 0;
@@ -3895,11 +3897,11 @@ static PyObject *__pyx_pf_4cana_12canalization_21cboolean_canalization_12expand_
         __pyx_t_3 = 0;
 
         /* "cana/canalization/cboolean_canalization.pyx":172
- * 			newstate=''
- * 			for b in schemata:
- * 				if b==WILDCARD_SYMBOL:             # <<<<<<<<<<<<<<
- * 					newstate += wildstates[wnum]
- * 					wnum += 1
+ *             newstate = ''
+ *             for b in schemata:
+ *                 if b == WILDCARD_SYMBOL:             # <<<<<<<<<<<<<<
+ *                     newstate += wildstates[wnum]
+ *                     wnum += 1
  */
         __Pyx_GetModuleGlobalName(__pyx_t_3, __pyx_n_s_WILDCARD_SYMBOL); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 172, __pyx_L1_error)
         __Pyx_GOTREF(__pyx_t_3);
@@ -3910,11 +3912,11 @@ static PyObject *__pyx_pf_4cana_12canalization_21cboolean_canalization_12expand_
         if (__pyx_t_5) {
 
           /* "cana/canalization/cboolean_canalization.pyx":173
- * 			for b in schemata:
- * 				if b==WILDCARD_SYMBOL:
- * 					newstate += wildstates[wnum]             # <<<<<<<<<<<<<<
- * 					wnum += 1
- * 				else:
+ *             for b in schemata:
+ *                 if b == WILDCARD_SYMBOL:
+ *                     newstate += wildstates[wnum]             # <<<<<<<<<<<<<<
+ *                     wnum += 1
+ *                 else:
  */
           __pyx_t_9 = __Pyx_PyObject_GetItem(__pyx_v_wildstates, __pyx_v_wnum); if (unlikely(!__pyx_t_9)) __PYX_ERR(0, 173, __pyx_L1_error)
           __Pyx_GOTREF(__pyx_t_9);
@@ -3925,11 +3927,11 @@ static PyObject *__pyx_pf_4cana_12canalization_21cboolean_canalization_12expand_
           __pyx_t_3 = 0;
 
           /* "cana/canalization/cboolean_canalization.pyx":174
- * 				if b==WILDCARD_SYMBOL:
- * 					newstate += wildstates[wnum]
- * 					wnum += 1             # <<<<<<<<<<<<<<
- * 				else:
- * 					newstate += b
+ *                 if b == WILDCARD_SYMBOL:
+ *                     newstate += wildstates[wnum]
+ *                     wnum += 1             # <<<<<<<<<<<<<<
+ *                 else:
+ *                     newstate += b
  */
           __pyx_t_3 = __Pyx_PyInt_AddObjC(__pyx_v_wnum, __pyx_int_1, 1, 1, 0); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 174, __pyx_L1_error)
           __Pyx_GOTREF(__pyx_t_3);
@@ -3937,21 +3939,21 @@ static PyObject *__pyx_pf_4cana_12canalization_21cboolean_canalization_12expand_
           __pyx_t_3 = 0;
 
           /* "cana/canalization/cboolean_canalization.pyx":172
- * 			newstate=''
- * 			for b in schemata:
- * 				if b==WILDCARD_SYMBOL:             # <<<<<<<<<<<<<<
- * 					newstate += wildstates[wnum]
- * 					wnum += 1
+ *             newstate = ''
+ *             for b in schemata:
+ *                 if b == WILDCARD_SYMBOL:             # <<<<<<<<<<<<<<
+ *                     newstate += wildstates[wnum]
+ *                     wnum += 1
  */
           goto __pyx_L8;
         }
 
         /* "cana/canalization/cboolean_canalization.pyx":176
- * 					wnum += 1
- * 				else:
- * 					newstate += b             # <<<<<<<<<<<<<<
- * 			binary_states.append(newstate)
- * 		return binary_states
+ *                     wnum += 1
+ *                 else:
+ *                     newstate += b             # <<<<<<<<<<<<<<
+ *             binary_states.append(newstate)
+ *         return binary_states
  */
         /*else*/ {
           __pyx_t_3 = PyNumber_InPlaceAdd(__pyx_v_newstate, __pyx_v_b); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 176, __pyx_L1_error)
@@ -3962,40 +3964,40 @@ static PyObject *__pyx_pf_4cana_12canalization_21cboolean_canalization_12expand_
         __pyx_L8:;
 
         /* "cana/canalization/cboolean_canalization.pyx":171
- * 			wnum = 0
- * 			newstate=''
- * 			for b in schemata:             # <<<<<<<<<<<<<<
- * 				if b==WILDCARD_SYMBOL:
- * 					newstate += wildstates[wnum]
+ *             wnum = 0
+ *             newstate = ''
+ *             for b in schemata:             # <<<<<<<<<<<<<<
+ *                 if b == WILDCARD_SYMBOL:
+ *                     newstate += wildstates[wnum]
  */
       }
       __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
 
       /* "cana/canalization/cboolean_canalization.pyx":177
- * 				else:
- * 					newstate += b
- * 			binary_states.append(newstate)             # <<<<<<<<<<<<<<
- * 		return binary_states
+ *                 else:
+ *                     newstate += b
+ *             binary_states.append(newstate)             # <<<<<<<<<<<<<<
+ *         return binary_states
  * 
  */
       __pyx_t_12 = __Pyx_PyList_Append(__pyx_v_binary_states, __pyx_v_newstate); if (unlikely(__pyx_t_12 == ((int)-1))) __PYX_ERR(0, 177, __pyx_L1_error)
 
       /* "cana/canalization/cboolean_canalization.pyx":167
- * 	else:
- * 		binary_states = []
- * 		for wildstatenum in range(2**nwildcards):             # <<<<<<<<<<<<<<
- * 			wildstates = statenum_to_binstate(wildstatenum, nwildcards)
- * 			wnum = 0
+ *     else:
+ *         binary_states = []
+ *         for wildstatenum in range(2**nwildcards):             # <<<<<<<<<<<<<<
+ *             wildstates = statenum_to_binstate(wildstatenum, nwildcards)
+ *             wnum = 0
  */
     }
     __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
 
     /* "cana/canalization/cboolean_canalization.pyx":178
- * 					newstate += b
- * 			binary_states.append(newstate)
- * 		return binary_states             # <<<<<<<<<<<<<<
+ *                     newstate += b
+ *             binary_states.append(newstate)
+ *         return binary_states             # <<<<<<<<<<<<<<
  * 
- * def return_pi_coverage(prime_implicants):
+ * 
  */
     __Pyx_XDECREF(__pyx_r);
     __Pyx_INCREF(__pyx_v_binary_states);
@@ -4004,11 +4006,11 @@ static PyObject *__pyx_pf_4cana_12canalization_21cboolean_canalization_12expand_
   }
 
   /* "cana/canalization/cboolean_canalization.pyx":149
- * 	return all(i==WILDCARD_SYMBOL or m==i for i, m in zip(implicant, input))
+ * 
  * 
  * def expand_wildcard_schemata(schemata):             # <<<<<<<<<<<<<<
- * 	"""
- * 	Expand a wildcard schemata to list all binary states it covers.
+ *     """
+ *     Expand a wildcard schemata to list all binary states it covers.
  */
 
   /* function exit code */
@@ -4033,17 +4035,17 @@ static PyObject *__pyx_pf_4cana_12canalization_21cboolean_canalization_12expand_
   return __pyx_r;
 }
 
-/* "cana/canalization/cboolean_canalization.pyx":180
- * 		return binary_states
+/* "cana/canalization/cboolean_canalization.pyx":181
+ * 
  * 
  * def return_pi_coverage(prime_implicants):             # <<<<<<<<<<<<<<
- * 	"""Computes the binary states coverage by Prime Implicant schematas.
+ *     """Computes the binary states coverage by Prime Implicant schematas.
  * 
  */
 
 /* Python wrapper */
 static PyObject *__pyx_pw_4cana_12canalization_21cboolean_canalization_15return_pi_coverage(PyObject *__pyx_self, PyObject *__pyx_v_prime_implicants); /*proto*/
-static char __pyx_doc_4cana_12canalization_21cboolean_canalization_14return_pi_coverage[] = "Computes the binary states coverage by Prime Implicant schematas.\n\n\tArgs:\n\t\tprime_implicants (set): a set of prime implicants.\n\t\t\tThis is returned by `find_implicants_qm`.\n\tReturns:\n\t\tpi_coverage (dict) : a dictionary of coverage where keys are input states and values are lists of the Prime Implicants covering that input.\n\t";
+static char __pyx_doc_4cana_12canalization_21cboolean_canalization_14return_pi_coverage[] = "Computes the binary states coverage by Prime Implicant schematas.\n\n    Args:\n        prime_implicants (set): a set of prime implicants.\n            This is returned by `find_implicants_qm`.\n    Returns:\n        pi_coverage (dict) : a dictionary of coverage where keys are input states and values are lists of the Prime Implicants covering that input.\n    ";
 static PyMethodDef __pyx_mdef_4cana_12canalization_21cboolean_canalization_15return_pi_coverage = {"return_pi_coverage", (PyCFunction)__pyx_pw_4cana_12canalization_21cboolean_canalization_15return_pi_coverage, METH_O, __pyx_doc_4cana_12canalization_21cboolean_canalization_14return_pi_coverage};
 static PyObject *__pyx_pw_4cana_12canalization_21cboolean_canalization_15return_pi_coverage(PyObject *__pyx_self, PyObject *__pyx_v_prime_implicants) {
   PyObject *__pyx_r = 0;
@@ -4078,49 +4080,49 @@ static PyObject *__pyx_pf_4cana_12canalization_21cboolean_canalization_14return_
   int __pyx_clineno = 0;
   __Pyx_RefNannySetupContext("return_pi_coverage", 0);
 
-  /* "cana/canalization/cboolean_canalization.pyx":190
- * 	"""
+  /* "cana/canalization/cboolean_canalization.pyx":191
+ *     """
  * 
- * 	pi_coverage = dict()             # <<<<<<<<<<<<<<
- * 	for pi in prime_implicants:
- * 		for binstate in expand_wildcard_schemata(pi):
+ *     pi_coverage = dict()             # <<<<<<<<<<<<<<
+ *     for pi in prime_implicants:
+ *         for binstate in expand_wildcard_schemata(pi):
  */
-  __pyx_t_1 = __Pyx_PyDict_NewPresized(0); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 190, __pyx_L1_error)
+  __pyx_t_1 = __Pyx_PyDict_NewPresized(0); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 191, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_1);
   __pyx_v_pi_coverage = ((PyObject*)__pyx_t_1);
   __pyx_t_1 = 0;
 
-  /* "cana/canalization/cboolean_canalization.pyx":191
+  /* "cana/canalization/cboolean_canalization.pyx":192
  * 
- * 	pi_coverage = dict()
- * 	for pi in prime_implicants:             # <<<<<<<<<<<<<<
- * 		for binstate in expand_wildcard_schemata(pi):
- * 			if not binstate in pi_coverage:
+ *     pi_coverage = dict()
+ *     for pi in prime_implicants:             # <<<<<<<<<<<<<<
+ *         for binstate in expand_wildcard_schemata(pi):
+ *             if binstate not in pi_coverage:
  */
   if (likely(PyList_CheckExact(__pyx_v_prime_implicants)) || PyTuple_CheckExact(__pyx_v_prime_implicants)) {
     __pyx_t_1 = __pyx_v_prime_implicants; __Pyx_INCREF(__pyx_t_1); __pyx_t_2 = 0;
     __pyx_t_3 = NULL;
   } else {
-    __pyx_t_2 = -1; __pyx_t_1 = PyObject_GetIter(__pyx_v_prime_implicants); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 191, __pyx_L1_error)
+    __pyx_t_2 = -1; __pyx_t_1 = PyObject_GetIter(__pyx_v_prime_implicants); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 192, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_1);
-    __pyx_t_3 = Py_TYPE(__pyx_t_1)->tp_iternext; if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 191, __pyx_L1_error)
+    __pyx_t_3 = Py_TYPE(__pyx_t_1)->tp_iternext; if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 192, __pyx_L1_error)
   }
   for (;;) {
     if (likely(!__pyx_t_3)) {
       if (likely(PyList_CheckExact(__pyx_t_1))) {
         if (__pyx_t_2 >= PyList_GET_SIZE(__pyx_t_1)) break;
         #if CYTHON_ASSUME_SAFE_MACROS && !CYTHON_AVOID_BORROWED_REFS
-        __pyx_t_4 = PyList_GET_ITEM(__pyx_t_1, __pyx_t_2); __Pyx_INCREF(__pyx_t_4); __pyx_t_2++; if (unlikely(0 < 0)) __PYX_ERR(0, 191, __pyx_L1_error)
+        __pyx_t_4 = PyList_GET_ITEM(__pyx_t_1, __pyx_t_2); __Pyx_INCREF(__pyx_t_4); __pyx_t_2++; if (unlikely(0 < 0)) __PYX_ERR(0, 192, __pyx_L1_error)
         #else
-        __pyx_t_4 = PySequence_ITEM(__pyx_t_1, __pyx_t_2); __pyx_t_2++; if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 191, __pyx_L1_error)
+        __pyx_t_4 = PySequence_ITEM(__pyx_t_1, __pyx_t_2); __pyx_t_2++; if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 192, __pyx_L1_error)
         __Pyx_GOTREF(__pyx_t_4);
         #endif
       } else {
         if (__pyx_t_2 >= PyTuple_GET_SIZE(__pyx_t_1)) break;
         #if CYTHON_ASSUME_SAFE_MACROS && !CYTHON_AVOID_BORROWED_REFS
-        __pyx_t_4 = PyTuple_GET_ITEM(__pyx_t_1, __pyx_t_2); __Pyx_INCREF(__pyx_t_4); __pyx_t_2++; if (unlikely(0 < 0)) __PYX_ERR(0, 191, __pyx_L1_error)
+        __pyx_t_4 = PyTuple_GET_ITEM(__pyx_t_1, __pyx_t_2); __Pyx_INCREF(__pyx_t_4); __pyx_t_2++; if (unlikely(0 < 0)) __PYX_ERR(0, 192, __pyx_L1_error)
         #else
-        __pyx_t_4 = PySequence_ITEM(__pyx_t_1, __pyx_t_2); __pyx_t_2++; if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 191, __pyx_L1_error)
+        __pyx_t_4 = PySequence_ITEM(__pyx_t_1, __pyx_t_2); __pyx_t_2++; if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 192, __pyx_L1_error)
         __Pyx_GOTREF(__pyx_t_4);
         #endif
       }
@@ -4130,7 +4132,7 @@ static PyObject *__pyx_pf_4cana_12canalization_21cboolean_canalization_14return_
         PyObject* exc_type = PyErr_Occurred();
         if (exc_type) {
           if (likely(__Pyx_PyErr_GivenExceptionMatches(exc_type, PyExc_StopIteration))) PyErr_Clear();
-          else __PYX_ERR(0, 191, __pyx_L1_error)
+          else __PYX_ERR(0, 192, __pyx_L1_error)
         }
         break;
       }
@@ -4139,14 +4141,14 @@ static PyObject *__pyx_pf_4cana_12canalization_21cboolean_canalization_14return_
     __Pyx_XDECREF_SET(__pyx_v_pi, __pyx_t_4);
     __pyx_t_4 = 0;
 
-    /* "cana/canalization/cboolean_canalization.pyx":192
- * 	pi_coverage = dict()
- * 	for pi in prime_implicants:
- * 		for binstate in expand_wildcard_schemata(pi):             # <<<<<<<<<<<<<<
- * 			if not binstate in pi_coverage:
- * 				pi_coverage[binstate] = set()
+    /* "cana/canalization/cboolean_canalization.pyx":193
+ *     pi_coverage = dict()
+ *     for pi in prime_implicants:
+ *         for binstate in expand_wildcard_schemata(pi):             # <<<<<<<<<<<<<<
+ *             if binstate not in pi_coverage:
+ *                 pi_coverage[binstate] = set()
  */
-    __Pyx_GetModuleGlobalName(__pyx_t_5, __pyx_n_s_expand_wildcard_schemata); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 192, __pyx_L1_error)
+    __Pyx_GetModuleGlobalName(__pyx_t_5, __pyx_n_s_expand_wildcard_schemata); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 193, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_5);
     __pyx_t_6 = NULL;
     if (CYTHON_UNPACK_METHODS && unlikely(PyMethod_Check(__pyx_t_5))) {
@@ -4160,16 +4162,16 @@ static PyObject *__pyx_pf_4cana_12canalization_21cboolean_canalization_14return_
     }
     __pyx_t_4 = (__pyx_t_6) ? __Pyx_PyObject_Call2Args(__pyx_t_5, __pyx_t_6, __pyx_v_pi) : __Pyx_PyObject_CallOneArg(__pyx_t_5, __pyx_v_pi);
     __Pyx_XDECREF(__pyx_t_6); __pyx_t_6 = 0;
-    if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 192, __pyx_L1_error)
+    if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 193, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_4);
     __Pyx_DECREF(__pyx_t_5); __pyx_t_5 = 0;
     if (likely(PyList_CheckExact(__pyx_t_4)) || PyTuple_CheckExact(__pyx_t_4)) {
       __pyx_t_5 = __pyx_t_4; __Pyx_INCREF(__pyx_t_5); __pyx_t_7 = 0;
       __pyx_t_8 = NULL;
     } else {
-      __pyx_t_7 = -1; __pyx_t_5 = PyObject_GetIter(__pyx_t_4); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 192, __pyx_L1_error)
+      __pyx_t_7 = -1; __pyx_t_5 = PyObject_GetIter(__pyx_t_4); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 193, __pyx_L1_error)
       __Pyx_GOTREF(__pyx_t_5);
-      __pyx_t_8 = Py_TYPE(__pyx_t_5)->tp_iternext; if (unlikely(!__pyx_t_8)) __PYX_ERR(0, 192, __pyx_L1_error)
+      __pyx_t_8 = Py_TYPE(__pyx_t_5)->tp_iternext; if (unlikely(!__pyx_t_8)) __PYX_ERR(0, 193, __pyx_L1_error)
     }
     __Pyx_DECREF(__pyx_t_4); __pyx_t_4 = 0;
     for (;;) {
@@ -4177,17 +4179,17 @@ static PyObject *__pyx_pf_4cana_12canalization_21cboolean_canalization_14return_
         if (likely(PyList_CheckExact(__pyx_t_5))) {
           if (__pyx_t_7 >= PyList_GET_SIZE(__pyx_t_5)) break;
           #if CYTHON_ASSUME_SAFE_MACROS && !CYTHON_AVOID_BORROWED_REFS
-          __pyx_t_4 = PyList_GET_ITEM(__pyx_t_5, __pyx_t_7); __Pyx_INCREF(__pyx_t_4); __pyx_t_7++; if (unlikely(0 < 0)) __PYX_ERR(0, 192, __pyx_L1_error)
+          __pyx_t_4 = PyList_GET_ITEM(__pyx_t_5, __pyx_t_7); __Pyx_INCREF(__pyx_t_4); __pyx_t_7++; if (unlikely(0 < 0)) __PYX_ERR(0, 193, __pyx_L1_error)
           #else
-          __pyx_t_4 = PySequence_ITEM(__pyx_t_5, __pyx_t_7); __pyx_t_7++; if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 192, __pyx_L1_error)
+          __pyx_t_4 = PySequence_ITEM(__pyx_t_5, __pyx_t_7); __pyx_t_7++; if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 193, __pyx_L1_error)
           __Pyx_GOTREF(__pyx_t_4);
           #endif
         } else {
           if (__pyx_t_7 >= PyTuple_GET_SIZE(__pyx_t_5)) break;
           #if CYTHON_ASSUME_SAFE_MACROS && !CYTHON_AVOID_BORROWED_REFS
-          __pyx_t_4 = PyTuple_GET_ITEM(__pyx_t_5, __pyx_t_7); __Pyx_INCREF(__pyx_t_4); __pyx_t_7++; if (unlikely(0 < 0)) __PYX_ERR(0, 192, __pyx_L1_error)
+          __pyx_t_4 = PyTuple_GET_ITEM(__pyx_t_5, __pyx_t_7); __Pyx_INCREF(__pyx_t_4); __pyx_t_7++; if (unlikely(0 < 0)) __PYX_ERR(0, 193, __pyx_L1_error)
           #else
-          __pyx_t_4 = PySequence_ITEM(__pyx_t_5, __pyx_t_7); __pyx_t_7++; if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 192, __pyx_L1_error)
+          __pyx_t_4 = PySequence_ITEM(__pyx_t_5, __pyx_t_7); __pyx_t_7++; if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 193, __pyx_L1_error)
           __Pyx_GOTREF(__pyx_t_4);
           #endif
         }
@@ -4197,7 +4199,7 @@ static PyObject *__pyx_pf_4cana_12canalization_21cboolean_canalization_14return_
           PyObject* exc_type = PyErr_Occurred();
           if (exc_type) {
             if (likely(__Pyx_PyErr_GivenExceptionMatches(exc_type, PyExc_StopIteration))) PyErr_Clear();
-            else __PYX_ERR(0, 192, __pyx_L1_error)
+            else __PYX_ERR(0, 193, __pyx_L1_error)
           }
           break;
         }
@@ -4206,48 +4208,48 @@ static PyObject *__pyx_pf_4cana_12canalization_21cboolean_canalization_14return_
       __Pyx_XDECREF_SET(__pyx_v_binstate, __pyx_t_4);
       __pyx_t_4 = 0;
 
-      /* "cana/canalization/cboolean_canalization.pyx":193
- * 	for pi in prime_implicants:
- * 		for binstate in expand_wildcard_schemata(pi):
- * 			if not binstate in pi_coverage:             # <<<<<<<<<<<<<<
- * 				pi_coverage[binstate] = set()
- * 			pi_coverage[binstate].add(pi)
+      /* "cana/canalization/cboolean_canalization.pyx":194
+ *     for pi in prime_implicants:
+ *         for binstate in expand_wildcard_schemata(pi):
+ *             if binstate not in pi_coverage:             # <<<<<<<<<<<<<<
+ *                 pi_coverage[binstate] = set()
+ *             pi_coverage[binstate].add(pi)
  */
-      __pyx_t_9 = (__Pyx_PyDict_ContainsTF(__pyx_v_binstate, __pyx_v_pi_coverage, Py_NE)); if (unlikely(__pyx_t_9 < 0)) __PYX_ERR(0, 193, __pyx_L1_error)
+      __pyx_t_9 = (__Pyx_PyDict_ContainsTF(__pyx_v_binstate, __pyx_v_pi_coverage, Py_NE)); if (unlikely(__pyx_t_9 < 0)) __PYX_ERR(0, 194, __pyx_L1_error)
       __pyx_t_10 = (__pyx_t_9 != 0);
       if (__pyx_t_10) {
 
-        /* "cana/canalization/cboolean_canalization.pyx":194
- * 		for binstate in expand_wildcard_schemata(pi):
- * 			if not binstate in pi_coverage:
- * 				pi_coverage[binstate] = set()             # <<<<<<<<<<<<<<
- * 			pi_coverage[binstate].add(pi)
+        /* "cana/canalization/cboolean_canalization.pyx":195
+ *         for binstate in expand_wildcard_schemata(pi):
+ *             if binstate not in pi_coverage:
+ *                 pi_coverage[binstate] = set()             # <<<<<<<<<<<<<<
+ *             pi_coverage[binstate].add(pi)
  * 
  */
-        __pyx_t_4 = PySet_New(0); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 194, __pyx_L1_error)
+        __pyx_t_4 = PySet_New(0); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 195, __pyx_L1_error)
         __Pyx_GOTREF(__pyx_t_4);
-        if (unlikely(PyDict_SetItem(__pyx_v_pi_coverage, __pyx_v_binstate, __pyx_t_4) < 0)) __PYX_ERR(0, 194, __pyx_L1_error)
+        if (unlikely(PyDict_SetItem(__pyx_v_pi_coverage, __pyx_v_binstate, __pyx_t_4) < 0)) __PYX_ERR(0, 195, __pyx_L1_error)
         __Pyx_DECREF(__pyx_t_4); __pyx_t_4 = 0;
 
-        /* "cana/canalization/cboolean_canalization.pyx":193
- * 	for pi in prime_implicants:
- * 		for binstate in expand_wildcard_schemata(pi):
- * 			if not binstate in pi_coverage:             # <<<<<<<<<<<<<<
- * 				pi_coverage[binstate] = set()
- * 			pi_coverage[binstate].add(pi)
+        /* "cana/canalization/cboolean_canalization.pyx":194
+ *     for pi in prime_implicants:
+ *         for binstate in expand_wildcard_schemata(pi):
+ *             if binstate not in pi_coverage:             # <<<<<<<<<<<<<<
+ *                 pi_coverage[binstate] = set()
+ *             pi_coverage[binstate].add(pi)
  */
       }
 
-      /* "cana/canalization/cboolean_canalization.pyx":195
- * 			if not binstate in pi_coverage:
- * 				pi_coverage[binstate] = set()
- * 			pi_coverage[binstate].add(pi)             # <<<<<<<<<<<<<<
+      /* "cana/canalization/cboolean_canalization.pyx":196
+ *             if binstate not in pi_coverage:
+ *                 pi_coverage[binstate] = set()
+ *             pi_coverage[binstate].add(pi)             # <<<<<<<<<<<<<<
  * 
- * 	return pi_coverage
+ *     return pi_coverage
  */
-      __pyx_t_6 = __Pyx_PyDict_GetItem(__pyx_v_pi_coverage, __pyx_v_binstate); if (unlikely(!__pyx_t_6)) __PYX_ERR(0, 195, __pyx_L1_error)
+      __pyx_t_6 = __Pyx_PyDict_GetItem(__pyx_v_pi_coverage, __pyx_v_binstate); if (unlikely(!__pyx_t_6)) __PYX_ERR(0, 196, __pyx_L1_error)
       __Pyx_GOTREF(__pyx_t_6);
-      __pyx_t_11 = __Pyx_PyObject_GetAttrStr(__pyx_t_6, __pyx_n_s_add); if (unlikely(!__pyx_t_11)) __PYX_ERR(0, 195, __pyx_L1_error)
+      __pyx_t_11 = __Pyx_PyObject_GetAttrStr(__pyx_t_6, __pyx_n_s_add); if (unlikely(!__pyx_t_11)) __PYX_ERR(0, 196, __pyx_L1_error)
       __Pyx_GOTREF(__pyx_t_11);
       __Pyx_DECREF(__pyx_t_6); __pyx_t_6 = 0;
       __pyx_t_6 = NULL;
@@ -4262,48 +4264,48 @@ static PyObject *__pyx_pf_4cana_12canalization_21cboolean_canalization_14return_
       }
       __pyx_t_4 = (__pyx_t_6) ? __Pyx_PyObject_Call2Args(__pyx_t_11, __pyx_t_6, __pyx_v_pi) : __Pyx_PyObject_CallOneArg(__pyx_t_11, __pyx_v_pi);
       __Pyx_XDECREF(__pyx_t_6); __pyx_t_6 = 0;
-      if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 195, __pyx_L1_error)
+      if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 196, __pyx_L1_error)
       __Pyx_GOTREF(__pyx_t_4);
       __Pyx_DECREF(__pyx_t_11); __pyx_t_11 = 0;
       __Pyx_DECREF(__pyx_t_4); __pyx_t_4 = 0;
 
-      /* "cana/canalization/cboolean_canalization.pyx":192
- * 	pi_coverage = dict()
- * 	for pi in prime_implicants:
- * 		for binstate in expand_wildcard_schemata(pi):             # <<<<<<<<<<<<<<
- * 			if not binstate in pi_coverage:
- * 				pi_coverage[binstate] = set()
+      /* "cana/canalization/cboolean_canalization.pyx":193
+ *     pi_coverage = dict()
+ *     for pi in prime_implicants:
+ *         for binstate in expand_wildcard_schemata(pi):             # <<<<<<<<<<<<<<
+ *             if binstate not in pi_coverage:
+ *                 pi_coverage[binstate] = set()
  */
     }
     __Pyx_DECREF(__pyx_t_5); __pyx_t_5 = 0;
 
-    /* "cana/canalization/cboolean_canalization.pyx":191
+    /* "cana/canalization/cboolean_canalization.pyx":192
  * 
- * 	pi_coverage = dict()
- * 	for pi in prime_implicants:             # <<<<<<<<<<<<<<
- * 		for binstate in expand_wildcard_schemata(pi):
- * 			if not binstate in pi_coverage:
+ *     pi_coverage = dict()
+ *     for pi in prime_implicants:             # <<<<<<<<<<<<<<
+ *         for binstate in expand_wildcard_schemata(pi):
+ *             if binstate not in pi_coverage:
  */
   }
   __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
 
-  /* "cana/canalization/cboolean_canalization.pyx":197
- * 			pi_coverage[binstate].add(pi)
+  /* "cana/canalization/cboolean_canalization.pyx":198
+ *             pi_coverage[binstate].add(pi)
  * 
- * 	return pi_coverage             # <<<<<<<<<<<<<<
+ *     return pi_coverage             # <<<<<<<<<<<<<<
  * 
- * def input_wildcard_coverage(pi_coverage):
+ * 
  */
   __Pyx_XDECREF(__pyx_r);
   __Pyx_INCREF(__pyx_v_pi_coverage);
   __pyx_r = __pyx_v_pi_coverage;
   goto __pyx_L0;
 
-  /* "cana/canalization/cboolean_canalization.pyx":180
- * 		return binary_states
+  /* "cana/canalization/cboolean_canalization.pyx":181
+ * 
  * 
  * def return_pi_coverage(prime_implicants):             # <<<<<<<<<<<<<<
- * 	"""Computes the binary states coverage by Prime Implicant schematas.
+ *     """Computes the binary states coverage by Prime Implicant schematas.
  * 
  */
 
@@ -4325,17 +4327,17 @@ static PyObject *__pyx_pf_4cana_12canalization_21cboolean_canalization_14return_
   return __pyx_r;
 }
 
-/* "cana/canalization/cboolean_canalization.pyx":199
- * 	return pi_coverage
+/* "cana/canalization/cboolean_canalization.pyx":201
+ * 
  * 
  * def input_wildcard_coverage(pi_coverage):             # <<<<<<<<<<<<<<
- * 	"""Computes the binary states coverage by Prime Implicant schematas.
+ *     """Computes the binary states coverage by Prime Implicant schematas.
  * 
  */
 
 /* Python wrapper */
 static PyObject *__pyx_pw_4cana_12canalization_21cboolean_canalization_17input_wildcard_coverage(PyObject *__pyx_self, PyObject *__pyx_v_pi_coverage); /*proto*/
-static char __pyx_doc_4cana_12canalization_21cboolean_canalization_16input_wildcard_coverage[] = "Computes the binary states coverage by Prime Implicant schematas.\n\n\tArgs:\n\t\tpi_coverage (dict): a dict mapping binary states to their prime implicants.\n\t\t\tThis is returned by `return_pi_coverage`.\n\tReturns:\n\t\tinput_wildcard_coverage (dict) : a dictionary of coverage where keys are inputs and values are lists of wither a WildCard covers that input.\n\n\t";
+static char __pyx_doc_4cana_12canalization_21cboolean_canalization_16input_wildcard_coverage[] = "Computes the binary states coverage by Prime Implicant schematas.\n\n    Args:\n        pi_coverage (dict): a dict mapping binary states to their prime implicants.\n            This is returned by `return_pi_coverage`.\n    Returns:\n        input_wildcard_coverage (dict) : a dictionary of coverage where keys are inputs and values are lists of wither a WildCard covers that input.\n\n    ";
 static PyMethodDef __pyx_mdef_4cana_12canalization_21cboolean_canalization_17input_wildcard_coverage = {"input_wildcard_coverage", (PyCFunction)__pyx_pw_4cana_12canalization_21cboolean_canalization_17input_wildcard_coverage, METH_O, __pyx_doc_4cana_12canalization_21cboolean_canalization_16input_wildcard_coverage};
 static PyObject *__pyx_pw_4cana_12canalization_21cboolean_canalization_17input_wildcard_coverage(PyObject *__pyx_self, PyObject *__pyx_v_pi_coverage) {
   PyObject *__pyx_r = 0;
@@ -4349,12 +4351,12 @@ static PyObject *__pyx_pw_4cana_12canalization_21cboolean_canalization_17input_w
 }
 static PyObject *__pyx_gb_4cana_12canalization_21cboolean_canalization_23input_wildcard_coverage_2generator1(__pyx_CoroutineObject *__pyx_generator, CYTHON_UNUSED PyThreadState *__pyx_tstate, PyObject *__pyx_sent_value); /* proto */
 
-/* "cana/canalization/cboolean_canalization.pyx":215
- * 	for binstate, piset in pi_coverage.items():
- * 		for i in range(k):
- * 			input_to_wildcards[i][binstate] = tuple(pi[i] == WILDCARD_SYMBOL for pi in piset)             # <<<<<<<<<<<<<<
+/* "cana/canalization/cboolean_canalization.pyx":217
+ *     for binstate, piset in pi_coverage.items():
+ *         for i in range(k):
+ *             input_to_wildcards[i][binstate] = tuple(pi[i] == WILDCARD_SYMBOL for pi in piset)             # <<<<<<<<<<<<<<
  * 
- * 	return input_to_wildcards
+ *     return input_to_wildcards
  */
 
 static PyObject *__pyx_pf_4cana_12canalization_21cboolean_canalization_23input_wildcard_coverage_genexpr(PyObject *__pyx_self) {
@@ -4369,7 +4371,7 @@ static PyObject *__pyx_pf_4cana_12canalization_21cboolean_canalization_23input_w
   if (unlikely(!__pyx_cur_scope)) {
     __pyx_cur_scope = ((struct __pyx_obj_4cana_12canalization_21cboolean_canalization___pyx_scope_struct_3_genexpr *)Py_None);
     __Pyx_INCREF(Py_None);
-    __PYX_ERR(0, 215, __pyx_L1_error)
+    __PYX_ERR(0, 217, __pyx_L1_error)
   } else {
     __Pyx_GOTREF(__pyx_cur_scope);
   }
@@ -4377,7 +4379,7 @@ static PyObject *__pyx_pf_4cana_12canalization_21cboolean_canalization_23input_w
   __Pyx_INCREF(((PyObject *)__pyx_cur_scope->__pyx_outer_scope));
   __Pyx_GIVEREF(__pyx_cur_scope->__pyx_outer_scope);
   {
-    __pyx_CoroutineObject *gen = __Pyx_Generator_New((__pyx_coroutine_body_t) __pyx_gb_4cana_12canalization_21cboolean_canalization_23input_wildcard_coverage_2generator1, NULL, (PyObject *) __pyx_cur_scope, __pyx_n_s_genexpr, __pyx_n_s_input_wildcard_coverage_locals_g, __pyx_n_s_cana_canalization_cboolean_canal); if (unlikely(!gen)) __PYX_ERR(0, 215, __pyx_L1_error)
+    __pyx_CoroutineObject *gen = __Pyx_Generator_New((__pyx_coroutine_body_t) __pyx_gb_4cana_12canalization_21cboolean_canalization_23input_wildcard_coverage_2generator1, NULL, (PyObject *) __pyx_cur_scope, __pyx_n_s_genexpr, __pyx_n_s_input_wildcard_coverage_locals_g, __pyx_n_s_cana_canalization_cboolean_canal); if (unlikely(!gen)) __PYX_ERR(0, 217, __pyx_L1_error)
     __Pyx_DECREF(__pyx_cur_scope);
     __Pyx_RefNannyFinishContext();
     return (PyObject *) gen;
@@ -4416,32 +4418,32 @@ static PyObject *__pyx_gb_4cana_12canalization_21cboolean_canalization_23input_w
     return NULL;
   }
   __pyx_L3_first_run:;
-  if (unlikely(!__pyx_sent_value)) __PYX_ERR(0, 215, __pyx_L1_error)
-  if (unlikely(!__pyx_cur_scope->__pyx_outer_scope->__pyx_v_piset)) { __Pyx_RaiseClosureNameError("piset"); __PYX_ERR(0, 215, __pyx_L1_error) }
+  if (unlikely(!__pyx_sent_value)) __PYX_ERR(0, 217, __pyx_L1_error)
+  if (unlikely(!__pyx_cur_scope->__pyx_outer_scope->__pyx_v_piset)) { __Pyx_RaiseClosureNameError("piset"); __PYX_ERR(0, 217, __pyx_L1_error) }
   if (likely(PyList_CheckExact(__pyx_cur_scope->__pyx_outer_scope->__pyx_v_piset)) || PyTuple_CheckExact(__pyx_cur_scope->__pyx_outer_scope->__pyx_v_piset)) {
     __pyx_t_1 = __pyx_cur_scope->__pyx_outer_scope->__pyx_v_piset; __Pyx_INCREF(__pyx_t_1); __pyx_t_2 = 0;
     __pyx_t_3 = NULL;
   } else {
-    __pyx_t_2 = -1; __pyx_t_1 = PyObject_GetIter(__pyx_cur_scope->__pyx_outer_scope->__pyx_v_piset); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 215, __pyx_L1_error)
+    __pyx_t_2 = -1; __pyx_t_1 = PyObject_GetIter(__pyx_cur_scope->__pyx_outer_scope->__pyx_v_piset); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 217, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_1);
-    __pyx_t_3 = Py_TYPE(__pyx_t_1)->tp_iternext; if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 215, __pyx_L1_error)
+    __pyx_t_3 = Py_TYPE(__pyx_t_1)->tp_iternext; if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 217, __pyx_L1_error)
   }
   for (;;) {
     if (likely(!__pyx_t_3)) {
       if (likely(PyList_CheckExact(__pyx_t_1))) {
         if (__pyx_t_2 >= PyList_GET_SIZE(__pyx_t_1)) break;
         #if CYTHON_ASSUME_SAFE_MACROS && !CYTHON_AVOID_BORROWED_REFS
-        __pyx_t_4 = PyList_GET_ITEM(__pyx_t_1, __pyx_t_2); __Pyx_INCREF(__pyx_t_4); __pyx_t_2++; if (unlikely(0 < 0)) __PYX_ERR(0, 215, __pyx_L1_error)
+        __pyx_t_4 = PyList_GET_ITEM(__pyx_t_1, __pyx_t_2); __Pyx_INCREF(__pyx_t_4); __pyx_t_2++; if (unlikely(0 < 0)) __PYX_ERR(0, 217, __pyx_L1_error)
         #else
-        __pyx_t_4 = PySequence_ITEM(__pyx_t_1, __pyx_t_2); __pyx_t_2++; if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 215, __pyx_L1_error)
+        __pyx_t_4 = PySequence_ITEM(__pyx_t_1, __pyx_t_2); __pyx_t_2++; if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 217, __pyx_L1_error)
         __Pyx_GOTREF(__pyx_t_4);
         #endif
       } else {
         if (__pyx_t_2 >= PyTuple_GET_SIZE(__pyx_t_1)) break;
         #if CYTHON_ASSUME_SAFE_MACROS && !CYTHON_AVOID_BORROWED_REFS
-        __pyx_t_4 = PyTuple_GET_ITEM(__pyx_t_1, __pyx_t_2); __Pyx_INCREF(__pyx_t_4); __pyx_t_2++; if (unlikely(0 < 0)) __PYX_ERR(0, 215, __pyx_L1_error)
+        __pyx_t_4 = PyTuple_GET_ITEM(__pyx_t_1, __pyx_t_2); __Pyx_INCREF(__pyx_t_4); __pyx_t_2++; if (unlikely(0 < 0)) __PYX_ERR(0, 217, __pyx_L1_error)
         #else
-        __pyx_t_4 = PySequence_ITEM(__pyx_t_1, __pyx_t_2); __pyx_t_2++; if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 215, __pyx_L1_error)
+        __pyx_t_4 = PySequence_ITEM(__pyx_t_1, __pyx_t_2); __pyx_t_2++; if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 217, __pyx_L1_error)
         __Pyx_GOTREF(__pyx_t_4);
         #endif
       }
@@ -4451,7 +4453,7 @@ static PyObject *__pyx_gb_4cana_12canalization_21cboolean_canalization_23input_w
         PyObject* exc_type = PyErr_Occurred();
         if (exc_type) {
           if (likely(__Pyx_PyErr_GivenExceptionMatches(exc_type, PyExc_StopIteration))) PyErr_Clear();
-          else __PYX_ERR(0, 215, __pyx_L1_error)
+          else __PYX_ERR(0, 217, __pyx_L1_error)
         }
         break;
       }
@@ -4461,11 +4463,11 @@ static PyObject *__pyx_gb_4cana_12canalization_21cboolean_canalization_23input_w
     __Pyx_XDECREF_SET(__pyx_cur_scope->__pyx_v_pi, __pyx_t_4);
     __Pyx_GIVEREF(__pyx_t_4);
     __pyx_t_4 = 0;
-    __pyx_t_4 = __Pyx_GetItemInt(__pyx_cur_scope->__pyx_v_pi, __pyx_cur_scope->__pyx_outer_scope->__pyx_v_i, Py_ssize_t, 1, PyInt_FromSsize_t, 0, 1, 1); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 215, __pyx_L1_error)
+    __pyx_t_4 = __Pyx_GetItemInt(__pyx_cur_scope->__pyx_v_pi, __pyx_cur_scope->__pyx_outer_scope->__pyx_v_i, Py_ssize_t, 1, PyInt_FromSsize_t, 0, 1, 1); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 217, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_4);
-    __Pyx_GetModuleGlobalName(__pyx_t_5, __pyx_n_s_WILDCARD_SYMBOL); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 215, __pyx_L1_error)
+    __Pyx_GetModuleGlobalName(__pyx_t_5, __pyx_n_s_WILDCARD_SYMBOL); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 217, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_5);
-    __pyx_t_6 = PyObject_RichCompare(__pyx_t_4, __pyx_t_5, Py_EQ); __Pyx_XGOTREF(__pyx_t_6); if (unlikely(!__pyx_t_6)) __PYX_ERR(0, 215, __pyx_L1_error)
+    __pyx_t_6 = PyObject_RichCompare(__pyx_t_4, __pyx_t_5, Py_EQ); __Pyx_XGOTREF(__pyx_t_6); if (unlikely(!__pyx_t_6)) __PYX_ERR(0, 217, __pyx_L1_error)
     __Pyx_DECREF(__pyx_t_4); __pyx_t_4 = 0;
     __Pyx_DECREF(__pyx_t_5); __pyx_t_5 = 0;
     __pyx_r = __pyx_t_6;
@@ -4486,7 +4488,7 @@ static PyObject *__pyx_gb_4cana_12canalization_21cboolean_canalization_23input_w
     __Pyx_XGOTREF(__pyx_t_1);
     __pyx_t_2 = __pyx_cur_scope->__pyx_t_1;
     __pyx_t_3 = __pyx_cur_scope->__pyx_t_2;
-    if (unlikely(!__pyx_sent_value)) __PYX_ERR(0, 215, __pyx_L1_error)
+    if (unlikely(!__pyx_sent_value)) __PYX_ERR(0, 217, __pyx_L1_error)
   }
   __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
   CYTHON_MAYBE_UNUSED_VAR(__pyx_cur_scope);
@@ -4511,11 +4513,11 @@ static PyObject *__pyx_gb_4cana_12canalization_21cboolean_canalization_23input_w
   return __pyx_r;
 }
 
-/* "cana/canalization/cboolean_canalization.pyx":199
- * 	return pi_coverage
+/* "cana/canalization/cboolean_canalization.pyx":201
+ * 
  * 
  * def input_wildcard_coverage(pi_coverage):             # <<<<<<<<<<<<<<
- * 	"""Computes the binary states coverage by Prime Implicant schematas.
+ *     """Computes the binary states coverage by Prime Implicant schematas.
  * 
  */
 
@@ -4524,7 +4526,7 @@ static PyObject *__pyx_pf_4cana_12canalization_21cboolean_canalization_16input_w
   Py_ssize_t __pyx_v_k;
   PyObject *__pyx_v_input_to_wildcards = NULL;
   PyObject *__pyx_v_binstate = NULL;
-  Py_ssize_t __pyx_8genexpr1__pyx_v_i;
+  Py_ssize_t __pyx_8genexpr2__pyx_v_i;
   PyObject *__pyx_r = NULL;
   __Pyx_RefNannyDeclarations
   PyObject *__pyx_t_1 = NULL;
@@ -4533,11 +4535,11 @@ static PyObject *__pyx_pf_4cana_12canalization_21cboolean_canalization_16input_w
   Py_ssize_t __pyx_t_4;
   Py_ssize_t __pyx_t_5;
   PyObject *__pyx_t_6 = NULL;
-  PyObject *(*__pyx_t_7)(PyObject *);
-  PyObject *__pyx_t_8 = NULL;
-  PyObject *__pyx_t_9 = NULL;
-  PyObject *(*__pyx_t_10)(PyObject *);
-  Py_ssize_t __pyx_t_11;
+  int __pyx_t_7;
+  int __pyx_t_8;
+  Py_ssize_t __pyx_t_9;
+  Py_ssize_t __pyx_t_10;
+  PyObject *__pyx_t_11 = NULL;
   int __pyx_lineno = 0;
   const char *__pyx_filename = NULL;
   int __pyx_clineno = 0;
@@ -4546,46 +4548,46 @@ static PyObject *__pyx_pf_4cana_12canalization_21cboolean_canalization_16input_w
   if (unlikely(!__pyx_cur_scope)) {
     __pyx_cur_scope = ((struct __pyx_obj_4cana_12canalization_21cboolean_canalization___pyx_scope_struct_2_input_wildcard_coverage *)Py_None);
     __Pyx_INCREF(Py_None);
-    __PYX_ERR(0, 199, __pyx_L1_error)
+    __PYX_ERR(0, 201, __pyx_L1_error)
   } else {
     __Pyx_GOTREF(__pyx_cur_scope);
   }
 
-  /* "cana/canalization/cboolean_canalization.pyx":210
- * 	"""
- * 	# number of inputs
- * 	k = len(next(iter(pi_coverage)))             # <<<<<<<<<<<<<<
+  /* "cana/canalization/cboolean_canalization.pyx":212
+ *     """
+ *     # number of inputs
+ *     k = len(next(iter(pi_coverage)))             # <<<<<<<<<<<<<<
  * 
- * 	input_to_wildcards = {i:dict() for i in range(k)}
+ *     input_to_wildcards = {i: dict() for i in range(k)}
  */
-  __pyx_t_1 = PyObject_GetIter(__pyx_v_pi_coverage); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 210, __pyx_L1_error)
+  __pyx_t_1 = PyObject_GetIter(__pyx_v_pi_coverage); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 212, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_1);
-  __pyx_t_2 = __Pyx_PyIter_Next(__pyx_t_1); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 210, __pyx_L1_error)
+  __pyx_t_2 = __Pyx_PyIter_Next(__pyx_t_1); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 212, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_2);
   __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
-  __pyx_t_3 = PyObject_Length(__pyx_t_2); if (unlikely(__pyx_t_3 == ((Py_ssize_t)-1))) __PYX_ERR(0, 210, __pyx_L1_error)
+  __pyx_t_3 = PyObject_Length(__pyx_t_2); if (unlikely(__pyx_t_3 == ((Py_ssize_t)-1))) __PYX_ERR(0, 212, __pyx_L1_error)
   __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
   __pyx_v_k = __pyx_t_3;
 
-  /* "cana/canalization/cboolean_canalization.pyx":212
- * 	k = len(next(iter(pi_coverage)))
+  /* "cana/canalization/cboolean_canalization.pyx":214
+ *     k = len(next(iter(pi_coverage)))
  * 
- * 	input_to_wildcards = {i:dict() for i in range(k)}             # <<<<<<<<<<<<<<
- * 	for binstate, piset in pi_coverage.items():
- * 		for i in range(k):
+ *     input_to_wildcards = {i: dict() for i in range(k)}             # <<<<<<<<<<<<<<
+ *     for binstate, piset in pi_coverage.items():
+ *         for i in range(k):
  */
   { /* enter inner scope */
-    __pyx_t_2 = PyDict_New(); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 212, __pyx_L1_error)
+    __pyx_t_2 = PyDict_New(); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 214, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_2);
     __pyx_t_3 = __pyx_v_k;
     __pyx_t_4 = __pyx_t_3;
     for (__pyx_t_5 = 0; __pyx_t_5 < __pyx_t_4; __pyx_t_5+=1) {
-      __pyx_8genexpr1__pyx_v_i = __pyx_t_5;
-      __pyx_t_1 = PyInt_FromSsize_t(__pyx_8genexpr1__pyx_v_i); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 212, __pyx_L1_error)
+      __pyx_8genexpr2__pyx_v_i = __pyx_t_5;
+      __pyx_t_1 = PyInt_FromSsize_t(__pyx_8genexpr2__pyx_v_i); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 214, __pyx_L1_error)
       __Pyx_GOTREF(__pyx_t_1);
-      __pyx_t_6 = __Pyx_PyDict_NewPresized(0); if (unlikely(!__pyx_t_6)) __PYX_ERR(0, 212, __pyx_L1_error)
+      __pyx_t_6 = __Pyx_PyDict_NewPresized(0); if (unlikely(!__pyx_t_6)) __PYX_ERR(0, 214, __pyx_L1_error)
       __Pyx_GOTREF(__pyx_t_6);
-      if (unlikely(PyDict_SetItem(__pyx_t_2, (PyObject*)__pyx_t_1, (PyObject*)__pyx_t_6))) __PYX_ERR(0, 212, __pyx_L1_error)
+      if (unlikely(PyDict_SetItem(__pyx_t_2, (PyObject*)__pyx_t_1, (PyObject*)__pyx_t_6))) __PYX_ERR(0, 214, __pyx_L1_error)
       __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
       __Pyx_DECREF(__pyx_t_6); __pyx_t_6 = 0;
     }
@@ -4593,182 +4595,87 @@ static PyObject *__pyx_pf_4cana_12canalization_21cboolean_canalization_16input_w
   __pyx_v_input_to_wildcards = ((PyObject*)__pyx_t_2);
   __pyx_t_2 = 0;
 
-  /* "cana/canalization/cboolean_canalization.pyx":213
+  /* "cana/canalization/cboolean_canalization.pyx":215
  * 
- * 	input_to_wildcards = {i:dict() for i in range(k)}
- * 	for binstate, piset in pi_coverage.items():             # <<<<<<<<<<<<<<
- * 		for i in range(k):
- * 			input_to_wildcards[i][binstate] = tuple(pi[i] == WILDCARD_SYMBOL for pi in piset)
+ *     input_to_wildcards = {i: dict() for i in range(k)}
+ *     for binstate, piset in pi_coverage.items():             # <<<<<<<<<<<<<<
+ *         for i in range(k):
+ *             input_to_wildcards[i][binstate] = tuple(pi[i] == WILDCARD_SYMBOL for pi in piset)
  */
-  __pyx_t_6 = __Pyx_PyObject_GetAttrStr(__pyx_v_pi_coverage, __pyx_n_s_items); if (unlikely(!__pyx_t_6)) __PYX_ERR(0, 213, __pyx_L1_error)
-  __Pyx_GOTREF(__pyx_t_6);
-  __pyx_t_1 = NULL;
-  if (CYTHON_UNPACK_METHODS && likely(PyMethod_Check(__pyx_t_6))) {
-    __pyx_t_1 = PyMethod_GET_SELF(__pyx_t_6);
-    if (likely(__pyx_t_1)) {
-      PyObject* function = PyMethod_GET_FUNCTION(__pyx_t_6);
-      __Pyx_INCREF(__pyx_t_1);
-      __Pyx_INCREF(function);
-      __Pyx_DECREF_SET(__pyx_t_6, function);
-    }
+  __pyx_t_3 = 0;
+  if (unlikely(__pyx_v_pi_coverage == Py_None)) {
+    PyErr_Format(PyExc_AttributeError, "'NoneType' object has no attribute '%.30s'", "items");
+    __PYX_ERR(0, 215, __pyx_L1_error)
   }
-  __pyx_t_2 = (__pyx_t_1) ? __Pyx_PyObject_CallOneArg(__pyx_t_6, __pyx_t_1) : __Pyx_PyObject_CallNoArg(__pyx_t_6);
-  __Pyx_XDECREF(__pyx_t_1); __pyx_t_1 = 0;
-  if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 213, __pyx_L1_error)
-  __Pyx_GOTREF(__pyx_t_2);
-  __Pyx_DECREF(__pyx_t_6); __pyx_t_6 = 0;
-  if (likely(PyList_CheckExact(__pyx_t_2)) || PyTuple_CheckExact(__pyx_t_2)) {
-    __pyx_t_6 = __pyx_t_2; __Pyx_INCREF(__pyx_t_6); __pyx_t_3 = 0;
-    __pyx_t_7 = NULL;
-  } else {
-    __pyx_t_3 = -1; __pyx_t_6 = PyObject_GetIter(__pyx_t_2); if (unlikely(!__pyx_t_6)) __PYX_ERR(0, 213, __pyx_L1_error)
+  __pyx_t_6 = __Pyx_dict_iterator(__pyx_v_pi_coverage, 0, __pyx_n_s_items, (&__pyx_t_4), (&__pyx_t_7)); if (unlikely(!__pyx_t_6)) __PYX_ERR(0, 215, __pyx_L1_error)
+  __Pyx_GOTREF(__pyx_t_6);
+  __Pyx_XDECREF(__pyx_t_2);
+  __pyx_t_2 = __pyx_t_6;
+  __pyx_t_6 = 0;
+  while (1) {
+    __pyx_t_8 = __Pyx_dict_iter_next(__pyx_t_2, __pyx_t_4, &__pyx_t_3, &__pyx_t_6, &__pyx_t_1, NULL, __pyx_t_7);
+    if (unlikely(__pyx_t_8 == 0)) break;
+    if (unlikely(__pyx_t_8 == -1)) __PYX_ERR(0, 215, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_6);
-    __pyx_t_7 = Py_TYPE(__pyx_t_6)->tp_iternext; if (unlikely(!__pyx_t_7)) __PYX_ERR(0, 213, __pyx_L1_error)
+    __Pyx_GOTREF(__pyx_t_1);
+    __Pyx_XDECREF_SET(__pyx_v_binstate, __pyx_t_6);
+    __pyx_t_6 = 0;
+    __Pyx_XGOTREF(__pyx_cur_scope->__pyx_v_piset);
+    __Pyx_XDECREF_SET(__pyx_cur_scope->__pyx_v_piset, __pyx_t_1);
+    __Pyx_GIVEREF(__pyx_t_1);
+    __pyx_t_1 = 0;
+
+    /* "cana/canalization/cboolean_canalization.pyx":216
+ *     input_to_wildcards = {i: dict() for i in range(k)}
+ *     for binstate, piset in pi_coverage.items():
+ *         for i in range(k):             # <<<<<<<<<<<<<<
+ *             input_to_wildcards[i][binstate] = tuple(pi[i] == WILDCARD_SYMBOL for pi in piset)
+ * 
+ */
+    __pyx_t_5 = __pyx_v_k;
+    __pyx_t_9 = __pyx_t_5;
+    for (__pyx_t_10 = 0; __pyx_t_10 < __pyx_t_9; __pyx_t_10+=1) {
+      __pyx_cur_scope->__pyx_v_i = __pyx_t_10;
+
+      /* "cana/canalization/cboolean_canalization.pyx":217
+ *     for binstate, piset in pi_coverage.items():
+ *         for i in range(k):
+ *             input_to_wildcards[i][binstate] = tuple(pi[i] == WILDCARD_SYMBOL for pi in piset)             # <<<<<<<<<<<<<<
+ * 
+ *     return input_to_wildcards
+ */
+      __pyx_t_1 = __pyx_pf_4cana_12canalization_21cboolean_canalization_23input_wildcard_coverage_genexpr(((PyObject*)__pyx_cur_scope)); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 217, __pyx_L1_error)
+      __Pyx_GOTREF(__pyx_t_1);
+      __pyx_t_6 = __Pyx_PySequence_Tuple(__pyx_t_1); if (unlikely(!__pyx_t_6)) __PYX_ERR(0, 217, __pyx_L1_error)
+      __Pyx_GOTREF(__pyx_t_6);
+      __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
+      __pyx_t_1 = PyInt_FromSsize_t(__pyx_cur_scope->__pyx_v_i); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 217, __pyx_L1_error)
+      __Pyx_GOTREF(__pyx_t_1);
+      __pyx_t_11 = __Pyx_PyDict_GetItem(__pyx_v_input_to_wildcards, __pyx_t_1); if (unlikely(!__pyx_t_11)) __PYX_ERR(0, 217, __pyx_L1_error)
+      __Pyx_GOTREF(__pyx_t_11);
+      __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
+      if (unlikely(PyObject_SetItem(__pyx_t_11, __pyx_v_binstate, __pyx_t_6) < 0)) __PYX_ERR(0, 217, __pyx_L1_error)
+      __Pyx_DECREF(__pyx_t_11); __pyx_t_11 = 0;
+      __Pyx_DECREF(__pyx_t_6); __pyx_t_6 = 0;
+    }
   }
   __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
-  for (;;) {
-    if (likely(!__pyx_t_7)) {
-      if (likely(PyList_CheckExact(__pyx_t_6))) {
-        if (__pyx_t_3 >= PyList_GET_SIZE(__pyx_t_6)) break;
-        #if CYTHON_ASSUME_SAFE_MACROS && !CYTHON_AVOID_BORROWED_REFS
-        __pyx_t_2 = PyList_GET_ITEM(__pyx_t_6, __pyx_t_3); __Pyx_INCREF(__pyx_t_2); __pyx_t_3++; if (unlikely(0 < 0)) __PYX_ERR(0, 213, __pyx_L1_error)
-        #else
-        __pyx_t_2 = PySequence_ITEM(__pyx_t_6, __pyx_t_3); __pyx_t_3++; if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 213, __pyx_L1_error)
-        __Pyx_GOTREF(__pyx_t_2);
-        #endif
-      } else {
-        if (__pyx_t_3 >= PyTuple_GET_SIZE(__pyx_t_6)) break;
-        #if CYTHON_ASSUME_SAFE_MACROS && !CYTHON_AVOID_BORROWED_REFS
-        __pyx_t_2 = PyTuple_GET_ITEM(__pyx_t_6, __pyx_t_3); __Pyx_INCREF(__pyx_t_2); __pyx_t_3++; if (unlikely(0 < 0)) __PYX_ERR(0, 213, __pyx_L1_error)
-        #else
-        __pyx_t_2 = PySequence_ITEM(__pyx_t_6, __pyx_t_3); __pyx_t_3++; if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 213, __pyx_L1_error)
-        __Pyx_GOTREF(__pyx_t_2);
-        #endif
-      }
-    } else {
-      __pyx_t_2 = __pyx_t_7(__pyx_t_6);
-      if (unlikely(!__pyx_t_2)) {
-        PyObject* exc_type = PyErr_Occurred();
-        if (exc_type) {
-          if (likely(__Pyx_PyErr_GivenExceptionMatches(exc_type, PyExc_StopIteration))) PyErr_Clear();
-          else __PYX_ERR(0, 213, __pyx_L1_error)
-        }
-        break;
-      }
-      __Pyx_GOTREF(__pyx_t_2);
-    }
-    if ((likely(PyTuple_CheckExact(__pyx_t_2))) || (PyList_CheckExact(__pyx_t_2))) {
-      PyObject* sequence = __pyx_t_2;
-      Py_ssize_t size = __Pyx_PySequence_SIZE(sequence);
-      if (unlikely(size != 2)) {
-        if (size > 2) __Pyx_RaiseTooManyValuesError(2);
-        else if (size >= 0) __Pyx_RaiseNeedMoreValuesError(size);
-        __PYX_ERR(0, 213, __pyx_L1_error)
-      }
-      #if CYTHON_ASSUME_SAFE_MACROS && !CYTHON_AVOID_BORROWED_REFS
-      if (likely(PyTuple_CheckExact(sequence))) {
-        __pyx_t_1 = PyTuple_GET_ITEM(sequence, 0); 
-        __pyx_t_8 = PyTuple_GET_ITEM(sequence, 1); 
-      } else {
-        __pyx_t_1 = PyList_GET_ITEM(sequence, 0); 
-        __pyx_t_8 = PyList_GET_ITEM(sequence, 1); 
-      }
-      __Pyx_INCREF(__pyx_t_1);
-      __Pyx_INCREF(__pyx_t_8);
-      #else
-      __pyx_t_1 = PySequence_ITEM(sequence, 0); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 213, __pyx_L1_error)
-      __Pyx_GOTREF(__pyx_t_1);
-      __pyx_t_8 = PySequence_ITEM(sequence, 1); if (unlikely(!__pyx_t_8)) __PYX_ERR(0, 213, __pyx_L1_error)
-      __Pyx_GOTREF(__pyx_t_8);
-      #endif
-      __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
-    } else {
-      Py_ssize_t index = -1;
-      __pyx_t_9 = PyObject_GetIter(__pyx_t_2); if (unlikely(!__pyx_t_9)) __PYX_ERR(0, 213, __pyx_L1_error)
-      __Pyx_GOTREF(__pyx_t_9);
-      __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
-      __pyx_t_10 = Py_TYPE(__pyx_t_9)->tp_iternext;
-      index = 0; __pyx_t_1 = __pyx_t_10(__pyx_t_9); if (unlikely(!__pyx_t_1)) goto __pyx_L7_unpacking_failed;
-      __Pyx_GOTREF(__pyx_t_1);
-      index = 1; __pyx_t_8 = __pyx_t_10(__pyx_t_9); if (unlikely(!__pyx_t_8)) goto __pyx_L7_unpacking_failed;
-      __Pyx_GOTREF(__pyx_t_8);
-      if (__Pyx_IternextUnpackEndCheck(__pyx_t_10(__pyx_t_9), 2) < 0) __PYX_ERR(0, 213, __pyx_L1_error)
-      __pyx_t_10 = NULL;
-      __Pyx_DECREF(__pyx_t_9); __pyx_t_9 = 0;
-      goto __pyx_L8_unpacking_done;
-      __pyx_L7_unpacking_failed:;
-      __Pyx_DECREF(__pyx_t_9); __pyx_t_9 = 0;
-      __pyx_t_10 = NULL;
-      if (__Pyx_IterFinish() == 0) __Pyx_RaiseNeedMoreValuesError(index);
-      __PYX_ERR(0, 213, __pyx_L1_error)
-      __pyx_L8_unpacking_done:;
-    }
-    __Pyx_XDECREF_SET(__pyx_v_binstate, __pyx_t_1);
-    __pyx_t_1 = 0;
-    __Pyx_XGOTREF(__pyx_cur_scope->__pyx_v_piset);
-    __Pyx_XDECREF_SET(__pyx_cur_scope->__pyx_v_piset, __pyx_t_8);
-    __Pyx_GIVEREF(__pyx_t_8);
-    __pyx_t_8 = 0;
 
-    /* "cana/canalization/cboolean_canalization.pyx":214
- * 	input_to_wildcards = {i:dict() for i in range(k)}
- * 	for binstate, piset in pi_coverage.items():
- * 		for i in range(k):             # <<<<<<<<<<<<<<
- * 			input_to_wildcards[i][binstate] = tuple(pi[i] == WILDCARD_SYMBOL for pi in piset)
+  /* "cana/canalization/cboolean_canalization.pyx":219
+ *             input_to_wildcards[i][binstate] = tuple(pi[i] == WILDCARD_SYMBOL for pi in piset)
  * 
- */
-    __pyx_t_4 = __pyx_v_k;
-    __pyx_t_5 = __pyx_t_4;
-    for (__pyx_t_11 = 0; __pyx_t_11 < __pyx_t_5; __pyx_t_11+=1) {
-      __pyx_cur_scope->__pyx_v_i = __pyx_t_11;
-
-      /* "cana/canalization/cboolean_canalization.pyx":215
- * 	for binstate, piset in pi_coverage.items():
- * 		for i in range(k):
- * 			input_to_wildcards[i][binstate] = tuple(pi[i] == WILDCARD_SYMBOL for pi in piset)             # <<<<<<<<<<<<<<
- * 
- * 	return input_to_wildcards
- */
-      __pyx_t_2 = __pyx_pf_4cana_12canalization_21cboolean_canalization_23input_wildcard_coverage_genexpr(((PyObject*)__pyx_cur_scope)); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 215, __pyx_L1_error)
-      __Pyx_GOTREF(__pyx_t_2);
-      __pyx_t_8 = __Pyx_PySequence_Tuple(__pyx_t_2); if (unlikely(!__pyx_t_8)) __PYX_ERR(0, 215, __pyx_L1_error)
-      __Pyx_GOTREF(__pyx_t_8);
-      __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
-      __pyx_t_2 = PyInt_FromSsize_t(__pyx_cur_scope->__pyx_v_i); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 215, __pyx_L1_error)
-      __Pyx_GOTREF(__pyx_t_2);
-      __pyx_t_1 = __Pyx_PyDict_GetItem(__pyx_v_input_to_wildcards, __pyx_t_2); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 215, __pyx_L1_error)
-      __Pyx_GOTREF(__pyx_t_1);
-      __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
-      if (unlikely(PyObject_SetItem(__pyx_t_1, __pyx_v_binstate, __pyx_t_8) < 0)) __PYX_ERR(0, 215, __pyx_L1_error)
-      __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
-      __Pyx_DECREF(__pyx_t_8); __pyx_t_8 = 0;
-    }
-
-    /* "cana/canalization/cboolean_canalization.pyx":213
- * 
- * 	input_to_wildcards = {i:dict() for i in range(k)}
- * 	for binstate, piset in pi_coverage.items():             # <<<<<<<<<<<<<<
- * 		for i in range(k):
- * 			input_to_wildcards[i][binstate] = tuple(pi[i] == WILDCARD_SYMBOL for pi in piset)
- */
-  }
-  __Pyx_DECREF(__pyx_t_6); __pyx_t_6 = 0;
-
-  /* "cana/canalization/cboolean_canalization.pyx":217
- * 			input_to_wildcards[i][binstate] = tuple(pi[i] == WILDCARD_SYMBOL for pi in piset)
- * 
- * 	return input_to_wildcards             # <<<<<<<<<<<<<<
+ *     return input_to_wildcards             # <<<<<<<<<<<<<<
  */
   __Pyx_XDECREF(__pyx_r);
   __Pyx_INCREF(__pyx_v_input_to_wildcards);
   __pyx_r = __pyx_v_input_to_wildcards;
   goto __pyx_L0;
 
-  /* "cana/canalization/cboolean_canalization.pyx":199
- * 	return pi_coverage
+  /* "cana/canalization/cboolean_canalization.pyx":201
+ * 
  * 
  * def input_wildcard_coverage(pi_coverage):             # <<<<<<<<<<<<<<
- * 	"""Computes the binary states coverage by Prime Implicant schematas.
+ *     """Computes the binary states coverage by Prime Implicant schematas.
  * 
  */
 
@@ -4777,8 +4684,7 @@ static PyObject *__pyx_pf_4cana_12canalization_21cboolean_canalization_16input_w
   __Pyx_XDECREF(__pyx_t_1);
   __Pyx_XDECREF(__pyx_t_2);
   __Pyx_XDECREF(__pyx_t_6);
-  __Pyx_XDECREF(__pyx_t_8);
-  __Pyx_XDECREF(__pyx_t_9);
+  __Pyx_XDECREF(__pyx_t_11);
   __Pyx_AddTraceback("cana.canalization.cboolean_canalization.input_wildcard_coverage", __pyx_clineno, __pyx_lineno, __pyx_filename);
   __pyx_r = NULL;
   __pyx_L0:;
@@ -5400,7 +5306,7 @@ static PyModuleDef_Slot __pyx_moduledef_slots[] = {
 static struct PyModuleDef __pyx_moduledef = {
     PyModuleDef_HEAD_INIT,
     "cboolean_canalization",
-    __pyx_k_Boolean_Canalization, /* m_doc */
+    __pyx_k_Cythonized_Boolean_Canalization, /* m_doc */
   #if CYTHON_PEP489_MULTI_PHASE_INIT
     0, /* m_size */
   #else
@@ -5428,13 +5334,14 @@ static struct PyModuleDef __pyx_moduledef = {
 #endif
 
 static __Pyx_StringTabEntry __pyx_string_tab[] = {
-  {&__pyx_kp_s_, __pyx_k_, sizeof(__pyx_k_), 0, 0, 1, 0},
-  {&__pyx_kp_s_0, __pyx_k_0, sizeof(__pyx_k_0), 0, 0, 1, 0},
-  {&__pyx_kp_s_1, __pyx_k_1, sizeof(__pyx_k_1), 0, 0, 1, 0},
+  {&__pyx_kp_u_, __pyx_k_, sizeof(__pyx_k_), 0, 1, 0, 0},
+  {&__pyx_kp_u_0, __pyx_k_0, sizeof(__pyx_k_0), 0, 1, 0, 0},
+  {&__pyx_kp_u_1, __pyx_k_1, sizeof(__pyx_k_1), 0, 1, 0, 0},
   {&__pyx_n_s_SYMMETRIC_WILDCARD_SYMBOL, __pyx_k_SYMMETRIC_WILDCARD_SYMBOL, sizeof(__pyx_k_SYMMETRIC_WILDCARD_SYMBOL), 0, 0, 1, 1},
   {&__pyx_n_s_WILDCARD_SYMBOL, __pyx_k_WILDCARD_SYMBOL, sizeof(__pyx_k_WILDCARD_SYMBOL), 0, 0, 1, 1},
   {&__pyx_n_s__2, __pyx_k__2, sizeof(__pyx_k__2), 0, 0, 1, 1},
-  {&__pyx_kp_s__3, __pyx_k__3, sizeof(__pyx_k__3), 0, 0, 1, 0},
+  {&__pyx_kp_u__2, __pyx_k__2, sizeof(__pyx_k__2), 0, 1, 0, 0},
+  {&__pyx_kp_u__3, __pyx_k__3, sizeof(__pyx_k__3), 0, 1, 0, 0},
   {&__pyx_n_s_add, __pyx_k_add, sizeof(__pyx_k_add), 0, 0, 1, 1},
   {&__pyx_n_s_args, __pyx_k_args, sizeof(__pyx_k_args), 0, 0, 1, 1},
   {&__pyx_n_s_b, __pyx_k_b, sizeof(__pyx_k_b), 0, 0, 1, 1},
@@ -5451,11 +5358,9 @@ static __Pyx_StringTabEntry __pyx_string_tab[] = {
   {&__pyx_n_s_cana_cutils, __pyx_k_cana_cutils, sizeof(__pyx_k_cana_cutils), 0, 0, 1, 1},
   {&__pyx_n_s_cline_in_traceback, __pyx_k_cline_in_traceback, sizeof(__pyx_k_cline_in_traceback), 0, 0, 1, 1},
   {&__pyx_n_s_close, __pyx_k_close, sizeof(__pyx_k_close), 0, 0, 1, 1},
-  {&__pyx_n_s_collections, __pyx_k_collections, sizeof(__pyx_k_collections), 0, 0, 1, 1},
   {&__pyx_n_s_count, __pyx_k_count, sizeof(__pyx_k_count), 0, 0, 1, 1},
   {&__pyx_n_s_density, __pyx_k_density, sizeof(__pyx_k_density), 0, 0, 1, 1},
   {&__pyx_n_s_density_groups, __pyx_k_density_groups, sizeof(__pyx_k_density_groups), 0, 0, 1, 1},
-  {&__pyx_n_s_deque, __pyx_k_deque, sizeof(__pyx_k_deque), 0, 0, 1, 1},
   {&__pyx_n_s_done, __pyx_k_done, sizeof(__pyx_k_done), 0, 0, 1, 1},
   {&__pyx_n_s_enumerate, __pyx_k_enumerate, sizeof(__pyx_k_enumerate), 0, 0, 1, 1},
   {&__pyx_n_s_expand_wildcard_schemata, __pyx_k_expand_wildcard_schemata, sizeof(__pyx_k_expand_wildcard_schemata), 0, 0, 1, 1},
@@ -5474,8 +5379,6 @@ static __Pyx_StringTabEntry __pyx_string_tab[] = {
   {&__pyx_n_s_input_wildcard_coverage, __pyx_k_input_wildcard_coverage, sizeof(__pyx_k_input_wildcard_coverage), 0, 0, 1, 1},
   {&__pyx_n_s_input_wildcard_coverage_locals_g, __pyx_k_input_wildcard_coverage_locals_g, sizeof(__pyx_k_input_wildcard_coverage_locals_g), 0, 0, 1, 1},
   {&__pyx_n_s_items, __pyx_k_items, sizeof(__pyx_k_items), 0, 0, 1, 1},
-  {&__pyx_n_s_itertools, __pyx_k_itertools, sizeof(__pyx_k_itertools), 0, 0, 1, 1},
-  {&__pyx_n_s_join, __pyx_k_join, sizeof(__pyx_k_join), 0, 0, 1, 1},
   {&__pyx_n_s_k, __pyx_k_k, sizeof(__pyx_k_k), 0, 0, 1, 1},
   {&__pyx_n_s_main, __pyx_k_main, sizeof(__pyx_k_main), 0, 0, 1, 1},
   {&__pyx_n_s_make_density_groups, __pyx_k_make_density_groups, sizeof(__pyx_k_make_density_groups), 0, 0, 1, 1},
@@ -5507,9 +5410,9 @@ static __Pyx_StringTabEntry __pyx_string_tab[] = {
   {0, 0, 0, 0, 0, 0, 0}
 };
 static CYTHON_SMALL_CODE int __Pyx_InitCachedBuiltins(void) {
-  __pyx_builtin_zip = __Pyx_GetBuiltinName(__pyx_n_s_zip); if (!__pyx_builtin_zip) __PYX_ERR(0, 52, __pyx_L1_error)
-  __pyx_builtin_enumerate = __Pyx_GetBuiltinName(__pyx_n_s_enumerate); if (!__pyx_builtin_enumerate) __PYX_ERR(0, 112, __pyx_L1_error)
-  __pyx_builtin_input = __Pyx_GetBuiltinName(__pyx_n_s_input); if (!__pyx_builtin_input) __PYX_ERR(0, 147, __pyx_L1_error)
+  __pyx_builtin_zip = __Pyx_GetBuiltinName(__pyx_n_s_zip); if (!__pyx_builtin_zip) __PYX_ERR(0, 49, __pyx_L1_error)
+  __pyx_builtin_enumerate = __Pyx_GetBuiltinName(__pyx_n_s_enumerate); if (!__pyx_builtin_enumerate) __PYX_ERR(0, 110, __pyx_L1_error)
+  __pyx_builtin_input = __Pyx_GetBuiltinName(__pyx_n_s_input); if (!__pyx_builtin_input) __PYX_ERR(0, 146, __pyx_L1_error)
   __pyx_builtin_range = __Pyx_GetBuiltinName(__pyx_n_s_range); if (!__pyx_builtin_range) __PYX_ERR(0, 167, __pyx_L1_error)
   return 0;
   __pyx_L1_error:;
@@ -5520,59 +5423,59 @@ static CYTHON_SMALL_CODE int __Pyx_InitCachedConstants(void) {
   __Pyx_RefNannyDeclarations
   __Pyx_RefNannySetupContext("__Pyx_InitCachedConstants", 0);
 
-  /* "cana/canalization/cboolean_canalization.pyx":27
+  /* "cana/canalization/cboolean_canalization.pyx":24
  * # Quine-McCluskey Functions
  * #
  * def make_density_groups(input_binstates):             # <<<<<<<<<<<<<<
- * 	"""
- * 
+ *     """
+ *     """
  */
-  __pyx_tuple__4 = PyTuple_Pack(4, __pyx_n_s_input_binstates, __pyx_n_s_density_groups, __pyx_n_s_binstate, __pyx_n_s_density); if (unlikely(!__pyx_tuple__4)) __PYX_ERR(0, 27, __pyx_L1_error)
+  __pyx_tuple__4 = PyTuple_Pack(4, __pyx_n_s_input_binstates, __pyx_n_s_density_groups, __pyx_n_s_binstate, __pyx_n_s_density); if (unlikely(!__pyx_tuple__4)) __PYX_ERR(0, 24, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_tuple__4);
   __Pyx_GIVEREF(__pyx_tuple__4);
-  __pyx_codeobj__5 = (PyObject*)__Pyx_PyCode_New(1, 0, 4, 0, CO_OPTIMIZED|CO_NEWLOCALS, __pyx_empty_bytes, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_tuple__4, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_kp_s_cana_canalization_cboolean_canal_2, __pyx_n_s_make_density_groups, 27, __pyx_empty_bytes); if (unlikely(!__pyx_codeobj__5)) __PYX_ERR(0, 27, __pyx_L1_error)
+  __pyx_codeobj__5 = (PyObject*)__Pyx_PyCode_New(1, 0, 4, 0, CO_OPTIMIZED|CO_NEWLOCALS, __pyx_empty_bytes, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_tuple__4, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_kp_s_cana_canalization_cboolean_canal_2, __pyx_n_s_make_density_groups, 24, __pyx_empty_bytes); if (unlikely(!__pyx_codeobj__5)) __PYX_ERR(0, 24, __pyx_L1_error)
 
-  /* "cana/canalization/cboolean_canalization.pyx":41
- * 	return density_groups
+  /* "cana/canalization/cboolean_canalization.pyx":38
+ * 
  * 
  * def find_wildcards(binstate1, binstate2):             # <<<<<<<<<<<<<<
- * 	"""
- * 	Compare two binary states and replace any differing bits by a wildcard.
+ *     """
+ *     Compare two binary states and replace any differing bits by a wildcard.
  */
-  __pyx_tuple__6 = PyTuple_Pack(4, __pyx_n_s_binstate1, __pyx_n_s_binstate2, __pyx_n_s_b0, __pyx_n_s_b1); if (unlikely(!__pyx_tuple__6)) __PYX_ERR(0, 41, __pyx_L1_error)
+  __pyx_tuple__6 = PyTuple_Pack(4, __pyx_n_s_binstate1, __pyx_n_s_binstate2, __pyx_n_s_b0, __pyx_n_s_b1); if (unlikely(!__pyx_tuple__6)) __PYX_ERR(0, 38, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_tuple__6);
   __Pyx_GIVEREF(__pyx_tuple__6);
-  __pyx_codeobj__7 = (PyObject*)__Pyx_PyCode_New(2, 0, 4, 0, CO_OPTIMIZED|CO_NEWLOCALS, __pyx_empty_bytes, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_tuple__6, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_kp_s_cana_canalization_cboolean_canal_2, __pyx_n_s_find_wildcards, 41, __pyx_empty_bytes); if (unlikely(!__pyx_codeobj__7)) __PYX_ERR(0, 41, __pyx_L1_error)
+  __pyx_codeobj__7 = (PyObject*)__Pyx_PyCode_New(2, 0, 4, 0, CO_OPTIMIZED|CO_NEWLOCALS, __pyx_empty_bytes, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_tuple__6, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_kp_s_cana_canalization_cboolean_canal_2, __pyx_n_s_find_wildcards, 38, __pyx_empty_bytes); if (unlikely(!__pyx_codeobj__7)) __PYX_ERR(0, 38, __pyx_L1_error)
 
-  /* "cana/canalization/cboolean_canalization.pyx":54
- * 	return "".join([b0 if (b0==b1) else WILDCARD_SYMBOL for b0, b1 in zip(binstate1, binstate2)])
+  /* "cana/canalization/cboolean_canalization.pyx":52
+ * 
  * 
  * def binary_density(binstate):             # <<<<<<<<<<<<<<
- * 	"""
- * 	Find the density (number of 1s) for a term with possible wildcards.
+ *     """
+ *     Find the density (number of 1s) for a term with possible wildcards.
  */
-  __pyx_tuple__8 = PyTuple_Pack(1, __pyx_n_s_binstate); if (unlikely(!__pyx_tuple__8)) __PYX_ERR(0, 54, __pyx_L1_error)
+  __pyx_tuple__8 = PyTuple_Pack(1, __pyx_n_s_binstate); if (unlikely(!__pyx_tuple__8)) __PYX_ERR(0, 52, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_tuple__8);
   __Pyx_GIVEREF(__pyx_tuple__8);
-  __pyx_codeobj__9 = (PyObject*)__Pyx_PyCode_New(1, 0, 1, 0, CO_OPTIMIZED|CO_NEWLOCALS, __pyx_empty_bytes, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_tuple__8, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_kp_s_cana_canalization_cboolean_canal_2, __pyx_n_s_binary_density, 54, __pyx_empty_bytes); if (unlikely(!__pyx_codeobj__9)) __PYX_ERR(0, 54, __pyx_L1_error)
+  __pyx_codeobj__9 = (PyObject*)__Pyx_PyCode_New(1, 0, 1, 0, CO_OPTIMIZED|CO_NEWLOCALS, __pyx_empty_bytes, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_tuple__8, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_kp_s_cana_canalization_cboolean_canal_2, __pyx_n_s_binary_density, 52, __pyx_empty_bytes); if (unlikely(!__pyx_codeobj__9)) __PYX_ERR(0, 52, __pyx_L1_error)
 
-  /* "cana/canalization/cboolean_canalization.pyx":60
- * 	return binstate.count('1')
+  /* "cana/canalization/cboolean_canalization.pyx":59
+ * 
  * 
  * def replace_wildcard(binstate, idx):             # <<<<<<<<<<<<<<
- * 	"""
- * 	Return the binary state with a wildcard at the idx position.
+ *     """
+ *     Return the binary state with a wildcard at the idx position.
  */
-  __pyx_tuple__10 = PyTuple_Pack(2, __pyx_n_s_binstate, __pyx_n_s_idx); if (unlikely(!__pyx_tuple__10)) __PYX_ERR(0, 60, __pyx_L1_error)
+  __pyx_tuple__10 = PyTuple_Pack(2, __pyx_n_s_binstate, __pyx_n_s_idx); if (unlikely(!__pyx_tuple__10)) __PYX_ERR(0, 59, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_tuple__10);
   __Pyx_GIVEREF(__pyx_tuple__10);
-  __pyx_codeobj__11 = (PyObject*)__Pyx_PyCode_New(2, 0, 2, 0, CO_OPTIMIZED|CO_NEWLOCALS, __pyx_empty_bytes, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_tuple__10, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_kp_s_cana_canalization_cboolean_canal_2, __pyx_n_s_replace_wildcard, 60, __pyx_empty_bytes); if (unlikely(!__pyx_codeobj__11)) __PYX_ERR(0, 60, __pyx_L1_error)
+  __pyx_codeobj__11 = (PyObject*)__Pyx_PyCode_New(2, 0, 2, 0, CO_OPTIMIZED|CO_NEWLOCALS, __pyx_empty_bytes, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_tuple__10, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_kp_s_cana_canalization_cboolean_canal_2, __pyx_n_s_replace_wildcard, 59, __pyx_empty_bytes); if (unlikely(!__pyx_codeobj__11)) __PYX_ERR(0, 59, __pyx_L1_error)
 
   /* "cana/canalization/cboolean_canalization.pyx":66
- * 	return binstate[:idx] + WILDCARD_SYMBOL + binstate[idx+1:]
+ * 
  * 
  * def find_implicants_qm(input_binstates, verbose=False):             # <<<<<<<<<<<<<<
- * 	""" Finds the prime implicants (PI) using the Quine-McCluskey algorithm :cite:`Quine:1955`.
+ *     """ Finds the prime implicants (PI) using the Quine-McCluskey algorithm :cite:`Quine:1955`.
  * 
  */
   __pyx_tuple__12 = PyTuple_Pack(13, __pyx_n_s_input_binstates, __pyx_n_s_verbose, __pyx_n_s_matched_implicants, __pyx_n_s_done, __pyx_n_s_density_groups, __pyx_n_s_used, __pyx_n_s_density, __pyx_n_s_binstate0, __pyx_n_s_idx, __pyx_n_s_b0, __pyx_n_s_binstate1, __pyx_n_s_groups, __pyx_n_s_prime_implicants); if (unlikely(!__pyx_tuple__12)) __PYX_ERR(0, 66, __pyx_L1_error)
@@ -5580,53 +5483,53 @@ static CYTHON_SMALL_CODE int __Pyx_InitCachedConstants(void) {
   __Pyx_GIVEREF(__pyx_tuple__12);
   __pyx_codeobj__13 = (PyObject*)__Pyx_PyCode_New(2, 0, 13, 0, CO_OPTIMIZED|CO_NEWLOCALS, __pyx_empty_bytes, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_tuple__12, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_kp_s_cana_canalization_cboolean_canal_2, __pyx_n_s_find_implicants_qm, 66, __pyx_empty_bytes); if (unlikely(!__pyx_codeobj__13)) __PYX_ERR(0, 66, __pyx_L1_error)
 
-  /* "cana/canalization/cboolean_canalization.pyx":138
- * 	return prime_implicants
+  /* "cana/canalization/cboolean_canalization.pyx":137
+ * 
  * 
  * def __pi_covers(implicant, binstate):             # <<<<<<<<<<<<<<
- * 	"""Determines if a binarystate is covered by a specific implicant.
- * 	Args:
+ *     """Determines if a binarystate is covered by a specific implicant.
+ *     Args:
  */
-  __pyx_tuple__14 = PyTuple_Pack(4, __pyx_n_s_implicant, __pyx_n_s_binstate, __pyx_n_s_genexpr, __pyx_n_s_genexpr); if (unlikely(!__pyx_tuple__14)) __PYX_ERR(0, 138, __pyx_L1_error)
+  __pyx_tuple__14 = PyTuple_Pack(4, __pyx_n_s_implicant, __pyx_n_s_binstate, __pyx_n_s_genexpr, __pyx_n_s_genexpr); if (unlikely(!__pyx_tuple__14)) __PYX_ERR(0, 137, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_tuple__14);
   __Pyx_GIVEREF(__pyx_tuple__14);
-  __pyx_codeobj__15 = (PyObject*)__Pyx_PyCode_New(2, 0, 4, 0, CO_OPTIMIZED|CO_NEWLOCALS, __pyx_empty_bytes, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_tuple__14, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_kp_s_cana_canalization_cboolean_canal_2, __pyx_n_s_pi_covers, 138, __pyx_empty_bytes); if (unlikely(!__pyx_codeobj__15)) __PYX_ERR(0, 138, __pyx_L1_error)
+  __pyx_codeobj__15 = (PyObject*)__Pyx_PyCode_New(2, 0, 4, 0, CO_OPTIMIZED|CO_NEWLOCALS, __pyx_empty_bytes, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_tuple__14, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_kp_s_cana_canalization_cboolean_canal_2, __pyx_n_s_pi_covers, 137, __pyx_empty_bytes); if (unlikely(!__pyx_codeobj__15)) __PYX_ERR(0, 137, __pyx_L1_error)
 
   /* "cana/canalization/cboolean_canalization.pyx":149
- * 	return all(i==WILDCARD_SYMBOL or m==i for i, m in zip(implicant, input))
+ * 
  * 
  * def expand_wildcard_schemata(schemata):             # <<<<<<<<<<<<<<
- * 	"""
- * 	Expand a wildcard schemata to list all binary states it covers.
+ *     """
+ *     Expand a wildcard schemata to list all binary states it covers.
  */
   __pyx_tuple__16 = PyTuple_Pack(8, __pyx_n_s_schemata, __pyx_n_s_nwildcards, __pyx_n_s_binary_states, __pyx_n_s_wildstatenum, __pyx_n_s_wildstates, __pyx_n_s_wnum, __pyx_n_s_newstate, __pyx_n_s_b); if (unlikely(!__pyx_tuple__16)) __PYX_ERR(0, 149, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_tuple__16);
   __Pyx_GIVEREF(__pyx_tuple__16);
   __pyx_codeobj__17 = (PyObject*)__Pyx_PyCode_New(1, 0, 8, 0, CO_OPTIMIZED|CO_NEWLOCALS, __pyx_empty_bytes, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_tuple__16, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_kp_s_cana_canalization_cboolean_canal_2, __pyx_n_s_expand_wildcard_schemata, 149, __pyx_empty_bytes); if (unlikely(!__pyx_codeobj__17)) __PYX_ERR(0, 149, __pyx_L1_error)
 
-  /* "cana/canalization/cboolean_canalization.pyx":180
- * 		return binary_states
+  /* "cana/canalization/cboolean_canalization.pyx":181
+ * 
  * 
  * def return_pi_coverage(prime_implicants):             # <<<<<<<<<<<<<<
- * 	"""Computes the binary states coverage by Prime Implicant schematas.
+ *     """Computes the binary states coverage by Prime Implicant schematas.
  * 
  */
-  __pyx_tuple__18 = PyTuple_Pack(4, __pyx_n_s_prime_implicants, __pyx_n_s_pi_coverage, __pyx_n_s_pi, __pyx_n_s_binstate); if (unlikely(!__pyx_tuple__18)) __PYX_ERR(0, 180, __pyx_L1_error)
+  __pyx_tuple__18 = PyTuple_Pack(4, __pyx_n_s_prime_implicants, __pyx_n_s_pi_coverage, __pyx_n_s_pi, __pyx_n_s_binstate); if (unlikely(!__pyx_tuple__18)) __PYX_ERR(0, 181, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_tuple__18);
   __Pyx_GIVEREF(__pyx_tuple__18);
-  __pyx_codeobj__19 = (PyObject*)__Pyx_PyCode_New(1, 0, 4, 0, CO_OPTIMIZED|CO_NEWLOCALS, __pyx_empty_bytes, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_tuple__18, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_kp_s_cana_canalization_cboolean_canal_2, __pyx_n_s_return_pi_coverage, 180, __pyx_empty_bytes); if (unlikely(!__pyx_codeobj__19)) __PYX_ERR(0, 180, __pyx_L1_error)
+  __pyx_codeobj__19 = (PyObject*)__Pyx_PyCode_New(1, 0, 4, 0, CO_OPTIMIZED|CO_NEWLOCALS, __pyx_empty_bytes, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_tuple__18, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_kp_s_cana_canalization_cboolean_canal_2, __pyx_n_s_return_pi_coverage, 181, __pyx_empty_bytes); if (unlikely(!__pyx_codeobj__19)) __PYX_ERR(0, 181, __pyx_L1_error)
 
-  /* "cana/canalization/cboolean_canalization.pyx":199
- * 	return pi_coverage
+  /* "cana/canalization/cboolean_canalization.pyx":201
+ * 
  * 
  * def input_wildcard_coverage(pi_coverage):             # <<<<<<<<<<<<<<
- * 	"""Computes the binary states coverage by Prime Implicant schematas.
+ *     """Computes the binary states coverage by Prime Implicant schematas.
  * 
  */
-  __pyx_tuple__20 = PyTuple_Pack(9, __pyx_n_s_pi_coverage, __pyx_n_s_k, __pyx_n_s_input_to_wildcards, __pyx_n_s_binstate, __pyx_n_s_piset, __pyx_n_s_i, __pyx_n_s_i, __pyx_n_s_genexpr, __pyx_n_s_genexpr); if (unlikely(!__pyx_tuple__20)) __PYX_ERR(0, 199, __pyx_L1_error)
+  __pyx_tuple__20 = PyTuple_Pack(9, __pyx_n_s_pi_coverage, __pyx_n_s_k, __pyx_n_s_input_to_wildcards, __pyx_n_s_binstate, __pyx_n_s_piset, __pyx_n_s_i, __pyx_n_s_i, __pyx_n_s_genexpr, __pyx_n_s_genexpr); if (unlikely(!__pyx_tuple__20)) __PYX_ERR(0, 201, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_tuple__20);
   __Pyx_GIVEREF(__pyx_tuple__20);
-  __pyx_codeobj__21 = (PyObject*)__Pyx_PyCode_New(1, 0, 9, 0, CO_OPTIMIZED|CO_NEWLOCALS, __pyx_empty_bytes, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_tuple__20, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_kp_s_cana_canalization_cboolean_canal_2, __pyx_n_s_input_wildcard_coverage, 199, __pyx_empty_bytes); if (unlikely(!__pyx_codeobj__21)) __PYX_ERR(0, 199, __pyx_L1_error)
+  __pyx_codeobj__21 = (PyObject*)__Pyx_PyCode_New(1, 0, 9, 0, CO_OPTIMIZED|CO_NEWLOCALS, __pyx_empty_bytes, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_tuple__20, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_kp_s_cana_canalization_cboolean_canal_2, __pyx_n_s_input_wildcard_coverage, 201, __pyx_empty_bytes); if (unlikely(!__pyx_codeobj__21)) __PYX_ERR(0, 201, __pyx_L1_error)
   __Pyx_RefNannyFinishContext();
   return 0;
   __pyx_L1_error:;
@@ -5683,7 +5586,7 @@ static int __Pyx_modinit_type_init_code(void) {
   int __pyx_clineno = 0;
   __Pyx_RefNannySetupContext("__Pyx_modinit_type_init_code", 0);
   /*--- Type init code ---*/
-  if (PyType_Ready(&__pyx_type_4cana_12canalization_21cboolean_canalization___pyx_scope_struct____pi_covers) < 0) __PYX_ERR(0, 138, __pyx_L1_error)
+  if (PyType_Ready(&__pyx_type_4cana_12canalization_21cboolean_canalization___pyx_scope_struct____pi_covers) < 0) __PYX_ERR(0, 137, __pyx_L1_error)
   #if PY_VERSION_HEX < 0x030800B1
   __pyx_type_4cana_12canalization_21cboolean_canalization___pyx_scope_struct____pi_covers.tp_print = 0;
   #endif
@@ -5691,7 +5594,7 @@ static int __Pyx_modinit_type_init_code(void) {
     __pyx_type_4cana_12canalization_21cboolean_canalization___pyx_scope_struct____pi_covers.tp_getattro = __Pyx_PyObject_GenericGetAttrNoDict;
   }
   __pyx_ptype_4cana_12canalization_21cboolean_canalization___pyx_scope_struct____pi_covers = &__pyx_type_4cana_12canalization_21cboolean_canalization___pyx_scope_struct____pi_covers;
-  if (PyType_Ready(&__pyx_type_4cana_12canalization_21cboolean_canalization___pyx_scope_struct_1_genexpr) < 0) __PYX_ERR(0, 147, __pyx_L1_error)
+  if (PyType_Ready(&__pyx_type_4cana_12canalization_21cboolean_canalization___pyx_scope_struct_1_genexpr) < 0) __PYX_ERR(0, 146, __pyx_L1_error)
   #if PY_VERSION_HEX < 0x030800B1
   __pyx_type_4cana_12canalization_21cboolean_canalization___pyx_scope_struct_1_genexpr.tp_print = 0;
   #endif
@@ -5699,7 +5602,7 @@ static int __Pyx_modinit_type_init_code(void) {
     __pyx_type_4cana_12canalization_21cboolean_canalization___pyx_scope_struct_1_genexpr.tp_getattro = __Pyx_PyObject_GenericGetAttrNoDict;
   }
   __pyx_ptype_4cana_12canalization_21cboolean_canalization___pyx_scope_struct_1_genexpr = &__pyx_type_4cana_12canalization_21cboolean_canalization___pyx_scope_struct_1_genexpr;
-  if (PyType_Ready(&__pyx_type_4cana_12canalization_21cboolean_canalization___pyx_scope_struct_2_input_wildcard_coverage) < 0) __PYX_ERR(0, 199, __pyx_L1_error)
+  if (PyType_Ready(&__pyx_type_4cana_12canalization_21cboolean_canalization___pyx_scope_struct_2_input_wildcard_coverage) < 0) __PYX_ERR(0, 201, __pyx_L1_error)
   #if PY_VERSION_HEX < 0x030800B1
   __pyx_type_4cana_12canalization_21cboolean_canalization___pyx_scope_struct_2_input_wildcard_coverage.tp_print = 0;
   #endif
@@ -5707,7 +5610,7 @@ static int __Pyx_modinit_type_init_code(void) {
     __pyx_type_4cana_12canalization_21cboolean_canalization___pyx_scope_struct_2_input_wildcard_coverage.tp_getattro = __Pyx_PyObject_GenericGetAttrNoDict;
   }
   __pyx_ptype_4cana_12canalization_21cboolean_canalization___pyx_scope_struct_2_input_wildcard_coverage = &__pyx_type_4cana_12canalization_21cboolean_canalization___pyx_scope_struct_2_input_wildcard_coverage;
-  if (PyType_Ready(&__pyx_type_4cana_12canalization_21cboolean_canalization___pyx_scope_struct_3_genexpr) < 0) __PYX_ERR(0, 215, __pyx_L1_error)
+  if (PyType_Ready(&__pyx_type_4cana_12canalization_21cboolean_canalization___pyx_scope_struct_3_genexpr) < 0) __PYX_ERR(0, 217, __pyx_L1_error)
   #if PY_VERSION_HEX < 0x030800B1
   __pyx_type_4cana_12canalization_21cboolean_canalization___pyx_scope_struct_3_genexpr.tp_print = 0;
   #endif
@@ -5903,7 +5806,7 @@ if (!__Pyx_RefNanny) {
   Py_INCREF(__pyx_m);
   #else
   #if PY_MAJOR_VERSION < 3
-  __pyx_m = Py_InitModule4("cboolean_canalization", __pyx_methods, __pyx_k_Boolean_Canalization, 0, PYTHON_API_VERSION); Py_XINCREF(__pyx_m);
+  __pyx_m = Py_InitModule4("cboolean_canalization", __pyx_methods, __pyx_k_Cythonized_Boolean_Canalization, 0, PYTHON_API_VERSION); Py_XINCREF(__pyx_m);
   #else
   __pyx_m = PyModule_Create(&__pyx_moduledef);
   #endif
@@ -5950,191 +5853,158 @@ if (!__Pyx_RefNanny) {
   #endif
 
   /* "cana/canalization/cboolean_canalization.pyx":15
+ * #   All rights reserved.
  * #   MIT license.
- * 
- * import itertools             # <<<<<<<<<<<<<<
- * from cana.cutils import *
- * 
- */
-  __pyx_t_1 = __Pyx_Import(__pyx_n_s_itertools, 0, -1); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 15, __pyx_L1_error)
-  __Pyx_GOTREF(__pyx_t_1);
-  if (PyDict_SetItem(__pyx_d, __pyx_n_s_itertools, __pyx_t_1) < 0) __PYX_ERR(0, 15, __pyx_L1_error)
-  __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
-
-  /* "cana/canalization/cboolean_canalization.pyx":16
- * 
- * import itertools
  * from cana.cutils import *             # <<<<<<<<<<<<<<
  * 
- * from collections import deque
+ * WILDCARD_SYMBOL = '#'
  */
-  __pyx_t_1 = PyList_New(1); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 16, __pyx_L1_error)
+  __pyx_t_1 = PyList_New(1); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 15, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_1);
   __Pyx_INCREF(__pyx_n_s__2);
   __Pyx_GIVEREF(__pyx_n_s__2);
   PyList_SET_ITEM(__pyx_t_1, 0, __pyx_n_s__2);
-  __pyx_t_2 = __Pyx_Import(__pyx_n_s_cana_cutils, __pyx_t_1, -1); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 16, __pyx_L1_error)
+  __pyx_t_2 = __Pyx_Import(__pyx_n_s_cana_cutils, __pyx_t_1, 0); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 15, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_2);
   __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
-  if (__pyx_import_star(__pyx_t_2) < 0) __PYX_ERR(0, 16, __pyx_L1_error);
+  if (__pyx_import_star(__pyx_t_2) < 0) __PYX_ERR(0, 15, __pyx_L1_error);
   __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
 
-  /* "cana/canalization/cboolean_canalization.pyx":18
+  /* "cana/canalization/cboolean_canalization.pyx":17
  * from cana.cutils import *
- * 
- * from collections import deque             # <<<<<<<<<<<<<<
- * 
- * 
- */
-  __pyx_t_2 = PyList_New(1); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 18, __pyx_L1_error)
-  __Pyx_GOTREF(__pyx_t_2);
-  __Pyx_INCREF(__pyx_n_s_deque);
-  __Pyx_GIVEREF(__pyx_n_s_deque);
-  PyList_SET_ITEM(__pyx_t_2, 0, __pyx_n_s_deque);
-  __pyx_t_1 = __Pyx_Import(__pyx_n_s_collections, __pyx_t_2, -1); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 18, __pyx_L1_error)
-  __Pyx_GOTREF(__pyx_t_1);
-  __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
-  __pyx_t_2 = __Pyx_ImportFrom(__pyx_t_1, __pyx_n_s_deque); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 18, __pyx_L1_error)
-  __Pyx_GOTREF(__pyx_t_2);
-  if (PyDict_SetItem(__pyx_d, __pyx_n_s_deque, __pyx_t_2) < 0) __PYX_ERR(0, 18, __pyx_L1_error)
-  __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
-  __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
-
-  /* "cana/canalization/cboolean_canalization.pyx":21
- * 
  * 
  * WILDCARD_SYMBOL = '#'             # <<<<<<<<<<<<<<
  * SYMMETRIC_WILDCARD_SYMBOL = '*'
  * 
  */
-  if (PyDict_SetItem(__pyx_d, __pyx_n_s_WILDCARD_SYMBOL, __pyx_kp_s__3) < 0) __PYX_ERR(0, 21, __pyx_L1_error)
+  if (PyDict_SetItem(__pyx_d, __pyx_n_s_WILDCARD_SYMBOL, __pyx_kp_u__3) < 0) __PYX_ERR(0, 17, __pyx_L1_error)
 
-  /* "cana/canalization/cboolean_canalization.pyx":22
+  /* "cana/canalization/cboolean_canalization.pyx":18
  * 
  * WILDCARD_SYMBOL = '#'
  * SYMMETRIC_WILDCARD_SYMBOL = '*'             # <<<<<<<<<<<<<<
  * 
- * #
+ * 
  */
-  if (PyDict_SetItem(__pyx_d, __pyx_n_s_SYMMETRIC_WILDCARD_SYMBOL, __pyx_n_s__2) < 0) __PYX_ERR(0, 22, __pyx_L1_error)
+  if (PyDict_SetItem(__pyx_d, __pyx_n_s_SYMMETRIC_WILDCARD_SYMBOL, __pyx_kp_u__2) < 0) __PYX_ERR(0, 18, __pyx_L1_error)
 
-  /* "cana/canalization/cboolean_canalization.pyx":27
+  /* "cana/canalization/cboolean_canalization.pyx":24
  * # Quine-McCluskey Functions
  * #
  * def make_density_groups(input_binstates):             # <<<<<<<<<<<<<<
- * 	"""
- * 
+ *     """
+ *     """
  */
-  __pyx_t_1 = PyCFunction_NewEx(&__pyx_mdef_4cana_12canalization_21cboolean_canalization_1make_density_groups, NULL, __pyx_n_s_cana_canalization_cboolean_canal); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 27, __pyx_L1_error)
-  __Pyx_GOTREF(__pyx_t_1);
-  if (PyDict_SetItem(__pyx_d, __pyx_n_s_make_density_groups, __pyx_t_1) < 0) __PYX_ERR(0, 27, __pyx_L1_error)
-  __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
+  __pyx_t_2 = PyCFunction_NewEx(&__pyx_mdef_4cana_12canalization_21cboolean_canalization_1make_density_groups, NULL, __pyx_n_s_cana_canalization_cboolean_canal); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 24, __pyx_L1_error)
+  __Pyx_GOTREF(__pyx_t_2);
+  if (PyDict_SetItem(__pyx_d, __pyx_n_s_make_density_groups, __pyx_t_2) < 0) __PYX_ERR(0, 24, __pyx_L1_error)
+  __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
 
-  /* "cana/canalization/cboolean_canalization.pyx":41
- * 	return density_groups
+  /* "cana/canalization/cboolean_canalization.pyx":38
+ * 
  * 
  * def find_wildcards(binstate1, binstate2):             # <<<<<<<<<<<<<<
- * 	"""
- * 	Compare two binary states and replace any differing bits by a wildcard.
+ *     """
+ *     Compare two binary states and replace any differing bits by a wildcard.
  */
-  __pyx_t_1 = PyCFunction_NewEx(&__pyx_mdef_4cana_12canalization_21cboolean_canalization_3find_wildcards, NULL, __pyx_n_s_cana_canalization_cboolean_canal); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 41, __pyx_L1_error)
-  __Pyx_GOTREF(__pyx_t_1);
-  if (PyDict_SetItem(__pyx_d, __pyx_n_s_find_wildcards, __pyx_t_1) < 0) __PYX_ERR(0, 41, __pyx_L1_error)
-  __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
+  __pyx_t_2 = PyCFunction_NewEx(&__pyx_mdef_4cana_12canalization_21cboolean_canalization_3find_wildcards, NULL, __pyx_n_s_cana_canalization_cboolean_canal); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 38, __pyx_L1_error)
+  __Pyx_GOTREF(__pyx_t_2);
+  if (PyDict_SetItem(__pyx_d, __pyx_n_s_find_wildcards, __pyx_t_2) < 0) __PYX_ERR(0, 38, __pyx_L1_error)
+  __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
 
-  /* "cana/canalization/cboolean_canalization.pyx":54
- * 	return "".join([b0 if (b0==b1) else WILDCARD_SYMBOL for b0, b1 in zip(binstate1, binstate2)])
+  /* "cana/canalization/cboolean_canalization.pyx":52
+ * 
  * 
  * def binary_density(binstate):             # <<<<<<<<<<<<<<
- * 	"""
- * 	Find the density (number of 1s) for a term with possible wildcards.
+ *     """
+ *     Find the density (number of 1s) for a term with possible wildcards.
  */
-  __pyx_t_1 = PyCFunction_NewEx(&__pyx_mdef_4cana_12canalization_21cboolean_canalization_5binary_density, NULL, __pyx_n_s_cana_canalization_cboolean_canal); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 54, __pyx_L1_error)
-  __Pyx_GOTREF(__pyx_t_1);
-  if (PyDict_SetItem(__pyx_d, __pyx_n_s_binary_density, __pyx_t_1) < 0) __PYX_ERR(0, 54, __pyx_L1_error)
-  __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
+  __pyx_t_2 = PyCFunction_NewEx(&__pyx_mdef_4cana_12canalization_21cboolean_canalization_5binary_density, NULL, __pyx_n_s_cana_canalization_cboolean_canal); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 52, __pyx_L1_error)
+  __Pyx_GOTREF(__pyx_t_2);
+  if (PyDict_SetItem(__pyx_d, __pyx_n_s_binary_density, __pyx_t_2) < 0) __PYX_ERR(0, 52, __pyx_L1_error)
+  __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
 
-  /* "cana/canalization/cboolean_canalization.pyx":60
- * 	return binstate.count('1')
+  /* "cana/canalization/cboolean_canalization.pyx":59
+ * 
  * 
  * def replace_wildcard(binstate, idx):             # <<<<<<<<<<<<<<
- * 	"""
- * 	Return the binary state with a wildcard at the idx position.
+ *     """
+ *     Return the binary state with a wildcard at the idx position.
  */
-  __pyx_t_1 = PyCFunction_NewEx(&__pyx_mdef_4cana_12canalization_21cboolean_canalization_7replace_wildcard, NULL, __pyx_n_s_cana_canalization_cboolean_canal); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 60, __pyx_L1_error)
-  __Pyx_GOTREF(__pyx_t_1);
-  if (PyDict_SetItem(__pyx_d, __pyx_n_s_replace_wildcard, __pyx_t_1) < 0) __PYX_ERR(0, 60, __pyx_L1_error)
-  __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
+  __pyx_t_2 = PyCFunction_NewEx(&__pyx_mdef_4cana_12canalization_21cboolean_canalization_7replace_wildcard, NULL, __pyx_n_s_cana_canalization_cboolean_canal); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 59, __pyx_L1_error)
+  __Pyx_GOTREF(__pyx_t_2);
+  if (PyDict_SetItem(__pyx_d, __pyx_n_s_replace_wildcard, __pyx_t_2) < 0) __PYX_ERR(0, 59, __pyx_L1_error)
+  __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
 
   /* "cana/canalization/cboolean_canalization.pyx":66
- * 	return binstate[:idx] + WILDCARD_SYMBOL + binstate[idx+1:]
+ * 
  * 
  * def find_implicants_qm(input_binstates, verbose=False):             # <<<<<<<<<<<<<<
- * 	""" Finds the prime implicants (PI) using the Quine-McCluskey algorithm :cite:`Quine:1955`.
+ *     """ Finds the prime implicants (PI) using the Quine-McCluskey algorithm :cite:`Quine:1955`.
  * 
  */
-  __pyx_t_1 = PyCFunction_NewEx(&__pyx_mdef_4cana_12canalization_21cboolean_canalization_9find_implicants_qm, NULL, __pyx_n_s_cana_canalization_cboolean_canal); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 66, __pyx_L1_error)
-  __Pyx_GOTREF(__pyx_t_1);
-  if (PyDict_SetItem(__pyx_d, __pyx_n_s_find_implicants_qm, __pyx_t_1) < 0) __PYX_ERR(0, 66, __pyx_L1_error)
-  __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
+  __pyx_t_2 = PyCFunction_NewEx(&__pyx_mdef_4cana_12canalization_21cboolean_canalization_9find_implicants_qm, NULL, __pyx_n_s_cana_canalization_cboolean_canal); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 66, __pyx_L1_error)
+  __Pyx_GOTREF(__pyx_t_2);
+  if (PyDict_SetItem(__pyx_d, __pyx_n_s_find_implicants_qm, __pyx_t_2) < 0) __PYX_ERR(0, 66, __pyx_L1_error)
+  __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
 
-  /* "cana/canalization/cboolean_canalization.pyx":138
- * 	return prime_implicants
+  /* "cana/canalization/cboolean_canalization.pyx":137
+ * 
  * 
  * def __pi_covers(implicant, binstate):             # <<<<<<<<<<<<<<
- * 	"""Determines if a binarystate is covered by a specific implicant.
- * 	Args:
+ *     """Determines if a binarystate is covered by a specific implicant.
+ *     Args:
  */
-  __pyx_t_1 = PyCFunction_NewEx(&__pyx_mdef_4cana_12canalization_21cboolean_canalization_11__pi_covers, NULL, __pyx_n_s_cana_canalization_cboolean_canal); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 138, __pyx_L1_error)
-  __Pyx_GOTREF(__pyx_t_1);
-  if (PyDict_SetItem(__pyx_d, __pyx_n_s_pi_covers, __pyx_t_1) < 0) __PYX_ERR(0, 138, __pyx_L1_error)
-  __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
+  __pyx_t_2 = PyCFunction_NewEx(&__pyx_mdef_4cana_12canalization_21cboolean_canalization_11__pi_covers, NULL, __pyx_n_s_cana_canalization_cboolean_canal); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 137, __pyx_L1_error)
+  __Pyx_GOTREF(__pyx_t_2);
+  if (PyDict_SetItem(__pyx_d, __pyx_n_s_pi_covers, __pyx_t_2) < 0) __PYX_ERR(0, 137, __pyx_L1_error)
+  __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
 
   /* "cana/canalization/cboolean_canalization.pyx":149
- * 	return all(i==WILDCARD_SYMBOL or m==i for i, m in zip(implicant, input))
+ * 
  * 
  * def expand_wildcard_schemata(schemata):             # <<<<<<<<<<<<<<
- * 	"""
- * 	Expand a wildcard schemata to list all binary states it covers.
+ *     """
+ *     Expand a wildcard schemata to list all binary states it covers.
  */
-  __pyx_t_1 = PyCFunction_NewEx(&__pyx_mdef_4cana_12canalization_21cboolean_canalization_13expand_wildcard_schemata, NULL, __pyx_n_s_cana_canalization_cboolean_canal); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 149, __pyx_L1_error)
-  __Pyx_GOTREF(__pyx_t_1);
-  if (PyDict_SetItem(__pyx_d, __pyx_n_s_expand_wildcard_schemata, __pyx_t_1) < 0) __PYX_ERR(0, 149, __pyx_L1_error)
-  __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
+  __pyx_t_2 = PyCFunction_NewEx(&__pyx_mdef_4cana_12canalization_21cboolean_canalization_13expand_wildcard_schemata, NULL, __pyx_n_s_cana_canalization_cboolean_canal); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 149, __pyx_L1_error)
+  __Pyx_GOTREF(__pyx_t_2);
+  if (PyDict_SetItem(__pyx_d, __pyx_n_s_expand_wildcard_schemata, __pyx_t_2) < 0) __PYX_ERR(0, 149, __pyx_L1_error)
+  __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
 
-  /* "cana/canalization/cboolean_canalization.pyx":180
- * 		return binary_states
+  /* "cana/canalization/cboolean_canalization.pyx":181
+ * 
  * 
  * def return_pi_coverage(prime_implicants):             # <<<<<<<<<<<<<<
- * 	"""Computes the binary states coverage by Prime Implicant schematas.
+ *     """Computes the binary states coverage by Prime Implicant schematas.
  * 
  */
-  __pyx_t_1 = PyCFunction_NewEx(&__pyx_mdef_4cana_12canalization_21cboolean_canalization_15return_pi_coverage, NULL, __pyx_n_s_cana_canalization_cboolean_canal); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 180, __pyx_L1_error)
-  __Pyx_GOTREF(__pyx_t_1);
-  if (PyDict_SetItem(__pyx_d, __pyx_n_s_return_pi_coverage, __pyx_t_1) < 0) __PYX_ERR(0, 180, __pyx_L1_error)
-  __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
+  __pyx_t_2 = PyCFunction_NewEx(&__pyx_mdef_4cana_12canalization_21cboolean_canalization_15return_pi_coverage, NULL, __pyx_n_s_cana_canalization_cboolean_canal); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 181, __pyx_L1_error)
+  __Pyx_GOTREF(__pyx_t_2);
+  if (PyDict_SetItem(__pyx_d, __pyx_n_s_return_pi_coverage, __pyx_t_2) < 0) __PYX_ERR(0, 181, __pyx_L1_error)
+  __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
 
-  /* "cana/canalization/cboolean_canalization.pyx":199
- * 	return pi_coverage
+  /* "cana/canalization/cboolean_canalization.pyx":201
+ * 
  * 
  * def input_wildcard_coverage(pi_coverage):             # <<<<<<<<<<<<<<
- * 	"""Computes the binary states coverage by Prime Implicant schematas.
+ *     """Computes the binary states coverage by Prime Implicant schematas.
  * 
  */
-  __pyx_t_1 = PyCFunction_NewEx(&__pyx_mdef_4cana_12canalization_21cboolean_canalization_17input_wildcard_coverage, NULL, __pyx_n_s_cana_canalization_cboolean_canal); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 199, __pyx_L1_error)
-  __Pyx_GOTREF(__pyx_t_1);
-  if (PyDict_SetItem(__pyx_d, __pyx_n_s_input_wildcard_coverage, __pyx_t_1) < 0) __PYX_ERR(0, 199, __pyx_L1_error)
-  __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
+  __pyx_t_2 = PyCFunction_NewEx(&__pyx_mdef_4cana_12canalization_21cboolean_canalization_17input_wildcard_coverage, NULL, __pyx_n_s_cana_canalization_cboolean_canal); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 201, __pyx_L1_error)
+  __Pyx_GOTREF(__pyx_t_2);
+  if (PyDict_SetItem(__pyx_d, __pyx_n_s_input_wildcard_coverage, __pyx_t_2) < 0) __PYX_ERR(0, 201, __pyx_L1_error)
+  __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
 
   /* "cana/canalization/cboolean_canalization.pyx":1
  * # -*- coding: utf-8 -*-             # <<<<<<<<<<<<<<
  * """
- * Boolean Canalization
+ * (Cythonized) Boolean Canalization
  */
-  __pyx_t_1 = __Pyx_PyDict_NewPresized(0); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 1, __pyx_L1_error)
-  __Pyx_GOTREF(__pyx_t_1);
-  if (PyDict_SetItem(__pyx_d, __pyx_n_s_test, __pyx_t_1) < 0) __PYX_ERR(0, 1, __pyx_L1_error)
-  __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
+  __pyx_t_2 = __Pyx_PyDict_NewPresized(0); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 1, __pyx_L1_error)
+  __Pyx_GOTREF(__pyx_t_2);
+  if (PyDict_SetItem(__pyx_d, __pyx_n_s_test, __pyx_t_2) < 0) __PYX_ERR(0, 1, __pyx_L1_error)
+  __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
 
   /*--- Wrapped vars code ---*/
 
@@ -6684,13 +6554,6 @@ invalid_keyword:
 bad:
     return -1;
 }
-
-/* StringJoin */
-#if !CYTHON_COMPILING_IN_CPYTHON
-static CYTHON_INLINE PyObject* __Pyx_PyBytes_Join(PyObject* sep, PyObject* values) {
-    return PyObject_CallMethodObjArgs(sep, __pyx_n_s_join, values, NULL);
-}
-#endif
 
 /* RaiseTooManyValuesToUnpack */
 static CYTHON_INLINE void __Pyx_RaiseTooManyValuesError(Py_ssize_t expected) {
@@ -7467,6 +7330,299 @@ static CYTHON_INLINE PyObject *__Pyx_PyIter_Next2(PyObject* iterator, PyObject* 
     return __Pyx_PyIter_Next2Default(defval);
 }
 
+/* PyObjectGetMethod */
+static int __Pyx_PyObject_GetMethod(PyObject *obj, PyObject *name, PyObject **method) {
+    PyObject *attr;
+#if CYTHON_UNPACK_METHODS && CYTHON_COMPILING_IN_CPYTHON && CYTHON_USE_PYTYPE_LOOKUP
+    PyTypeObject *tp = Py_TYPE(obj);
+    PyObject *descr;
+    descrgetfunc f = NULL;
+    PyObject **dictptr, *dict;
+    int meth_found = 0;
+    assert (*method == NULL);
+    if (unlikely(tp->tp_getattro != PyObject_GenericGetAttr)) {
+        attr = __Pyx_PyObject_GetAttrStr(obj, name);
+        goto try_unpack;
+    }
+    if (unlikely(tp->tp_dict == NULL) && unlikely(PyType_Ready(tp) < 0)) {
+        return 0;
+    }
+    descr = _PyType_Lookup(tp, name);
+    if (likely(descr != NULL)) {
+        Py_INCREF(descr);
+#if PY_MAJOR_VERSION >= 3
+        #ifdef __Pyx_CyFunction_USED
+        if (likely(PyFunction_Check(descr) || (Py_TYPE(descr) == &PyMethodDescr_Type) || __Pyx_CyFunction_Check(descr)))
+        #else
+        if (likely(PyFunction_Check(descr) || (Py_TYPE(descr) == &PyMethodDescr_Type)))
+        #endif
+#else
+        #ifdef __Pyx_CyFunction_USED
+        if (likely(PyFunction_Check(descr) || __Pyx_CyFunction_Check(descr)))
+        #else
+        if (likely(PyFunction_Check(descr)))
+        #endif
+#endif
+        {
+            meth_found = 1;
+        } else {
+            f = Py_TYPE(descr)->tp_descr_get;
+            if (f != NULL && PyDescr_IsData(descr)) {
+                attr = f(descr, obj, (PyObject *)Py_TYPE(obj));
+                Py_DECREF(descr);
+                goto try_unpack;
+            }
+        }
+    }
+    dictptr = _PyObject_GetDictPtr(obj);
+    if (dictptr != NULL && (dict = *dictptr) != NULL) {
+        Py_INCREF(dict);
+        attr = __Pyx_PyDict_GetItemStr(dict, name);
+        if (attr != NULL) {
+            Py_INCREF(attr);
+            Py_DECREF(dict);
+            Py_XDECREF(descr);
+            goto try_unpack;
+        }
+        Py_DECREF(dict);
+    }
+    if (meth_found) {
+        *method = descr;
+        return 1;
+    }
+    if (f != NULL) {
+        attr = f(descr, obj, (PyObject *)Py_TYPE(obj));
+        Py_DECREF(descr);
+        goto try_unpack;
+    }
+    if (descr != NULL) {
+        *method = descr;
+        return 0;
+    }
+    PyErr_Format(PyExc_AttributeError,
+#if PY_MAJOR_VERSION >= 3
+                 "'%.50s' object has no attribute '%U'",
+                 tp->tp_name, name);
+#else
+                 "'%.50s' object has no attribute '%.400s'",
+                 tp->tp_name, PyString_AS_STRING(name));
+#endif
+    return 0;
+#else
+    attr = __Pyx_PyObject_GetAttrStr(obj, name);
+    goto try_unpack;
+#endif
+try_unpack:
+#if CYTHON_UNPACK_METHODS
+    if (likely(attr) && PyMethod_Check(attr) && likely(PyMethod_GET_SELF(attr) == obj)) {
+        PyObject *function = PyMethod_GET_FUNCTION(attr);
+        Py_INCREF(function);
+        Py_DECREF(attr);
+        *method = function;
+        return 1;
+    }
+#endif
+    *method = attr;
+    return 0;
+}
+
+/* PyObjectCallMethod0 */
+static PyObject* __Pyx_PyObject_CallMethod0(PyObject* obj, PyObject* method_name) {
+    PyObject *method = NULL, *result = NULL;
+    int is_method = __Pyx_PyObject_GetMethod(obj, method_name, &method);
+    if (likely(is_method)) {
+        result = __Pyx_PyObject_CallOneArg(method, obj);
+        Py_DECREF(method);
+        return result;
+    }
+    if (unlikely(!method)) goto bad;
+    result = __Pyx_PyObject_CallNoArg(method);
+    Py_DECREF(method);
+bad:
+    return result;
+}
+
+/* RaiseNoneIterError */
+static CYTHON_INLINE void __Pyx_RaiseNoneNotIterableError(void) {
+    PyErr_SetString(PyExc_TypeError, "'NoneType' object is not iterable");
+}
+
+/* UnpackTupleError */
+static void __Pyx_UnpackTupleError(PyObject *t, Py_ssize_t index) {
+    if (t == Py_None) {
+      __Pyx_RaiseNoneNotIterableError();
+    } else if (PyTuple_GET_SIZE(t) < index) {
+      __Pyx_RaiseNeedMoreValuesError(PyTuple_GET_SIZE(t));
+    } else {
+      __Pyx_RaiseTooManyValuesError(index);
+    }
+}
+
+/* UnpackTuple2 */
+static CYTHON_INLINE int __Pyx_unpack_tuple2_exact(
+        PyObject* tuple, PyObject** pvalue1, PyObject** pvalue2, int decref_tuple) {
+    PyObject *value1 = NULL, *value2 = NULL;
+#if CYTHON_COMPILING_IN_PYPY
+    value1 = PySequence_ITEM(tuple, 0);  if (unlikely(!value1)) goto bad;
+    value2 = PySequence_ITEM(tuple, 1);  if (unlikely(!value2)) goto bad;
+#else
+    value1 = PyTuple_GET_ITEM(tuple, 0);  Py_INCREF(value1);
+    value2 = PyTuple_GET_ITEM(tuple, 1);  Py_INCREF(value2);
+#endif
+    if (decref_tuple) {
+        Py_DECREF(tuple);
+    }
+    *pvalue1 = value1;
+    *pvalue2 = value2;
+    return 0;
+#if CYTHON_COMPILING_IN_PYPY
+bad:
+    Py_XDECREF(value1);
+    Py_XDECREF(value2);
+    if (decref_tuple) { Py_XDECREF(tuple); }
+    return -1;
+#endif
+}
+static int __Pyx_unpack_tuple2_generic(PyObject* tuple, PyObject** pvalue1, PyObject** pvalue2,
+                                       int has_known_size, int decref_tuple) {
+    Py_ssize_t index;
+    PyObject *value1 = NULL, *value2 = NULL, *iter = NULL;
+    iternextfunc iternext;
+    iter = PyObject_GetIter(tuple);
+    if (unlikely(!iter)) goto bad;
+    if (decref_tuple) { Py_DECREF(tuple); tuple = NULL; }
+    iternext = Py_TYPE(iter)->tp_iternext;
+    value1 = iternext(iter); if (unlikely(!value1)) { index = 0; goto unpacking_failed; }
+    value2 = iternext(iter); if (unlikely(!value2)) { index = 1; goto unpacking_failed; }
+    if (!has_known_size && unlikely(__Pyx_IternextUnpackEndCheck(iternext(iter), 2))) goto bad;
+    Py_DECREF(iter);
+    *pvalue1 = value1;
+    *pvalue2 = value2;
+    return 0;
+unpacking_failed:
+    if (!has_known_size && __Pyx_IterFinish() == 0)
+        __Pyx_RaiseNeedMoreValuesError(index);
+bad:
+    Py_XDECREF(iter);
+    Py_XDECREF(value1);
+    Py_XDECREF(value2);
+    if (decref_tuple) { Py_XDECREF(tuple); }
+    return -1;
+}
+
+/* dict_iter */
+static CYTHON_INLINE PyObject* __Pyx_dict_iterator(PyObject* iterable, int is_dict, PyObject* method_name,
+                                                   Py_ssize_t* p_orig_length, int* p_source_is_dict) {
+    is_dict = is_dict || likely(PyDict_CheckExact(iterable));
+    *p_source_is_dict = is_dict;
+    if (is_dict) {
+#if !CYTHON_COMPILING_IN_PYPY
+        *p_orig_length = PyDict_Size(iterable);
+        Py_INCREF(iterable);
+        return iterable;
+#elif PY_MAJOR_VERSION >= 3
+        static PyObject *py_items = NULL, *py_keys = NULL, *py_values = NULL;
+        PyObject **pp = NULL;
+        if (method_name) {
+            const char *name = PyUnicode_AsUTF8(method_name);
+            if (strcmp(name, "iteritems") == 0) pp = &py_items;
+            else if (strcmp(name, "iterkeys") == 0) pp = &py_keys;
+            else if (strcmp(name, "itervalues") == 0) pp = &py_values;
+            if (pp) {
+                if (!*pp) {
+                    *pp = PyUnicode_FromString(name + 4);
+                    if (!*pp)
+                        return NULL;
+                }
+                method_name = *pp;
+            }
+        }
+#endif
+    }
+    *p_orig_length = 0;
+    if (method_name) {
+        PyObject* iter;
+        iterable = __Pyx_PyObject_CallMethod0(iterable, method_name);
+        if (!iterable)
+            return NULL;
+#if !CYTHON_COMPILING_IN_PYPY
+        if (PyTuple_CheckExact(iterable) || PyList_CheckExact(iterable))
+            return iterable;
+#endif
+        iter = PyObject_GetIter(iterable);
+        Py_DECREF(iterable);
+        return iter;
+    }
+    return PyObject_GetIter(iterable);
+}
+static CYTHON_INLINE int __Pyx_dict_iter_next(
+        PyObject* iter_obj, CYTHON_NCP_UNUSED Py_ssize_t orig_length, CYTHON_NCP_UNUSED Py_ssize_t* ppos,
+        PyObject** pkey, PyObject** pvalue, PyObject** pitem, int source_is_dict) {
+    PyObject* next_item;
+#if !CYTHON_COMPILING_IN_PYPY
+    if (source_is_dict) {
+        PyObject *key, *value;
+        if (unlikely(orig_length != PyDict_Size(iter_obj))) {
+            PyErr_SetString(PyExc_RuntimeError, "dictionary changed size during iteration");
+            return -1;
+        }
+        if (unlikely(!PyDict_Next(iter_obj, ppos, &key, &value))) {
+            return 0;
+        }
+        if (pitem) {
+            PyObject* tuple = PyTuple_New(2);
+            if (unlikely(!tuple)) {
+                return -1;
+            }
+            Py_INCREF(key);
+            Py_INCREF(value);
+            PyTuple_SET_ITEM(tuple, 0, key);
+            PyTuple_SET_ITEM(tuple, 1, value);
+            *pitem = tuple;
+        } else {
+            if (pkey) {
+                Py_INCREF(key);
+                *pkey = key;
+            }
+            if (pvalue) {
+                Py_INCREF(value);
+                *pvalue = value;
+            }
+        }
+        return 1;
+    } else if (PyTuple_CheckExact(iter_obj)) {
+        Py_ssize_t pos = *ppos;
+        if (unlikely(pos >= PyTuple_GET_SIZE(iter_obj))) return 0;
+        *ppos = pos + 1;
+        next_item = PyTuple_GET_ITEM(iter_obj, pos);
+        Py_INCREF(next_item);
+    } else if (PyList_CheckExact(iter_obj)) {
+        Py_ssize_t pos = *ppos;
+        if (unlikely(pos >= PyList_GET_SIZE(iter_obj))) return 0;
+        *ppos = pos + 1;
+        next_item = PyList_GET_ITEM(iter_obj, pos);
+        Py_INCREF(next_item);
+    } else
+#endif
+    {
+        next_item = PyIter_Next(iter_obj);
+        if (unlikely(!next_item)) {
+            return __Pyx_IterFinish();
+        }
+    }
+    if (pitem) {
+        *pitem = next_item;
+    } else if (pkey && pvalue) {
+        if (__Pyx_unpack_tuple2(next_item, pkey, pvalue, source_is_dict, source_is_dict, 1))
+            return -1;
+    } else if (pkey) {
+        *pkey = next_item;
+    } else {
+        *pvalue = next_item;
+    }
+    return 1;
+}
+
 /* PyObject_GenericGetAttrNoDict */
 #if CYTHON_USE_TYPE_SLOTS && CYTHON_USE_PYTYPE_LOOKUP && PY_VERSION_HEX < 0x03070000
 static PyObject *__Pyx_RaiseGenericGetAttributeError(PyTypeObject *tp, PyObject *attr_name) {
@@ -7570,20 +7726,6 @@ bad:
     Py_XDECREF(empty_list);
     Py_XDECREF(empty_dict);
     return module;
-}
-
-/* ImportFrom */
-static PyObject* __Pyx_ImportFrom(PyObject* module, PyObject* name) {
-    PyObject* value = __Pyx_PyObject_GetAttrStr(module, name);
-    if (unlikely(!value) && PyErr_ExceptionMatches(PyExc_AttributeError)) {
-        PyErr_Format(PyExc_ImportError,
-        #if PY_MAJOR_VERSION < 3
-            "cannot import name %.230s", PyString_AS_STRING(name));
-        #else
-            "cannot import name %S", name);
-        #endif
-    }
-    return value;
 }
 
 /* CLineInTraceback */
@@ -8612,102 +8754,6 @@ static CYTHON_INLINE void __Pyx_ExceptionSwap(PyObject **type, PyObject **value,
     *tb = tmp_tb;
 }
 #endif
-
-/* PyObjectGetMethod */
-static int __Pyx_PyObject_GetMethod(PyObject *obj, PyObject *name, PyObject **method) {
-    PyObject *attr;
-#if CYTHON_UNPACK_METHODS && CYTHON_COMPILING_IN_CPYTHON && CYTHON_USE_PYTYPE_LOOKUP
-    PyTypeObject *tp = Py_TYPE(obj);
-    PyObject *descr;
-    descrgetfunc f = NULL;
-    PyObject **dictptr, *dict;
-    int meth_found = 0;
-    assert (*method == NULL);
-    if (unlikely(tp->tp_getattro != PyObject_GenericGetAttr)) {
-        attr = __Pyx_PyObject_GetAttrStr(obj, name);
-        goto try_unpack;
-    }
-    if (unlikely(tp->tp_dict == NULL) && unlikely(PyType_Ready(tp) < 0)) {
-        return 0;
-    }
-    descr = _PyType_Lookup(tp, name);
-    if (likely(descr != NULL)) {
-        Py_INCREF(descr);
-#if PY_MAJOR_VERSION >= 3
-        #ifdef __Pyx_CyFunction_USED
-        if (likely(PyFunction_Check(descr) || (Py_TYPE(descr) == &PyMethodDescr_Type) || __Pyx_CyFunction_Check(descr)))
-        #else
-        if (likely(PyFunction_Check(descr) || (Py_TYPE(descr) == &PyMethodDescr_Type)))
-        #endif
-#else
-        #ifdef __Pyx_CyFunction_USED
-        if (likely(PyFunction_Check(descr) || __Pyx_CyFunction_Check(descr)))
-        #else
-        if (likely(PyFunction_Check(descr)))
-        #endif
-#endif
-        {
-            meth_found = 1;
-        } else {
-            f = Py_TYPE(descr)->tp_descr_get;
-            if (f != NULL && PyDescr_IsData(descr)) {
-                attr = f(descr, obj, (PyObject *)Py_TYPE(obj));
-                Py_DECREF(descr);
-                goto try_unpack;
-            }
-        }
-    }
-    dictptr = _PyObject_GetDictPtr(obj);
-    if (dictptr != NULL && (dict = *dictptr) != NULL) {
-        Py_INCREF(dict);
-        attr = __Pyx_PyDict_GetItemStr(dict, name);
-        if (attr != NULL) {
-            Py_INCREF(attr);
-            Py_DECREF(dict);
-            Py_XDECREF(descr);
-            goto try_unpack;
-        }
-        Py_DECREF(dict);
-    }
-    if (meth_found) {
-        *method = descr;
-        return 1;
-    }
-    if (f != NULL) {
-        attr = f(descr, obj, (PyObject *)Py_TYPE(obj));
-        Py_DECREF(descr);
-        goto try_unpack;
-    }
-    if (descr != NULL) {
-        *method = descr;
-        return 0;
-    }
-    PyErr_Format(PyExc_AttributeError,
-#if PY_MAJOR_VERSION >= 3
-                 "'%.50s' object has no attribute '%U'",
-                 tp->tp_name, name);
-#else
-                 "'%.50s' object has no attribute '%.400s'",
-                 tp->tp_name, PyString_AS_STRING(name));
-#endif
-    return 0;
-#else
-    attr = __Pyx_PyObject_GetAttrStr(obj, name);
-    goto try_unpack;
-#endif
-try_unpack:
-#if CYTHON_UNPACK_METHODS
-    if (likely(attr) && PyMethod_Check(attr) && likely(PyMethod_GET_SELF(attr) == obj)) {
-        PyObject *function = PyMethod_GET_FUNCTION(attr);
-        Py_INCREF(function);
-        Py_DECREF(attr);
-        *method = function;
-        return 1;
-    }
-#endif
-    *method = attr;
-    return 0;
-}
 
 /* PyObjectCallMethod1 */
 static PyObject* __Pyx__PyObject_CallMethod1(PyObject* method, PyObject* arg) {
