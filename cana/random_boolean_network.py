@@ -18,7 +18,7 @@ import random
 from cana.boolean_network import BooleanNetwork
 import re
 from io import StringIO
-from utils import output_transitions
+from cana.utils import output_transitions
 
 
 def regular_boolean_network(N=10, K=2, bias=0.5, bias_constraint='soft', keep_constants=True, remove_multiedges=True, niter_remove=1000):
