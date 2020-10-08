@@ -66,7 +66,7 @@ class BooleanNetwork:
             k = len(logic[i]['in'])
             inputs = [self.name2int[logic[j]['name']] for j in logic[i]['in']]
             outputs = logic[i]['out']
-            node = BooleanNode(id=i, name=name, k=k, inputs=inputs, outputs=outputs)
+            node = BooleanNode(id=i, name=name, k=k, inputs=inputs, outputs=outputs, network=self)
             self.nodes.append(node)
 
         self.input_nodes = [i for i in range(Nnodes) if (self.nodes[i].constant or ((self.nodes[i].k == 1) and (i in self.nodes[i].inputs)))]

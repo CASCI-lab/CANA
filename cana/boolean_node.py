@@ -15,6 +15,7 @@ Boolean Node
 from __future__ import division
 import numpy as np
 import pandas as pd
+from statistics import mean
 from itertools import compress, combinations
 from cana.canalization import boolean_canalization as BCanalization
 from cana.canalization import cboolean_canalization as cBCanalization
@@ -26,13 +27,14 @@ class BooleanNode(object):
     """
     """
 
-    def __init__(self, id=0, name='x', k=1, inputs=[1], state=False, outputs=[0, 1], constant=False, verbose=False, *args, **kwargs):
+    def __init__(self, id=0, name='x', k=1, inputs=[1], state=False, outputs=[0, 1], constant=False, network=None, verbose=False, *args, **kwargs):
         self.id = id                            # the id of the node
         self.name = name                        # the name of the node
         self.k = k                              # k is the number of inputs
         self.inputs = list(map(int, inputs))    # the ids of the input nodes
         self.state = state                      # the initial state of the node
         self.outputs = list(map(str, outputs))  # the list of transition outputs
+        self.network = network                  # the BooleanNetwork object this nodes belongs to
         self.verbose = verbose                  # verbose mode
 
         # mask for inputs
@@ -74,8 +76,10 @@ class BooleanNode(object):
 
         Args:
             outputs (list) : The transition outputs of the node.
+
         Returns:
             (BooleanNode) : the instanciated object.
+
         Example:
             >>> BooleanNode.from_output_list(outputs=[0,0,0,1], name="AND")
         """
@@ -87,8 +91,8 @@ class BooleanNode(object):
 
         return BooleanNode(id=id, name=name, k=k, inputs=inputs, state=state, outputs=outputs, *args, **kwargs)
 
-    def input_redundancy(self, bound='upper', norm=True):
-        r""" The Input Redundancy :math:`k_{r}` is the mean number of unnecessary inputs (or ``#``) in the Prime Implicants Look Up Table (LUT).
+    def input_redundancy(self, operator=mean, norm=True):
+        r"""The Input Redundancy :math:`k_{r}` is the mean number of unnecessary inputs (or ``#``) in the Prime Implicants Look Up Table (LUT).
         Since there may be more than one redescription schema for each input entry, the input redundancy is bounded by an upper and lower limit.
 
 
@@ -99,9 +103,8 @@ class BooleanNode(object):
         where :math:`\Phi` is a function (:math:`min` or :math:`max`) and :math:`F` is the node LUT.
 
         Args:
-            bound (string) : The bound to which compute input redundancy.
-                ["lower", "upper"].
-                Defaults to "upper".
+            operator (function) : The operator to use while computing input redundancy for the node.
+                Defaults to `statistics.mean`, but `min` or `max` can be also considered.
             norm (bool) : Normalized between [0,1].
                 Use this value when comparing nodes with different input sizes. (Defaults to "True".)
 
@@ -123,14 +126,10 @@ class BooleanNode(object):
 
         self._check_compute_canalization_variables(pi_coverage=True)
 
-        if bound == 'upper':
-            minmax = max
-        elif bound == 'lower':
-            minmax = min
-        else:
-            raise AttributeError('The bound you selected does not exist. Try "upper", or "lower"')
+        if not hasattr(operator, '__call__'):
+            raise AttributeError('The operator you selected must be a function. Try "min", "statitics.mean", or "max".')
 
-        redundancy = [minmax([pi.count('#') for pi in self._pi_coverage[binstate]]) for binstate in self._pi_coverage]
+        redundancy = [operator([pi.count('#') for pi in self._pi_coverage[binstate]]) for binstate in self._pi_coverage]
 
         k_r = sum(redundancy) / 2**self.k
 
@@ -141,7 +140,7 @@ class BooleanNode(object):
         return k_r
 
     def edge_redundancy(self, bound='mean'):
-        r""" The Edge Redundancy :math:`r_i` is the mean number of unnecessary inputs (or ``#``) in the Prime Implicants Look Up Table (LUT) for that input.
+        r""" The Edge Redundancy :math:`r_{i}` is the mean number of unnecessary inputs (or ``#``) in the Prime Implicants Look Up Table (LUT) for that input.
         Since there may be more than one redescription schema for each input entry, the input redundancy is bounded by an upper and lower limit.
 
         .. math::
@@ -154,7 +153,6 @@ class BooleanNode(object):
             bound (string) : The bound to which compute input redundancy.
                 Mode "input" accepts: ["lower", "mean", "ave", upper", "tuple"].
                 Defaults to "mean".
-
 
         Returns:
             (list) : The list of :math:`r_i` for inputs.
@@ -197,16 +195,16 @@ class BooleanNode(object):
 
         return redundancies  # r_i
 
-    def effective_connectivity(self, bound='upper', norm=True):
+    def effective_connectivity(self, operator=mean, norm=True):
         r"""The Effective Connectiviy is the mean number of input nodes needed to determine the transition of the node.
 
         .. math::
 
             k_e(x) = k(x) - k_r(x)
 
-
         Args:
-            bound (string) : The bound for the :math:`k_r` Input Redundancy
+            operator (function) : The operator to use while computing input redundancy for the node.
+                Defaults to `statistics.mean`, but `min` or `max` can be also considered. 
             norm (bool) : Normalized between [0,1].
                 Use this value when comparing nodes with different input sizes. (Defaults to "True".)
 
@@ -221,8 +219,9 @@ class BooleanNode(object):
         # Canalization can only occur when k>= 2
         if self.k < 2:
             return 1.0
-
-        k_r = self.input_redundancy(bound=bound, norm=False)
+        #
+        k_r = self.input_redundancy(operator=operator, norm=norm)
+        #
         k_e = self.k - k_r
         if (norm):
             k_e = k_e / self.k
@@ -251,13 +250,9 @@ class BooleanNode(object):
         e_i = [1.0 - x_i for x_i in self.edge_redundancy(bound=bound)]
         return e_i
 
-    def input_symmetry(self, mode='node', bound='upper', norm=True):
-        r"""The Input Symmetry is a measure of permutation redundancy.
-        Similar to the computation of Input Redundancy but using the Two-Symbol instead of the Prime Implicant schemata.
-
-        .. math::
-
-            k_s = \frac{ \sum_{f_{\alpha} \in F} \Phi_{\theta:f_{\alpha} \in \Theta_{\theta}} (n^{\circ}) }{ |F| }
+    def edge_symmetry(self, bound='upper'):
+        r"""Edge Symmetry is a measure of permutation redundancy of a single input.
+        Similar to the computation of Edge Effectiveness but using the Two-Symbol instead of the Prime Implicant schemata.
 
         .. math::
 
@@ -266,7 +261,66 @@ class BooleanNode(object):
         where :math:`\Phi` is the function :math:`min` or :math:`max` and :math:`F` is the node LUT.
 
         Args:
-            mode (string) : Per "input" or per "node". Default is "node".
+            bound (string) : The bound to which compute input symmetry.
+                Mode "node" accepts: ["lower", "upper"].
+                Mode "input" accepts: ["lower", "mean", "upper", "tuple"].
+                Defaults to "upper".
+
+        Returns:
+            (float/list) : The :math:`k_s` or a list of :math:`r_i`.
+
+        See also:
+            :func:`input_redundancy`, :func:`effective_connectivity`
+        """
+        # Canalization can only occur when k>= 2
+        if self.k < 2:
+            return [0.0]
+
+        self._check_compute_canalization_variables(ts_coverage=True)
+
+        symmetries = []
+        # Generate a per input coverage
+        # ex: {0: {'11': [], '10': [], '00': [], '01': []}, 1: {'11': [], '10': [], '00': [], '01': []}}
+        # ts_input_coverage = { input : { binstate: [ idxs.count(input) for schema,reps,sms in tss for idxs in reps+sms ] for binstate,tss in self._ts_coverage.items() } for input in range(self.k) }
+        ts_input_coverage = {input: {binstate: [len(idxs) if input in idxs else 0 for schema, reps, sms in tss for idxs in reps + sms] for binstate, tss in self._ts_coverage.items()} for input in range(self.k)}
+
+        # Loop ever input node
+        for input, binstates in ts_input_coverage.items():
+            # {'numstate': [number-of-ts's for each match], '10': [0, 2] ...}
+            numstates = {binstate_to_statenum(binstate): permuts for binstate, permuts in binstates.items()}
+
+            # A triplet of (min, mean, max) values
+            if bound in ['lower', 'mean', 'upper']:
+                # Min, Mean or Max
+                if bound == 'upper':
+                    minmax = max
+                elif bound == 'mean':
+                    minmax = np.mean
+                elif bound == 'lower':
+                    minmax = min
+
+                s_i = sum(minmax(permuts) if len(permuts) else 0 for permuts in numstates.values()) / 2**self.k  # min(r_s)
+
+            elif bound == 'tuple':
+                # tuple (min,max) per input, per state
+                s_i = [(min(permuts), max(permuts)) if len(permuts) else (0, 0) for permuts in numstates.values()]  # (min,max)
+            else:
+                raise AttributeError('The bound you selected does not exist. Try "upper", "mean", "lower" or "tuple".')
+            symmetries.append(s_i)
+
+        return symmetries  # s_i
+
+    def input_symmetry(self, bound='upper', norm=True):
+        r"""The Input Symmetry is a measure of permutation redundancy.
+        Similar to the computation of Input Redundancy but using the Two-Symbol instead of the Prime Implicant schemata.
+
+        .. math::
+
+            k_s = \frac{ \sum_{f_{\alpha} \in F} \Phi_{\theta:f_{\alpha} \in \Theta_{\theta}} (n^{\circ}) }{ |F| }
+
+        where :math:`\Phi` is the function :math:`min` or :math:`max` and :math:`F` is the node LUT.
+
+        Args:
             bound (string) : The bound to which compute input symmetry.
                 Mode "node" accepts: ["lower", "upper"].
                 Mode "input" accepts: ["lower", "mean", "upper", "tuple"].
@@ -283,64 +337,17 @@ class BooleanNode(object):
             :func:`input_redundancy`, :func:`effective_connectivity`
         """
         # Canalization can only occur when k>= 2
-        raise ImplementationError('Not Error Checked. Will Do this on the next update.')
         if self.k < 2:
-            if mode == 'node':
-                return 0.0
-            elif mode == 'input':
-                return [0.0]
-            else:
-                raise AttributeError('The mode you selected does not exist. Try "node" or "input".')
+            return 0.0
 
         self._check_compute_canalization_variables(ts_coverage=True)
 
-        if mode == 'node':
-            if bound == 'upper':
-                minmax = max
-            elif bound == 'lower':
-                minmax = min
+        k_s = sum(self.edge_symmetry(bound=bound)) / self.k
 
-            k_s = sum(self.input_symmetry(mode='input', bound=bound, norm=norm)) / self.k
+        if (norm):
+            k_s = k_s / self.k
 
-            if (norm):
-                k_s = k_s / self.k
-            return k_s
-
-        elif mode == 'input':
-            symmetries = []
-            # Generate a per input coverage
-            # ex: {0: {'11': [], '10': [], '00': [], '01': []}, 1: {'11': [], '10': [], '00': [], '01': []}}
-            # ts_input_coverage = { input : { binstate: [ idxs.count(input) for schema,reps,sms in tss for idxs in reps+sms ] for binstate,tss in self._ts_coverage.items() } for input in range(self.k) }
-            ts_input_coverage = {input: {binstate: [len(idxs) if input in idxs else 0 for schema, reps, sms in tss for idxs in reps + sms] for binstate, tss in self._ts_coverage.items()} for input in range(self.k)}
-
-            # Loop ever input node
-            for input, binstates in ts_input_coverage.items():
-                # {'numstate': [number-of-ts's for each match], '10': [0, 2] ...}
-                numstates = {binstate_to_statenum(binstate): permuts for binstate, permuts in binstates.items()}
-
-                # A triplet of (min, mean, max) values
-                if bound in ['lower', 'mean', 'upper']:
-                    # Min, Mean or Max
-                    if bound == 'upper':
-                        minmax = max
-                    elif bound == 'mean':
-                        minmax = np.mean
-                    elif bound == 'lower':
-                        minmax = min
-
-                    s_i = sum(minmax(permuts) if len(permuts) else 0 for permuts in numstates.values()) / 2**self.k  # min(r_s)
-
-                elif bound == 'tuple':
-                    # tuple (min,max) per input, per state
-                    s_i = [(min(permuts), max(permuts)) if len(permuts) else (0, 0) for permuts in numstates.values()]  # (min,max)
-                else:
-                    raise AttributeError('The bound you selected does not exist. Try "upper", "mean", "lower" or "tuple".')
-                symmetries.append(s_i)
-
-            return symmetries  # s_i
-
-        else:
-            raise AttributeError('The mode you selected does not exist. Try "node" or "input".')
+        return k_s
 
     def look_up_table(self):
         """ Returns the Look Up Table (LUT)
@@ -361,11 +368,13 @@ class BooleanNode(object):
             k = 2
         else:
             k = self.k
+
         for statenum, output in zip(range(2**k), self.outputs):
             # Binary State, Transition
             d.append((statenum_to_binstate(statenum, base=self.k), output))
 
         df = pd.DataFrame(d, columns=['In:', 'Out:'])
+
         return df
 
     def schemata_look_up_table(self, type='pi', pi_symbol=u'#', ts_symbol_unicode=u"\u030A", ts_symbol_latex=u"\circ", format='pandas'):
@@ -396,7 +405,8 @@ class BooleanNode(object):
         if type == 'pi':
             self._check_compute_canalization_variables(prime_implicants=True)
 
-            pi0s, pi1s = self._prime_implicants
+            pi0s = self._prime_implicants.get('0', [])
+            pi1s = self._prime_implicants.get('1', [])
 
             for output, pi in zip([0, 1], [pi0s, pi1s]):
                 for schemata in pi:
@@ -461,6 +471,7 @@ class BooleanNode(object):
 
     def input_mask(self, binstate):
         """ Returns the mask applied to the binary state binstate
+
         Args:
             binstate (str) : the binary state
 
@@ -477,6 +488,7 @@ class BooleanNode(object):
 
     def dynamic_step(self, input_state):
         """ Returns the output of the node based on a specific input
+
         Args:
             input (list) : an input to the node.
 
@@ -562,9 +574,13 @@ class BooleanNode(object):
                 for lit in lits:
                     iname = 'var-{nid:d}-out-{out:d}'.format(nid=self.inputs[lit], out=int(ts[lit]))
                     if iname not in G.nodes():
-                        ilabel = str(self.inputs[lit])
+                        # Can we get the name of ther nodes? Are we attached to a network?
+                        if self.network is not None:
+                            ilabel = self.network.get_node_name(lit)[0]
+                        else:
+                            ilabel = str(self.inputs[lit])
                         iout = int(ts[lit])
-                        G.add_node(iname, **{'label-tmp': ilabel, 'type': 'variable', 'mode': 'input', 'value': iout, 'group': self.id})
+                        G.add_node(iname, **{'label': ilabel, 'type': 'variable', 'mode': 'input', 'value': iout, 'group': self.id})
                     G.add_edge(iname, tname, **{'type': 'literal'})
 
                 # Group0
@@ -574,8 +590,12 @@ class BooleanNode(object):
                     for input in ps[0]:
                         iname = 'var-{nid:d}-out-{out:d}'.format(nid=self.inputs[input], out=0)
                         if iname not in G.nodes():
-                            ilabel = str(self.inputs[input])
-                            G.add_node(iname, **{'label-tmp': ilabel, 'type': 'variable', 'mode': 'input', 'value': 0, 'group': self.id})
+                            # Can we get the name of ther nodes? Are we attached to a network?
+                            if self.network is not None:
+                                ilabel = self.network.get_node_name(input)[0]
+                            else:
+                                ilabel = str(self.inputs[input])
+                            G.add_node(iname, **{'label': ilabel, 'type': 'variable', 'mode': 'input', 'value': 0, 'group': self.id})
                         G.add_edge(iname, fname, **{'type': 'fusing'})
                     G.add_edge(fname, tname, **{'type': 'fused'})
 
@@ -586,9 +606,13 @@ class BooleanNode(object):
                     for input in ps[0]:
                         iname = 'var-{var:d}-out-{out:d}'.format(var=self.inputs[input], out=1)
                         if iname not in G.nodes():
-                            ilabel = str(self.inputs[input])
+                            # Can we get the name of ther nodes? Are we attached to a network?
+                            if self.network is not None:
+                                ilabel = self.network.get_node_name(input)[0]
+                            else:
+                                ilabel = str(self.inputs[input])
                             iout = ts[input]
-                            G.add_node(iname, **{'label-tmp': ilabel, 'type': 'variable', 'mode': 'input', 'value': 1, 'group': self.id})
+                            G.add_node(iname, **{'label': ilabel, 'type': 'variable', 'mode': 'input', 'value': 1, 'group': self.id})
                         G.add_edge(iname, fname, **{'type': 'fusing'})
                     G.add_edge(fname, tname, **{'type': 'fused'})
 
@@ -601,6 +625,7 @@ class BooleanNode(object):
 
         Returns:
             (list)
+
         See also:
             :func:`ts_coverage`
         """
@@ -612,6 +637,7 @@ class BooleanNode(object):
 
         Returns:
             (list)
+
         See also:
             :func:`pi_coverage`
         """
@@ -661,7 +687,6 @@ class BooleanNode(object):
                         BCanalization.find_two_symbols_v2(k=self.k, prime_implicants=pi1)
                     )
         elif 'ts_coverage' in kwargs:
-            raise Exception('Two Symbol Error. %s' % kwargs)
             self._check_compute_canalization_variables(two_symbols=True)
             if self._ts_coverage is None:
                 self._ts_coverage = BCanalization.computes_ts_coverage(self.k, self.outputs, self._two_symbols)
