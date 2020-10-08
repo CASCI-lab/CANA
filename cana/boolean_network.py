@@ -1148,94 +1148,68 @@ class BooleanNetwork:
         def eff_weight_func(u, v, e):
             return -np.log(e['weight'])
 
+        def inv_eff_weight_func(pathlength):
+            return np.exp(-pathlength)
+
+
         impact_matrix = np.zeros((2, n_steps + 1, len(target_set)))
         impact_matrix[0, :, :] = self.Nnodes + 1  # if we can't reach the node, then the paths cant be longer than the number of nodes in the graph
+        # note that by default: impact_matrix[1, :, :] = 0 the minimum path for nodes we cant reach in the effective graph
 
+        # in the structural graph, calcluate the dijkstra shortest paths from the source to all targets that are shorter than the cufoff
         Gstr_shortest_dist, Gstr_shortest_paths = nx.single_source_dijkstra(Gstr, source, target=None, cutoff=n_steps)
         Gstr_shortest_dist = {n: int(l) for n, l in Gstr_shortest_dist.items()}
 
+        # in the effective graph, calcluate the dijkstra shortest paths from the source to all targets that are shorter than the cufoff
+        # where the edge weight is given by the effective weight function
         Geff_shortest_dist, Geff_shortest_paths = nx.single_source_dijkstra(Geff, source, target=None, cutoff=n_steps, weight=eff_weight_func)
 
         for itar, target in enumerate(target_set):
 
+            # we dont need to worry about a path to iteself (source==target)
+            # and if the target doesnt appear in the shortest path dict, then no path exists that is less than the cutoff
             if target != source and not Gstr_shortest_dist.get(target, None) is None:
+
+                # the light cone is at least as big as the number of edges in the structural shorest path
                 impact_matrix[0, list(range(Gstr_shortest_dist[target], n_steps + 1)), itar] = Gstr_shortest_dist[target]
 
-                # the number is edges in the path is one less than the number of nodes
-                eff_path_steps = len(Geff_shortest_paths.get(itar, range(n_steps + 1))) - 1
+                # if the path exists, then the number of edges (timesteps) is one less than the number of nodes
+                if not Geff_shortest_paths.get(target, None) is None:
+                    eff_path_steps = len(Geff_shortest_paths[target]) - 1
+                else:
+                    # or the path doesnt exist
+                    eff_path_steps = n_steps + 100 # any number bigger than the longest path to represent we cannot reach the node
 
-                # check to see if the effective path is longer than the light cone
-                if eff_path_steps > Gstr_shortest_dist[target] and eff_path_steps < n_steps + 1:
-                    # allpaths = nx.all_simple_paths(Geff, source=source, target=target, cutoff=eff_path_steps - 1)
-                    # for path in allpaths:
-                    #   length = pathlength(path, nx.get_edge_attributes(Geff, 'weight'), rule='prod')
-                    # print("Redo", target, Gstr_shortest_dist[target], eff_path_steps)
+                
+                # start by checking if the number of timesteps is less than the maximum allowable number of steps
+                if eff_path_steps <= n_steps:
 
-                    for istep in range(Gstr_shortest_dist[target], eff_path_steps):
+                    # now check if the most likely effective path is longer (in terms of # of timesteps) than the structural shortest path
+                    if eff_path_steps > Gstr_shortest_dist[target]:
+                        
+                        # if it is, then we need to find another effective path constrained by the light-cone
+                        # for all time steps where the most likely effective path is longer (in terms of # of timesteps) 
+                        # than the structural shortest path
+                        for istep in range(Gstr_shortest_dist[target], eff_path_steps):
 
-                        # bc the effective graph has fully redundant edges, there may actually not be a path
-                        try:
-                            redo_dijkstra_dist, _ = nx.single_source_dijkstra(Geff, source, target=target, cutoff=istep, weight=eff_weight_func)
-                            impact_matrix[1, istep, itar] = np.exp(-redo_dijkstra_dist)
-                        except nx.NetworkXNoPath:
-                            pass
+                            # bc the effective graph has fully redundant edges, there may actually not be a path
+                            try:
+                                redo_dijkstra_dist, _ = nx.single_source_dijkstra(Geff, 
+                                    source=source, 
+                                    target=target, 
+                                    cutoff=istep, 
+                                    weight=eff_weight_func)
+                                impact_matrix[1, istep, itar] = inv_eff_weight_func(redo_dijkstra_dist)
+                            except nx.NetworkXNoPath:
+                                pass
 
-                # for all other steps the effective path is the best
-                if not Geff_shortest_dist.get(target, None) is None and eff_path_steps < n_steps + 1:
-                    impact_matrix[1, list(range(eff_path_steps, n_steps + 1)), itar] = np.exp(-Geff_shortest_dist[target])
+                    # once the lightcone includes the target node on the effective shortest path, 
+                    # then for all other steps the effective path is the best
+                    impact_matrix[1, list(range(eff_path_steps, n_steps + 1)), itar] = inv_eff_weight_func(Geff_shortest_dist[target])
 
         return impact_matrix[:, 1:]
 
-    def approx_dynamic_impact2(self, node, n_steps=1, mode='effective', target_set=None,
-                               bound='mean', threshold=0.0):
-        """
-        Use the network structure to approximate the dynamical impact of a perturbation
-        to node for each of n_steps for details see: Gates et al (2019)
-
-        Args:
-            node (int) : the node index for perturbations
-
-            n_steps (int) : the number of time steps
-
-            mode (str) : the structural graph approximation to use
-                'effective' : use the effective graph
-                'structural' : use the structural graph
-
-            bound (str) : the bound for the effective graph
-                'mean'
-
-        Returns:
-            (matrix) : approximate dynamical impact for each node at each step (n_steps x n_nodes)
-        """
-
-        if target_set is None:
-            target_set = range(self.Nnodes)
-
-        # choose the underlying graph and get the edge weights
-        if mode == 'effective':
-            G = self.effective_graph(bound=bound, threshold=threshold)
-            weights = {e: w for e, w in nx.get_edge_attributes(G, 'weight').items()}
-
-        elif mode == 'structural':
-            G = self.structural_graph()
-            weights = {e: 0.5 for e, w in nx.get_edge_attributes(G, 'weight').items()}
-
-        impact_matrix = np.zeros((n_steps, len(target_set)))
-
-        for itarget, target in enumerate(target_set):
-
-            if target != node:
-                # the dict to store all paths
-                allpaths = nx.all_simple_paths(G, source=node, target=target, cutoff=(n_steps))
-
-                for path in allpaths:
-                    length = pathlength(path, weights, rule='prod')
-                    for istep in range(1, n_steps):
-                        if len(path) <= (istep + 1):  # impose the light-code restriction
-                            impact_matrix[istep, itarget] = max([length, impact_matrix[istep, itarget]])
-
-        return impact_matrix
-
+    
     def dist_from_attractor(self):
         "Find the distance from attractor for each configuration"
         self._check_compute_variables(attractors=True)
