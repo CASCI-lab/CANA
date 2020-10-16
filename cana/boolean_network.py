@@ -1180,36 +1180,36 @@ class BooleanNetwork:
                     # or the path doesnt exist
                     eff_path_steps = n_steps + 100 # any number bigger than the longest path to represent we cannot reach the node
 
-                
+
                 # start by checking if the number of timesteps is less than the maximum allowable number of steps
                 if eff_path_steps <= n_steps:
 
                     # now check if the most likely effective path is longer (in terms of # of timesteps) than the structural shortest path
                     if eff_path_steps > Gstr_shortest_dist[target]:
-                        
+
                         # if it is, then we need to find another effective path constrained by the light-cone
-                        # for all time steps where the most likely effective path is longer (in terms of # of timesteps) 
+                        # for all time steps where the most likely effective path is longer (in terms of # of timesteps)
                         # than the structural shortest path
                         for istep in range(Gstr_shortest_dist[target], eff_path_steps):
 
                             # bc the effective graph has fully redundant edges, there may actually not be a path
                             try:
-                                redo_dijkstra_dist, _ = nx.single_source_dijkstra(Geff, 
-                                    source=source, 
-                                    target=target, 
-                                    cutoff=istep, 
+                                redo_dijkstra_dist, _ = nx.single_source_dijkstra(Geff,
+                                    source=source,
+                                    target=target,
+                                    cutoff=istep,
                                     weight=eff_weight_func)
                                 impact_matrix[1, istep, itar] = inv_eff_weight_func(redo_dijkstra_dist)
                             except nx.NetworkXNoPath:
                                 pass
 
-                    # once the lightcone includes the target node on the effective shortest path, 
+                    # once the lightcone includes the target node on the effective shortest path,
                     # then for all other steps the effective path is the best
                     impact_matrix[1, list(range(eff_path_steps, n_steps + 1)), itar] = inv_eff_weight_func(Geff_shortest_dist[target])
 
         return impact_matrix[:, 1:]
 
-    
+
     def dist_from_attractor(self):
         "Find the distance from attractor for each configuration"
         self._check_compute_variables(attractors=True)
