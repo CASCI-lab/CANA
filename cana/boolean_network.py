@@ -455,11 +455,14 @@ class BooleanNetwork:
                 newk = len(new_successor_inputs)
                 
                 # now we create a conditioned LUT as the subset of the original for which the conditioned node is fixed to its value
-                new_successor_outputs = []
-                for sn in range(2**newk):
-                    binstate = statenum_to_binstate(sn, newk)
-                    binstate = binstate[:conditioned_node_idx] + conditioned_value + binstate[conditioned_node_idx:]
-                    new_successor_outputs.append(conditioned_logic[n]['out'][binstate_to_statenum(binstate)])
+                if newk == 0:
+                    new_successor_outputs = [conditioned_logic[n]['out'][binstate_to_statenum(conditioned_value)]]*2
+                else:
+                    new_successor_outputs = []
+                    for sn in range(2**newk):
+                        binstate = statenum_to_binstate(sn, newk)
+                        binstate = binstate[:conditioned_node_idx] + conditioned_value + binstate[conditioned_node_idx:]
+                        new_successor_outputs.append(conditioned_logic[n]['out'][binstate_to_statenum(binstate)])
 
                 # use the new logic to calcuate a new edge effectiveness
                 new_edge_effectiveness = BooleanNode().from_output_list(new_successor_outputs).edge_effectiveness(bound=bound)
