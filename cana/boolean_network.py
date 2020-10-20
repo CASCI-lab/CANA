@@ -405,7 +405,7 @@ class BooleanNetwork:
 
         return self._eg
 
-    def conditional_effective_graph(self, conditioned_nodes = {}, bound='mean', threshold=None):
+    def conditional_effective_graph(self, conditioned_nodes={}, bound='mean', threshold=None):
         """Computes and returns the BN effective graph conditioned on some known states.
 
         Args:
@@ -435,28 +435,28 @@ class BooleanNetwork:
         while len(nodes2condition) > 0:
 
             conditioned_node = nodes2condition.pop(0)
-            conditioned_value=str(conditioned_nodes[conditioned_node])
+            conditioned_value = str(conditioned_nodes[conditioned_node])
             conditioned_subgraph.add(conditioned_node)
 
             # take all successors of the conditioned node ignoring self-loops
-            successors = [n for n in list(conditional_eg.neighbors(conditioned_node)) if n!= conditioned_node]
+            successors = [n for n in list(conditional_eg.neighbors(conditioned_node)) if n != conditioned_node]
             conditioned_subgraph.update(successors)
 
             # we have to loop through all of the successors of the conditioned node and change their logic
             for n in successors:
-                
+
                 # find the index of the conditioned node in the successor logic
                 conditioned_node_idx = conditioned_logic[n]['in'].index(conditioned_node)
 
                 conditioned_subgraph.update(conditioned_logic[n]['in'])
 
                 # the new successor inputs without the conditioned node
-                new_successor_inputs = conditioned_logic[n]['in'][:conditioned_node_idx] + conditioned_logic[n]['in'][(conditioned_node_idx+1):]
+                new_successor_inputs = conditioned_logic[n]['in'][:conditioned_node_idx] + conditioned_logic[n]['in'][(conditioned_node_idx + 1):]
                 newk = len(new_successor_inputs)
-                
+
                 # now we create a conditioned LUT as the subset of the original for which the conditioned node is fixed to its value
                 if newk == 0:
-                    new_successor_outputs = [conditioned_logic[n]['out'][binstate_to_statenum(conditioned_value)]]*2
+                    new_successor_outputs = [conditioned_logic[n]['out'][binstate_to_statenum(conditioned_value)]] * 2
                 else:
                     new_successor_outputs = []
                     for sn in range(2**newk):
@@ -466,7 +466,7 @@ class BooleanNetwork:
 
                 # use the new logic to calcuate a new edge effectiveness
                 new_edge_effectiveness = BooleanNode().from_output_list(new_successor_outputs).edge_effectiveness(bound=bound)
-                
+
                 # and update the conditional effective graph with the new edge effectiveness values
                 for i in range(newk):
                     conditional_eg[new_successor_inputs[i]][n]['weight'] = new_edge_effectiveness[i]
@@ -476,31 +476,27 @@ class BooleanNetwork:
                 conditioned_logic[n]['out'] = new_successor_outputs
 
                 # check if we just made a constant node
-                if not n in conditioned_nodes and len(set(new_successor_outputs)) == 1:
+                if n not in conditioned_nodes and len(set(new_successor_outputs)) == 1:
                     # in which case, add it to the conditioned set and propagate the conditioned effect
                     nodes2condition.append(n)
                     conditioned_nodes[n] = new_successor_outputs[0]
-                    
-
-
 
         conditional_eg.name = "Conditioned Effective Graph: {0} conditioned on {1}".format(self.name, str(conditioned_nodes))
         if threshold is None:
-            conditional_eg.name = conditional_eg.name + " (Threshold: None)" 
+            conditional_eg.name = conditional_eg.name + " (Threshold: None)"
         else:
             conditional_eg.name = conditional_eg.name + " (Threshold: %.2f)" % threshold
             remove_edges = [e for e in conditional_eg.edges(data=True) if e['weight'] <= threshold]
             conditional_eg.remove_edges_from(remove_edges)
 
         # add the conditional information into the effective graph object
-        conditioned_subgraph = {n:int(n in conditioned_subgraph) for n in conditional_eg.nodes()}
+        conditioned_subgraph = {n: int(n in conditioned_subgraph) for n in conditional_eg.nodes()}
         nx.set_node_attributes(conditional_eg, conditioned_subgraph, 'conditioned_subgraph')
-        
-        conditioned_nodes = {n:conditioned_nodes.get(n, None) for n in conditional_eg.nodes()}
+
+        conditioned_nodes = {n: conditioned_nodes.get(n, None) for n in conditional_eg.nodes()}
         nx.set_node_attributes(conditional_eg, conditioned_nodes, 'conditioned_state')
 
         return conditional_eg
-
 
     def effective_indegrees(self):
         """Returns the in-degrees of the Effective Graph. Sorted.

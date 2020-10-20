@@ -357,7 +357,7 @@ class BooleanNode(object):
 
         """
         d = []
-        if ((self.k == 1) and (self.constant is False)):
+        if ((self.k < 2) and (self.constant is False)):
             k = 2
         else:
             k = self.k
