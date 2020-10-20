@@ -482,15 +482,24 @@ class BooleanNetwork:
                     conditioned_nodes[n] = new_successor_outputs[0]
                     
 
+
+
         conditional_eg.name = "Conditioned Effective Graph: {0} conditioned on {1}".format(self.name, str(conditioned_nodes))
         if threshold is None:
             conditional_eg.name = conditional_eg.name + " (Threshold: None)" 
         else:
             conditional_eg.name = conditional_eg.name + " (Threshold: %.2f)" % threshold
             remove_edges = [e for e in conditional_eg.edges(data=True) if e['weight'] <= threshold]
-            conditional_eg.remove_nodes_from(remove_edges)
+            conditional_eg.remove_edges_from(remove_edges)
 
-        return conditional_eg, conditioned_subgraph, conditioned_nodes, conditioned_logic
+        # add the conditional information into the effective graph object
+        conditioned_subgraph = {n:int(n in conditioned_subgraph) for n in conditional_eg.nodes()}
+        nx.set_node_attributes(conditional_eg, conditioned_subgraph, 'conditioned_subgraph')
+        
+        conditioned_nodes = {n:conditioned_nodes.get(n, None) for n in conditional_eg.nodes()}
+        nx.set_node_attributes(conditional_eg, conditioned_nodes, 'conditioned_state')
+
+        return conditional_eg
 
 
     def effective_indegrees(self):
