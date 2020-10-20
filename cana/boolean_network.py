@@ -466,7 +466,7 @@ class BooleanNetwork:
 
                 # use the new logic to calcuate a new edge effectiveness
                 new_edge_effectiveness = BooleanNode().from_output_list(new_successor_outputs).edge_effectiveness(bound=bound)
-
+                
                 # and update the conditional effective graph with the new edge effectiveness values
                 for i in range(newk):
                     conditional_eg[new_successor_inputs[i]][n]['weight'] = new_edge_effectiveness[i]
@@ -490,7 +490,7 @@ class BooleanNetwork:
             remove_edges = [e for e in conditional_eg.edges(data=True) if e['weight'] <= threshold]
             conditional_eg.remove_nodes_from(remove_edges)
 
-        return conditional_eg, conditioned_subgraph, conditioned_nodes
+        return conditional_eg, conditioned_subgraph, conditioned_nodes, conditioned_logic
 
 
     def effective_indegrees(self):

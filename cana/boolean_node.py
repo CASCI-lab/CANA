@@ -163,9 +163,6 @@ class BooleanNode(object):
         See also:
             :func:`effective_connectivity`, :func:`input_symmetry`.
         """
-        # Canalization can only occur when k>= 2
-        if self.k < 2:
-            return [0.0]
 
         self._check_compute_canalization_variables(pi_coverage=True)
 
@@ -216,9 +213,7 @@ class BooleanNode(object):
         See Also:
             :func:`input_redundancy`, :func:`input_symmetry`, :func:`~boolnets.boolean_network.BooleanNetwork.effective_graph`.
         """
-        # Canalization can only occur when k>= 2
-        if self.k < 2:
-            return 1.0
+    
         #
         k_r = self.input_redundancy(operator=operator, norm=norm)
         #
@@ -243,9 +238,7 @@ class BooleanNode(object):
         See Also:
             :func:`input_redundancy`, :func:`input_symmetry`, :func:`~boolnets.boolean_network.BooleanNetwork.effective_graph`.
         """
-        # Canalization can only occur when k>= 2
-        if self.k < 2:
-            return [1.0]
+        
 
         e_i = [1.0 - x_i for x_i in self.edge_redundancy(bound=bound)]
         return e_i
