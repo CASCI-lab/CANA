@@ -371,7 +371,7 @@ class BooleanNetwork:
 
     def effective_graph(self, bound='mean', threshold=None):
         """Computes and returns the effective graph of the network.
-        In practive it asks each :class:`~boolnets.boolean_node.BooleanNode` for their :func:`~boolnets.boolean_node.BooleanNode.effective_connectivity`.
+        In practive it asks each :class:`~cana.boolean_node.BooleanNode` for their :func:`~cana.boolean_node.BooleanNode.effective_connectivity`.
 
         Args:
             bound (string) : The bound to which compute input redundancy.
@@ -384,10 +384,10 @@ class BooleanNetwork:
             (networkx.DiGraph) : directed graph
 
         See Also:
-            :func:`~boolnets.boolean_node.BooleanNode.effective_connectivity`
+            :func:`~cana.boolean_node.BooleanNode.effective_connectivity`
         """
         if threshold is not None:
-            self._eg = nx.DiGraph(name="Effective Graph: " + self.name + "(Threshold: %.2f)" % threshold)
+            self._eg = nx.DiGraph(name="Effective Graph: " + self.name + "(Threshold: {threshold:.2f})".format(threshold=threshold))
         else:
             self._eg = nx.DiGraph(name="Effective Graph: " + self.name + "(Threshold: None)")
 
@@ -421,7 +421,7 @@ class BooleanNetwork:
             (networkx.DiGraph) : directed graph
 
         See Also:
-            :func:`~boolnets.boolean_network.BooleanNetwork.effective_graph`
+            :func:`~cana.boolean_network.BooleanNetwork.effective_graph`
         """
 
         conditional_eg = copy.deepcopy(self.effective_graph(bound=bound, threshold=None))
@@ -430,12 +430,15 @@ class BooleanNetwork:
         # make a copy of the logic dict so we can edit it
         conditioned_logic = copy.deepcopy(self.logic)
 
+        # separate input conditioned nodes and nodes that get conditioned
+        all_conditioned_nodes = dict(conditioned_nodes)
+        # Queue of nodes to condition
         nodes2condition = list(conditioned_nodes.keys())
 
         while len(nodes2condition) > 0:
 
             conditioned_node = nodes2condition.pop(0)
-            conditioned_value = str(conditioned_nodes[conditioned_node])
+            conditioned_value = str(all_conditioned_nodes[conditioned_node])
             conditioned_subgraph.add(conditioned_node)
 
             # take all successors of the conditioned node ignoring self-loops
@@ -476,25 +479,25 @@ class BooleanNetwork:
                 conditioned_logic[n]['out'] = new_successor_outputs
 
                 # check if we just made a constant node
-                if n not in conditioned_nodes and len(set(new_successor_outputs)) == 1:
+                if n not in all_conditioned_nodes and len(set(new_successor_outputs)) == 1:
                     # in which case, add it to the conditioned set and propagate the conditioned effect
                     nodes2condition.append(n)
-                    conditioned_nodes[n] = new_successor_outputs[0]
+                    all_conditioned_nodes[n] = new_successor_outputs[0]
 
-        conditional_eg.name = "Conditioned Effective Graph: {0} conditioned on {1}".format(self.name, str(conditioned_nodes))
+        conditional_eg.name = "Conditioned Effective Graph: {name:s} conditioned on {nodes:s}".format(name=self.name, nodes=str(conditioned_nodes))
         if threshold is None:
             conditional_eg.name = conditional_eg.name + " (Threshold: None)"
         else:
-            conditional_eg.name = conditional_eg.name + " (Threshold: %.2f)" % threshold
-            remove_edges = [e for e in conditional_eg.edges(data=True) if e['weight'] <= threshold]
+            conditional_eg.name = conditional_eg.name + " (Threshold: {threshold:.2f})".format(threshold=threshold)
+            remove_edges = [(i, j) for i, j, d in conditional_eg.edges(data=True) if d['weight'] <= threshold]
             conditional_eg.remove_edges_from(remove_edges)
 
         # add the conditional information into the effective graph object
-        conditioned_subgraph = {n: int(n in conditioned_subgraph) for n in conditional_eg.nodes()}
-        nx.set_node_attributes(conditional_eg, conditioned_subgraph, 'conditioned_subgraph')
+        dict_conditioned_subgraph = {n: (n in conditioned_subgraph) for n in conditional_eg.nodes()}
+        nx.set_node_attributes(conditional_eg, values=dict_conditioned_subgraph, name='conditioned_subgraph')
 
-        conditioned_nodes = {n: conditioned_nodes.get(n, None) for n in conditional_eg.nodes()}
-        nx.set_node_attributes(conditional_eg, conditioned_nodes, 'conditioned_state')
+        dict_all_conditioned_nodes = {n: all_conditioned_nodes.get(n, None) for n in conditional_eg.nodes()}
+        nx.set_node_attributes(conditional_eg, values=dict_all_conditioned_nodes, name='conditioned_state')
 
         return conditional_eg
 
@@ -693,7 +696,7 @@ class BooleanNetwork:
             TODO
 
         See Also:
-            :func:`~boolnets.boolean_node.bias`
+            :func:`~cana.boolean_node.bias`
         """
         return sum([node.bias() for node in self.nodes]) / self.Nnodes
 
