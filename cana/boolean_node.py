@@ -526,6 +526,7 @@ class BooleanNode(object):
                 continue
 
             for ts, ps, ss in tspsss:
+
                 lits = []
                 group0 = []
                 group1 = []
@@ -569,7 +570,7 @@ class BooleanNode(object):
                     if iname not in G.nodes():
                         # Can we get the name of ther nodes? Are we attached to a network?
                         if self.network is not None:
-                            ilabel = self.network.get_node_name(lit)[0]
+                            ilabel = self.network.get_node_name(self.inputs[lit])[0]
                         else:
                             ilabel = str(self.inputs[lit])
                         iout = int(ts[lit])
@@ -585,7 +586,7 @@ class BooleanNode(object):
                         if iname not in G.nodes():
                             # Can we get the name of ther nodes? Are we attached to a network?
                             if self.network is not None:
-                                ilabel = self.network.get_node_name(input)[0]
+                                ilabel = self.network.get_node_name(self.inputs[input])[0]
                             else:
                                 ilabel = str(self.inputs[input])
                             G.add_node(iname, **{'label': ilabel, 'type': 'variable', 'mode': 'input', 'value': 0, 'group': self.id})
@@ -601,7 +602,7 @@ class BooleanNode(object):
                         if iname not in G.nodes():
                             # Can we get the name of ther nodes? Are we attached to a network?
                             if self.network is not None:
-                                ilabel = self.network.get_node_name(input)[0]
+                                ilabel = self.network.get_node_name(self.inputs[input])[0]
                             else:
                                 ilabel = str(self.inputs[input])
                             iout = ts[input]
