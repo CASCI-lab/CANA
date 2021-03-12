@@ -5,7 +5,7 @@ __description__ = u'This package implements a series of methods used to study co
 __author__ = """\n""".join([
     'Rion Brattig Correia <rionbr@gmail.com>',
     'Alex Gates <ajgates42@gmail.com>',
-    'Xuan Wang <xw47@indiana.edu>'
+    'Xuan Wang <xw47@indiana.edu>',
     'Thomas Parmer <tjparmer@indiana.edu>',
     'Etienne Nzabarushimana <enzabaru@indiana.edu>',
     'Luis M. Rocha <rocha@indiana.edu>'
