@@ -841,8 +841,7 @@ class BooleanNetwork:
         """
         self._check_compute_variables(attractors=True)
 
-        #if self.keep_constants:
-        if False:
+        if self.keep_constants:
             for dv in driver_nodes:
                 if dv in self.constants:
                     warnings.warn("Cannot control a constant variable '%s'! Skipping" % self.nodes[dv].name )
@@ -882,7 +881,7 @@ class BooleanNetwork:
         if self.keep_constants:
             for dv in driver_nodes:
                 if dv in self.constants:
-                    warnings.warn("Cannot control a constant variable '%s'! Skipping" % self.nodes[dv].name)
+                    warnings.warn("Cannot control a constant variable {dv:s}'! Skipping".format(dv=self.nodes[dv].name))
 
         uncontrolled_system_size = self.Nnodes - len(driver_nodes)
 
@@ -939,8 +938,7 @@ class BooleanNetwork:
         """
         self._check_compute_variables(attractors=True)
 
-        #if self.keep_constants:
-        if False:
+        if self.keep_constants:
             for dv in driver_nodes:
                 if dv in self.constants:
                     warnings.warn("Cannot control a constant variable '%s'! Skipping" % self.nodes[dv].name )
@@ -1334,14 +1332,13 @@ class BooleanNetwork:
     #
     # Dynamics Canalization Map (DCM)
     #
-    def dynamics_canalization_map(self, output=None, simplify=True, keep_constants=True):
+    def dynamics_canalization_map(self, output=None, simplify=True):
         """Computes the Dynamics Canalization Map (DCM).
         In practice, it asks each node to compute their Canalization Map and then puts them together, simplifying it if possible.
 
         Args:
             output (int) : The output DCM to return. Default is ``None``, retuning both [0,1].
             simplify (bool) : Attemps to simpify the DCM by removing thresholds nodes with :math:`\tao=1`.
-            keep_constants (bool) : Keep or remove constants from the DCM.
 
         Returns:
             DCM (networkx.DiGraph) : a directed graph representation of the DCM.
@@ -1351,7 +1348,7 @@ class BooleanNetwork:
         """
         CMs = []
         for node in self.nodes:
-            if keep_constants or not node.constant:
+            if self.keep_constants or not node.constant:
                 CMs.append(node.canalizing_map(output))
         # https://networkx.github.io/documentation/stable/reference/algorithms/generated/networkx.algorithms.operators.all.compose_all.html
         DCM = nx.compose_all(CMs)
