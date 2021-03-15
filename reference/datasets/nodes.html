@@ -1,59 +1,56 @@
 
 
 <!DOCTYPE html>
-<!--[if IE 8]><html class="no-js lt-ie9" lang="en" > <![endif]-->
-<!--[if gt IE 8]><!--> <html class="no-js" lang="en" > <!--<![endif]-->
+<html class="writer-html5" lang="en" >
 <head>
-  <meta charset="utf-8">
+  <meta charset="utf-8" />
   
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   
-  <title>Boolean Nodes &mdash; CANA 0.0.3-alpha documentation</title>
+  <title>Boolean Nodes &mdash; CANA 0.1 documentation</title>
+  
+
+  
+  <link rel="stylesheet" href="../../_static/css/theme.css" type="text/css" />
+  <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
+
+  
   
 
   
   
-  
-  
 
   
 
   
+  <!--[if lt IE 9]>
+    <script src="../../_static/js/html5shiv.min.js"></script>
+  <![endif]-->
   
     
+      <script type="text/javascript" id="documentation_options" data-url_root="../../" src="../../_static/documentation_options.js"></script>
+        <script src="../../_static/jquery.js"></script>
+        <script src="../../_static/underscore.js"></script>
+        <script src="../../_static/doctools.js"></script>
+        <script async="async" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.7/latest.js?config=TeX-AMS-MML_HTMLorMML"></script>
+    
+    <script type="text/javascript" src="../../_static/js/theme.js"></script>
 
-  
-
-  
-  
-    <link rel="stylesheet" href="../../static/css/theme.css" type="text/css" />
-  
-
-  
-
-  
-        <link rel="index" title="Index"
-              href="../../genindex.html"/>
-        <link rel="search" title="Search" href="../../search.html"/>
-    <link rel="top" title="CANA 0.0.3-alpha documentation" href="../../index.html"/>
-        <link rel="up" title="Common Nodes &amp; Networks" href="index.html"/>
-        <link rel="next" title="Biological Boolean Networks" href="networks.html"/>
-        <link rel="prev" title="Common Nodes &amp; Networks" href="index.html"/> 
-
-  
-  <script src="../../static/js/modernizr.min.js"></script>
-
+    
+    <link rel="index" title="Index" href="../../genindex.html" />
+    <link rel="search" title="Search" href="../../search.html" />
+    <link rel="next" title="Biological Boolean Networks" href="networks.html" />
+    <link rel="prev" title="Datasets" href="index.html" /> 
 </head>
 
-<body class="wy-body-for-nav" role="document">
+<body class="wy-body-for-nav">
 
    
   <div class="wy-grid-for-nav">
-
     
     <nav data-toggle="wy-nav-shift" class="wy-nav-side">
       <div class="wy-side-scroll">
-        <div class="wy-side-nav-search">
+        <div class="wy-side-nav-search" >
           
 
           
@@ -67,7 +64,7 @@
             
             
               <div class="version">
-                0.0.3
+                0.1
               </div>
             
           
@@ -84,6 +81,7 @@
           
         </div>
 
+        
         <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
           
             
@@ -91,39 +89,38 @@
               
             
             
-              <ul class="current">
-<li class="toctree-l1"><a class="reference internal" href="../../install.html">Installation</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../../notation.html">Notation</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../../tutorial.html">Tutorials</a></li>
+              <p class="caption"><span class="caption-text">Table of Contents:</span></p>
+<ul class="current">
 <li class="toctree-l1 current"><a class="reference internal" href="../index.html">API Reference</a><ul class="current">
-<li class="toctree-l2"><a class="reference internal" href="../boolean_node.html">Node</a></li>
-<li class="toctree-l2"><a class="reference internal" href="../boolean_network.html">Network</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../node.html">Node</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../network.html">Network</a></li>
 <li class="toctree-l2"><a class="reference internal" href="../canalization/index.html">Canalization</a></li>
 <li class="toctree-l2"><a class="reference internal" href="../control/index.html">Control</a></li>
-<li class="toctree-l2 current"><a class="reference internal" href="index.html">Common Nodes &amp; Networks</a><ul class="current">
+<li class="toctree-l2 current"><a class="reference internal" href="index.html">Datasets</a><ul class="current">
 <li class="toctree-l3 current"><a class="current reference internal" href="#">Boolean Nodes</a></li>
 <li class="toctree-l3"><a class="reference internal" href="networks.html">Biological Boolean Networks</a></li>
 <li class="toctree-l3"><a class="reference internal" href="networks.html#network-motifs">Network Motifs</a></li>
 </ul>
 </li>
+<li class="toctree-l2"><a class="reference internal" href="../ensemble.html">Ensemble Methods</a></li>
 <li class="toctree-l2"><a class="reference internal" href="../utils.html">Utilities</a></li>
 </ul>
 </li>
-<li class="toctree-l1"><a class="reference internal" href="../../development.html">Development</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../appendix/index.html">Appendix</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../../references.html">References</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../bibliography.html">Bibliography</a></li>
 </ul>
 
             
           
         </div>
+        
       </div>
     </nav>
 
     <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
 
       
-      <nav class="wy-nav-top" role="navigation" aria-label="top navigation">
+      <nav class="wy-nav-top" aria-label="top navigation">
         
           <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
           <a href="../../index.html">CANA</a>
@@ -131,10 +128,13 @@
       </nav>
 
 
-      
       <div class="wy-nav-content">
+        
         <div class="rst-content">
+        
           
+
+
 
 
 
@@ -154,19 +154,19 @@
 
   <ul class="wy-breadcrumbs">
     
-      <li><a href="../../index.html">Docs</a> &raquo;</li>
+      <li><a href="../../index.html" class="icon icon-home"></a> &raquo;</li>
         
           <li><a href="../index.html">API Reference</a> &raquo;</li>
         
-          <li><a href="index.html">Common Nodes &amp; Networks</a> &raquo;</li>
+          <li><a href="index.html">Datasets</a> &raquo;</li>
         
       <li>Boolean Nodes</li>
     
     
       <li class="wy-breadcrumbs-aside">
         
-            
-            <a href="../../sources/reference/datasets/nodes.rst.txt" rel="nofollow"> View page source</a>
+          
+            <a href="../../_sources/reference/datasets/nodes.rst.txt" rel="nofollow"> View page source</a>
           
         
       </li>
@@ -182,11 +182,11 @@
   <span class="target" id="module-cana.datasets.bools"></span><div class="section" id="boolean-nodes">
 <h1>Boolean Nodes<a class="headerlink" href="#boolean-nodes" title="Permalink to this headline">¶</a></h1>
 <p>Commonly used boolean node functions.</p>
-<dl class="function">
+<dl class="py function">
 <dt id="cana.datasets.bools.AND">
-<code class="descclassname">cana.datasets.bools.</code><code class="descname">AND</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../../modules/cana/datasets/bools.html#AND"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#cana.datasets.bools.AND" title="Permalink to this definition">¶</a></dt>
+<code class="sig-prename descclassname"><span class="pre">cana.datasets.bools.</span></code><code class="sig-name descname"><span class="pre">AND</span></code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/cana/datasets/bools.html#AND"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#cana.datasets.bools.AND" title="Permalink to this definition">¶</a></dt>
 <dd><p>AND boolean node.</p>
-<div class="code highlight-default notranslate"><div class="highlight"><pre><span></span><span class="mi">00</span> <span class="p">:</span> <span class="mi">0</span>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="mi">00</span> <span class="p">:</span> <span class="mi">0</span>
 <span class="mi">01</span> <span class="p">:</span> <span class="mi">0</span>
 <span class="mi">10</span> <span class="p">:</span> <span class="mi">0</span>
 <span class="mi">11</span> <span class="p">:</span> <span class="mi">1</span>
@@ -194,47 +194,11 @@
 </div>
 </dd></dl>
 
-<dl class="function">
-<dt id="cana.datasets.bools.OR">
-<code class="descclassname">cana.datasets.bools.</code><code class="descname">OR</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../../modules/cana/datasets/bools.html#OR"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#cana.datasets.bools.OR" title="Permalink to this definition">¶</a></dt>
-<dd><p>OR boolean node.</p>
-<div class="code highlight-default notranslate"><div class="highlight"><pre><span></span><span class="mi">00</span> <span class="p">:</span> <span class="mi">0</span>
-<span class="mi">01</span> <span class="p">:</span> <span class="mi">1</span>
-<span class="mi">10</span> <span class="p">:</span> <span class="mi">1</span>
-<span class="mi">11</span> <span class="p">:</span> <span class="mi">1</span>
-</pre></div>
-</div>
-</dd></dl>
-
-<dl class="function">
-<dt id="cana.datasets.bools.XOR">
-<code class="descclassname">cana.datasets.bools.</code><code class="descname">XOR</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../../modules/cana/datasets/bools.html#XOR"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#cana.datasets.bools.XOR" title="Permalink to this definition">¶</a></dt>
-<dd><p>XOR boolean node.</p>
-<div class="code highlight-default notranslate"><div class="highlight"><pre><span></span><span class="mi">00</span> <span class="p">:</span> <span class="mi">0</span>
-<span class="mi">01</span> <span class="p">:</span> <span class="mi">1</span>
-<span class="mi">10</span> <span class="p">:</span> <span class="mi">1</span>
-<span class="mi">11</span> <span class="p">:</span> <span class="mi">0</span>
-</pre></div>
-</div>
-</dd></dl>
-
-<dl class="function">
-<dt id="cana.datasets.bools.COPYx1">
-<code class="descclassname">cana.datasets.bools.</code><code class="descname">COPYx1</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../../modules/cana/datasets/bools.html#COPYx1"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#cana.datasets.bools.COPYx1" title="Permalink to this definition">¶</a></dt>
-<dd><p>COPY <span class="math notranslate">\(x_1\)</span> boolean node.</p>
-<div class="code highlight-default notranslate"><div class="highlight"><pre><span></span><span class="mi">00</span> <span class="p">:</span> <span class="mi">0</span>
-<span class="mi">01</span> <span class="p">:</span> <span class="mi">0</span>
-<span class="mi">10</span> <span class="p">:</span> <span class="mi">1</span>
-<span class="mi">11</span> <span class="p">:</span> <span class="mi">1</span>
-</pre></div>
-</div>
-</dd></dl>
-
-<dl class="function">
+<dl class="py function">
 <dt id="cana.datasets.bools.CONTRADICTION">
-<code class="descclassname">cana.datasets.bools.</code><code class="descname">CONTRADICTION</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../../modules/cana/datasets/bools.html#CONTRADICTION"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#cana.datasets.bools.CONTRADICTION" title="Permalink to this definition">¶</a></dt>
+<code class="sig-prename descclassname"><span class="pre">cana.datasets.bools.</span></code><code class="sig-name descname"><span class="pre">CONTRADICTION</span></code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/cana/datasets/bools.html#CONTRADICTION"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#cana.datasets.bools.CONTRADICTION" title="Permalink to this definition">¶</a></dt>
 <dd><p>Contradiction boolean node.</p>
-<div class="code highlight-default notranslate"><div class="highlight"><pre><span></span><span class="mi">00</span> <span class="p">:</span> <span class="mi">0</span>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="mi">00</span> <span class="p">:</span> <span class="mi">0</span>
 <span class="mi">01</span> <span class="p">:</span> <span class="mi">0</span>
 <span class="mi">10</span> <span class="p">:</span> <span class="mi">0</span>
 <span class="mi">11</span> <span class="p">:</span> <span class="mi">0</span>
@@ -242,27 +206,35 @@
 </div>
 </dd></dl>
 
-<dl class="function">
-<dt id="cana.datasets.bools.RULE90">
-<code class="descclassname">cana.datasets.bools.</code><code class="descname">RULE90</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../../modules/cana/datasets/bools.html#RULE90"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#cana.datasets.bools.RULE90" title="Permalink to this definition">¶</a></dt>
-<dd><p>RULE 90 celular automata node.</p>
-<div class="code highlight-default notranslate"><div class="highlight"><pre><span></span><span class="mi">000</span> <span class="p">:</span> <span class="mi">0</span>
-<span class="mi">001</span> <span class="p">:</span> <span class="mi">1</span>
-<span class="mi">010</span> <span class="p">:</span> <span class="mi">0</span>
-<span class="mi">011</span> <span class="p">:</span> <span class="mi">1</span>
-<span class="mi">100</span> <span class="p">:</span> <span class="mi">1</span>
-<span class="mi">101</span> <span class="p">:</span> <span class="mi">0</span>
-<span class="mi">110</span> <span class="p">:</span> <span class="mi">1</span>
-<span class="mi">111</span> <span class="p">:</span> <span class="mi">0</span>
+<dl class="py function">
+<dt id="cana.datasets.bools.COPYx1">
+<code class="sig-prename descclassname"><span class="pre">cana.datasets.bools.</span></code><code class="sig-name descname"><span class="pre">COPYx1</span></code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/cana/datasets/bools.html#COPYx1"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#cana.datasets.bools.COPYx1" title="Permalink to this definition">¶</a></dt>
+<dd><p>COPY <span class="math notranslate nohighlight">\(x_1\)</span> boolean node.</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="mi">00</span> <span class="p">:</span> <span class="mi">0</span>
+<span class="mi">01</span> <span class="p">:</span> <span class="mi">0</span>
+<span class="mi">10</span> <span class="p">:</span> <span class="mi">1</span>
+<span class="mi">11</span> <span class="p">:</span> <span class="mi">1</span>
 </pre></div>
 </div>
 </dd></dl>
 
-<dl class="function">
+<dl class="py function">
+<dt id="cana.datasets.bools.OR">
+<code class="sig-prename descclassname"><span class="pre">cana.datasets.bools.</span></code><code class="sig-name descname"><span class="pre">OR</span></code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/cana/datasets/bools.html#OR"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#cana.datasets.bools.OR" title="Permalink to this definition">¶</a></dt>
+<dd><p>OR boolean node.</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="mi">00</span> <span class="p">:</span> <span class="mi">0</span>
+<span class="mi">01</span> <span class="p">:</span> <span class="mi">1</span>
+<span class="mi">10</span> <span class="p">:</span> <span class="mi">1</span>
+<span class="mi">11</span> <span class="p">:</span> <span class="mi">1</span>
+</pre></div>
+</div>
+</dd></dl>
+
+<dl class="py function">
 <dt id="cana.datasets.bools.RULE110">
-<code class="descclassname">cana.datasets.bools.</code><code class="descname">RULE110</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../../modules/cana/datasets/bools.html#RULE110"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#cana.datasets.bools.RULE110" title="Permalink to this definition">¶</a></dt>
+<code class="sig-prename descclassname"><span class="pre">cana.datasets.bools.</span></code><code class="sig-name descname"><span class="pre">RULE110</span></code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/cana/datasets/bools.html#RULE110"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#cana.datasets.bools.RULE110" title="Permalink to this definition">¶</a></dt>
 <dd><p>RULE 110 celular automata node.</p>
-<div class="code highlight-default notranslate"><div class="highlight"><pre><span></span><span class="mi">000</span> <span class="p">:</span> <span class="mi">0</span>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="mi">000</span> <span class="p">:</span> <span class="mi">0</span>
 <span class="mi">001</span> <span class="p">:</span> <span class="mi">1</span>
 <span class="mi">010</span> <span class="p">:</span> <span class="mi">1</span>
 <span class="mi">011</span> <span class="p">:</span> <span class="mi">1</span>
@@ -274,39 +246,64 @@
 </div>
 </dd></dl>
 
+<dl class="py function">
+<dt id="cana.datasets.bools.RULE90">
+<code class="sig-prename descclassname"><span class="pre">cana.datasets.bools.</span></code><code class="sig-name descname"><span class="pre">RULE90</span></code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/cana/datasets/bools.html#RULE90"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#cana.datasets.bools.RULE90" title="Permalink to this definition">¶</a></dt>
+<dd><p>RULE 90 celular automata node.</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="mi">000</span> <span class="p">:</span> <span class="mi">0</span>
+<span class="mi">001</span> <span class="p">:</span> <span class="mi">1</span>
+<span class="mi">010</span> <span class="p">:</span> <span class="mi">0</span>
+<span class="mi">011</span> <span class="p">:</span> <span class="mi">1</span>
+<span class="mi">100</span> <span class="p">:</span> <span class="mi">1</span>
+<span class="mi">101</span> <span class="p">:</span> <span class="mi">0</span>
+<span class="mi">110</span> <span class="p">:</span> <span class="mi">1</span>
+<span class="mi">111</span> <span class="p">:</span> <span class="mi">0</span>
+</pre></div>
+</div>
+</dd></dl>
+
+<dl class="py function">
+<dt id="cana.datasets.bools.XOR">
+<code class="sig-prename descclassname"><span class="pre">cana.datasets.bools.</span></code><code class="sig-name descname"><span class="pre">XOR</span></code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/cana/datasets/bools.html#XOR"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#cana.datasets.bools.XOR" title="Permalink to this definition">¶</a></dt>
+<dd><p>XOR boolean node.</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="mi">00</span> <span class="p">:</span> <span class="mi">0</span>
+<span class="mi">01</span> <span class="p">:</span> <span class="mi">1</span>
+<span class="mi">10</span> <span class="p">:</span> <span class="mi">1</span>
+<span class="mi">11</span> <span class="p">:</span> <span class="mi">0</span>
+</pre></div>
+</div>
+</dd></dl>
+
 </div>
 
 
            </div>
-           <div class="articleComments">
-            
-           </div>
+           
           </div>
           <footer>
-  
     <div class="rst-footer-buttons" role="navigation" aria-label="footer navigation">
-      
-        <a href="networks.html" class="btn btn-neutral float-right" title="Biological Boolean Networks" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right"></span></a>
-      
-      
-        <a href="index.html" class="btn btn-neutral" title="Common Nodes &amp; Networks" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left"></span> Previous</a>
-      
+        <a href="networks.html" class="btn btn-neutral float-right" title="Biological Boolean Networks" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+        <a href="index.html" class="btn btn-neutral float-left" title="Datasets" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
     </div>
-  
 
   <hr/>
 
   <div role="contentinfo">
     <p>
-        &copy; Copyright 2017, Correia, R. B., Gates, A., Rocha, L. M..
-      Last updated on Apr 16, 2018.
+        &#169; Copyright 2021, Correia, R. B., Gates, A., Rocha, L. M..
 
     </p>
   </div>
-  Built with <a href="http://sphinx-doc.org/">Sphinx</a> using a <a href="https://github.com/snide/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>. 
+    
+    
+    
+    Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    
+    provided by <a href="https://readthedocs.org">Read the Docs</a>. 
 
 </footer>
-
         </div>
       </div>
 
@@ -315,38 +312,15 @@
   </div>
   
 
-
-  
-
-    <script type="text/javascript">
-        var DOCUMENTATION_OPTIONS = {
-            URL_ROOT:'../../',
-            VERSION:'0.0.3-alpha',
-            COLLAPSE_INDEX:false,
-            FILE_SUFFIX:'.html',
-            HAS_SOURCE:  true,
-            SOURCELINK_SUFFIX: '.txt'
-        };
-    </script>
-      <script type="text/javascript" src="../../static/jquery.js"></script>
-      <script type="text/javascript" src="../../static/underscore.js"></script>
-      <script type="text/javascript" src="../../static/doctools.js"></script>
-      <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.1/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
-
-  
-
-  
-  
-    <script type="text/javascript" src="../../static/js/theme.js"></script>
-  
-
-  
-  
   <script type="text/javascript">
       jQuery(function () {
-          SphinxRtdTheme.StickyNav.enable();
+          SphinxRtdTheme.Navigation.enable(true);
       });
   </script>
+
+  
+  
+    
    
 
 </body>

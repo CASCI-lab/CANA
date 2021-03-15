@@ -1,0 +1,1057 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" >
+<head>
+  <meta charset="utf-8" />
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  
+  <title>cana.canalization.boolean_canalization &mdash; CANA 0.1 documentation</title>
+  
+
+  
+  <link rel="stylesheet" href="../../../_static/css/theme.css" type="text/css" />
+  <link rel="stylesheet" href="../../../_static/pygments.css" type="text/css" />
+
+  
+  
+
+  
+  
+
+  
+
+  
+  <!--[if lt IE 9]>
+    <script src="../../../_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+    
+      <script type="text/javascript" id="documentation_options" data-url_root="../../../" src="../../../_static/documentation_options.js"></script>
+        <script src="../../../_static/jquery.js"></script>
+        <script src="../../../_static/underscore.js"></script>
+        <script src="../../../_static/doctools.js"></script>
+    
+    <script type="text/javascript" src="../../../_static/js/theme.js"></script>
+
+    
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav">
+
+   
+  <div class="wy-grid-for-nav">
+    
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+          
+
+          
+            <a href="../../../index.html" class="icon icon-home"> CANA
+          
+
+          
+          </a>
+
+          
+            
+            
+              <div class="version">
+                0.1
+              </div>
+            
+          
+
+          
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+
+          
+        </div>
+
+        
+        <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+          
+            
+            
+              
+            
+            
+              <p class="caption"><span class="caption-text">Table of Contents:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../reference/index.html">API Reference</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../appendix/index.html">Appendix</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../bibliography.html">Bibliography</a></li>
+</ul>
+
+            
+          
+        </div>
+        
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+
+      
+      <nav class="wy-nav-top" aria-label="top navigation">
+        
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../../index.html">CANA</a>
+        
+      </nav>
+
+
+      <div class="wy-nav-content">
+        
+        <div class="rst-content">
+        
+          
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div role="navigation" aria-label="breadcrumbs navigation">
+
+  <ul class="wy-breadcrumbs">
+    
+      <li><a href="../../../index.html" class="icon icon-home"></a> &raquo;</li>
+        
+          <li><a href="../../index.html">Module code</a> &raquo;</li>
+        
+      <li>cana.canalization.boolean_canalization</li>
+    
+    
+      <li class="wy-breadcrumbs-aside">
+        
+      </li>
+    
+  </ul>
+
+  
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+            
+  <h1>Source code for cana.canalization.boolean_canalization</h1><div class="highlight"><pre>
+<span></span><span class="c1"># -*- coding: utf-8 -*-</span>
+<span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">Boolean Canalization</span>
+<span class="sd">=====================</span>
+
+<span class="sd">Functions to compute the Quine-McCluskey algorithm.</span>
+
+<span class="sd">&quot;&quot;&quot;</span>
+<span class="c1">#   Copyright (C) 2021 by</span>
+<span class="c1">#   Rion Brattig Correia &lt;rionbr@gmail.com&gt;</span>
+<span class="c1">#   Alex Gates &lt;ajgates@gmail.com&gt;</span>
+<span class="c1">#   Etienne Nzabarushimana &lt;enzabaru@indiana.edu&gt;</span>
+<span class="c1">#   All rights reserved.</span>
+<span class="c1">#   MIT license.</span>
+
+<span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
+
+<span class="kn">import</span> <span class="nn">itertools</span>
+<span class="kn">from</span> <span class="nn">..</span> <span class="n">utils</span> <span class="kn">import</span> <span class="o">*</span>
+
+<span class="kn">from</span> <span class="nn">collections</span> <span class="kn">import</span> <span class="n">deque</span>
+
+<span class="n">__author__</span> <span class="o">=</span> <span class="s2">&quot;&quot;&quot;</span><span class="se">\n</span><span class="s2">&quot;&quot;&quot;</span><span class="o">.</span><span class="n">join</span><span class="p">([</span>
+    <span class="s1">&#39;Alex Gates &lt;ajgates@umail.iu.edu&gt;&#39;</span><span class="p">,</span>
+    <span class="s1">&#39;Etienne Nzabarushimana &lt;enzabaru@indiana.edu&gt;&#39;</span><span class="p">,</span>
+    <span class="s1">&#39;Rion Brattig Correia &lt;rionbr@gmail.com&gt;&#39;</span>
+<span class="p">])</span>
+
+
+<span class="c1"># Quine-McCluskey Functions</span>
+<div class="viewcode-block" id="make_transition_density_tables"><a class="viewcode-back" href="../../../reference/canalization/index.html#cana.canalization.boolean_canalization.make_transition_density_tables">[docs]</a><span class="k">def</span> <span class="nf">make_transition_density_tables</span><span class="p">(</span><span class="n">k</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">outputs</span><span class="o">=</span><span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">]):</span>
+    <span class="sd">&quot;&quot;&quot; This method creates a tuple-of-lists that is used to calculate Prime Implicants in the first step of the Quine-McCluskey algorithm :cite:`Quine:1955`.</span>
+<span class="sd">    In practice it separates the positive and negative transitions (tuple), then further separates it by counting the number of 1&#39;s in each (lists).</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        k (int) : the ``k`` number of inputs</span>
+<span class="sd">        outputs (list) : a list of ``[0,1]`` output for each state number.</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">        tables (tuple) : a tuple where [0] is the negative table and [1] is the positive table.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="c1"># make sure outputs are integers</span>
+    <span class="n">outputs</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="nb">map</span><span class="p">(</span><span class="nb">int</span><span class="p">,</span> <span class="n">outputs</span><span class="p">))</span>
+
+    <span class="c1"># we need to split up the LUT based on the transition (to either 0 or 1) and the density of 1s in the binstate</span>
+    <span class="n">transition_density_tuple</span> <span class="o">=</span> <span class="p">[[[]</span> <span class="k">for</span> <span class="n">density</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">k</span> <span class="o">+</span> <span class="mi">1</span><span class="p">)]</span> <span class="k">for</span> <span class="n">transition</span> <span class="ow">in</span> <span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">]]</span>
+    <span class="k">for</span> <span class="n">statenum</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">2</span><span class="o">**</span><span class="n">k</span><span class="p">):</span>
+        <span class="n">binstate</span> <span class="o">=</span> <span class="n">statenum_to_binstate</span><span class="p">(</span><span class="n">statenum</span><span class="p">,</span> <span class="n">base</span><span class="o">=</span><span class="n">k</span><span class="p">)</span>
+        <span class="n">density</span> <span class="o">=</span> <span class="n">binstate_to_density</span><span class="p">(</span><span class="n">binstate</span><span class="p">)</span>
+        <span class="n">transition</span> <span class="o">=</span> <span class="n">outputs</span><span class="p">[</span><span class="n">statenum</span><span class="p">]</span>
+        <span class="c1"># Account for Dont-Care (2) transition states</span>
+        <span class="k">if</span> <span class="n">transition</span> <span class="o">==</span> <span class="mi">2</span><span class="p">:</span>
+            <span class="n">transition_density_tuple</span><span class="p">[</span><span class="mi">0</span><span class="p">][</span><span class="n">density</span><span class="p">]</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">binstate</span><span class="p">)</span>
+            <span class="n">transition_density_tuple</span><span class="p">[</span><span class="mi">1</span><span class="p">][</span><span class="n">density</span><span class="p">]</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">binstate</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">transition_density_tuple</span><span class="p">[</span><span class="n">transition</span><span class="p">][</span><span class="n">density</span><span class="p">]</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">binstate</span><span class="p">)</span>
+    <span class="c1">#</span>
+    <span class="k">return</span> <span class="n">transition_density_tuple</span></div>
+
+
+<div class="viewcode-block" id="find_implicants_qmOLD"><a class="viewcode-back" href="../../../reference/canalization/index.html#cana.canalization.boolean_canalization.find_implicants_qmOLD">[docs]</a><span class="k">def</span> <span class="nf">find_implicants_qmOLD</span><span class="p">(</span><span class="n">column</span><span class="p">,</span> <span class="n">verbose</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot; Finds the prime implicants (PI) using the Quine-McCluskey algorithm :cite:`Quine:1955`.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        column (list) : A list-of-lists containing the counts of ``1`` for each input.</span>
+<span class="sd">            This is given by `make_transition_density_tables`.</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">        PI (set): a set of prime implicants.</span>
+
+<span class="sd">    # Authors: Alex Gates and Etienne Nzabarushimana</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="n">N</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">column</span><span class="p">)</span> <span class="o">-</span> <span class="mi">1</span>
+
+    <span class="c1"># we start with an empty set of implicants</span>
+    <span class="n">prime_implicants</span> <span class="o">=</span> <span class="nb">set</span><span class="p">()</span>
+    <span class="n">done</span> <span class="o">=</span> <span class="kc">False</span>
+
+    <span class="c1"># repeat the following until no matches are found</span>
+    <span class="k">while</span> <span class="ow">not</span> <span class="n">done</span><span class="p">:</span>
+        <span class="n">done</span> <span class="o">=</span> <span class="kc">True</span>
+
+        <span class="c1"># default everything to empty with no matches</span>
+        <span class="n">next_column</span> <span class="o">=</span> <span class="p">[</span><span class="nb">set</span><span class="p">()</span> <span class="k">for</span> <span class="n">_</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">N</span> <span class="o">+</span> <span class="mi">1</span><span class="p">)]</span>
+        <span class="n">matches</span> <span class="o">=</span> <span class="p">[[</span><span class="kc">False</span> <span class="k">for</span> <span class="n">_</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">column</span><span class="p">[</span><span class="n">density</span><span class="p">]))]</span> <span class="k">for</span> <span class="n">density</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">N</span> <span class="o">+</span> <span class="mi">1</span><span class="p">)]</span>
+
+        <span class="c1"># loop through the possible densities</span>
+        <span class="k">for</span> <span class="n">density</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">N</span><span class="p">):</span>
+
+            <span class="c1"># compare the implicants from successive densities</span>
+            <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">implicant</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">column</span><span class="p">[</span><span class="n">density</span><span class="p">]):</span>
+                <span class="k">for</span> <span class="n">j</span><span class="p">,</span> <span class="n">candidate</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">column</span><span class="p">[</span><span class="n">density</span> <span class="o">+</span> <span class="mi">1</span><span class="p">]):</span>
+
+                    <span class="c1"># check if the implicants differ on only one variable</span>
+                    <span class="n">match</span> <span class="o">=</span> <span class="n">_adjacent</span><span class="p">(</span><span class="n">implicant</span><span class="p">,</span> <span class="n">candidate</span><span class="p">)</span>
+                    <span class="k">if</span> <span class="n">match</span><span class="p">:</span>
+                        <span class="n">matches</span><span class="p">[</span><span class="n">density</span><span class="p">][</span><span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="n">matches</span><span class="p">[</span><span class="n">density</span> <span class="o">+</span> <span class="mi">1</span><span class="p">][</span><span class="n">j</span><span class="p">]</span> <span class="o">=</span> <span class="kc">True</span>
+                        <span class="n">matches_density</span> <span class="o">=</span> <span class="nb">sum</span><span class="p">([</span><span class="n">var</span> <span class="o">!=</span> <span class="s1">&#39;0&#39;</span> <span class="k">for</span> <span class="n">var</span> <span class="ow">in</span> <span class="n">match</span><span class="p">])</span>
+                        <span class="n">next_column</span><span class="p">[</span><span class="n">matches_density</span><span class="p">]</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="n">match</span><span class="p">)</span>
+                        <span class="n">done</span> <span class="o">=</span> <span class="kc">False</span>
+
+        <span class="c1"># now add back the implicants that were not matched</span>
+        <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">N</span> <span class="o">+</span> <span class="mi">1</span><span class="p">):</span>
+            <span class="k">for</span> <span class="n">j</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">matches</span><span class="p">[</span><span class="n">i</span><span class="p">])):</span>
+                <span class="k">if</span> <span class="ow">not</span> <span class="n">matches</span><span class="p">[</span><span class="n">i</span><span class="p">][</span><span class="n">j</span><span class="p">]:</span>
+                    <span class="n">prime_implicants</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="n">column</span><span class="p">[</span><span class="n">i</span><span class="p">][</span><span class="n">j</span><span class="p">])</span>
+
+        <span class="c1"># use the simplified table as the starting point of the next pass</span>
+        <span class="n">column</span> <span class="o">=</span> <span class="p">[</span><span class="nb">list</span><span class="p">(</span><span class="n">g</span><span class="p">)</span> <span class="k">for</span> <span class="n">g</span> <span class="ow">in</span> <span class="n">next_column</span><span class="p">]</span>
+
+    <span class="k">return</span> <span class="n">prime_implicants</span></div>
+
+
+<span class="k">def</span> <span class="nf">_adjacent</span><span class="p">(</span><span class="n">imp1</span><span class="p">,</span> <span class="n">imp2</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Determine if two implicants are adjacent: ie differ on only one variable.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        imp1 (string): implicant 1</span>
+<span class="sd">        imp1 (string): implicant 2</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">        (bool)</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">differences</span> <span class="o">=</span> <span class="mi">0</span>
+    <span class="n">match</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="k">for</span> <span class="n">m1</span><span class="p">,</span> <span class="n">m2</span> <span class="ow">in</span> <span class="nb">zip</span><span class="p">(</span><span class="n">imp1</span><span class="p">,</span> <span class="n">imp2</span><span class="p">):</span>
+        <span class="k">if</span> <span class="n">m1</span> <span class="o">==</span> <span class="n">m2</span><span class="p">:</span>
+            <span class="n">match</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">m1</span><span class="p">)</span>
+        <span class="k">elif</span> <span class="n">differences</span><span class="p">:</span>
+            <span class="k">return</span> <span class="kc">False</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">differences</span> <span class="o">+=</span> <span class="mi">1</span>
+            <span class="n">match</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="s1">&#39;2&#39;</span><span class="p">)</span>
+    <span class="k">return</span> <span class="s2">&quot;&quot;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">match</span><span class="p">)</span>
+
+
+<span class="k">def</span> <span class="nf">__pi_covers</span><span class="p">(</span><span class="n">implicant</span><span class="p">,</span> <span class="nb">input</span><span class="p">,</span> <span class="n">symbol</span><span class="o">=</span><span class="p">[</span><span class="s1">&#39;2&#39;</span><span class="p">,</span> <span class="s1">&#39;#&#39;</span><span class="p">,</span> <span class="mi">2</span><span class="p">]):</span>
+    <span class="sd">&quot;&quot;&quot;Determines if a minterm is covered by a specific implicant.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        implicant (string): the implicant.</span>
+<span class="sd">        minterm (string): the minterm.</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">        x (bool): True if covered else False.</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">m</span> <span class="ow">in</span> <span class="nb">zip</span><span class="p">(</span><span class="n">implicant</span><span class="p">,</span> <span class="nb">input</span><span class="p">):</span>
+        <span class="k">if</span> <span class="n">i</span> <span class="ow">in</span> <span class="n">symbol</span><span class="p">:</span>
+            <span class="k">continue</span>
+        <span class="k">if</span> <span class="nb">int</span><span class="p">(</span><span class="n">i</span><span class="p">)</span> <span class="o">!=</span> <span class="nb">int</span><span class="p">(</span><span class="n">m</span><span class="p">):</span>
+            <span class="k">return</span> <span class="kc">False</span>
+    <span class="k">return</span> <span class="kc">True</span>
+
+
+<div class="viewcode-block" id="computes_pi_coverage"><a class="viewcode-back" href="../../../reference/canalization/index.html#cana.canalization.boolean_canalization.computes_pi_coverage">[docs]</a><span class="k">def</span> <span class="nf">computes_pi_coverage</span><span class="p">(</span><span class="n">k</span><span class="p">,</span> <span class="n">outputs</span><span class="p">,</span> <span class="n">prime_implicants</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Computes the input coverage by Prime Implicant schematas.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        k (int): the number of inputs.</span>
+<span class="sd">        outpus (list): the list of transition outputs.</span>
+<span class="sd">        prime_implicants (tuple): a tuple containing a list negative and positive prime implicants. This is returned by `find_implicants_qm`.</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">        pi_coverage (dict) : a dictionary of coverage where keys are input states and values are lists of the Prime Implicants covering that input.</span>
+
+<span class="sd">    Note: based on code from Alex Gates and Etienne Nzabarushimana.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="c1"># make sure outputs are integers</span>
+    <span class="n">outputs</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="nb">map</span><span class="p">(</span><span class="nb">int</span><span class="p">,</span> <span class="n">outputs</span><span class="p">))</span>
+
+    <span class="n">pi_coverage</span> <span class="o">=</span> <span class="p">{}</span>
+    <span class="k">for</span> <span class="n">statenum</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">2</span><span class="o">**</span><span class="n">k</span><span class="p">):</span>
+        <span class="n">binstate</span> <span class="o">=</span> <span class="n">statenum_to_binstate</span><span class="p">(</span><span class="n">statenum</span><span class="p">,</span> <span class="n">base</span><span class="o">=</span><span class="n">k</span><span class="p">)</span>
+        <span class="n">pi_coverage</span><span class="p">[</span><span class="n">binstate</span><span class="p">]</span> <span class="o">=</span> <span class="n">covering_implicants</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="n">transition</span> <span class="o">=</span> <span class="n">outputs</span><span class="p">[</span><span class="n">statenum</span><span class="p">]</span>
+        <span class="c1"># Add support for DontCare (2) transition</span>
+        <span class="k">if</span> <span class="n">transition</span> <span class="o">==</span> <span class="mi">2</span><span class="p">:</span>
+            <span class="n">transition</span> <span class="o">=</span> <span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">]</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">transition</span> <span class="o">=</span> <span class="p">[</span><span class="n">outputs</span><span class="p">[</span><span class="n">statenum</span><span class="p">]]</span>
+        <span class="k">for</span> <span class="n">t</span> <span class="ow">in</span> <span class="n">transition</span><span class="p">:</span>
+            <span class="k">for</span> <span class="n">prime_implicant</span> <span class="ow">in</span> <span class="n">prime_implicants</span><span class="p">[</span><span class="n">t</span><span class="p">]:</span>
+                <span class="k">if</span> <span class="n">__pi_covers</span><span class="p">(</span><span class="n">prime_implicant</span><span class="p">,</span> <span class="n">binstate</span><span class="p">):</span>
+                    <span class="n">covering_implicants</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">prime_implicant</span><span class="p">)</span>
+    <span class="c1">#</span>
+    <span class="k">return</span> <span class="n">pi_coverage</span></div>
+
+
+<span class="c1"># Two Symbols Functions</span>
+<div class="viewcode-block" id="find_two_symbols_v2"><a class="viewcode-back" href="../../../reference/canalization/index.html#cana.canalization.boolean_canalization.find_two_symbols_v2">[docs]</a><span class="k">def</span> <span class="nf">find_two_symbols_v2</span><span class="p">(</span><span class="n">k</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">prime_implicants</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">verbose</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">verbose_level</span><span class="o">=</span><span class="mi">0</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;This function calculates the permutation, two-symbol (TS), list of schematas.</span>
+<span class="sd">    This implementation considers &#39;11&#39; and &#39;00&#39; as a possible input permutation.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        k (int): The number of inputs.</span>
+<span class="sd">        prime_implicants (list): The prime implicants computed.</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">        final_list (list) : The list of two-symbol schematas.</span>
+
+<span class="sd">    Note: This is a modification of the original algorithm that can be found in Marques-Pita &amp; Rocha [2013].</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="nb">len</span><span class="p">(</span><span class="n">prime_implicants</span><span class="p">):</span>
+        <span class="k">return</span> <span class="p">[]</span>
+
+    <span class="c1"># If this node has no input, yet it affects other nodes (fixed variable)</span>
+    <span class="k">if</span> <span class="n">k</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+        <span class="n">TSf</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="k">for</span> <span class="n">pi</span> <span class="ow">in</span> <span class="n">prime_implicants</span><span class="p">:</span>
+            <span class="n">TSf</span><span class="o">.</span><span class="n">append</span><span class="p">((</span><span class="n">pi</span><span class="p">,</span> <span class="p">[],</span> <span class="p">[]))</span>
+        <span class="k">return</span> <span class="n">TSf</span>
+
+    <span class="c1"># Init</span>
+    <span class="c1"># n_pi = len(prime_implicants) # never used</span>
+    <span class="n">pi_matrix</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="nb">tuple</span><span class="p">(</span><span class="nb">map</span><span class="p">(</span><span class="nb">tuple</span><span class="p">,</span> <span class="n">prime_implicants</span><span class="p">)),</span> <span class="n">dtype</span><span class="o">=</span><span class="nb">int</span><span class="p">)</span>
+
+    <span class="c1"># List of the Two-Symbol Schematas</span>
+    <span class="n">TS</span> <span class="o">=</span> <span class="p">[]</span>
+
+    <span class="c1"># Init Queue</span>
+    <span class="n">Q</span> <span class="o">=</span> <span class="n">deque</span><span class="p">()</span>
+    <span class="n">Q_history</span> <span class="o">=</span> <span class="nb">set</span><span class="p">()</span>
+    <span class="n">Q</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">pi_matrix</span><span class="p">)</span>
+    <span class="n">i</span> <span class="o">=</span> <span class="mi">0</span>
+
+    <span class="k">while</span> <span class="nb">len</span><span class="p">(</span><span class="n">Q</span><span class="p">):</span>
+
+        <span class="n">schematas</span> <span class="o">=</span> <span class="n">Q</span><span class="o">.</span><span class="n">popleft</span><span class="p">()</span>
+        <span class="n">n_schematas</span> <span class="o">=</span> <span class="n">schematas</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+        <span class="n">i</span> <span class="o">+=</span> <span class="mi">1</span>
+
+        <span class="k">if</span> <span class="n">verbose</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">verbose_level</span> <span class="o">==</span> <span class="mi">1</span><span class="p">:</span>
+                <span class="k">if</span> <span class="p">(</span><span class="n">i</span> <span class="o">%</span> <span class="mi">500</span> <span class="o">==</span> <span class="mi">0</span><span class="p">):</span>
+                    <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;&gt;&gt;&gt; QUEUE: pop | A (m=</span><span class="si">%d</span><span class="s1">) | Queue size: </span><span class="si">%d</span><span class="s1">&#39;</span> <span class="o">%</span> <span class="p">(</span><span class="n">n_schematas</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="n">Q</span><span class="p">)))</span>
+            <span class="k">elif</span> <span class="n">verbose_level</span> <span class="o">&gt;</span> <span class="mi">5</span><span class="p">:</span>
+                <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;&gt;&gt;&gt; QUEUE: pop | A (m=</span><span class="si">%d</span><span class="s1">) | Queue size: </span><span class="si">%d</span><span class="s1">&#39;</span> <span class="o">%</span> <span class="p">(</span><span class="n">n_schematas</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="n">Q</span><span class="p">)))</span>
+            <span class="k">if</span> <span class="n">verbose_level</span> <span class="o">&gt;</span> <span class="mi">10</span><span class="p">:</span>
+                <span class="nb">print</span><span class="p">(</span><span class="n">schematas</span><span class="p">)</span>
+
+        <span class="c1"># count the number of [0&#39;s, 1&#39;s, 2&#39;s] in each column</span>
+        <span class="n">column_counts</span> <span class="o">=</span> <span class="n">_count_cols_symbols_v2</span><span class="p">(</span><span class="n">pi_matrix</span><span class="o">=</span><span class="n">schematas</span><span class="p">,</span> <span class="n">verbose</span><span class="o">=</span><span class="n">verbose</span><span class="p">,</span> <span class="n">verbose_level</span><span class="o">=</span><span class="n">verbose_level</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">verbose</span> <span class="ow">and</span> <span class="n">verbose_level</span> <span class="o">&gt;</span> <span class="mi">10</span><span class="p">:</span>
+            <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;&gt;&gt;&gt; COLUMN Schema Counts:&#39;</span><span class="p">)</span>
+        <span class="c1"># find the permutation groups based on column counts</span>
+        <span class="n">perm_groups</span> <span class="o">=</span> <span class="n">_check_col_counts_v3</span><span class="p">(</span><span class="n">counts_matrix</span><span class="o">=</span><span class="n">column_counts</span><span class="p">,</span> <span class="n">verbose</span><span class="o">=</span><span class="n">verbose</span><span class="p">,</span> <span class="n">verbose_level</span><span class="o">=</span><span class="n">verbose_level</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="p">(</span><span class="n">perm_groups</span> <span class="o">!=</span> <span class="o">-</span><span class="mi">1</span><span class="p">):</span>
+            <span class="k">if</span> <span class="n">verbose</span> <span class="ow">and</span> <span class="n">verbose_level</span> <span class="o">&gt;</span> <span class="mi">10</span><span class="p">:</span>
+                <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;&gt;&gt;&gt; There are permutable groups! Lets loop them&#39;</span><span class="p">)</span>
+            <span class="k">for</span> <span class="n">x_group</span> <span class="ow">in</span> <span class="n">perm_groups</span><span class="p">:</span>
+                <span class="k">if</span> <span class="n">verbose</span> <span class="ow">and</span> <span class="n">verbose_level</span> <span class="o">&gt;</span> <span class="mi">20</span><span class="p">:</span>
+                    <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;&gt;&gt;&gt; x_group:&#39;</span><span class="p">,</span> <span class="n">x_group</span><span class="p">)</span>
+                    <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;&gt;&gt;&gt; Truncated schemata matrix:&#39;</span><span class="p">)</span>
+                    <span class="nb">print</span><span class="p">(</span><span class="n">schematas</span><span class="p">[:,</span> <span class="n">x_group</span><span class="p">]</span><span class="o">.</span><span class="n">T</span><span class="p">)</span>
+                <span class="c1"># find the row counts by taking the transpose of the truncated schemata list</span>
+                <span class="n">row_counts</span> <span class="o">=</span> <span class="n">_count_cols_symbols_v2</span><span class="p">(</span><span class="n">pi_matrix</span><span class="o">=</span><span class="n">schematas</span><span class="p">[:,</span> <span class="n">x_group</span><span class="p">]</span><span class="o">.</span><span class="n">T</span><span class="p">,</span> <span class="n">verbose</span><span class="o">=</span><span class="n">verbose</span><span class="p">,</span> <span class="n">verbose_level</span><span class="o">=</span><span class="n">verbose_level</span><span class="p">)</span>
+                <span class="k">if</span> <span class="n">verbose</span> <span class="ow">and</span> <span class="n">verbose_level</span> <span class="o">&gt;</span> <span class="mi">20</span><span class="p">:</span>
+                    <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;&gt;&gt;&gt; ROW Schema Counts:&#39;</span><span class="p">)</span>
+                    <span class="nb">print</span><span class="p">(</span><span class="n">row_counts</span><span class="p">)</span>
+                <span class="c1"># make sure all row counts are the same</span>
+                <span class="k">if</span> <span class="ow">not</span> <span class="p">(</span><span class="n">row_counts</span> <span class="o">==</span> <span class="n">row_counts</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span><span class="o">.</span><span class="n">all</span><span class="p">():</span>
+                    <span class="k">if</span> <span class="n">verbose</span> <span class="ow">and</span> <span class="n">verbose_level</span> <span class="o">&gt;</span> <span class="mi">20</span><span class="p">:</span>
+                        <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;&gt;&gt;&gt; row_counts are NOT the same (-1)&#39;</span><span class="p">)</span>
+                    <span class="n">perm_groups</span> <span class="o">=</span> <span class="o">-</span><span class="mi">1</span>
+
+        <span class="k">if</span> <span class="n">verbose</span> <span class="ow">and</span> <span class="n">verbose_level</span> <span class="o">&gt;</span> <span class="mi">10</span><span class="p">:</span>
+            <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;&gt;&gt;&gt; Exists permutation groups?:&quot;</span><span class="p">,</span> <span class="p">(</span><span class="n">perm_groups</span> <span class="o">!=</span> <span class="o">-</span><span class="mi">1</span><span class="p">))</span>
+            <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;&gt;&gt;&gt; Are groups already in F&#39;&#39;?:&quot;</span><span class="p">,</span> <span class="p">((</span><span class="n">schematas</span><span class="o">.</span><span class="n">tolist</span><span class="p">(),</span> <span class="n">perm_groups</span><span class="p">)</span> <span class="ow">in</span> <span class="n">TS</span><span class="p">))</span>
+        <span class="k">if</span> <span class="p">(</span><span class="n">perm_groups</span> <span class="o">!=</span> <span class="o">-</span><span class="mi">1</span><span class="p">)</span> <span class="ow">and</span> <span class="ow">not</span> <span class="p">((</span><span class="n">schematas</span><span class="o">.</span><span class="n">tolist</span><span class="p">(),</span> <span class="n">perm_groups</span><span class="p">)</span> <span class="ow">in</span> <span class="n">TS</span><span class="p">):</span>
+            <span class="c1"># do some weird permutation group testing</span>
+            <span class="n">allowed_perm_groups</span> <span class="o">=</span> <span class="n">_check_schemata_permutations_v2</span><span class="p">(</span><span class="n">schematas</span><span class="p">,</span> <span class="n">perm_groups</span><span class="p">,</span> <span class="n">verbose</span><span class="o">=</span><span class="n">verbose</span><span class="p">,</span> <span class="n">verbose_level</span><span class="o">=</span><span class="n">verbose_level</span><span class="p">)</span>
+            <span class="k">if</span> <span class="n">verbose</span> <span class="ow">and</span> <span class="n">verbose_level</span> <span class="o">&gt;</span> <span class="mi">15</span><span class="p">:</span>
+                <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;&gt;&gt;&gt; Permutation testing result:&#39;</span><span class="p">,</span> <span class="n">allowed_perm_groups</span><span class="p">)</span>
+            <span class="k">if</span> <span class="n">allowed_perm_groups</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+                <span class="k">if</span> <span class="n">verbose</span> <span class="ow">and</span> <span class="n">verbose_level</span> <span class="o">&gt;</span> <span class="mi">15</span><span class="p">:</span>
+                    <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;&gt;&gt;&gt; RESULTS: adding F&#39;&#39;: </span><span class="si">%s</span><span class="s2"> , Idxs: </span><span class="si">%s</span><span class="s2">&quot;</span> <span class="o">%</span> <span class="p">(</span><span class="n">schematas</span><span class="o">.</span><span class="n">tolist</span><span class="p">(),</span> <span class="n">allowed_perm_groups</span><span class="p">))</span>
+                <span class="n">TS</span><span class="o">.</span><span class="n">append</span><span class="p">((</span><span class="n">schematas</span><span class="o">.</span><span class="n">tolist</span><span class="p">(),</span> <span class="n">allowed_perm_groups</span><span class="p">))</span>
+
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">verbose</span> <span class="ow">and</span> <span class="n">verbose_level</span> <span class="o">&gt;</span> <span class="mi">10</span><span class="p">:</span>
+                <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;&gt;&gt;&gt; Generate combinations of schematas (m-1) and add to Queue&#39;</span><span class="p">)</span>
+            <span class="k">if</span> <span class="n">schematas</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">&gt;</span> <span class="mi">2</span><span class="p">:</span>
+                <span class="k">for</span> <span class="n">idxs_subset</span> <span class="ow">in</span> <span class="n">itertools</span><span class="o">.</span><span class="n">combinations</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="n">n_schematas</span><span class="p">),</span> <span class="p">(</span><span class="n">n_schematas</span> <span class="o">-</span> <span class="mi">1</span><span class="p">)):</span>
+                    <span class="n">idxs_subset</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">idxs_subset</span><span class="p">)</span>
+                    <span class="n">schemata_subset</span> <span class="o">=</span> <span class="n">schematas</span><span class="p">[</span><span class="n">idxs_subset</span><span class="p">,</span> <span class="p">:]</span>
+                    <span class="c1"># This schemata has already been inserted onto the Queue before?</span>
+                    <span class="k">if</span> <span class="n">schemata_subset</span><span class="o">.</span><span class="n">tostring</span><span class="p">()</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">Q_history</span><span class="p">:</span>
+                        <span class="k">if</span> <span class="n">verbose</span> <span class="ow">and</span> <span class="n">verbose_level</span> <span class="o">&gt;</span> <span class="mi">25</span><span class="p">:</span>
+                            <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;&gt;&gt;&gt; QUEUE: appending (idxs: </span><span class="si">%s</span><span class="s1">)&#39;</span> <span class="o">%</span> <span class="p">(</span><span class="n">idxs_subset</span><span class="p">))</span>
+                            <span class="nb">print</span><span class="p">(</span><span class="n">schemata_subset</span><span class="p">)</span>
+                        <span class="n">Q</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">schemata_subset</span><span class="p">)</span>
+                        <span class="n">Q_history</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="n">schemata_subset</span><span class="o">.</span><span class="n">tostring</span><span class="p">())</span>
+                    <span class="k">else</span><span class="p">:</span>
+                        <span class="k">if</span> <span class="n">verbose</span> <span class="ow">and</span> <span class="n">verbose_level</span> <span class="o">&gt;</span> <span class="mi">25</span><span class="p">:</span>
+                            <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;&gt;&gt;&gt; QUEUE: duplicate, skip (idxs: </span><span class="si">%s</span><span class="s1">)&#39;</span> <span class="o">%</span> <span class="p">(</span><span class="n">idxs_subset</span><span class="p">))</span>
+
+    <span class="k">if</span> <span class="n">verbose</span><span class="p">:</span>
+        <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;&gt;&gt;&gt; TWO-SYMBOLS:&#39;</span><span class="p">)</span>
+        <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="p">(</span><span class="n">tss</span><span class="p">,</span> <span class="n">perms</span><span class="p">)</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">TS</span><span class="p">):</span>
+            <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;F&#39;&#39;-</span><span class="si">%d</span><span class="s2">: </span><span class="si">%s</span><span class="s2"> | Perms: </span><span class="si">%s</span><span class="s2">&quot;</span> <span class="o">%</span> <span class="p">(</span><span class="n">i</span><span class="p">,</span> <span class="n">tss</span><span class="p">,</span> <span class="n">perms</span><span class="p">))</span>
+
+    <span class="c1"># Simplification. Check if there are TSs that are completely contained within others.</span>
+    <span class="c1"># &#39;ts&#39; = Two-Symbol</span>
+    <span class="c1"># &#39;cx&#39; = Complexity</span>
+    <span class="c1"># &#39;xs&#39; = Expanded Logic</span>
+    <span class="n">TSs</span> <span class="o">=</span> <span class="p">{</span>
+        <span class="n">i</span><span class="p">:</span> <span class="p">{</span>
+            <span class="s1">&#39;tss&#39;</span><span class="p">:</span> <span class="n">tss</span><span class="p">,</span>
+            <span class="s1">&#39;perms&#39;</span><span class="p">:</span> <span class="n">perms</span><span class="p">,</span>
+            <span class="s1">&#39;cx&#39;</span><span class="p">:</span> <span class="n">_calc_ts_complexity</span><span class="p">(</span><span class="n">tss</span><span class="p">,</span> <span class="n">perms</span><span class="p">),</span>
+            <span class="s1">&#39;xl&#39;</span><span class="p">:</span> <span class="n">_expand_ts_logic</span><span class="p">(</span><span class="n">tss</span><span class="p">,</span> <span class="n">perms</span><span class="p">)</span>
+        <span class="p">}</span> <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="p">(</span><span class="n">tss</span><span class="p">,</span> <span class="n">perms</span><span class="p">)</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">TS</span><span class="p">)</span>
+    <span class="p">}</span>
+
+    <span class="c1"># Loops all combinations (2) of TS</span>
+    <span class="k">for</span> <span class="p">(</span><span class="n">i</span><span class="p">,</span> <span class="n">j</span><span class="p">)</span> <span class="ow">in</span> <span class="n">itertools</span><span class="o">.</span><span class="n">combinations</span><span class="p">(</span><span class="n">TSs</span><span class="o">.</span><span class="n">keys</span><span class="p">(),</span> <span class="mi">2</span><span class="p">):</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="n">a_in_b</span><span class="p">,</span> <span class="n">b_in_a</span> <span class="o">=</span> <span class="n">_check_schema_within_schema</span><span class="p">(</span><span class="n">TSs</span><span class="p">[</span><span class="n">i</span><span class="p">][</span><span class="s1">&#39;xl&#39;</span><span class="p">],</span> <span class="n">TSs</span><span class="p">[</span><span class="n">j</span><span class="p">][</span><span class="s1">&#39;xl&#39;</span><span class="p">])</span>
+        <span class="k">except</span> <span class="n">e</span><span class="p">:</span>
+            <span class="k">continue</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">cx_a</span> <span class="o">=</span> <span class="n">TSs</span><span class="p">[</span><span class="n">i</span><span class="p">][</span><span class="s1">&#39;cx&#39;</span><span class="p">]</span>
+            <span class="n">cx_b</span> <span class="o">=</span> <span class="n">TSs</span><span class="p">[</span><span class="n">j</span><span class="p">][</span><span class="s1">&#39;cx&#39;</span><span class="p">]</span>
+            <span class="c1"># A or B contained in the other, keep only contained.</span>
+            <span class="k">if</span> <span class="n">a_in_b</span> <span class="ow">and</span> <span class="ow">not</span> <span class="n">b_in_a</span><span class="p">:</span>
+                <span class="k">del</span> <span class="n">TSs</span><span class="p">[</span><span class="n">i</span><span class="p">]</span>
+            <span class="k">elif</span> <span class="n">b_in_a</span> <span class="ow">and</span> <span class="ow">not</span> <span class="n">a_in_b</span><span class="p">:</span>
+                <span class="k">del</span> <span class="n">TSs</span><span class="p">[</span><span class="n">j</span><span class="p">]</span>
+            <span class="k">elif</span> <span class="n">a_in_b</span> <span class="ow">and</span> <span class="n">b_in_a</span><span class="p">:</span>
+                <span class="c1"># Keep most complex</span>
+                <span class="k">if</span> <span class="n">cx_a</span> <span class="o">&lt;</span> <span class="n">cx_b</span><span class="p">:</span>
+                    <span class="k">del</span> <span class="n">TSs</span><span class="p">[</span><span class="n">i</span><span class="p">]</span>
+                <span class="k">elif</span> <span class="n">cx_b</span> <span class="o">&lt;</span> <span class="n">cx_a</span><span class="p">:</span>
+                    <span class="k">del</span> <span class="n">TSs</span><span class="p">[</span><span class="n">j</span><span class="p">]</span>
+                <span class="k">else</span><span class="p">:</span>
+                    <span class="c1"># they are equal, delete either one</span>
+                    <span class="k">del</span> <span class="n">TSs</span><span class="p">[</span><span class="n">i</span><span class="p">]</span>
+
+    <span class="k">if</span> <span class="n">verbose</span><span class="p">:</span>
+        <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;&gt;&gt;&gt; TWO-SYMBOLS (simplified):&#39;</span><span class="p">)</span>
+        <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="p">(</span><span class="n">tss</span><span class="p">)</span> <span class="ow">in</span> <span class="n">TSs</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+            <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;F&#39;&#39;-</span><span class="si">%d</span><span class="s2">: </span><span class="si">%s</span><span class="s2"> | Perms: </span><span class="si">%s</span><span class="s2"> | CX: </span><span class="si">%s</span><span class="s2">&quot;</span> <span class="o">%</span> <span class="p">(</span><span class="n">i</span><span class="p">,</span> <span class="n">tss</span><span class="p">[</span><span class="s1">&#39;tss&#39;</span><span class="p">],</span> <span class="n">tss</span><span class="p">[</span><span class="s1">&#39;perms&#39;</span><span class="p">],</span> <span class="n">tss</span><span class="p">[</span><span class="s1">&#39;cx&#39;</span><span class="p">]))</span>
+
+    <span class="c1"># Final List (from simplified)</span>
+    <span class="n">TSf</span> <span class="o">=</span> <span class="p">[(</span><span class="n">tss</span><span class="p">[</span><span class="s1">&#39;tss&#39;</span><span class="p">][</span><span class="mi">0</span><span class="p">],</span> <span class="n">tss</span><span class="p">[</span><span class="s1">&#39;perms&#39;</span><span class="p">],</span> <span class="p">[])</span> <span class="k">for</span> <span class="n">tss</span> <span class="ow">in</span> <span class="n">TSs</span><span class="o">.</span><span class="n">values</span><span class="p">()]</span>
+
+    <span class="c1"># Check if all PI are being covered. If not, include the PI on the TS list</span>
+    <span class="k">if</span> <span class="n">verbose</span><span class="p">:</span>
+        <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;&gt;&gt;&gt; Check all PI are accounted for in the TS&#39;</span><span class="p">)</span>
+    <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">pi</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">pi_matrix</span><span class="p">,</span> <span class="n">start</span><span class="o">=</span><span class="mi">0</span><span class="p">):</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="nb">any</span><span class="p">([</span><span class="n">_check_schema_within_schema</span><span class="p">([</span><span class="n">pi</span><span class="o">.</span><span class="n">tolist</span><span class="p">()],</span> <span class="n">tss</span><span class="p">[</span><span class="s1">&#39;xl&#39;</span><span class="p">],</span> <span class="nb">dir</span><span class="o">=</span><span class="s1">&#39;a&#39;</span><span class="p">,</span> <span class="n">verbose</span><span class="o">=</span><span class="n">verbose</span><span class="p">)[</span><span class="mi">0</span><span class="p">]</span> <span class="k">for</span> <span class="n">tss</span> <span class="ow">in</span> <span class="n">TSs</span><span class="o">.</span><span class="n">values</span><span class="p">()]):</span>
+            <span class="k">if</span> <span class="n">verbose</span><span class="p">:</span>
+                <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;PI-</span><span class="si">%d</span><span class="s2"> &#39;</span><span class="si">%s</span><span class="s2">&#39; Not in list, ADDING.&quot;</span> <span class="o">%</span> <span class="p">(</span><span class="n">i</span><span class="p">,</span> <span class="n">pi</span><span class="o">.</span><span class="n">tolist</span><span class="p">()))</span>
+            <span class="n">TSf</span><span class="o">.</span><span class="n">append</span><span class="p">((</span><span class="n">pi</span><span class="o">.</span><span class="n">tolist</span><span class="p">(),</span> <span class="p">[],</span> <span class="p">[]))</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">verbose</span><span class="p">:</span>
+                <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;PI-</span><span class="si">%d</span><span class="s2"> &#39;</span><span class="si">%s</span><span class="s2">&#39; OK.&quot;</span> <span class="o">%</span> <span class="p">(</span><span class="n">i</span><span class="p">,</span> <span class="n">pi</span><span class="o">.</span><span class="n">tolist</span><span class="p">()))</span>
+
+    <span class="k">if</span> <span class="n">verbose</span><span class="p">:</span>
+        <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;&gt;&gt;&gt; Check for Same-Symbol permutables&#39;</span><span class="p">)</span>
+
+    <span class="c1"># NEW: Step to include same-symbol permutables</span>
+    <span class="k">for</span> <span class="n">ts</span><span class="p">,</span> <span class="n">perms</span><span class="p">,</span> <span class="n">sames</span> <span class="ow">in</span> <span class="n">TSf</span><span class="p">:</span>
+        <span class="c1"># Indices of permutables inputs</span>
+        <span class="n">idxs</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="nb">set</span><span class="p">([</span><span class="n">idx</span> <span class="k">for</span> <span class="n">idxs</span> <span class="ow">in</span> <span class="n">perms</span> <span class="k">for</span> <span class="n">idx</span> <span class="ow">in</span> <span class="n">idxs</span><span class="p">]))</span>
+
+        <span class="c1"># Makes the F&#39;&#39; into a Collum Array so it can be used by &#39;_count_cols_symbols_vX&#39;</span>
+        <span class="n">ts_matrix</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="n">ts</span><span class="p">])</span><span class="o">.</span><span class="n">T</span>
+
+        <span class="c1"># Remove Inputs (columns) that already have permutable symbols. Only if there are permutables</span>
+        <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">idxs</span><span class="p">):</span>
+            <span class="n">rmask</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">idxs</span><span class="p">)</span>
+            <span class="n">ts_matrix_left</span> <span class="o">=</span> <span class="n">ts_matrix</span><span class="p">[</span><span class="o">~</span><span class="n">rmask</span><span class="p">,</span> <span class="p">:]</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">ts_matrix_left</span> <span class="o">=</span> <span class="n">ts_matrix</span>
+
+        <span class="k">if</span> <span class="n">verbose</span> <span class="ow">and</span> <span class="n">verbose_level</span> <span class="o">&gt;</span> <span class="mi">10</span><span class="p">:</span>
+            <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;&gt; F&#39;&#39; Original:&quot;</span><span class="p">)</span>
+            <span class="nb">print</span><span class="p">(</span><span class="n">ts_matrix</span><span class="p">)</span>
+            <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;&gt; Permutables: </span><span class="si">%s</span><span class="s2">&quot;</span> <span class="o">%</span> <span class="p">(</span><span class="n">perms</span><span class="p">))</span>
+            <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;&gt; F&#39;&#39; without permutables:&quot;</span><span class="p">)</span>
+            <span class="nb">print</span><span class="p">(</span><span class="n">ts_matrix_left</span><span class="p">)</span>
+
+        <span class="n">counts_matrix</span> <span class="o">=</span> <span class="n">_count_cols_symbols_v2</span><span class="p">(</span><span class="n">pi_matrix</span><span class="o">=</span><span class="n">ts_matrix_left</span><span class="o">.</span><span class="n">T</span><span class="p">,</span> <span class="n">verbose</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">verbose_level</span><span class="o">=</span><span class="n">verbose_level</span><span class="p">)</span>
+        <span class="n">perm_groups</span> <span class="o">=</span> <span class="n">_check_identical_cols_count_symbols_v2</span><span class="p">(</span><span class="n">counts_matrix</span><span class="o">=</span><span class="n">counts_matrix</span><span class="p">,</span> <span class="n">verbose</span><span class="o">=</span><span class="n">verbose</span><span class="p">,</span> <span class="n">verbose_level</span><span class="o">=</span><span class="n">verbose_level</span><span class="p">)</span>
+        <span class="n">sames</span><span class="o">.</span><span class="n">extend</span><span class="p">(</span><span class="n">perm_groups</span><span class="p">)</span>
+
+    <span class="c1"># Step to convert the pi list to string</span>
+    <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="p">(</span><span class="n">ts</span><span class="p">,</span> <span class="n">perms</span><span class="p">,</span> <span class="n">sames</span><span class="p">)</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">TSf</span><span class="p">,</span> <span class="n">start</span><span class="o">=</span><span class="mi">0</span><span class="p">):</span>
+        <span class="n">ts</span> <span class="o">=</span> <span class="s1">&#39;&#39;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="nb">map</span><span class="p">(</span><span class="nb">str</span><span class="p">,</span> <span class="n">ts</span><span class="p">))</span>
+        <span class="n">TSf</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="p">(</span><span class="n">ts</span><span class="p">,</span> <span class="n">perms</span><span class="p">,</span> <span class="n">sames</span><span class="p">)</span>
+
+    <span class="c1"># Final list after all PI were accounted for</span>
+    <span class="k">if</span> <span class="n">verbose</span><span class="p">:</span>
+        <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;&gt;&gt;&gt; TS (final list):&#39;</span><span class="p">)</span>
+        <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">tss</span><span class="p">,</span> <span class="n">sms</span> <span class="ow">in</span> <span class="n">TSf</span><span class="p">:</span>
+            <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;TS: &#39;</span><span class="si">%s</span><span class="s2">&#39; | Perm Idx: </span><span class="si">%s</span><span class="s2"> | Sms Idx: </span><span class="si">%s</span><span class="s2">&quot;</span> <span class="o">%</span> <span class="p">(</span><span class="n">i</span><span class="p">,</span> <span class="n">tss</span><span class="p">,</span> <span class="n">sms</span><span class="p">))</span>
+
+    <span class="k">return</span> <span class="n">TSf</span></div>
+
+
+<span class="k">def</span> <span class="nf">_calc_ts_complexity</span><span class="p">(</span><span class="n">tss</span><span class="p">,</span> <span class="n">pers</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot; Calculates the complexity of a TS schema</span>
+<span class="sd">    Complexity = (Number of Schemas + Number of Permutable Symbols + Lenght of each Permutable Symbol)</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">return</span> <span class="nb">len</span><span class="p">(</span><span class="n">tss</span><span class="p">)</span> <span class="o">+</span> <span class="nb">sum</span><span class="p">([</span><span class="nb">len</span><span class="p">(</span><span class="n">per</span><span class="p">)</span> <span class="k">for</span> <span class="n">ts</span><span class="p">,</span> <span class="n">per</span> <span class="ow">in</span> <span class="nb">zip</span><span class="p">(</span><span class="n">tss</span><span class="p">,</span> <span class="n">pers</span><span class="p">)])</span>
+
+
+<span class="k">def</span> <span class="nf">_check_schema_within_schema</span><span class="p">(</span><span class="n">la</span><span class="p">,</span> <span class="n">lb</span><span class="p">,</span> <span class="nb">dir</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">verbose</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot; Check is a Two-Symbol schemata is covered by another.</span>
+<span class="sd">    This is used to simplify the number of TS schematas returned.</span>
+<span class="sd">    The arguments for this function are generated by `_expand_ts_logic`.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        tsa (list) : A list of :math:`F&#39;` schematas that a Two-Symbol :math:`F&#39;&#39;` schemata can cover.</span>
+<span class="sd">        tsb (list) : A list of :math:`F&#39;` schematas that a Two-Symbol :math:`F&#39;&#39;` schemata can cover.</span>
+<span class="sd">        dir (string) : The direction to check, either ``a`` or ``b`` is in the other.</span>
+<span class="sd">            Defaults to both directions.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">a_in_b</span><span class="p">,</span> <span class="n">b_in_a</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span> <span class="kc">None</span>
+    <span class="c1">#</span>
+    <span class="k">if</span> <span class="nb">dir</span> <span class="o">!=</span> <span class="s1">&#39;b&#39;</span><span class="p">:</span>
+        <span class="n">a_in_b</span> <span class="o">=</span> <span class="nb">all</span><span class="p">([(</span><span class="n">xa</span> <span class="ow">in</span> <span class="n">lb</span><span class="p">)</span> <span class="k">for</span> <span class="n">xa</span> <span class="ow">in</span> <span class="n">la</span><span class="p">])</span>
+        <span class="k">if</span> <span class="n">verbose</span><span class="p">:</span>
+            <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;</span><span class="si">%s</span><span class="s1"> in </span><span class="si">%s</span><span class="s1"> : </span><span class="si">%s</span><span class="s1">&#39;</span> <span class="o">%</span> <span class="p">(</span><span class="n">la</span><span class="p">,</span> <span class="n">lb</span><span class="p">,</span> <span class="n">a_in_b</span><span class="p">))</span>
+    <span class="k">if</span> <span class="nb">dir</span> <span class="o">!=</span> <span class="s1">&#39;a&#39;</span><span class="p">:</span>
+        <span class="n">b_in_a</span> <span class="o">=</span> <span class="nb">all</span><span class="p">([(</span><span class="n">xb</span> <span class="ow">in</span> <span class="n">la</span><span class="p">)</span> <span class="k">for</span> <span class="n">xb</span> <span class="ow">in</span> <span class="n">lb</span><span class="p">])</span>
+        <span class="k">if</span> <span class="n">verbose</span><span class="p">:</span>
+            <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;</span><span class="si">%s</span><span class="s1"> in </span><span class="si">%s</span><span class="s1"> : </span><span class="si">%s</span><span class="s1">&#39;</span> <span class="o">%</span> <span class="p">(</span><span class="n">lb</span><span class="p">,</span> <span class="n">la</span><span class="p">,</span> <span class="n">b_in_a</span><span class="p">))</span>
+    <span class="c1">#</span>
+    <span class="k">return</span> <span class="n">a_in_b</span><span class="p">,</span> <span class="n">b_in_a</span>
+
+
+<span class="k">def</span> <span class="nf">_expand_ts_logic</span><span class="p">(</span><span class="n">two_symbols</span><span class="p">,</span> <span class="n">permut_indexes</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot; Expands the Two-Symbol logic to all possible prime-implicants variations being covered.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        two_symbols (list) : Two-Symbol schematas list-of-lists.</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">        (list) : a list of :math:`F&#39;` covered by this Two-Symbol.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="c1"># If receiving a binary string, convert to list of lists</span>
+    <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">two_symbols</span><span class="p">,</span> <span class="nb">str</span><span class="p">):</span>
+        <span class="n">two_symbols</span> <span class="o">=</span> <span class="p">[</span><span class="nb">list</span><span class="p">(</span><span class="n">two_symbols</span><span class="p">)]</span>
+    <span class="c1"># Queue</span>
+    <span class="n">Q</span> <span class="o">=</span> <span class="n">deque</span><span class="p">()</span>
+    <span class="n">Q</span><span class="o">.</span><span class="n">extend</span><span class="p">(</span><span class="n">two_symbols</span><span class="p">)</span>
+    <span class="n">logics</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="c1">#</span>
+    <span class="k">while</span> <span class="n">Q</span><span class="p">:</span>
+        <span class="n">implicant</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">Q</span><span class="o">.</span><span class="n">pop</span><span class="p">())</span>
+        <span class="k">for</span> <span class="n">idxs</span> <span class="ow">in</span> <span class="n">permut_indexes</span><span class="p">:</span>
+            <span class="c1"># Permutation of all possible combinations of the values that are permutable.</span>
+            <span class="k">for</span> <span class="n">vals</span> <span class="ow">in</span> <span class="n">itertools</span><span class="o">.</span><span class="n">permutations</span><span class="p">(</span><span class="n">implicant</span><span class="p">[</span><span class="n">idxs</span><span class="p">],</span> <span class="nb">len</span><span class="p">(</span><span class="n">idxs</span><span class="p">)):</span>
+                <span class="c1"># Generate a new schema</span>
+                <span class="n">_implicant</span> <span class="o">=</span> <span class="n">copy</span><span class="o">.</span><span class="n">copy</span><span class="p">(</span><span class="n">implicant</span><span class="p">)</span>
+                <span class="n">_implicant</span><span class="p">[</span><span class="n">idxs</span><span class="p">]</span> <span class="o">=</span> <span class="n">vals</span>
+                <span class="c1"># Insert to list of logics if not already there</span>
+                <span class="k">if</span> <span class="ow">not</span><span class="p">(</span><span class="n">_implicant</span><span class="o">.</span><span class="n">tolist</span><span class="p">()</span> <span class="ow">in</span> <span class="n">logics</span><span class="p">):</span>
+                    <span class="n">logics</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">_implicant</span><span class="o">.</span><span class="n">tolist</span><span class="p">())</span>
+                    <span class="n">Q</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">_implicant</span><span class="o">.</span><span class="n">tolist</span><span class="p">())</span>
+    <span class="k">return</span> <span class="n">logics</span>
+
+
+<span class="k">def</span> <span class="nf">_check_schemata_permutations_v2</span><span class="p">(</span><span class="n">schematas</span><span class="p">,</span> <span class="n">perm_groups</span><span class="p">,</span> <span class="n">verbose</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">verbose_level</span><span class="o">=</span><span class="mi">0</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot; Checks if the permutations are possible</span>
+
+<span class="sd">    Note:</span>
+<span class="sd">        Not sure if this is really needed.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">if</span> <span class="n">verbose</span> <span class="ow">and</span> <span class="n">verbose_level</span> <span class="o">&gt;</span> <span class="mi">20</span><span class="p">:</span>
+        <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;-- Check Schemata Permutations (v2) : g(H&#39;,L) --&quot;</span><span class="p">)</span>
+    <span class="n">allowed_perm_groups</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="n">all_indices</span> <span class="o">=</span> <span class="nb">set</span><span class="p">([</span><span class="n">i_index</span> <span class="k">for</span> <span class="n">x_group</span> <span class="ow">in</span> <span class="n">perm_groups</span> <span class="k">for</span> <span class="n">i_index</span> <span class="ow">in</span> <span class="n">x_group</span><span class="p">])</span>
+    <span class="k">for</span> <span class="n">x_group</span> <span class="ow">in</span> <span class="n">perm_groups</span><span class="p">:</span>
+        <span class="n">sofar</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="k">for</span> <span class="n">i_index</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">x_group</span><span class="p">)</span> <span class="o">-</span> <span class="mi">1</span><span class="p">):</span>
+            <span class="n">x_index</span> <span class="o">=</span> <span class="n">x_group</span><span class="p">[</span><span class="n">i_index</span><span class="p">]</span>
+            <span class="n">small_group</span> <span class="o">=</span> <span class="p">[</span><span class="n">x_index</span><span class="p">]</span>
+            <span class="k">if</span> <span class="ow">not</span> <span class="p">(</span><span class="n">x_index</span> <span class="ow">in</span> <span class="n">sofar</span><span class="p">):</span>
+                <span class="n">sofar</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">x_index</span><span class="p">)</span>
+
+                <span class="k">for</span> <span class="n">y_index</span> <span class="ow">in</span> <span class="n">x_group</span><span class="p">[(</span><span class="n">i_index</span> <span class="o">+</span> <span class="mi">1</span><span class="p">)::]:</span>
+
+                    <span class="k">if</span> <span class="p">(</span><span class="ow">not</span><span class="p">(</span><span class="n">y_index</span> <span class="ow">in</span> <span class="n">sofar</span><span class="p">))</span> <span class="ow">and</span> <span class="n">_can_swap_v2</span><span class="p">(</span><span class="n">schematas</span><span class="p">[:,</span> <span class="p">[</span><span class="n">x_index</span><span class="p">,</span> <span class="n">y_index</span><span class="p">]],</span> <span class="n">verbose</span><span class="o">=</span><span class="n">verbose</span><span class="p">,</span> <span class="n">verbose_level</span><span class="o">=</span><span class="n">verbose_level</span><span class="p">):</span>
+                        <span class="n">small_group</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">y_index</span><span class="p">)</span>
+                        <span class="n">sofar</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">y_index</span><span class="p">)</span>
+                <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">small_group</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">1</span><span class="p">:</span>
+                    <span class="n">allowed_perm_groups</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">small_group</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="n">verbose</span> <span class="ow">and</span> <span class="n">verbose_level</span> <span class="o">&gt;</span> <span class="mi">30</span><span class="p">:</span>
+            <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;&gt; allowed_perm_groups&#39;</span><span class="p">,</span> <span class="n">allowed_perm_groups</span><span class="p">)</span>
+        <span class="k">if</span> <span class="nb">set</span><span class="p">([</span><span class="n">i_index</span> <span class="k">for</span> <span class="n">x_group</span> <span class="ow">in</span> <span class="n">allowed_perm_groups</span> <span class="k">for</span> <span class="n">i_index</span> <span class="ow">in</span> <span class="n">x_group</span><span class="p">])</span> <span class="o">==</span> <span class="n">all_indices</span><span class="p">:</span>
+            <span class="k">return</span> <span class="n">allowed_perm_groups</span>
+    <span class="k">return</span> <span class="kc">None</span>
+
+
+<span class="k">def</span> <span class="nf">_can_swap_v2</span><span class="p">(</span><span class="n">schemata_subset</span><span class="p">,</span> <span class="n">verbose</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">verbose_level</span><span class="o">=</span><span class="mi">0</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Determines if two schemata subsets can be swapped&quot;&quot;&quot;</span>
+    <span class="k">if</span> <span class="n">verbose</span> <span class="ow">and</span> <span class="n">verbose_level</span> <span class="o">&gt;</span> <span class="mi">40</span><span class="p">:</span>
+        <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;&gt; Can Swap?:&#39;</span><span class="p">,)</span>
+    <span class="n">can_switch</span> <span class="o">=</span> <span class="mi">1</span>
+    <span class="k">for</span> <span class="n">row</span> <span class="ow">in</span> <span class="n">schemata_subset</span><span class="p">[:,</span> <span class="p">[</span><span class="mi">1</span><span class="p">,</span> <span class="mi">0</span><span class="p">]]:</span>
+        <span class="n">can_switch</span> <span class="o">*=</span> <span class="n">np</span><span class="o">.</span><span class="n">any</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">all</span><span class="p">(</span><span class="n">schemata_subset</span> <span class="o">==</span> <span class="n">row</span><span class="p">,</span> <span class="n">axis</span><span class="o">=</span><span class="mi">1</span><span class="p">))</span>
+    <span class="k">if</span> <span class="n">verbose</span> <span class="ow">and</span> <span class="n">verbose_level</span> <span class="o">&gt;</span> <span class="mi">40</span><span class="p">:</span>
+        <span class="nb">print</span><span class="p">(</span><span class="n">can_switch</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">can_switch</span>
+
+
+<span class="k">def</span> <span class="nf">_check_col_counts_v3</span><span class="p">(</span><span class="n">counts_matrix</span><span class="p">,</span> <span class="n">verbose</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">verbose_level</span><span class="o">=</span><span class="mi">0</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot; This function is used to find permutable symbols.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        counts_matrix (numpy.ndarray) : a matrix where rows are inputs and columns are possible input types (0,1 or #)</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">        perm_groups (list) : a list of the indexes that can be permuted.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">if</span> <span class="n">verbose</span> <span class="ow">and</span> <span class="n">verbose_level</span> <span class="o">&gt;</span> <span class="mi">30</span><span class="p">:</span>
+        <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;-- Check Col Counts (v3) --&#39;</span><span class="p">)</span>
+
+    <span class="n">counts</span> <span class="o">=</span> <span class="p">{}</span>         <span class="c1"># Multi Counts</span>
+    <span class="n">perm_groups</span> <span class="o">=</span> <span class="p">[]</span>    <span class="c1"># A list of groups of Permutable Indexes</span>
+
+    <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">row</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">counts_matrix</span><span class="p">,</span> <span class="n">start</span><span class="o">=</span><span class="mi">0</span><span class="p">):</span>
+        <span class="c1"># a tuple (hashable) version of the row counts</span>
+        <span class="n">row_tuple</span> <span class="o">=</span> <span class="nb">tuple</span><span class="p">(</span><span class="n">row</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="n">row_tuple</span> <span class="ow">in</span> <span class="n">counts</span><span class="p">:</span>
+            <span class="c1"># we have seen this one before, so add it to the permutation group</span>
+            <span class="n">counts</span><span class="p">[</span><span class="n">row_tuple</span><span class="p">]</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">i</span><span class="p">)</span>
+        <span class="k">elif</span> <span class="n">np</span><span class="o">.</span><span class="n">count_nonzero</span><span class="p">(</span><span class="n">row</span><span class="p">)</span> <span class="o">&gt;=</span> <span class="mi">2</span><span class="p">:</span>
+            <span class="c1"># we have not seen this count before, it is not a fixed variable, so create a new entry for it</span>
+            <span class="n">counts</span><span class="p">[</span><span class="n">row_tuple</span><span class="p">]</span> <span class="o">=</span> <span class="p">[</span><span class="n">i</span><span class="p">]</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="c1"># we will skip fixed variables</span>
+            <span class="k">pass</span>
+
+    <span class="c1"># Append non-constants that have permutable positions</span>
+    <span class="k">for</span> <span class="n">col</span><span class="p">,</span> <span class="n">idxs</span> <span class="ow">in</span> <span class="n">counts</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+        <span class="k">if</span> <span class="n">verbose</span> <span class="ow">and</span> <span class="n">verbose_level</span> <span class="o">&gt;</span> <span class="mi">40</span><span class="p">:</span>
+            <span class="nb">print</span><span class="p">(</span><span class="n">col</span><span class="p">,</span> <span class="s1">&#39;:&#39;</span><span class="p">,</span> <span class="n">idxs</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">idxs</span><span class="p">)</span> <span class="o">==</span> <span class="mi">1</span><span class="p">:</span>
+            <span class="k">return</span> <span class="o">-</span><span class="mi">1</span>
+        <span class="k">elif</span> <span class="nb">len</span><span class="p">(</span><span class="n">idxs</span><span class="p">)</span> <span class="o">&gt;=</span> <span class="mi">1</span><span class="p">:</span>
+            <span class="n">perm_groups</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">idxs</span><span class="p">)</span>
+
+    <span class="k">if</span> <span class="n">verbose</span> <span class="ow">and</span> <span class="n">verbose_level</span> <span class="o">&gt;</span> <span class="mi">40</span><span class="p">:</span>
+        <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;counts:&#39;</span><span class="p">,</span> <span class="n">counts</span><span class="p">)</span>
+        <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;perm_groups:&#39;</span><span class="p">,</span> <span class="n">perm_groups</span><span class="p">)</span>
+
+    <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">perm_groups</span><span class="p">):</span>
+        <span class="k">return</span> <span class="n">perm_groups</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="k">return</span> <span class="o">-</span><span class="mi">1</span>
+
+
+<span class="k">def</span> <span class="nf">_check_identical_cols_count_symbols_v2</span><span class="p">(</span><span class="n">counts_matrix</span><span class="p">,</span> <span class="n">verbose</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">verbose_level</span><span class="o">=</span><span class="mi">0</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot; This function is used to find same symbol permutables. In practice it is a variance of `_check_cols_symbols_vX`</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        counts_matrix (numpy.ndarray) : a matrix where rows are inputs and columns are possible input types (0,1 or #)</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">        perm_groups (list) : a list of the indexes that can be permuted</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">if</span> <span class="n">verbose</span> <span class="ow">and</span> <span class="n">verbose_level</span> <span class="o">&gt;</span> <span class="mi">20</span><span class="p">:</span>
+        <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;-- Check Identical Col Counts (v2) --&#39;</span><span class="p">)</span>
+
+    <span class="n">counts</span> <span class="o">=</span> <span class="p">{}</span>         <span class="c1"># Multi Counts</span>
+    <span class="n">perm_groups</span> <span class="o">=</span> <span class="p">[]</span>    <span class="c1"># A list of groups of Permutable Indexes</span>
+
+    <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">row</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">counts_matrix</span><span class="p">,</span> <span class="n">start</span><span class="o">=</span><span class="mi">0</span><span class="p">):</span>
+        <span class="c1"># a tuple (hashable) version of the row counts</span>
+        <span class="n">row</span> <span class="o">=</span> <span class="n">row</span><span class="o">.</span><span class="n">tolist</span><span class="p">()</span>
+        <span class="n">row_tuple</span> <span class="o">=</span> <span class="nb">tuple</span><span class="p">(</span><span class="n">row</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="n">verbose</span> <span class="ow">and</span> <span class="n">verbose_level</span> <span class="o">&gt;</span> <span class="mi">30</span><span class="p">:</span>
+            <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;RC: </span><span class="si">%s</span><span class="s1"> : </span><span class="si">%s</span><span class="s1">&#39;</span> <span class="o">%</span> <span class="p">(</span><span class="n">i</span><span class="p">,</span> <span class="n">row_tuple</span><span class="p">))</span>
+
+        <span class="k">if</span> <span class="n">row_tuple</span> <span class="ow">in</span> <span class="n">counts</span><span class="p">:</span>
+            <span class="c1"># we have seen this one before, so add it to the permutation group</span>
+            <span class="n">counts</span><span class="p">[</span><span class="n">row_tuple</span><span class="p">]</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">i</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="c1"># we have not seen this count before, so create a new entry for it</span>
+            <span class="n">counts</span><span class="p">[</span><span class="n">row_tuple</span><span class="p">]</span> <span class="o">=</span> <span class="p">[</span><span class="n">i</span><span class="p">]</span>
+
+    <span class="c1"># Append non-constants that have permutable positions</span>
+    <span class="k">for</span> <span class="n">col</span><span class="p">,</span> <span class="n">idxs</span> <span class="ow">in</span> <span class="n">counts</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+        <span class="k">if</span> <span class="n">verbose</span> <span class="ow">and</span> <span class="n">verbose_level</span> <span class="o">&gt;</span> <span class="mi">30</span><span class="p">:</span>
+            <span class="nb">print</span><span class="p">(</span><span class="n">col</span><span class="p">,</span> <span class="s1">&#39;:&#39;</span><span class="p">,</span> <span class="n">idxs</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">idxs</span><span class="p">)</span> <span class="o">&gt;=</span> <span class="mi">2</span><span class="p">:</span>
+            <span class="n">perm_groups</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">idxs</span><span class="p">)</span>
+
+    <span class="k">if</span> <span class="n">verbose</span> <span class="ow">and</span> <span class="n">verbose_level</span> <span class="o">&gt;</span> <span class="mi">30</span><span class="p">:</span>
+        <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;counts:&#39;</span><span class="p">,</span> <span class="n">counts</span><span class="p">)</span>
+        <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;sames_groups:&#39;</span><span class="p">,</span> <span class="n">perm_groups</span><span class="p">)</span>
+
+    <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">perm_groups</span><span class="p">):</span>
+        <span class="k">return</span> <span class="n">perm_groups</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="k">return</span> <span class="p">[]</span>
+
+
+<span class="k">def</span> <span class="nf">_count_cols_symbols_v2</span><span class="p">(</span><span class="n">pi_matrix</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">verbose</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">verbose_level</span><span class="o">=</span><span class="mi">0</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot; Given a matrix, where each row is a prime implicant, counts how many 0&#39;s, 1&#39;s and 2&#39;s are found in each column.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        pi_matrix (numpy.ndarray) : a matrix ``n \times k`` of ``n`` prime implicants.</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">        counts (numpy.ndarray) : a matrix ``n \times 3`` where the entries are counts.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">if</span> <span class="n">verbose</span> <span class="ow">and</span> <span class="n">verbose_level</span> <span class="o">&gt;</span> <span class="mi">20</span><span class="p">:</span>
+        <span class="nb">print</span><span class="p">(</span><span class="s1">&#39; -- Count Cols (v2) --&#39;</span><span class="p">)</span>
+    <span class="c1"># How many PI?</span>
+    <span class="n">n</span> <span class="o">=</span> <span class="n">pi_matrix</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span>
+    <span class="c1"># Instanciate count matrix</span>
+    <span class="n">counts</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">((</span><span class="n">n</span><span class="p">,</span> <span class="mi">3</span><span class="p">),</span> <span class="n">dtype</span><span class="o">=</span><span class="nb">int</span><span class="p">)</span>
+    <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">col</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">pi_matrix</span><span class="o">.</span><span class="n">T</span><span class="p">):</span>
+        <span class="c1"># Count how many values are found and update the matrix of counts</span>
+        <span class="n">val</span><span class="p">,</span> <span class="n">cnt</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">unique</span><span class="p">(</span><span class="n">col</span><span class="p">,</span> <span class="n">return_counts</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+        <span class="n">counts</span><span class="p">[</span><span class="n">i</span><span class="p">,</span> <span class="n">val</span><span class="p">]</span> <span class="o">=</span> <span class="n">cnt</span>
+
+    <span class="k">return</span> <span class="n">counts</span>
+
+
+<span class="c1">############ START OF TWO SYMBOL v.1 ############</span>
+
+
+<span class="c1"># This version does not conside &#39;11&#39; and &#39;00&#39; as permutable symbols and had other bugs solved by v2</span>
+<span class="k">def</span> <span class="nf">find_two_symbols_v1</span><span class="p">(</span><span class="n">k</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">prime_implicants</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">verbose</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
+    <span class="n">two_symbol_schemata_list</span> <span class="o">=</span> <span class="p">[]</span>
+
+    <span class="n">Partition_Options</span> <span class="o">=</span> <span class="p">[</span><span class="n">prime_implicants</span><span class="p">]</span>
+    <span class="k">while</span> <span class="nb">len</span><span class="p">(</span><span class="n">Partition_Options</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
+        <span class="c1"># take first partition out of the set</span>
+        <span class="n">schemata_list</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="nb">map</span><span class="p">(</span><span class="nb">list</span><span class="p">,</span> <span class="n">Partition_Options</span><span class="o">.</span><span class="n">pop</span><span class="p">()))</span>
+        <span class="k">if</span> <span class="n">verbose</span><span class="p">:</span>
+            <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;== Partitions (v1) ==&#39;</span><span class="p">)</span>
+            <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;&gt;&gt;&gt; A (m=</span><span class="si">%d</span><span class="s1">)&#39;</span> <span class="o">%</span> <span class="n">schemata_list</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span>
+            <span class="nb">print</span><span class="p">(</span><span class="n">schemata_list</span><span class="p">)</span>
+
+        <span class="c1"># count the number of [0&#39;s, 1&#39;s, 2&#39;s] in each column</span>
+        <span class="n">column_counts</span> <span class="o">=</span> <span class="n">_three_symbol_count_cols_symbols_v1</span><span class="p">(</span><span class="n">k</span><span class="o">=</span><span class="n">k</span><span class="p">,</span> <span class="n">transition_list</span><span class="o">=</span><span class="n">schemata_list</span><span class="p">)</span>
+
+        <span class="c1"># find the permutation groups based on column counts</span>
+        <span class="n">permutation_groups</span> <span class="o">=</span> <span class="n">_check_counts_v1</span><span class="p">(</span><span class="n">column_counts</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="p">(</span><span class="n">permutation_groups</span> <span class="o">!=</span> <span class="o">-</span><span class="mi">1</span><span class="p">):</span>
+            <span class="k">if</span> <span class="n">verbose</span><span class="p">:</span>
+                <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;&gt;&gt;&gt; There are permutable groups! Lets loop them&#39;</span><span class="p">)</span>
+            <span class="k">for</span> <span class="n">x_group</span> <span class="ow">in</span> <span class="n">permutation_groups</span><span class="p">:</span>
+
+                <span class="c1"># find the row counts by taking the transpose of the truncated schemata list</span>
+                <span class="n">row_counts</span> <span class="o">=</span> <span class="n">_three_symbol_count_cols_symbols_v1</span><span class="p">(</span><span class="n">k</span><span class="o">=</span><span class="n">schemata_list</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">transition_list</span><span class="o">=</span><span class="n">schemata_list</span><span class="p">[:,</span> <span class="n">x_group</span><span class="p">]</span><span class="o">.</span><span class="n">T</span><span class="p">)</span>
+                <span class="k">if</span> <span class="n">verbose</span><span class="p">:</span>
+                    <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;&gt;&gt;&gt; ROW Schema Counts:&#39;</span><span class="p">)</span>
+                    <span class="nb">print</span><span class="p">(</span><span class="n">row_counts</span><span class="p">)</span>
+                <span class="c1"># make sure all row counts are the same</span>
+                <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">row_counts</span><span class="p">)</span> <span class="o">!=</span> <span class="n">row_counts</span><span class="o">.</span><span class="n">count</span><span class="p">(</span><span class="n">row_counts</span><span class="p">[</span><span class="mi">0</span><span class="p">]):</span>
+                    <span class="n">permutation_groups</span> <span class="o">=</span> <span class="o">-</span><span class="mi">1</span>
+        <span class="k">if</span> <span class="n">verbose</span><span class="p">:</span>
+            <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;&gt;&gt;&gt; Permutation groups:&quot;</span><span class="p">,</span> <span class="p">(</span><span class="n">permutation_groups</span> <span class="o">!=</span> <span class="o">-</span><span class="mi">1</span><span class="p">),</span> <span class="n">permutation_groups</span><span class="p">)</span>
+            <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;&gt;&gt;&gt; Permuted groups already in F&#39;&#39;:&quot;</span><span class="p">,</span> <span class="p">((</span><span class="n">schemata_list</span><span class="o">.</span><span class="n">tolist</span><span class="p">(),</span> <span class="n">permutation_groups</span><span class="p">)</span> <span class="ow">in</span> <span class="n">two_symbol_schemata_list</span><span class="p">))</span>
+        <span class="k">if</span> <span class="p">(</span><span class="n">permutation_groups</span> <span class="o">!=</span> <span class="o">-</span><span class="mi">1</span><span class="p">)</span> <span class="ow">and</span> <span class="ow">not</span> <span class="p">((</span><span class="n">schemata_list</span><span class="o">.</span><span class="n">tolist</span><span class="p">(),</span> <span class="n">permutation_groups</span><span class="p">)</span> <span class="ow">in</span> <span class="n">two_symbol_schemata_list</span><span class="p">):</span>
+            <span class="c1"># do some weird permutation group testing</span>
+            <span class="n">allowed_permutation_groups</span> <span class="o">=</span> <span class="n">_check_schemata_permutations_v1</span><span class="p">(</span><span class="n">schemata_list</span><span class="p">,</span> <span class="n">permutation_groups</span><span class="p">)</span>
+            <span class="k">if</span> <span class="n">allowed_permutation_groups</span> <span class="o">!=</span> <span class="p">[]:</span>
+                <span class="k">if</span> <span class="n">verbose</span><span class="p">:</span>
+                    <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;ADDING to F&#39;&#39;:&quot;</span><span class="p">,</span> <span class="n">schemata_subset</span><span class="p">)</span>
+                <span class="n">two_symbol_schemata_list</span><span class="o">.</span><span class="n">append</span><span class="p">((</span><span class="n">schemata_list</span><span class="o">.</span><span class="n">tolist</span><span class="p">(),</span> <span class="n">allowed_permutation_groups</span><span class="p">))</span>
+
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">schemata_list</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">&gt;</span> <span class="mi">2</span><span class="p">:</span>
+                <span class="k">for</span> <span class="n">schemata_subset</span> <span class="ow">in</span> <span class="n">itertools</span><span class="o">.</span><span class="n">combinations</span><span class="p">(</span><span class="n">schemata_list</span><span class="p">,</span> <span class="p">(</span><span class="n">schemata_list</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">-</span> <span class="mi">1</span><span class="p">)):</span>
+                    <span class="k">if</span> <span class="n">verbose</span><span class="p">:</span>
+                        <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;ADDING to Queue:&#39;</span><span class="p">,</span> <span class="n">schemata_subset</span><span class="p">)</span>
+                    <span class="n">Partition_Options</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">schemata_subset</span><span class="p">))</span>
+
+    <span class="k">if</span> <span class="n">verbose</span><span class="p">:</span>
+        <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;Partition_Options:&#39;</span><span class="p">,</span> <span class="n">Partition_Options</span><span class="p">)</span>
+    <span class="n">final_list</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="n">prime_accounted</span> <span class="o">=</span> <span class="p">[]</span>
+
+    <span class="k">for</span> <span class="n">p_implicant</span> <span class="ow">in</span> <span class="n">prime_implicants</span><span class="p">:</span>
+        <span class="n">p_implicant</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">p_implicant</span><span class="p">)</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="p">(</span><span class="n">p_implicant</span> <span class="ow">in</span> <span class="n">prime_accounted</span><span class="p">):</span>
+            <span class="k">for</span> <span class="n">f_double_prime</span><span class="p">,</span> <span class="n">r_perm</span> <span class="ow">in</span> <span class="n">two_symbol_schemata_list</span><span class="p">:</span>
+                <span class="k">for</span> <span class="n">f_prime</span> <span class="ow">in</span> <span class="n">f_double_prime</span><span class="p">:</span>
+                    <span class="k">if</span> <span class="n">np</span><span class="o">.</span><span class="n">all</span><span class="p">(</span><span class="n">f_prime</span> <span class="o">==</span> <span class="n">p_implicant</span><span class="p">):</span>
+                        <span class="n">final_list</span><span class="o">.</span><span class="n">append</span><span class="p">((</span><span class="n">p_implicant</span><span class="p">,</span> <span class="n">r_perm</span><span class="p">))</span>
+                        <span class="k">for</span> <span class="n">account_prime</span> <span class="ow">in</span> <span class="n">f_double_prime</span><span class="p">:</span>
+                            <span class="n">prime_accounted</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="nb">list</span><span class="p">(</span><span class="n">account_prime</span><span class="p">))</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="p">(</span><span class="n">p_implicant</span> <span class="ow">in</span> <span class="n">prime_accounted</span><span class="p">):</span>
+            <span class="n">final_list</span><span class="o">.</span><span class="n">append</span><span class="p">((</span><span class="n">p_implicant</span><span class="p">,</span> <span class="p">[]))</span>
+
+    <span class="k">return</span> <span class="n">final_list</span>
+
+<span class="k">def</span> <span class="nf">_check_schemata_permutations_v1</span><span class="p">(</span><span class="n">schemata_list</span><span class="p">,</span> <span class="n">permutation_groups</span><span class="p">):</span>
+
+    <span class="n">allowed_permutation_groups</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="n">all_indices</span> <span class="o">=</span> <span class="nb">set</span><span class="p">([</span><span class="n">i_index</span> <span class="k">for</span> <span class="n">x_group</span> <span class="ow">in</span> <span class="n">permutation_groups</span> <span class="k">for</span> <span class="n">i_index</span> <span class="ow">in</span> <span class="n">x_group</span><span class="p">])</span>
+
+    <span class="k">for</span> <span class="n">x_group</span> <span class="ow">in</span> <span class="n">permutation_groups</span><span class="p">:</span>
+        <span class="n">sofar</span> <span class="o">=</span> <span class="p">[]</span>
+
+        <span class="k">for</span> <span class="n">i_index</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">x_group</span><span class="p">)</span> <span class="o">-</span> <span class="mi">1</span><span class="p">):</span>
+            <span class="n">x_index</span> <span class="o">=</span> <span class="n">x_group</span><span class="p">[</span><span class="n">i_index</span><span class="p">]</span>
+            <span class="n">small_group</span> <span class="o">=</span> <span class="p">[</span><span class="n">x_index</span><span class="p">]</span>
+
+            <span class="k">if</span> <span class="ow">not</span> <span class="p">(</span><span class="n">x_index</span> <span class="ow">in</span> <span class="n">sofar</span><span class="p">):</span>
+                <span class="n">sofar</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">x_index</span><span class="p">)</span>
+
+                <span class="k">for</span> <span class="n">y_index</span> <span class="ow">in</span> <span class="n">x_group</span><span class="p">[(</span><span class="n">i_index</span> <span class="o">+</span> <span class="mi">1</span><span class="p">)::]:</span>
+                    <span class="k">if</span> <span class="p">(</span><span class="ow">not</span><span class="p">(</span><span class="n">y_index</span> <span class="ow">in</span> <span class="n">sofar</span><span class="p">))</span> <span class="ow">and</span> <span class="n">_can_swap_v1</span><span class="p">(</span><span class="n">schemata_list</span><span class="p">[:,</span> <span class="p">[</span><span class="n">x_index</span><span class="p">,</span> <span class="n">y_index</span><span class="p">]]):</span>
+                        <span class="n">small_group</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">y_index</span><span class="p">)</span>
+                        <span class="n">sofar</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">y_index</span><span class="p">)</span>
+                <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">small_group</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">1</span><span class="p">:</span>
+                    <span class="n">allowed_permutation_groups</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">small_group</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="nb">set</span><span class="p">([</span><span class="n">i_index</span> <span class="k">for</span> <span class="n">x_group</span> <span class="ow">in</span> <span class="n">allowed_permutation_groups</span> <span class="k">for</span> <span class="n">i_index</span> <span class="ow">in</span> <span class="n">x_group</span><span class="p">])</span> <span class="o">==</span> <span class="n">all_indices</span><span class="p">:</span>
+            <span class="k">return</span> <span class="n">allowed_permutation_groups</span>
+    <span class="k">return</span> <span class="p">[]</span>
+
+
+<span class="k">def</span> <span class="nf">_can_swap_v1</span><span class="p">(</span><span class="n">schemata_subset</span><span class="p">):</span>
+    <span class="n">can_switch</span> <span class="o">=</span> <span class="mi">1</span>
+    <span class="k">for</span> <span class="n">row</span> <span class="ow">in</span> <span class="n">schemata_subset</span><span class="p">[:,</span> <span class="p">[</span><span class="mi">1</span><span class="p">,</span> <span class="mi">0</span><span class="p">]]:</span>
+        <span class="n">can_switch</span> <span class="o">*=</span> <span class="n">np</span><span class="o">.</span><span class="n">any</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">all</span><span class="p">(</span><span class="n">schemata_subset</span> <span class="o">==</span> <span class="n">row</span><span class="p">,</span> <span class="n">axis</span><span class="o">=</span><span class="mi">1</span><span class="p">))</span>
+    <span class="k">return</span> <span class="n">can_switch</span>
+
+
+<span class="k">def</span> <span class="nf">_check_counts_v1</span><span class="p">(</span><span class="n">column_counts</span><span class="o">=</span><span class="p">[]):</span>
+    <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;-- Column Counts (v1) --&#39;</span><span class="p">)</span>
+    <span class="nb">print</span><span class="p">(</span><span class="n">column_counts</span><span class="p">)</span>
+    <span class="n">unique_col_counts</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="n">permutation_groups</span> <span class="o">=</span> <span class="p">[]</span>
+
+    <span class="k">for</span> <span class="n">i_col_count</span><span class="p">,</span> <span class="n">x_col_count</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">column_counts</span><span class="p">):</span>
+        <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;RC: </span><span class="si">%d</span><span class="s1"> : </span><span class="si">%s</span><span class="s1">&#39;</span> <span class="o">%</span> <span class="p">(</span><span class="n">i_col_count</span><span class="p">,</span> <span class="n">x_col_count</span><span class="p">))</span>
+        <span class="k">if</span> <span class="n">x_col_count</span><span class="o">.</span><span class="n">count</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span> <span class="o">&gt;=</span> <span class="mi">2</span><span class="p">:</span>
+            <span class="c1"># this is a constant column so skip it</span>
+            <span class="k">pass</span>
+
+        <span class="k">elif</span> <span class="n">x_col_count</span> <span class="ow">in</span> <span class="n">unique_col_counts</span><span class="p">:</span>
+            <span class="c1"># we have seen this one before, so add it to the permutation group</span>
+            <span class="n">permutation_groups</span><span class="p">[</span><span class="n">unique_col_counts</span><span class="o">.</span><span class="n">index</span><span class="p">(</span><span class="n">x_col_count</span><span class="p">)]</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">i_col_count</span><span class="p">)</span>
+
+        <span class="k">else</span><span class="p">:</span>
+            <span class="c1"># we have not seen this count before, so create a new entry for it</span>
+            <span class="n">unique_col_counts</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">x_col_count</span><span class="p">)</span>
+            <span class="n">permutation_groups</span><span class="o">.</span><span class="n">append</span><span class="p">([</span><span class="n">i_col_count</span><span class="p">])</span>
+
+    <span class="c1"># check if a singleton permutation group exists</span>
+    <span class="k">if</span> <span class="p">[</span><span class="nb">len</span><span class="p">(</span><span class="n">x_group</span><span class="p">)</span> <span class="k">for</span> <span class="n">x_group</span> <span class="ow">in</span> <span class="n">permutation_groups</span><span class="p">]</span><span class="o">.</span><span class="n">count</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
+        <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;counts:&#39;</span><span class="p">,</span> <span class="n">permutation_groups</span><span class="p">)</span>
+        <span class="k">return</span> <span class="o">-</span><span class="mi">1</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;counts:&#39;</span><span class="p">,</span> <span class="n">permutation_groups</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">permutation_groups</span>
+
+
+<span class="k">def</span> <span class="nf">_three_symbol_count_cols_symbols_v1</span><span class="p">(</span><span class="n">k</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">transition_list</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+    <span class="n">column_counts</span> <span class="o">=</span> <span class="p">[[</span><span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">]</span> <span class="k">for</span> <span class="n">i_col</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">k</span><span class="p">)]</span>
+    <span class="k">for</span> <span class="n">x_col</span> <span class="ow">in</span> <span class="n">transition_list</span><span class="p">:</span>
+        <span class="k">for</span> <span class="n">i_entry</span><span class="p">,</span> <span class="n">x_entry</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">x_col</span><span class="p">):</span>
+            <span class="k">if</span> <span class="n">x_entry</span> <span class="o">==</span> <span class="s1">&#39;0&#39;</span><span class="p">:</span>
+                <span class="n">column_counts</span><span class="p">[</span><span class="n">i_entry</span><span class="p">][</span><span class="mi">0</span><span class="p">]</span> <span class="o">+=</span> <span class="mi">1</span>
+            <span class="k">elif</span> <span class="n">x_entry</span> <span class="o">==</span> <span class="s1">&#39;1&#39;</span><span class="p">:</span>
+                <span class="n">column_counts</span><span class="p">[</span><span class="n">i_entry</span><span class="p">][</span><span class="mi">1</span><span class="p">]</span> <span class="o">+=</span> <span class="mi">1</span>
+            <span class="k">elif</span> <span class="n">x_entry</span> <span class="o">==</span> <span class="s1">&#39;2&#39;</span><span class="p">:</span>
+                <span class="n">column_counts</span><span class="p">[</span><span class="n">i_entry</span><span class="p">][</span><span class="mi">2</span><span class="p">]</span> <span class="o">+=</span> <span class="mi">1</span>
+
+    <span class="k">return</span> <span class="n">column_counts</span>
+
+
+<span class="c1">############ END OF TWO SYMBOL v.1 ############</span>
+
+
+<span class="k">def</span> <span class="nf">__ts_covers</span><span class="p">(</span><span class="n">two_symbol</span><span class="p">,</span> <span class="n">permut_indexes</span><span class="p">,</span> <span class="nb">input</span><span class="p">,</span> <span class="n">verbose</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Helper method to test if an input is being covered by a two symbol permuted implicant</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        two_symbol (string): the two_symbol implicant.</span>
+<span class="sd">        permut_indexes (list): a list-of-lists of the implicant indexes that are permutables.</span>
+<span class="sd">        input (string): the input string to be checked.</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">        x (bool): True if covered else False.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="c1"># No permutation, just plain implicant coverage?</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="nb">len</span><span class="p">(</span><span class="n">permut_indexes</span><span class="p">):</span>
+        <span class="k">if</span> <span class="n">__pi_covers</span><span class="p">(</span><span class="n">two_symbol</span><span class="p">,</span> <span class="nb">input</span><span class="p">):</span>
+            <span class="k">return</span> <span class="kc">True</span>
+    <span class="c1"># There are permutations to generate and check</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="c1"># NEW METHOD: Generates the expanded logic of the Two-Symbol Schema</span>
+        <span class="k">for</span> <span class="n">gen_implicant</span> <span class="ow">in</span> <span class="n">_expand_ts_logic</span><span class="p">(</span><span class="n">two_symbol</span><span class="p">,</span> <span class="n">permut_indexes</span><span class="p">):</span>
+            <span class="k">if</span> <span class="n">__pi_covers</span><span class="p">(</span><span class="n">gen_implicant</span><span class="p">,</span> <span class="nb">input</span><span class="p">):</span>
+                <span class="k">return</span> <span class="kc">True</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        # OLD METHOD</span>
+<span class="sd">        for idxs in permut_indexes:</span>
+<span class="sd">            # Extract the charactes that can be permuted</span>
+<span class="sd">            chars = [implicant[idx] for idx in idxs]</span>
+<span class="sd">            # Generate all possible permutations of these symbols</span>
+<span class="sd">            permut_chars = itertools.permutations(chars, len(idxs))</span>
+<span class="sd">            for permut_chars in permut_chars:</span>
+<span class="sd">                # Generate a new implicant and substitute the charactes with the permuted ones</span>
+<span class="sd">                tmp = list(implicant)</span>
+<span class="sd">                for idx,char in zip(idxs,permut_chars):</span>
+<span class="sd">                    tmp[idx] = char</span>
+<span class="sd">                # The new permuted implicate is covered?</span>
+<span class="sd">                if __pi_covers(tmp, input):</span>
+<span class="sd">                    return True</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+    <span class="k">return</span> <span class="kc">False</span>
+
+
+<div class="viewcode-block" id="computes_ts_coverage"><a class="viewcode-back" href="../../../reference/canalization/index.html#cana.canalization.boolean_canalization.computes_ts_coverage">[docs]</a><span class="k">def</span> <span class="nf">computes_ts_coverage</span><span class="p">(</span><span class="n">k</span><span class="p">,</span> <span class="n">outputs</span><span class="p">,</span> <span class="n">two_symbols</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot; Computes the input coverage by Two Symbol schematas.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        k (int): the number of inputs.</span>
+<span class="sd">        outpus (list): the list of transition outputs.</span>
+<span class="sd">        two_symbols (list): The final list of Two Symbol permutable schematas. This is returned by `find_two_symbols`.</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">        coverage (dict): a dictionary of coverage where keys are inputs states and values are lists of the Two Symbols covering that input.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">ts_coverage</span> <span class="o">=</span> <span class="p">{}</span>
+    <span class="k">for</span> <span class="n">statenum</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">2</span><span class="o">**</span><span class="n">k</span><span class="p">):</span>
+        <span class="n">binstate</span> <span class="o">=</span> <span class="n">statenum_to_binstate</span><span class="p">(</span><span class="n">statenum</span><span class="p">,</span> <span class="n">base</span><span class="o">=</span><span class="n">k</span><span class="p">)</span>
+        <span class="n">ts_coverage</span><span class="p">[</span><span class="n">binstate</span><span class="p">]</span> <span class="o">=</span> <span class="n">covering_twosymbols</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="n">output</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">outputs</span><span class="p">[</span><span class="n">statenum</span><span class="p">])</span>
+        <span class="k">if</span> <span class="n">output</span> <span class="o">==</span> <span class="mi">2</span><span class="p">:</span>
+            <span class="n">output</span> <span class="o">=</span> <span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">]</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">output</span> <span class="o">=</span> <span class="p">[</span><span class="nb">int</span><span class="p">(</span><span class="n">outputs</span><span class="p">[</span><span class="n">statenum</span><span class="p">])]</span>
+        <span class="k">for</span> <span class="n">t</span> <span class="ow">in</span> <span class="n">output</span><span class="p">:</span>
+            <span class="k">for</span> <span class="n">implicant</span><span class="p">,</span> <span class="n">permut_indxs</span><span class="p">,</span> <span class="n">same_symbols_indxs</span> <span class="ow">in</span> <span class="n">two_symbols</span><span class="p">[</span><span class="n">t</span><span class="p">]:</span>
+                <span class="k">if</span> <span class="n">__ts_covers</span><span class="p">(</span><span class="n">implicant</span><span class="p">,</span> <span class="n">permut_indxs</span><span class="p">,</span> <span class="n">binstate</span><span class="p">):</span>
+                    <span class="n">covering_twosymbols</span><span class="o">.</span><span class="n">append</span><span class="p">((</span><span class="n">implicant</span><span class="p">,</span> <span class="n">permut_indxs</span><span class="p">,</span> <span class="n">same_symbols_indxs</span><span class="p">))</span>
+    <span class="c1">#</span>
+    <span class="k">return</span> <span class="n">ts_coverage</span></div>
+</pre></div>
+
+           </div>
+           
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>
+        &#169; Copyright 2021, Correia, R. B., Gates, A., Rocha, L. M..
+
+    </p>
+  </div>
+    
+    
+    
+    Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    
+    provided by <a href="https://readthedocs.org">Read the Docs</a>. 
+
+</footer>
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+  
+
+  <script type="text/javascript">
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script>
+
+  
+  
+    
+   
+
+</body>
+</html>

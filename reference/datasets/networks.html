@@ -1,59 +1,55 @@
 
 
 <!DOCTYPE html>
-<!--[if IE 8]><html class="no-js lt-ie9" lang="en" > <![endif]-->
-<!--[if gt IE 8]><!--> <html class="no-js" lang="en" > <!--<![endif]-->
+<html class="writer-html5" lang="en" >
 <head>
-  <meta charset="utf-8">
+  <meta charset="utf-8" />
   
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   
-  <title>Biological Boolean Networks &mdash; CANA 0.0.3-alpha documentation</title>
+  <title>Biological Boolean Networks &mdash; CANA 0.1 documentation</title>
+  
+
+  
+  <link rel="stylesheet" href="../../_static/css/theme.css" type="text/css" />
+  <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
+
+  
   
 
   
   
-  
-  
 
   
 
   
+  <!--[if lt IE 9]>
+    <script src="../../_static/js/html5shiv.min.js"></script>
+  <![endif]-->
   
     
+      <script type="text/javascript" id="documentation_options" data-url_root="../../" src="../../_static/documentation_options.js"></script>
+        <script src="../../_static/jquery.js"></script>
+        <script src="../../_static/underscore.js"></script>
+        <script src="../../_static/doctools.js"></script>
+    
+    <script type="text/javascript" src="../../_static/js/theme.js"></script>
 
-  
-
-  
-  
-    <link rel="stylesheet" href="../../static/css/theme.css" type="text/css" />
-  
-
-  
-
-  
-        <link rel="index" title="Index"
-              href="../../genindex.html"/>
-        <link rel="search" title="Search" href="../../search.html"/>
-    <link rel="top" title="CANA 0.0.3-alpha documentation" href="../../index.html"/>
-        <link rel="up" title="Common Nodes &amp; Networks" href="index.html"/>
-        <link rel="next" title="Utilities" href="../utils.html"/>
-        <link rel="prev" title="Boolean Nodes" href="nodes.html"/> 
-
-  
-  <script src="../../static/js/modernizr.min.js"></script>
-
+    
+    <link rel="index" title="Index" href="../../genindex.html" />
+    <link rel="search" title="Search" href="../../search.html" />
+    <link rel="next" title="Ensemble Methods" href="../ensemble.html" />
+    <link rel="prev" title="Boolean Nodes" href="nodes.html" /> 
 </head>
 
-<body class="wy-body-for-nav" role="document">
+<body class="wy-body-for-nav">
 
    
   <div class="wy-grid-for-nav">
-
     
     <nav data-toggle="wy-nav-shift" class="wy-nav-side">
       <div class="wy-side-scroll">
-        <div class="wy-side-nav-search">
+        <div class="wy-side-nav-search" >
           
 
           
@@ -67,7 +63,7 @@
             
             
               <div class="version">
-                0.0.3
+                0.1
               </div>
             
           
@@ -84,6 +80,7 @@
           
         </div>
 
+        
         <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
           
             
@@ -91,39 +88,38 @@
               
             
             
-              <ul class="current">
-<li class="toctree-l1"><a class="reference internal" href="../../install.html">Installation</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../../notation.html">Notation</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../../tutorial.html">Tutorials</a></li>
+              <p class="caption"><span class="caption-text">Table of Contents:</span></p>
+<ul class="current">
 <li class="toctree-l1 current"><a class="reference internal" href="../index.html">API Reference</a><ul class="current">
-<li class="toctree-l2"><a class="reference internal" href="../boolean_node.html">Node</a></li>
-<li class="toctree-l2"><a class="reference internal" href="../boolean_network.html">Network</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../node.html">Node</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../network.html">Network</a></li>
 <li class="toctree-l2"><a class="reference internal" href="../canalization/index.html">Canalization</a></li>
 <li class="toctree-l2"><a class="reference internal" href="../control/index.html">Control</a></li>
-<li class="toctree-l2 current"><a class="reference internal" href="index.html">Common Nodes &amp; Networks</a><ul class="current">
+<li class="toctree-l2 current"><a class="reference internal" href="index.html">Datasets</a><ul class="current">
 <li class="toctree-l3"><a class="reference internal" href="nodes.html">Boolean Nodes</a></li>
 <li class="toctree-l3 current"><a class="current reference internal" href="#">Biological Boolean Networks</a></li>
 <li class="toctree-l3"><a class="reference internal" href="#network-motifs">Network Motifs</a></li>
 </ul>
 </li>
+<li class="toctree-l2"><a class="reference internal" href="../ensemble.html">Ensemble Methods</a></li>
 <li class="toctree-l2"><a class="reference internal" href="../utils.html">Utilities</a></li>
 </ul>
 </li>
-<li class="toctree-l1"><a class="reference internal" href="../../development.html">Development</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../appendix/index.html">Appendix</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../../references.html">References</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../bibliography.html">Bibliography</a></li>
 </ul>
 
             
           
         </div>
+        
       </div>
     </nav>
 
     <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
 
       
-      <nav class="wy-nav-top" role="navigation" aria-label="top navigation">
+      <nav class="wy-nav-top" aria-label="top navigation">
         
           <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
           <a href="../../index.html">CANA</a>
@@ -131,10 +127,13 @@
       </nav>
 
 
-      
       <div class="wy-nav-content">
+        
         <div class="rst-content">
+        
           
+
+
 
 
 
@@ -154,19 +153,19 @@
 
   <ul class="wy-breadcrumbs">
     
-      <li><a href="../../index.html">Docs</a> &raquo;</li>
+      <li><a href="../../index.html" class="icon icon-home"></a> &raquo;</li>
         
           <li><a href="../index.html">API Reference</a> &raquo;</li>
         
-          <li><a href="index.html">Common Nodes &amp; Networks</a> &raquo;</li>
+          <li><a href="index.html">Datasets</a> &raquo;</li>
         
       <li>Biological Boolean Networks</li>
     
     
       <li class="wy-breadcrumbs-aside">
         
-            
-            <a href="../../sources/reference/datasets/networks.rst.txt" rel="nofollow"> View page source</a>
+          
+            <a href="../../_sources/reference/datasets/networks.rst.txt" rel="nofollow"> View page source</a>
           
         
       </li>
@@ -181,108 +180,184 @@
             
   <span class="target" id="module-cana.datasets.bio"></span><div class="section" id="biological-boolean-networks">
 <h1>Biological Boolean Networks<a class="headerlink" href="#biological-boolean-networks" title="Permalink to this headline">¶</a></h1>
-<p>Some of the commonly used biological boolean networks</p>
-<dl class="function">
-<dt id="cana.datasets.bio.THALIANA">
-<code class="descclassname">cana.datasets.bio.</code><code class="descname">THALIANA</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../../modules/cana/datasets/bio.html#THALIANA"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#cana.datasets.bio.THALIANA" title="Permalink to this definition">¶</a></dt>
-<dd><p>Boolean network model of the control of flower morphogenesis in Arabidopsis thaliana</p>
-<p>The network is defined in <a class="reference internal" href="../../references.html#chaos-2006" id="id1">[CAES+06]</a>.</p>
-<table class="docutils field-list" frame="void" rules="none">
-<col class="field-name" />
-<col class="field-body" />
-<tbody valign="top">
-<tr class="field-odd field"><th class="field-name">Returns:</th><td class="field-body">(BooleanNetwork)</td>
-</tr>
-</tbody>
-</table>
+<p>A series of biological Boolean networks that can be directly loaded for experimentation.</p>
+<dl class="py function">
+<dt id="cana.datasets.bio.BREAST_CANCER">
+<code class="sig-prename descclassname"><span class="pre">cana.datasets.bio.</span></code><code class="sig-name descname"><span class="pre">BREAST_CANCER</span></code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/cana/datasets/bio.html#BREAST_CANCER"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#cana.datasets.bio.BREAST_CANCER" title="Permalink to this definition">¶</a></dt>
+<dd><p>Boolean network model of signal transduction in ER+ breast cancer</p>
+<p>The network is defined in <span id="id1">[<a class="reference internal" href="../../bibliography.html#id20">ZSA17</a>]</span>.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns</dt>
+<dd class="field-odd"><p>(BooleanNetwork)</p>
+</dd>
+</dl>
 </dd></dl>
 
-<dl class="function">
+<dl class="py function">
+<dt id="cana.datasets.bio.BUDDING_YEAST">
+<code class="sig-prename descclassname"><span class="pre">cana.datasets.bio.</span></code><code class="sig-name descname"><span class="pre">BUDDING_YEAST</span></code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/cana/datasets/bio.html#BUDDING_YEAST"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#cana.datasets.bio.BUDDING_YEAST" title="Permalink to this definition">¶</a></dt>
+<dd><p>The network is defined in <span id="id2">[<a class="reference internal" href="../../bibliography.html#id11">LLL+04</a>]</span>.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns</dt>
+<dd class="field-odd"><p>(BooleanNetwork)</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
 <dt id="cana.datasets.bio.DROSOPHILA">
-<code class="descclassname">cana.datasets.bio.</code><code class="descname">DROSOPHILA</code><span class="sig-paren">(</span><em>cells=1</em><span class="sig-paren">)</span><a class="reference internal" href="../../modules/cana/datasets/bio.html#DROSOPHILA"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#cana.datasets.bio.DROSOPHILA" title="Permalink to this definition">¶</a></dt>
+<code class="sig-prename descclassname"><span class="pre">cana.datasets.bio.</span></code><code class="sig-name descname"><span class="pre">DROSOPHILA</span></code><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">cells</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/cana/datasets/bio.html#DROSOPHILA"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#cana.datasets.bio.DROSOPHILA" title="Permalink to this definition">¶</a></dt>
 <dd><p>Drosophila Melanogaster boolean model.
-This is a simplification of the original network defined in <a class="reference internal" href="../../references.html#albert-2008" id="id2">[AO03]</a>.
+This is a simplification of the original network defined in <span id="id3">[<a class="reference internal" href="../../bibliography.html#id13">AO03</a>]</span>.
 In the original model, some nodes receive inputs from neighboring cells.
 In this single cell network, they are condensed (nhhnHH) and treated as constants.</p>
 <p>There is currently only one model available, where the original neighboring cell signals are treated as constants.</p>
-<table class="docutils field-list" frame="void" rules="none">
-<col class="field-name" />
-<col class="field-body" />
-<tbody valign="top">
-<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>cells</strong> (<em>int</em>) – Which model to return.</td>
-</tr>
-</tbody>
-</table>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>cells</strong> (<em>int</em>) – Which model to return.</p>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>(BooleanNetwork)</p>
+</dd>
+</dl>
 </dd></dl>
 
-<dl class="function">
-<dt id="cana.datasets.bio.BUDDING_YEAST">
-<code class="descclassname">cana.datasets.bio.</code><code class="descname">BUDDING_YEAST</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../../modules/cana/datasets/bio.html#BUDDING_YEAST"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#cana.datasets.bio.BUDDING_YEAST" title="Permalink to this definition">¶</a></dt>
-<dd><p>The network is defined in <a class="reference internal" href="../../references.html#fangting-2004" id="id3">[LLL+04]</a>.</p>
+<dl class="py function">
+<dt id="cana.datasets.bio.LEUKEMIA">
+<code class="sig-prename descclassname"><span class="pre">cana.datasets.bio.</span></code><code class="sig-name descname"><span class="pre">LEUKEMIA</span></code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/cana/datasets/bio.html#LEUKEMIA"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#cana.datasets.bio.LEUKEMIA" title="Permalink to this definition">¶</a></dt>
+<dd><p>Boolean network model of survival signaling in T-LGL leukemia</p>
+<p>The network is defined in <span id="id4">[<a class="reference internal" href="../../bibliography.html#id21">ZSY+08</a>]</span>.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns</dt>
+<dd class="field-odd"><p>(BooleanNetwork)</p>
+</dd>
+</dl>
 </dd></dl>
 
-<dl class="function">
+<dl class="py function">
 <dt id="cana.datasets.bio.MARQUESPITA">
-<code class="descclassname">cana.datasets.bio.</code><code class="descname">MARQUESPITA</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../../modules/cana/datasets/bio.html#MARQUESPITA"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#cana.datasets.bio.MARQUESPITA" title="Permalink to this definition">¶</a></dt>
+<code class="sig-prename descclassname"><span class="pre">cana.datasets.bio.</span></code><code class="sig-name descname"><span class="pre">MARQUESPITA</span></code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/cana/datasets/bio.html#MARQUESPITA"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#cana.datasets.bio.MARQUESPITA" title="Permalink to this definition">¶</a></dt>
 <dd><p>Boolean network used for the Two-Symbol schemata example.</p>
-<p>The network is defined in <a class="reference internal" href="../../references.html#marques-pita-2013" id="id4">[MPR13]</a>.</p>
+<p>The network is defined in <span id="id5">[<a class="reference internal" href="../../bibliography.html#id16">MPR13</a>]</span>.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns</dt>
+<dd class="field-odd"><p>(BooleanNetwork)</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt id="cana.datasets.bio.THALIANA">
+<code class="sig-prename descclassname"><span class="pre">cana.datasets.bio.</span></code><code class="sig-name descname"><span class="pre">THALIANA</span></code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/cana/datasets/bio.html#THALIANA"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#cana.datasets.bio.THALIANA" title="Permalink to this definition">¶</a></dt>
+<dd><p>Boolean network model of the control of flower morphogenesis in Arabidopsis thaliana</p>
+<p>The network is defined in <span id="id6">[<a class="reference internal" href="../../bibliography.html#id14">CAES+06</a>]</span>.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns</dt>
+<dd class="field-odd"><p>(BooleanNetwork)</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt id="cana.datasets.bio.load_all_cell_collective_models">
+<code class="sig-prename descclassname"><span class="pre">cana.datasets.bio.</span></code><code class="sig-name descname"><span class="pre">load_all_cell_collective_models</span></code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/cana/datasets/bio.html#load_all_cell_collective_models"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#cana.datasets.bio.load_all_cell_collective_models" title="Permalink to this definition">¶</a></dt>
+<dd><p>Load all the Cell Collective models, instanciating +70 models.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns</dt>
+<dd class="field-odd"><p>(list)</p>
+</dd>
+</dl>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>See source code for full list of models.</p>
+</div>
+</dd></dl>
+
+<dl class="py function">
+<dt id="cana.datasets.bio.load_cell_collective_model">
+<code class="sig-prename descclassname"><span class="pre">cana.datasets.bio.</span></code><code class="sig-name descname"><span class="pre">load_cell_collective_model</span></code><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">name</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/cana/datasets/bio.html#load_cell_collective_model"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#cana.datasets.bio.load_cell_collective_model" title="Permalink to this definition">¶</a></dt>
+<dd><p>Loads one of the Cell Collective <span id="id7">[<a class="reference internal" href="../../bibliography.html#id2">HKM+12</a>]</span> models.
+Models collected on Aug 2020.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>name</strong> (<em>str</em>) – the name of the model to be loaded.
+Accepts: [“Apoptosis Network”, “Arabidopsis thaliana Cell Cycle”, “Aurora Kinase A in Neuroblastoma”, …,
+“Wg Pathway of Drosophila Signalling Pathways”, “Yeast Apoptosis”]</p>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>(BooleanNetwork)</p>
+</dd>
+</dl>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>See source code for full list of models. Credits to Xuan Wang for compiling these models.
+We are working on making a Cell Collective direct loader.</p>
+</div>
 </dd></dl>
 
 </div>
 <span class="target" id="module-cana.datasets.motifs"></span><div class="section" id="network-motifs">
 <h1>Network Motifs<a class="headerlink" href="#network-motifs" title="Permalink to this headline">¶</a></h1>
-<dl class="function">
+<p>Simple network motifs in Networkx.DiGraph format that can be directly loaded.</p>
+<dl class="py function">
 <dt id="cana.datasets.motifs.network_motif">
-<code class="descclassname">cana.datasets.motifs.</code><code class="descname">network_motif</code><span class="sig-paren">(</span><em>name=None</em><span class="sig-paren">)</span><a class="reference internal" href="../../modules/cana/datasets/motifs.html#network_motif"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#cana.datasets.motifs.network_motif" title="Permalink to this definition">¶</a></dt>
-<dd><p>Graph motifs from <a class="reference internal" href="../../references.html#milo-2012" id="id5">[MSOI+02]</a>.</p>
-<table class="docutils field-list" frame="void" rules="none">
-<col class="field-name" />
-<col class="field-body" />
-<tbody valign="top">
-<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>name</strong> (<em>string</em>) – The name of the motif.
-Possible values are : <code class="docutils literal notranslate"><span class="pre">FeedForward</span></code>, <code class="docutils literal notranslate"><span class="pre">Fan</span></code>, <code class="docutils literal notranslate"><span class="pre">FeedForwardSelf1</span></code>, <code class="docutils literal notranslate"><span class="pre">FeedForwardSelf2</span></code>, <code class="docutils literal notranslate"><span class="pre">FeedForwardSelf3</span></code>, <code class="docutils literal notranslate"><span class="pre">FeedForwardSelf123</span></code>, <code class="docutils literal notranslate"><span class="pre">BiFan</span></code>, <code class="docutils literal notranslate"><span class="pre">CoRegulated</span></code>, <code class="docutils literal notranslate"><span class="pre">CoRegulating</span></code>, <code class="docutils literal notranslate"><span class="pre">BiParallel</span></code>, <code class="docutils literal notranslate"><span class="pre">TriParallel</span></code>, <code class="docutils literal notranslate"><span class="pre">Dominating4</span></code>, <code class="docutils literal notranslate"><span class="pre">Dominating4Undir</span></code>, <code class="docutils literal notranslate"><span class="pre">3Loop</span></code>, <code class="docutils literal notranslate"><span class="pre">4Loop</span></code>, <code class="docutils literal notranslate"><span class="pre">3LoopSelf123</span></code>, <code class="docutils literal notranslate"><span class="pre">FourLoop</span></code>, <code class="docutils literal notranslate"><span class="pre">FourCoLoop</span></code>, <code class="docutils literal notranslate"><span class="pre">DirectedTwoLoop</span></code>, <code class="docutils literal notranslate"><span class="pre">BiParallelLoop</span></code>, <code class="docutils literal notranslate"><span class="pre">5Chain</span></code>, <code class="docutils literal notranslate"><span class="pre">3Chain</span></code>, <code class="docutils literal notranslate"><span class="pre">KeffStudy3</span></code>, <code class="docutils literal notranslate"><span class="pre">KeffStudy4</span></code>, <code class="docutils literal notranslate"><span class="pre">CoRegulatedSelf</span></code>, <code class="docutils literal notranslate"><span class="pre">KeffLine4</span></code>, <code class="docutils literal notranslate"><span class="pre">KeffLineLoop4</span></code>, <code class="docutils literal notranslate"><span class="pre">3Full</span></code>, <code class="docutils literal notranslate"><span class="pre">6Pyramid</span></code>, <code class="docutils literal notranslate"><span class="pre">4Split</span></code>, <code class="docutils literal notranslate"><span class="pre">5BiParallel</span></code>, <code class="docutils literal notranslate"><span class="pre">6BiParallelDilation</span></code>, <code class="docutils literal notranslate"><span class="pre">6BiParallelDilationLoop</span></code>, <code class="docutils literal notranslate"><span class="pre">5combine</span></code>, <code class="docutils literal notranslate"><span class="pre">4tree</span></code>.</td>
-</tr>
-<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body">The directed graph motif.</td>
-</tr>
-<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body">(networkx.DiGraph)</td>
-</tr>
-</tbody>
-</table>
+<code class="sig-prename descclassname"><span class="pre">cana.datasets.motifs.</span></code><code class="sig-name descname"><span class="pre">network_motif</span></code><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">name</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/cana/datasets/motifs.html#network_motif"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#cana.datasets.motifs.network_motif" title="Permalink to this definition">¶</a></dt>
+<dd><p>Graph motifs from <span id="id8">[<a class="reference internal" href="../../bibliography.html#id10">MSOI+02</a>]</span>.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>name</strong> (<em>string</em>) – <p>The name of the motif.
+Possible values are : <code class="docutils literal notranslate"><span class="pre">FeedForward</span></code>, <code class="docutils literal notranslate"><span class="pre">Fan</span></code>, <code class="docutils literal notranslate"><span class="pre">FeedForwardSelf1</span></code>,</p>
+<blockquote>
+<div><p><code class="docutils literal notranslate"><span class="pre">FeedForwardSelf2</span></code>, <code class="docutils literal notranslate"><span class="pre">FeedForwardSelf3</span></code>, <code class="docutils literal notranslate"><span class="pre">FeedForwardSelf123</span></code>,
+<code class="docutils literal notranslate"><span class="pre">BiFan</span></code>, <code class="docutils literal notranslate"><span class="pre">CoRegulated</span></code>, <code class="docutils literal notranslate"><span class="pre">CoRegulating</span></code>, <code class="docutils literal notranslate"><span class="pre">BiParallel</span></code>,
+<code class="docutils literal notranslate"><span class="pre">TriParallel</span></code>, <code class="docutils literal notranslate"><span class="pre">Dominating4</span></code>, <code class="docutils literal notranslate"><span class="pre">Dominating4Undir</span></code>, <code class="docutils literal notranslate"><span class="pre">3Loop</span></code>,
+<code class="docutils literal notranslate"><span class="pre">4Loop</span></code>, <code class="docutils literal notranslate"><span class="pre">3LoopSelf123</span></code>, <code class="docutils literal notranslate"><span class="pre">FourLoop</span></code>, <code class="docutils literal notranslate"><span class="pre">FourCoLoop</span></code>,
+<code class="docutils literal notranslate"><span class="pre">DirectedTwoLoop</span></code>, <code class="docutils literal notranslate"><span class="pre">BiParallelLoop</span></code>, <code class="docutils literal notranslate"><span class="pre">5Chain</span></code>, <code class="docutils literal notranslate"><span class="pre">3Chain</span></code>,
+<code class="docutils literal notranslate"><span class="pre">KeffStudy3</span></code>, <code class="docutils literal notranslate"><span class="pre">KeffStudy4</span></code>, <code class="docutils literal notranslate"><span class="pre">CoRegulatedSelf</span></code>, <code class="docutils literal notranslate"><span class="pre">KeffLine4</span></code>,
+<code class="docutils literal notranslate"><span class="pre">KeffLineLoop4</span></code>, <code class="docutils literal notranslate"><span class="pre">3Full</span></code>, <code class="docutils literal notranslate"><span class="pre">6Pyramid</span></code>, <code class="docutils literal notranslate"><span class="pre">4Split</span></code>, <code class="docutils literal notranslate"><span class="pre">5BiParallel</span></code>,
+<code class="docutils literal notranslate"><span class="pre">6BiParallelDilation</span></code>, <code class="docutils literal notranslate"><span class="pre">6BiParallelDilationLoop</span></code>, <code class="docutils literal notranslate"><span class="pre">5combine</span></code>, <code class="docutils literal notranslate"><span class="pre">4tree</span></code>.</p>
+</div></blockquote>
+</p>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>The directed graph motif.</p>
+</dd>
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p>(networkx.DiGraph)</p>
+</dd>
+</dl>
 </dd></dl>
 
 </div>
 
 
            </div>
-           <div class="articleComments">
-            
-           </div>
+           
           </div>
           <footer>
-  
     <div class="rst-footer-buttons" role="navigation" aria-label="footer navigation">
-      
-        <a href="../utils.html" class="btn btn-neutral float-right" title="Utilities" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right"></span></a>
-      
-      
-        <a href="nodes.html" class="btn btn-neutral" title="Boolean Nodes" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left"></span> Previous</a>
-      
+        <a href="../ensemble.html" class="btn btn-neutral float-right" title="Ensemble Methods" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+        <a href="nodes.html" class="btn btn-neutral float-left" title="Boolean Nodes" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
     </div>
-  
 
   <hr/>
 
   <div role="contentinfo">
     <p>
-        &copy; Copyright 2017, Correia, R. B., Gates, A., Rocha, L. M..
-      Last updated on Apr 16, 2018.
+        &#169; Copyright 2021, Correia, R. B., Gates, A., Rocha, L. M..
 
     </p>
   </div>
-  Built with <a href="http://sphinx-doc.org/">Sphinx</a> using a <a href="https://github.com/snide/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>. 
+    
+    
+    
+    Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    
+    provided by <a href="https://readthedocs.org">Read the Docs</a>. 
 
 </footer>
-
         </div>
       </div>
 
@@ -291,38 +366,15 @@ Possible values are : <code class="docutils literal notranslate"><span class="pr
   </div>
   
 
-
-  
-
-    <script type="text/javascript">
-        var DOCUMENTATION_OPTIONS = {
-            URL_ROOT:'../../',
-            VERSION:'0.0.3-alpha',
-            COLLAPSE_INDEX:false,
-            FILE_SUFFIX:'.html',
-            HAS_SOURCE:  true,
-            SOURCELINK_SUFFIX: '.txt'
-        };
-    </script>
-      <script type="text/javascript" src="../../static/jquery.js"></script>
-      <script type="text/javascript" src="../../static/underscore.js"></script>
-      <script type="text/javascript" src="../../static/doctools.js"></script>
-      <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.1/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
-
-  
-
-  
-  
-    <script type="text/javascript" src="../../static/js/theme.js"></script>
-  
-
-  
-  
   <script type="text/javascript">
       jQuery(function () {
-          SphinxRtdTheme.StickyNav.enable();
+          SphinxRtdTheme.Navigation.enable(true);
       });
   </script>
+
+  
+  
+    
    
 
 </body>

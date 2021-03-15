@@ -1,0 +1,397 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" >
+<head>
+  <meta charset="utf-8" />
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  
+  <title>cana.random_boolean_network &mdash; CANA 0.1 documentation</title>
+  
+
+  
+  <link rel="stylesheet" href="../../_static/css/theme.css" type="text/css" />
+  <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
+
+  
+  
+
+  
+  
+
+  
+
+  
+  <!--[if lt IE 9]>
+    <script src="../../_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+    
+      <script type="text/javascript" id="documentation_options" data-url_root="../../" src="../../_static/documentation_options.js"></script>
+        <script src="../../_static/jquery.js"></script>
+        <script src="../../_static/underscore.js"></script>
+        <script src="../../_static/doctools.js"></script>
+    
+    <script type="text/javascript" src="../../_static/js/theme.js"></script>
+
+    
+    <link rel="index" title="Index" href="../../genindex.html" />
+    <link rel="search" title="Search" href="../../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav">
+
+   
+  <div class="wy-grid-for-nav">
+    
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+          
+
+          
+            <a href="../../index.html" class="icon icon-home"> CANA
+          
+
+          
+          </a>
+
+          
+            
+            
+              <div class="version">
+                0.1
+              </div>
+            
+          
+
+          
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+
+          
+        </div>
+
+        
+        <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+          
+            
+            
+              
+            
+            
+              <p class="caption"><span class="caption-text">Table of Contents:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../reference/index.html">API Reference</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../appendix/index.html">Appendix</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../bibliography.html">Bibliography</a></li>
+</ul>
+
+            
+          
+        </div>
+        
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+
+      
+      <nav class="wy-nav-top" aria-label="top navigation">
+        
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../index.html">CANA</a>
+        
+      </nav>
+
+
+      <div class="wy-nav-content">
+        
+        <div class="rst-content">
+        
+          
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div role="navigation" aria-label="breadcrumbs navigation">
+
+  <ul class="wy-breadcrumbs">
+    
+      <li><a href="../../index.html" class="icon icon-home"></a> &raquo;</li>
+        
+          <li><a href="../index.html">Module code</a> &raquo;</li>
+        
+      <li>cana.random_boolean_network</li>
+    
+    
+      <li class="wy-breadcrumbs-aside">
+        
+      </li>
+    
+  </ul>
+
+  
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+            
+  <h1>Source code for cana.random_boolean_network</h1><div class="highlight"><pre>
+<span></span><span class="c1"># -*- coding: utf-8 -*-</span>
+<span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">Random Boolean Network</span>
+<span class="sd">======================</span>
+
+<span class="sd">Methods to generate random ensembles of Boolean networks.</span>
+
+<span class="sd">&quot;&quot;&quot;</span>
+<span class="c1">#   Copyright (C) 2021 by</span>
+<span class="c1">#   Alex Gates &lt;ajgates@indiana.edu&gt;</span>
+<span class="c1">#   Rion Brattig Correia &lt;rionbr@gmail.com&gt;</span>
+<span class="c1">#   Thomas Parmer &lt;tjparmer@indiana.edu&gt;</span>
+<span class="c1">#   All rights reserved.</span>
+<span class="c1">#   MIT license.</span>
+<span class="kn">from</span> <span class="nn">collections</span> <span class="kn">import</span> <span class="n">defaultdict</span><span class="p">,</span> <span class="n">Counter</span>
+<span class="kn">import</span> <span class="nn">networkx</span> <span class="k">as</span> <span class="nn">nx</span>
+<span class="kn">import</span> <span class="nn">random</span>
+<span class="kn">from</span> <span class="nn">cana.boolean_network</span> <span class="kn">import</span> <span class="n">BooleanNetwork</span>
+<span class="kn">import</span> <span class="nn">re</span>
+<span class="kn">from</span> <span class="nn">io</span> <span class="kn">import</span> <span class="n">StringIO</span>
+<span class="kn">from</span> <span class="nn">cana.utils</span> <span class="kn">import</span> <span class="n">output_transitions</span>
+
+
+<div class="viewcode-block" id="regular_boolean_network"><a class="viewcode-back" href="../../reference/ensemble.html#cana.random_boolean_network.regular_boolean_network">[docs]</a><span class="k">def</span> <span class="nf">regular_boolean_network</span><span class="p">(</span><span class="n">N</span><span class="o">=</span><span class="mi">10</span><span class="p">,</span> <span class="n">K</span><span class="o">=</span><span class="mi">2</span><span class="p">,</span> <span class="n">bias</span><span class="o">=</span><span class="mf">0.5</span><span class="p">,</span> <span class="n">bias_constraint</span><span class="o">=</span><span class="s1">&#39;soft&#39;</span><span class="p">,</span> <span class="n">keep_constants</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">remove_multiedges</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">niter_remove</span><span class="o">=</span><span class="mi">1000</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    TODO: description</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">din</span> <span class="o">=</span> <span class="p">[</span><span class="n">K</span><span class="p">]</span> <span class="o">*</span> <span class="n">N</span>  <span class="c1"># in-degree distrubtion</span>
+    <span class="n">dout</span> <span class="o">=</span> <span class="p">[</span><span class="n">K</span><span class="p">]</span> <span class="o">*</span> <span class="n">N</span>  <span class="c1"># out-degree distrubtion</span>
+
+    <span class="n">regular_graph</span> <span class="o">=</span> <span class="n">nx</span><span class="o">.</span><span class="n">directed_configuration_model</span><span class="p">(</span><span class="n">din</span><span class="p">,</span> <span class="n">dout</span><span class="p">)</span>
+
+    <span class="c1"># the configuration graph creates a multigraph with self loops</span>
+    <span class="c1"># the self loops are OK, but we should only have one copy of each edge</span>
+    <span class="k">if</span> <span class="n">remove_multiedges</span><span class="p">:</span>
+        <span class="n">regular_graph</span> <span class="o">=</span> <span class="n">_remove_duplicate_edges</span><span class="p">(</span><span class="n">graph</span><span class="o">=</span><span class="n">regular_graph</span><span class="p">,</span> <span class="n">niter_remove</span><span class="o">=</span><span class="n">niter_remove</span><span class="p">)</span>
+
+    <span class="c1"># A dict that contains the network logic {&lt;id&gt;:{&#39;name&#39;:&lt;string&gt;,&#39;in&#39;:&lt;list-input-node-id&gt;,&#39;out&#39;:&lt;list-output-transitions&gt;},..}</span>
+    <span class="n">bn_dict</span> <span class="o">=</span> <span class="p">{</span>
+        <span class="n">node</span><span class="p">:</span> <span class="p">{</span>
+            <span class="s1">&#39;name&#39;</span><span class="p">:</span> <span class="nb">str</span><span class="p">(</span><span class="n">node</span><span class="p">),</span>
+            <span class="s1">&#39;in&#39;</span><span class="p">:</span> <span class="nb">sorted</span><span class="p">([</span><span class="n">n</span> <span class="k">for</span> <span class="n">n</span> <span class="ow">in</span> <span class="n">regular_graph</span><span class="o">.</span><span class="n">predecessors</span><span class="p">(</span><span class="n">node</span><span class="p">)]),</span>
+            <span class="s1">&#39;out&#39;</span><span class="p">:</span> <span class="n">random_automata_table</span><span class="p">(</span><span class="n">regular_graph</span><span class="o">.</span><span class="n">in_degree</span><span class="p">(</span><span class="n">node</span><span class="p">),</span> <span class="n">bias</span><span class="p">,</span> <span class="n">bias_constraint</span><span class="p">)</span>
+        <span class="p">}</span> <span class="k">for</span> <span class="n">node</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">N</span><span class="p">)</span>
+    <span class="p">}</span>
+
+    <span class="k">return</span> <span class="n">BooleanNetwork</span><span class="o">.</span><span class="n">from_dict</span><span class="p">(</span><span class="n">bn_dict</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="er_boolean_network"><a class="viewcode-back" href="../../reference/ensemble.html#cana.random_boolean_network.er_boolean_network">[docs]</a><span class="k">def</span> <span class="nf">er_boolean_network</span><span class="p">(</span><span class="n">N</span><span class="o">=</span><span class="mi">10</span><span class="p">,</span> <span class="n">p</span><span class="o">=</span><span class="mf">0.2</span><span class="p">,</span> <span class="n">bias</span><span class="o">=</span><span class="mf">0.5</span><span class="p">,</span> <span class="n">bias_constraint</span><span class="o">=</span><span class="s1">&#39;soft&#39;</span><span class="p">,</span> <span class="n">remove_multiedges</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">niter_remove</span><span class="o">=</span><span class="mi">1000</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    TODO: description</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">er_graph</span> <span class="o">=</span> <span class="n">nx</span><span class="o">.</span><span class="n">erdos_renyi_graph</span><span class="p">(</span><span class="n">N</span><span class="p">,</span> <span class="n">p</span><span class="p">,</span> <span class="n">directed</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+
+    <span class="c1"># the configuration graph creates a multigraph with self loops</span>
+    <span class="c1"># the self loops are OK, but we should only have one copy of each edge</span>
+    <span class="k">if</span> <span class="n">remove_multiedges</span><span class="p">:</span>
+        <span class="n">er_graph</span> <span class="o">=</span> <span class="n">_remove_duplicate_edges</span><span class="p">(</span><span class="n">graph</span><span class="o">=</span><span class="n">er_graph</span><span class="p">,</span> <span class="n">niter_remove</span><span class="o">=</span><span class="n">niter_remove</span><span class="p">)</span>
+
+    <span class="c1"># A dict that contains the network logic {&lt;id&gt;:{&#39;name&#39;:&lt;string&gt;,&#39;in&#39;:&lt;list-input-node-id&gt;,&#39;out&#39;:&lt;list-output-transitions&gt;},..}</span>
+    <span class="n">bn_dict</span> <span class="o">=</span> <span class="p">{</span>
+        <span class="n">node</span><span class="p">:</span> <span class="p">{</span>
+            <span class="s1">&#39;name&#39;</span><span class="p">:</span> <span class="nb">str</span><span class="p">(</span><span class="n">node</span><span class="p">),</span>
+            <span class="s1">&#39;in&#39;</span><span class="p">:</span> <span class="nb">sorted</span><span class="p">([</span><span class="n">n</span> <span class="k">for</span> <span class="n">n</span> <span class="ow">in</span> <span class="n">er_graph</span><span class="o">.</span><span class="n">predecessors</span><span class="p">(</span><span class="n">node</span><span class="p">)]),</span>
+            <span class="s1">&#39;out&#39;</span><span class="p">:</span> <span class="n">random_automata_table</span><span class="p">(</span><span class="n">er_graph</span><span class="o">.</span><span class="n">in_degree</span><span class="p">(</span><span class="n">node</span><span class="p">),</span> <span class="n">bias</span><span class="p">,</span> <span class="n">bias_constraint</span><span class="p">)</span>
+        <span class="p">}</span> <span class="k">for</span> <span class="n">node</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">N</span><span class="p">)</span>
+    <span class="p">}</span>
+
+    <span class="k">return</span> <span class="n">BooleanNetwork</span><span class="o">.</span><span class="n">from_dict</span><span class="p">(</span><span class="n">bn_dict</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="random_automata_table"><a class="viewcode-back" href="../../reference/ensemble.html#cana.random_boolean_network.random_automata_table">[docs]</a><span class="k">def</span> <span class="nf">random_automata_table</span><span class="p">(</span><span class="n">indegree</span><span class="p">,</span> <span class="n">bias</span><span class="p">,</span> <span class="n">bias_constraint</span><span class="o">=</span><span class="s1">&#39;soft&#39;</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    TODO: description</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">if</span> <span class="n">bias_constraint</span> <span class="o">==</span> <span class="s1">&#39;soft&#39;</span><span class="p">:</span>
+        <span class="k">return</span> <span class="p">[</span><span class="nb">int</span><span class="p">(</span><span class="n">random</span><span class="o">.</span><span class="n">random</span><span class="p">()</span> <span class="o">&lt;</span> <span class="n">bias</span><span class="p">)</span> <span class="k">for</span> <span class="n">b</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">2</span><span class="o">**</span><span class="n">indegree</span><span class="p">)]</span>
+
+    <span class="k">elif</span> <span class="n">bias_constraint</span> <span class="o">==</span> <span class="s1">&#39;hard&#39;</span><span class="p">:</span>
+        <span class="n">n_ones</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">bias</span> <span class="o">*</span> <span class="p">(</span><span class="mi">2</span><span class="o">**</span><span class="n">indegree</span><span class="p">))</span>
+        <span class="n">output</span> <span class="o">=</span> <span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">*</span> <span class="p">(</span><span class="mi">2</span><span class="o">**</span><span class="n">indegree</span> <span class="o">-</span> <span class="n">n_ones</span><span class="p">)</span> <span class="o">+</span> <span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">*</span> <span class="n">n_ones</span>
+        <span class="n">random</span><span class="o">.</span><span class="n">shuffle</span><span class="p">(</span><span class="n">output</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">output</span>
+
+    <span class="k">elif</span> <span class="n">bias_constraint</span> <span class="o">==</span> <span class="s1">&#39;soft_no_constant&#39;</span><span class="p">:</span>
+        <span class="n">output</span> <span class="o">=</span> <span class="p">[</span><span class="nb">int</span><span class="p">(</span><span class="n">random</span><span class="o">.</span><span class="n">random</span><span class="p">()</span> <span class="o">&lt;</span> <span class="n">bias</span><span class="p">)</span> <span class="k">for</span> <span class="n">b</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">2</span><span class="o">**</span><span class="n">indegree</span><span class="p">)]</span>
+        <span class="k">if</span> <span class="nb">sum</span><span class="p">(</span><span class="n">output</span><span class="p">)</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="n">output</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">=</span> <span class="mi">1</span>
+            <span class="n">random</span><span class="o">.</span><span class="n">shuffle</span><span class="p">(</span><span class="n">output</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">output</span></div>
+
+
+<span class="k">def</span> <span class="nf">_remove_duplicate_edges</span><span class="p">(</span><span class="n">graph</span><span class="p">,</span> <span class="n">niter_remove</span><span class="o">=</span><span class="mi">100</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    TODO: description</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">edge_list</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">graph</span><span class="o">.</span><span class="n">edges</span><span class="p">())</span>
+    <span class="n">edge_frequency</span> <span class="o">=</span> <span class="n">Counter</span><span class="p">(</span><span class="n">edge_list</span><span class="p">)</span>
+
+    <span class="n">duplicate_edges</span> <span class="o">=</span> <span class="p">[</span><span class="n">edge</span> <span class="k">for</span> <span class="n">edge</span><span class="p">,</span> <span class="n">num_edge</span> <span class="ow">in</span> <span class="n">edge_frequency</span><span class="o">.</span><span class="n">items</span><span class="p">()</span> <span class="k">if</span> <span class="n">num_edge</span> <span class="o">&gt;</span> <span class="mi">1</span><span class="p">]</span>
+
+    <span class="n">iremove_iter</span> <span class="o">=</span> <span class="mi">0</span>
+    <span class="k">while</span> <span class="nb">len</span><span class="p">(</span><span class="n">duplicate_edges</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">0</span> <span class="ow">and</span> <span class="n">iremove_iter</span> <span class="o">&lt;</span> <span class="n">niter_remove</span><span class="p">:</span>
+        <span class="k">for</span> <span class="n">dedge</span> <span class="ow">in</span> <span class="n">duplicate_edges</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">edge_frequency</span><span class="p">[</span><span class="n">dedge</span><span class="p">]</span> <span class="o">&gt;</span> <span class="mi">1</span><span class="p">:</span>
+                <span class="n">switch_edge</span> <span class="o">=</span> <span class="n">random</span><span class="o">.</span><span class="n">choice</span><span class="p">(</span><span class="n">edge_list</span><span class="p">)</span>
+
+                <span class="c1"># exchange edges</span>
+                <span class="n">graph</span><span class="o">.</span><span class="n">remove_edge</span><span class="p">(</span><span class="n">dedge</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">dedge</span><span class="p">[</span><span class="mi">1</span><span class="p">])</span>
+                <span class="n">graph</span><span class="o">.</span><span class="n">remove_edge</span><span class="p">(</span><span class="n">switch_edge</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">switch_edge</span><span class="p">[</span><span class="mi">1</span><span class="p">])</span>
+                <span class="n">graph</span><span class="o">.</span><span class="n">add_edge</span><span class="p">(</span><span class="n">dedge</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">switch_edge</span><span class="p">[</span><span class="mi">1</span><span class="p">])</span>
+                <span class="n">graph</span><span class="o">.</span><span class="n">add_edge</span><span class="p">(</span><span class="n">switch_edge</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">dedge</span><span class="p">[</span><span class="mi">1</span><span class="p">])</span>
+
+                <span class="n">edge_frequency</span><span class="p">[</span><span class="n">dedge</span><span class="p">]</span> <span class="o">-=</span> <span class="mi">1</span>
+                <span class="n">edge_frequency</span><span class="p">[</span><span class="n">switch_edge</span><span class="p">]</span> <span class="o">-=</span> <span class="mi">1</span>
+
+                <span class="n">edge_frequency</span><span class="p">[(</span><span class="n">dedge</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">switch_edge</span><span class="p">[</span><span class="mi">1</span><span class="p">])]</span> <span class="o">+=</span> <span class="mi">1</span>
+                <span class="n">edge_frequency</span><span class="p">[(</span><span class="n">switch_edge</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">dedge</span><span class="p">[</span><span class="mi">1</span><span class="p">])]</span> <span class="o">+=</span> <span class="mi">1</span>
+
+                <span class="n">edge_list</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">graph</span><span class="o">.</span><span class="n">edges</span><span class="p">())</span>
+
+        <span class="n">duplicate_edges</span> <span class="o">=</span> <span class="p">[</span><span class="n">edge</span> <span class="k">for</span> <span class="n">edge</span><span class="p">,</span> <span class="n">num_edge</span> <span class="ow">in</span> <span class="n">edge_frequency</span><span class="o">.</span><span class="n">items</span><span class="p">()</span> <span class="k">if</span> <span class="n">num_edge</span> <span class="o">&gt;</span> <span class="mi">1</span><span class="p">]</span>
+        <span class="n">iremove_iter</span> <span class="o">+=</span> <span class="mi">1</span>
+
+    <span class="k">if</span> <span class="n">iremove_iter</span> <span class="o">&gt;=</span> <span class="n">niter_remove</span><span class="p">:</span>
+        <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Warning: multi-edges were not successfully removed after </span><span class="si">%s</span><span class="s2"> iterations!!&quot;</span> <span class="o">%</span> <span class="nb">str</span><span class="p">(</span><span class="n">iremove_iter</span><span class="p">))</span>
+
+    <span class="k">return</span> <span class="n">graph</span>
+
+
+<div class="viewcode-block" id="from_string_boolean"><a class="viewcode-back" href="../../reference/ensemble.html#cana.random_boolean_network.from_string_boolean">[docs]</a><span class="k">def</span> <span class="nf">from_string_boolean</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">string</span><span class="p">,</span> <span class="n">keep_constants</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Instanciates a Boolean Network from a Boolean update rules format.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        string (string) : A boolean update rules format representation of a Boolean Network.</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">        (BooleanNetwork) : The boolean network object.</span>
+
+<span class="sd">    Examples:</span>
+<span class="sd">        String should be structured as follow:</span>
+
+<span class="sd">        .. code-block:: text</span>
+
+<span class="sd">            # BOOLEAN RULES (this is a comment)</span>
+<span class="sd">            # node_name*=node_input_1 [logic operator] node_input_2 ...</span>
+<span class="sd">            NODE3*=NODE1 AND NODE2 ...</span>
+
+<span class="sd">    See also:</span>
+<span class="sd">        :func:`from_string` :func:`from_dict`</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="n">logic</span> <span class="o">=</span> <span class="n">defaultdict</span><span class="p">(</span><span class="nb">dict</span><span class="p">)</span>
+
+    <span class="c1"># parse lines to receive node names</span>
+    <span class="n">network_file</span> <span class="o">=</span> <span class="n">StringIO</span><span class="p">(</span><span class="n">string</span><span class="p">)</span>
+    <span class="n">line</span> <span class="o">=</span> <span class="n">network_file</span><span class="o">.</span><span class="n">readline</span><span class="p">()</span>
+    <span class="n">i</span> <span class="o">=</span> <span class="mi">0</span>
+    <span class="k">while</span> <span class="n">line</span> <span class="o">!=</span> <span class="s2">&quot;&quot;</span><span class="p">:</span>
+        <span class="k">if</span> <span class="n">line</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">==</span> <span class="s1">&#39;#&#39;</span><span class="p">:</span>
+            <span class="n">line</span> <span class="o">=</span> <span class="n">network_file</span><span class="o">.</span><span class="n">readline</span><span class="p">()</span>
+            <span class="k">continue</span>
+        <span class="n">logic</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="p">{</span>
+            <span class="s1">&#39;name&#39;</span><span class="p">:</span> <span class="n">line</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s2">&quot;*&quot;</span><span class="p">)[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">strip</span><span class="p">(),</span>
+            <span class="s1">&#39;in&#39;</span><span class="p">:</span> <span class="p">[],</span>
+            <span class="s1">&#39;out&#39;</span><span class="p">:</span> <span class="p">[]</span>
+        <span class="p">}</span>
+        <span class="n">line</span> <span class="o">=</span> <span class="n">network_file</span><span class="o">.</span><span class="n">readline</span><span class="p">()</span>
+        <span class="n">i</span> <span class="o">+=</span> <span class="mi">1</span>
+
+    <span class="c1"># Parse lines again to determine inputs and output sequence</span>
+    <span class="n">network_file</span> <span class="o">=</span> <span class="n">StringIO</span><span class="p">(</span><span class="n">string</span><span class="p">)</span>
+    <span class="n">line</span> <span class="o">=</span> <span class="n">network_file</span><span class="o">.</span><span class="n">readline</span><span class="p">()</span>
+    <span class="n">i</span> <span class="o">=</span> <span class="mi">0</span>
+    <span class="k">while</span> <span class="n">line</span> <span class="o">!=</span> <span class="s2">&quot;&quot;</span><span class="p">:</span>
+        <span class="k">if</span> <span class="n">line</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">==</span> <span class="s1">&#39;#&#39;</span><span class="p">:</span>
+            <span class="n">line</span> <span class="o">=</span> <span class="n">network_file</span><span class="o">.</span><span class="n">readline</span><span class="p">()</span>
+            <span class="k">continue</span>
+        <span class="n">eval_line</span> <span class="o">=</span> <span class="n">line</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s2">&quot;=&quot;</span><span class="p">)[</span><span class="mi">1</span><span class="p">]</span>  <span class="c1"># logical condition to evaluate</span>
+        <span class="c1"># RE checks for non-alphanumeric character before/after node name (node names are included in other node names)</span>
+        <span class="c1"># Additional characters added to eval_line to avoid start/end of string complications</span>
+        <span class="n">input_names</span> <span class="o">=</span> <span class="p">[</span><span class="n">logic</span><span class="p">[</span><span class="n">node</span><span class="p">][</span><span class="s1">&#39;name&#39;</span><span class="p">]</span> <span class="k">for</span> <span class="n">node</span> <span class="ow">in</span> <span class="n">logic</span> <span class="k">if</span> <span class="n">re</span><span class="o">.</span><span class="n">compile</span><span class="p">(</span><span class="s1">&#39;\W&#39;</span> <span class="o">+</span> <span class="n">logic</span><span class="p">[</span><span class="n">node</span><span class="p">][</span><span class="s1">&#39;name&#39;</span><span class="p">]</span> <span class="o">+</span> <span class="s1">&#39;\W&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">search</span><span class="p">(</span><span class="s1">&#39;*&#39;</span> <span class="o">+</span> <span class="n">eval_line</span> <span class="o">+</span> <span class="s1">&#39;*&#39;</span><span class="p">)]</span>
+        <span class="n">input_nums</span> <span class="o">=</span> <span class="p">[</span><span class="n">node</span> <span class="k">for</span> <span class="nb">input</span> <span class="ow">in</span> <span class="n">input_names</span> <span class="k">for</span> <span class="n">node</span> <span class="ow">in</span> <span class="n">logic</span> <span class="k">if</span> <span class="nb">input</span> <span class="o">==</span> <span class="n">logic</span><span class="p">[</span><span class="n">node</span><span class="p">][</span><span class="s1">&#39;name&#39;</span><span class="p">]]</span>
+        <span class="n">logic</span><span class="p">[</span><span class="n">i</span><span class="p">][</span><span class="s1">&#39;in&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">input_nums</span>
+        <span class="c1"># Determine output transitions</span>
+        <span class="n">logic</span><span class="p">[</span><span class="n">i</span><span class="p">][</span><span class="s1">&#39;out&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">output_transitions</span><span class="p">(</span><span class="n">eval_line</span><span class="p">,</span> <span class="n">input_names</span><span class="p">)</span>
+        <span class="n">line</span> <span class="o">=</span> <span class="n">network_file</span><span class="o">.</span><span class="n">readline</span><span class="p">()</span>
+        <span class="n">i</span> <span class="o">+=</span> <span class="mi">1</span>
+
+    <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">from_dict</span><span class="p">(</span><span class="n">logic</span><span class="p">,</span> <span class="n">keep_constants</span><span class="o">=</span><span class="n">keep_constants</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span></div>
+</pre></div>
+
+           </div>
+           
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>
+        &#169; Copyright 2021, Correia, R. B., Gates, A., Rocha, L. M..
+
+    </p>
+  </div>
+    
+    
+    
+    Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    
+    provided by <a href="https://readthedocs.org">Read the Docs</a>. 
+
+</footer>
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+  
+
+  <script type="text/javascript">
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script>
+
+  
+  
+    
+   
+
+</body>
+</html>

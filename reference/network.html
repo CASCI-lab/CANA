@@ -1,0 +1,1197 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" >
+<head>
+  <meta charset="utf-8" />
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  
+  <title>Network &mdash; CANA 0.1 documentation</title>
+  
+
+  
+  <link rel="stylesheet" href="../_static/css/theme.css" type="text/css" />
+  <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
+
+  
+  
+
+  
+  
+
+  
+
+  
+  <!--[if lt IE 9]>
+    <script src="../_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+    
+      <script type="text/javascript" id="documentation_options" data-url_root="../" src="../_static/documentation_options.js"></script>
+        <script src="../_static/jquery.js"></script>
+        <script src="../_static/underscore.js"></script>
+        <script src="../_static/doctools.js"></script>
+        <script async="async" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.7/latest.js?config=TeX-AMS-MML_HTMLorMML"></script>
+    
+    <script type="text/javascript" src="../_static/js/theme.js"></script>
+
+    
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="Canalization" href="canalization/index.html" />
+    <link rel="prev" title="Node" href="node.html" /> 
+</head>
+
+<body class="wy-body-for-nav">
+
+   
+  <div class="wy-grid-for-nav">
+    
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+          
+
+          
+            <a href="../index.html" class="icon icon-home"> CANA
+          
+
+          
+          </a>
+
+          
+            
+            
+              <div class="version">
+                0.1
+              </div>
+            
+          
+
+          
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+
+          
+        </div>
+
+        
+        <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+          
+            
+            
+              
+            
+            
+              <p class="caption"><span class="caption-text">Table of Contents:</span></p>
+<ul class="current">
+<li class="toctree-l1 current"><a class="reference internal" href="index.html">API Reference</a><ul class="current">
+<li class="toctree-l2"><a class="reference internal" href="node.html">Node</a></li>
+<li class="toctree-l2 current"><a class="current reference internal" href="#">Network</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#boolean-network">Boolean Network</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#bns-attractors-interface">BNS Attractors Interface</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="canalization/index.html">Canalization</a></li>
+<li class="toctree-l2"><a class="reference internal" href="control/index.html">Control</a></li>
+<li class="toctree-l2"><a class="reference internal" href="datasets/index.html">Datasets</a></li>
+<li class="toctree-l2"><a class="reference internal" href="ensemble.html">Ensemble Methods</a></li>
+<li class="toctree-l2"><a class="reference internal" href="utils.html">Utilities</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="../appendix/index.html">Appendix</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../bibliography.html">Bibliography</a></li>
+</ul>
+
+            
+          
+        </div>
+        
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+
+      
+      <nav class="wy-nav-top" aria-label="top navigation">
+        
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../index.html">CANA</a>
+        
+      </nav>
+
+
+      <div class="wy-nav-content">
+        
+        <div class="rst-content">
+        
+          
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div role="navigation" aria-label="breadcrumbs navigation">
+
+  <ul class="wy-breadcrumbs">
+    
+      <li><a href="../index.html" class="icon icon-home"></a> &raquo;</li>
+        
+          <li><a href="index.html">API Reference</a> &raquo;</li>
+        
+      <li>Network</li>
+    
+    
+      <li class="wy-breadcrumbs-aside">
+        
+          
+            <a href="../_sources/reference/network.rst.txt" rel="nofollow"> View page source</a>
+          
+        
+      </li>
+    
+  </ul>
+
+  
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+            
+  <div class="section" id="network">
+<h1><a class="toc-backref" href="#id4">Network</a><a class="headerlink" href="#network" title="Permalink to this headline">¶</a></h1>
+<div class="contents topic" id="contents">
+<p class="topic-title">Contents</p>
+<ul class="simple">
+<li><p><a class="reference internal" href="#network" id="id4">Network</a></p>
+<ul>
+<li><p><a class="reference internal" href="#boolean-network" id="id5">Boolean Network</a></p></li>
+<li><p><a class="reference internal" href="#bns-attractors-interface" id="id6">BNS Attractors Interface</a></p></li>
+</ul>
+</li>
+</ul>
+</div>
+<span class="target" id="module-cana.boolean_network"></span><div class="section" id="boolean-network">
+<h2><a class="toc-backref" href="#id5">Boolean Network</a><a class="headerlink" href="#boolean-network" title="Permalink to this headline">¶</a></h2>
+<p>Main class for Boolean network objects.</p>
+</div>
+<dl class="py class">
+<dt id="cana.boolean_network.BooleanNetwork">
+<em class="property"><span class="pre">class</span> </em><code class="sig-prename descclassname"><span class="pre">cana.boolean_network.</span></code><code class="sig-name descname"><span class="pre">BooleanNetwork</span></code><span class="sig-paren">(</span><em class="sig-param"><span class="pre">name=''</span></em>, <em class="sig-param"><span class="pre">Nnodes=0</span></em>, <em class="sig-param"><span class="pre">logic=None</span></em>, <em class="sig-param"><span class="pre">sg=None</span></em>, <em class="sig-param"><span class="pre">stg=None</span></em>, <em class="sig-param"><span class="pre">stg_r=None</span></em>, <em class="sig-param"><span class="pre">_ef=None</span></em>, <em class="sig-param"><span class="pre">attractors=None</span></em>, <em class="sig-param"><span class="pre">constants={}</span></em>, <em class="sig-param"><span class="pre">Nconstants=0</span></em>, <em class="sig-param"><span class="pre">keep_constants=False</span></em>, <em class="sig-param"><span class="pre">bin2num=&lt;built-in</span> <span class="pre">function</span> <span class="pre">binstate_to_statenum&gt;</span></em>, <em class="sig-param"><span class="pre">num2bin=&lt;built-in</span> <span class="pre">function</span> <span class="pre">statenum_to_binstate&gt;</span></em>, <em class="sig-param"><span class="pre">verbose=False</span></em>, <em class="sig-param"><span class="pre">*args</span></em>, <em class="sig-param"><span class="pre">**kwargs</span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/cana/boolean_network.html#BooleanNetwork"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#cana.boolean_network.BooleanNetwork" title="Permalink to this definition">¶</a></dt>
+<dd><dl class="py method">
+<dt id="cana.boolean_network.BooleanNetwork.activity_graph">
+<code class="sig-name descname"><span class="pre">activity_graph</span></code><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">threshold</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/cana/boolean_network.html#BooleanNetwork.activity_graph"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#cana.boolean_network.BooleanNetwork.activity_graph" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns the activity graph as proposed in
+Ghanbarnejad &amp; Klemm (2012) EPL, 99</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>threshold</strong> (<em>float</em>) – Only return edges above a certain activity threshold.
+This is usefull when computing graph measures at diffent levels.</p>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>directed graph</p>
+</dd>
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p>(networkx.DiGraph)</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt id="cana.boolean_network.BooleanNetwork.approx_dynamic_impact">
+<code class="sig-name descname"><span class="pre">approx_dynamic_impact</span></code><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">source</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">n_steps</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">target_set</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">bound</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'mean'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">threshold</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0.0</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/cana/boolean_network.html#BooleanNetwork.approx_dynamic_impact"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#cana.boolean_network.BooleanNetwork.approx_dynamic_impact" title="Permalink to this definition">¶</a></dt>
+<dd><p>Use the network structure to approximate the dynamical impact of a perturbation to node for each of n_steps
+for details see: Gates et al (2020).</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>source</strong> (<em>int</em>) – the source index for perturbations</p></li>
+<li><p><strong>n_steps</strong> (<em>int</em>) – the number of time steps</p></li>
+</ul>
+</dd>
+</dl>
+<dl class="simple">
+<dt>bound (str)<span class="classifier">the bound for the effective graph</span></dt><dd><p>‘mean’ - edge effectiveness
+‘upper’ - activity</p>
+</dd>
+</dl>
+<dl class="field-list simple">
+<dt class="field-odd">Returns</dt>
+<dd class="field-odd"><p>approximate dynamical impact for each node at each step (2 x n_steps x n_nodes)</p>
+</dd>
+<dt class="field-even">Return type</dt>
+<dd class="field-even"><p>(matrix)</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt id="cana.boolean_network.BooleanNetwork.attractor">
+<code class="sig-name descname"><span class="pre">attractor</span></code><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">initial</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/cana/boolean_network.html#BooleanNetwork.attractor"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#cana.boolean_network.BooleanNetwork.attractor" title="Permalink to this definition">¶</a></dt>
+<dd><p>Computes the trajectory starting at <code class="docutils literal notranslate"><span class="pre">initial</span></code> until it reaches an attracor (this is garanteed)</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>initial</strong> (<em>string</em>) – the initial state.</p>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>the atractor state.</p>
+</dd>
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p>attractor (string)</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt id="cana.boolean_network.BooleanNetwork.attractor_driver_nodes">
+<code class="sig-name descname"><span class="pre">attractor_driver_nodes</span></code><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">min_dvs</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">max_dvs</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">4</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">verbose</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/cana/boolean_network.html#BooleanNetwork.attractor_driver_nodes"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#cana.boolean_network.BooleanNetwork.attractor_driver_nodes" title="Permalink to this definition">¶</a></dt>
+<dd><p>Get the minimum necessary driver nodes by iterating the combination of all possible driver nodes of length <span class="math notranslate nohighlight">\(min &lt;= x &lt;= max\)</span>.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>min_dvs</strong> (<em>int</em>) – Mininum number of driver nodes to search.</p></li>
+<li><p><strong>max_dvs</strong> (<em>int</em>) – Maximum number of driver nodes to search.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>The list of driver nodes found in the search.</p>
+</dd>
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p>(list)</p>
+</dd>
+</dl>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>This is an inefficient bruit force search, maybe we can think of better ways to do this?</p>
+</div>
+<div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<p><a class="reference internal" href="#cana.boolean_network.BooleanNetwork.controlled_state_transition_graph" title="cana.boolean_network.BooleanNetwork.controlled_state_transition_graph"><code class="xref py py-func docutils literal notranslate"><span class="pre">controlled_state_transition_graph()</span></code></a>, <a class="reference internal" href="#cana.boolean_network.BooleanNetwork.controlled_attractor_graph" title="cana.boolean_network.BooleanNetwork.controlled_attractor_graph"><code class="xref py py-func docutils literal notranslate"><span class="pre">controlled_attractor_graph()</span></code></a>.</p>
+</div>
+</dd></dl>
+
+<dl class="py method">
+<dt id="cana.boolean_network.BooleanNetwork.attractors">
+<code class="sig-name descname"><span class="pre">attractors</span></code><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">mode</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'stg'</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/cana/boolean_network.html#BooleanNetwork.attractors"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#cana.boolean_network.BooleanNetwork.attractors" title="Permalink to this definition">¶</a></dt>
+<dd><p>Find the attractors of the boolean network.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>mode</strong> (<em>string</em>) – <code class="docutils literal notranslate"><span class="pre">stg</span></code> or <code class="docutils literal notranslate"><span class="pre">sat</span></code>. Defaults to <code class="docutils literal notranslate"><span class="pre">stg</span></code>.
+<code class="docutils literal notranslate"><span class="pre">stg</span></code>: Uses the full State Transition Graph (STG) and identifies the attractors as strongly connected components.
+<code class="docutils literal notranslate"><span class="pre">bns</span></code>: Uses the SAT-based <a class="reference internal" href="#module-cana.bns" title="cana.bns"><code class="xref py py-mod docutils literal notranslate"><span class="pre">cana.bns</span></code></a> to find all attractors.</p>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>A list containing all attractors for the boolean network.</p>
+</dd>
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p>attractors (list)</p>
+</dd>
+</dl>
+<div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<p><a class="reference internal" href="#module-cana.bns" title="cana.bns"><code class="xref py py-mod docutils literal notranslate"><span class="pre">cana.bns</span></code></a></p>
+</div>
+</dd></dl>
+
+<dl class="py method">
+<dt id="cana.boolean_network.BooleanNetwork.average_trajectory_length">
+<code class="sig-name descname"><span class="pre">average_trajectory_length</span></code><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">nsamples</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">10</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">random_seed</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">method</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'random'</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/cana/boolean_network.html#BooleanNetwork.average_trajectory_length"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#cana.boolean_network.BooleanNetwork.average_trajectory_length" title="Permalink to this definition">¶</a></dt>
+<dd><p>The average length of trajectories from a random initial configuration to its attractor.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>nsamples</strong> (<em>int</em>) – The number of samples per hammimg distance to get.</p></li>
+<li><p><strong>random_seed</strong> (<em>int</em>) – The random state seed.</p></li>
+<li><p><strong>method</strong> (<em>string</em>) – specify the method you want. either ‘random’ or ….</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>The average trajectory length to an attractor.</p>
+</dd>
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p>trajlen (float)</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt id="cana.boolean_network.BooleanNetwork.basin_entropy">
+<code class="sig-name descname"><span class="pre">basin_entropy</span></code><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">base</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">2</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/cana/boolean_network.html#BooleanNetwork.basin_entropy"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#cana.boolean_network.BooleanNetwork.basin_entropy" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt id="cana.boolean_network.BooleanNetwork.conditional_effective_graph">
+<code class="sig-name descname"><span class="pre">conditional_effective_graph</span></code><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">conditioned_nodes</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">{}</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">bound</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'mean'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">threshold</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/cana/boolean_network.html#BooleanNetwork.conditional_effective_graph"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#cana.boolean_network.BooleanNetwork.conditional_effective_graph" title="Permalink to this definition">¶</a></dt>
+<dd><p>Computes and returns the BN effective graph conditioned on some known states.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>conditioned_nodes</strong> (<em>dict</em>) – a dictionary mapping node ids to their conditioned states.
+dict of form { nodeid : nodestate }</p></li>
+<li><p><strong>bound</strong> (<em>string</em>) – The bound to which compute input redundancy.
+Can be one of : [“lower”, “mean”, “upper”, “tuple”].
+Defaults to “mean”.</p></li>
+<li><p><strong>threshold</strong> (<em>float</em>) – Only return edges above a certain effective connectivity threshold.
+This is usefull when computing graph measures at diffent levels.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>directed graph</p>
+</dd>
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p>(networkx.DiGraph)</p>
+</dd>
+</dl>
+<div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<p><a class="reference internal" href="#cana.boolean_network.BooleanNetwork.effective_graph" title="cana.boolean_network.BooleanNetwork.effective_graph"><code class="xref py py-func docutils literal notranslate"><span class="pre">effective_graph()</span></code></a></p>
+</div>
+</dd></dl>
+
+<dl class="py method">
+<dt id="cana.boolean_network.BooleanNetwork.controlled_attractor_graph">
+<code class="sig-name descname"><span class="pre">controlled_attractor_graph</span></code><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">driver_nodes</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">[]</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/cana/boolean_network.html#BooleanNetwork.controlled_attractor_graph"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#cana.boolean_network.BooleanNetwork.controlled_attractor_graph" title="Permalink to this definition">¶</a></dt>
+<dd><dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>cstg</strong> (<em>networkx.DiGraph</em>) – A Controlled State-Transition-Graph (CSTG)</p>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>The Controlled Attractor Graph (CAG)</p>
+</dd>
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p>(networkx.DiGraph)</p>
+</dd>
+</dl>
+<div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<p><a class="reference internal" href="#cana.boolean_network.BooleanNetwork.attractor_driver_nodes" title="cana.boolean_network.BooleanNetwork.attractor_driver_nodes"><code class="xref py py-func docutils literal notranslate"><span class="pre">attractor_driver_nodes()</span></code></a>, <a class="reference internal" href="#cana.boolean_network.BooleanNetwork.controlled_state_transition_graph" title="cana.boolean_network.BooleanNetwork.controlled_state_transition_graph"><code class="xref py py-func docutils literal notranslate"><span class="pre">controlled_state_transition_graph()</span></code></a>.</p>
+</div>
+</dd></dl>
+
+<dl class="py method">
+<dt id="cana.boolean_network.BooleanNetwork.controlled_state_transition_graph">
+<code class="sig-name descname"><span class="pre">controlled_state_transition_graph</span></code><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">driver_nodes</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">[]</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/cana/boolean_network.html#BooleanNetwork.controlled_state_transition_graph"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#cana.boolean_network.BooleanNetwork.controlled_state_transition_graph" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns the Controlled State-Transition-Graph (CSTG).
+In practice, it copies the original STG, flips driver nodes (variables), and updates the CSTG.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>driver_nodes</strong> (<em>list</em>) – The list of driver nodes.</p>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>The Controlled State-Transition-Graph.</p>
+</dd>
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p>(networkx.DiGraph)</p>
+</dd>
+</dl>
+<div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<p><a class="reference internal" href="#cana.boolean_network.BooleanNetwork.attractor_driver_nodes" title="cana.boolean_network.BooleanNetwork.attractor_driver_nodes"><code class="xref py py-func docutils literal notranslate"><span class="pre">attractor_driver_nodes()</span></code></a>, <a class="reference internal" href="#cana.boolean_network.BooleanNetwork.controlled_attractor_graph" title="cana.boolean_network.BooleanNetwork.controlled_attractor_graph"><code class="xref py py-func docutils literal notranslate"><span class="pre">controlled_attractor_graph()</span></code></a>.</p>
+</div>
+</dd></dl>
+
+<dl class="py method">
+<dt id="cana.boolean_network.BooleanNetwork.derrida_coefficient">
+<code class="sig-name descname"><span class="pre">derrida_coefficient</span></code><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">nsamples</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">10</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">random_seed</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">method</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'random'</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/cana/boolean_network.html#BooleanNetwork.derrida_coefficient"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#cana.boolean_network.BooleanNetwork.derrida_coefficient" title="Permalink to this definition">¶</a></dt>
+<dd><p>The Derrida Coefficient.
+When “mode” is set as “random” (default), it would use random sampling to estimate Derrida value
+If “mode” is set as “sensitivity”, it would use c-sensitivity to calculate Derrida value (slower)
+You can refer to :cite:’kadelka2017influence’ about why c-sensitivity can be used to caculate Derrida value</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>nsamples</strong> (<em>int</em>) – The number of samples per hammimg distance to get.</p></li>
+<li><p><strong>random_seed</strong> (<em>int</em>) – The random state seed.</p></li>
+<li><p><strong>method</strong> (<em>string</em>) – specify the method you want. either ‘random’ or ‘sensitivity’</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>The dx and dy of the curve.</p>
+</dd>
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p>(dx,dy) (tuple)</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt id="cana.boolean_network.BooleanNetwork.derrida_curve">
+<code class="sig-name descname"><span class="pre">derrida_curve</span></code><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">nsamples</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">10</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">max_hamm</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">random_seed</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">method</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'random'</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/cana/boolean_network.html#BooleanNetwork.derrida_curve"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#cana.boolean_network.BooleanNetwork.derrida_curve" title="Permalink to this definition">¶</a></dt>
+<dd><p>The Derrida Curve (also reffered as criticality measure <span class="math notranslate nohighlight">\(D_s\)</span>).
+When “mode” is set as “random” (default), it would use random sampling to estimate Derrida value
+If “mode” is set as “sensitivity”, it would use c-sensitivity to calculate Derrida value (slower)
+You can refer to :cite:’kadelka2017influence’ about why c-sensitivity can be used to caculate Derrida value</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>nsamples</strong> (<em>int</em>) – The number of samples per hammimg distance to get.</p></li>
+<li><p><strong>max_hamm</strong> (<em>int</em>) – The maximum Hamming distance between starting states. default: self.Nnodes</p></li>
+<li><p><strong>random_seed</strong> (<em>int</em>) – The random state seed.</p></li>
+<li><p><strong>method</strong> (<em>string</em>) – specify the method you want. either ‘random’ or ‘sensitivity’</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>The dx and dy of the curve.</p>
+</dd>
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p>(dx,dy) (tuple)</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt id="cana.boolean_network.BooleanNetwork.dist_from_attractor">
+<code class="sig-name descname"><span class="pre">dist_from_attractor</span></code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/cana/boolean_network.html#BooleanNetwork.dist_from_attractor"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#cana.boolean_network.BooleanNetwork.dist_from_attractor" title="Permalink to this definition">¶</a></dt>
+<dd><p>Find the distance from attractor for each configuration.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns</dt>
+<dd class="field-odd"><p>distance (dict). Nodes are dictionary indexes and distances the values.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt id="cana.boolean_network.BooleanNetwork.dynamics_canalization_map">
+<code class="sig-name descname"><span class="pre">dynamics_canalization_map</span></code><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">output</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">simplify</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/cana/boolean_network.html#BooleanNetwork.dynamics_canalization_map"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#cana.boolean_network.BooleanNetwork.dynamics_canalization_map" title="Permalink to this definition">¶</a></dt>
+<dd><p>Computes the Dynamics Canalization Map (DCM).
+In practice, it asks each node to compute their Canalization Map and then puts them together, simplifying it if possible.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>output</strong> (<em>int</em>) – The output DCM to return. Default is <code class="docutils literal notranslate"><span class="pre">None</span></code>, retuning both [0,1].</p></li>
+<li><p><strong>simplify</strong> (<em>bool</em>) – Attemps to simpify the DCM by removing thresholds nodes with :math:`      ao=1`.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>a directed graph representation of the DCM.</p>
+</dd>
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p>DCM (networkx.DiGraph)</p>
+</dd>
+</dl>
+<div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<p><code class="xref py py-func docutils literal notranslate"><span class="pre">boolean_node.canalizing_map()</span></code> for the CM and <code class="xref py py-func docutils literal notranslate"><span class="pre">drawing.draw_dynamics_canalizing_map_graphviz()</span></code> for plotting.</p>
+</div>
+</dd></dl>
+
+<dl class="py method">
+<dt id="cana.boolean_network.BooleanNetwork.effective_graph">
+<code class="sig-name descname"><span class="pre">effective_graph</span></code><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">bound</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'mean'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">threshold</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/cana/boolean_network.html#BooleanNetwork.effective_graph"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#cana.boolean_network.BooleanNetwork.effective_graph" title="Permalink to this definition">¶</a></dt>
+<dd><p>Computes and returns the effective graph of the network.
+In practive it asks each <a class="reference internal" href="node.html#cana.boolean_node.BooleanNode" title="cana.boolean_node.BooleanNode"><code class="xref py py-class docutils literal notranslate"><span class="pre">BooleanNode</span></code></a> for their <a class="reference internal" href="node.html#cana.boolean_node.BooleanNode.edge_effectiveness" title="cana.boolean_node.BooleanNode.edge_effectiveness"><code class="xref py py-func docutils literal notranslate"><span class="pre">edge_effectiveness()</span></code></a>.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>bound</strong> (<em>string</em>) – The bound to which compute input redundancy.
+Can be one of : [“lower”, “mean”, “upper”, “tuple”].
+Defaults to “mean”.</p></li>
+<li><p><strong>threshold</strong> (<em>float</em>) – Only return edges above a certain effective connectivity threshold.
+This is usefull when computing graph measures at diffent levels.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>directed graph</p>
+</dd>
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p>(networkx.DiGraph)</p>
+</dd>
+</dl>
+<div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<p><a class="reference internal" href="node.html#cana.boolean_node.BooleanNode.edge_effectiveness" title="cana.boolean_node.BooleanNode.edge_effectiveness"><code class="xref py py-func docutils literal notranslate"><span class="pre">edge_effectiveness()</span></code></a></p>
+</div>
+</dd></dl>
+
+<dl class="py method">
+<dt id="cana.boolean_network.BooleanNetwork.effective_indegrees">
+<code class="sig-name descname"><span class="pre">effective_indegrees</span></code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/cana/boolean_network.html#BooleanNetwork.effective_indegrees"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#cana.boolean_network.BooleanNetwork.effective_indegrees" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns the in-degrees of the Effective Graph. Sorted.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns</dt>
+<dd class="field-odd"><p>(list)</p>
+</dd>
+</dl>
+<div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<p><a class="reference internal" href="#cana.boolean_network.BooleanNetwork.effective_outdegrees" title="cana.boolean_network.BooleanNetwork.effective_outdegrees"><code class="xref py py-func docutils literal notranslate"><span class="pre">effective_outdegrees()</span></code></a>, <a class="reference internal" href="#cana.boolean_network.BooleanNetwork.structural_indegrees" title="cana.boolean_network.BooleanNetwork.structural_indegrees"><code class="xref py py-func docutils literal notranslate"><span class="pre">structural_indegrees()</span></code></a>, <a class="reference internal" href="#cana.boolean_network.BooleanNetwork.structural_outdegrees" title="cana.boolean_network.BooleanNetwork.structural_outdegrees"><code class="xref py py-func docutils literal notranslate"><span class="pre">structural_outdegrees()</span></code></a></p>
+</div>
+</dd></dl>
+
+<dl class="py method">
+<dt id="cana.boolean_network.BooleanNetwork.effective_outdegrees">
+<code class="sig-name descname"><span class="pre">effective_outdegrees</span></code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/cana/boolean_network.html#BooleanNetwork.effective_outdegrees"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#cana.boolean_network.BooleanNetwork.effective_outdegrees" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns the out-degrees of the Effective Graph. Sorted.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns</dt>
+<dd class="field-odd"><p>(list)</p>
+</dd>
+</dl>
+<div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<p><a class="reference internal" href="#cana.boolean_network.BooleanNetwork.effective_indegrees" title="cana.boolean_network.BooleanNetwork.effective_indegrees"><code class="xref py py-func docutils literal notranslate"><span class="pre">effective_indegrees()</span></code></a>, <a class="reference internal" href="#cana.boolean_network.BooleanNetwork.structural_indegrees" title="cana.boolean_network.BooleanNetwork.structural_indegrees"><code class="xref py py-func docutils literal notranslate"><span class="pre">structural_indegrees()</span></code></a>, <a class="reference internal" href="#cana.boolean_network.BooleanNetwork.structural_outdegrees" title="cana.boolean_network.BooleanNetwork.structural_outdegrees"><code class="xref py py-func docutils literal notranslate"><span class="pre">structural_outdegrees()</span></code></a></p>
+</div>
+</dd></dl>
+
+<dl class="py method">
+<dt id="cana.boolean_network.BooleanNetwork.feedback_vertex_set_driver_nodes">
+<code class="sig-name descname"><span class="pre">feedback_vertex_set_driver_nodes</span></code><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">graph</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'structural'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">method</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'grasp'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">max_iter</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">max_search</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">11</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">keep_self_loops</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">args</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/cana/boolean_network.html#BooleanNetwork.feedback_vertex_set_driver_nodes"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#cana.boolean_network.BooleanNetwork.feedback_vertex_set_driver_nodes" title="Permalink to this definition">¶</a></dt>
+<dd><p>The minimum set of necessary driver nodes to control the network based on Feedback Vertex Set (FVS) theory.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>graph</strong> (<em>string</em>) – Which graph to perform computation</p></li>
+<li><p><strong>method</strong> (<em>string</em>) – FVS method. <code class="docutils literal notranslate"><span class="pre">bruteforce</span></code> or <code class="docutils literal notranslate"><span class="pre">grasp</span></code> (default).</p></li>
+<li><p><strong>max_iter</strong> (<em>int</em>) – The maximum number of iterations used by the grasp method.</p></li>
+<li><p><strong>max_search</strong> (<em>int</em>) – The maximum number of searched used by the bruteforce method.</p></li>
+<li><p><strong>keep_self_loops</strong> (<em>bool</em>) – Keep or remove self loop in the graph to be searched.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>A list-of-lists with FVS solution nodes.</p>
+</dd>
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p>(list)</p>
+</dd>
+</dl>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>When computing FVS on the structural graph, you might want to use <code class="docutils literal notranslate"><span class="pre">remove_constants=True</span></code>
+to make sure the resulting set is minimal – since constants are not controlabled by definition.
+Also, when computing on the effective graph, you can define the desired <code class="docutils literal notranslate"><span class="pre">threshold</span></code> level.</p>
+</div>
+</dd></dl>
+
+<dl class="py method">
+<dt id="cana.boolean_network.BooleanNetwork.fraction_pinned_attractors">
+<code class="sig-name descname"><span class="pre">fraction_pinned_attractors</span></code><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">pcstg_dict</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/cana/boolean_network.html#BooleanNetwork.fraction_pinned_attractors"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#cana.boolean_network.BooleanNetwork.fraction_pinned_attractors" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns the Number of Accessible Attractors</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>pcstg_dict</strong> (<em>dict of networkx.DiGraph</em>) – The dictionary of Pinned Controlled State-Transition-Graphs.</p>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>Number of Accessible Attractors</p>
+</dd>
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p>(int)</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt id="cana.boolean_network.BooleanNetwork.fraction_pinned_configurations">
+<code class="sig-name descname"><span class="pre">fraction_pinned_configurations</span></code><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">pcstg_dict</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/cana/boolean_network.html#BooleanNetwork.fraction_pinned_configurations"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#cana.boolean_network.BooleanNetwork.fraction_pinned_configurations" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns the Fraction of successfully Pinned Configurations</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>pcstg_dict</strong> (<em>dict of networkx.DiGraph</em>) – The dictionary of Pinned Controlled State-Transition-Graphs.</p>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>the Fraction of successfully Pinned Configurations to each attractor</p>
+</dd>
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p>(list)</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt id="cana.boolean_network.BooleanNetwork.from_dict">
+<em class="property"><span class="pre">classmethod</span> </em><code class="sig-name descname"><span class="pre">from_dict</span></code><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">logic</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">keep_constants</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/cana/boolean_network.html#BooleanNetwork.from_dict"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#cana.boolean_network.BooleanNetwork.from_dict" title="Permalink to this definition">¶</a></dt>
+<dd><p>Instanciaets a BoolleanNetwork from a logic dictionary.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>logic</strong> (<em>dict</em>) – The logic dict.</p></li>
+<li><p><strong>keep_constants</strong> (<em>bool</em>) – </p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>(BooleanNetwork)</p>
+</dd>
+</dl>
+<div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<p><a class="reference internal" href="#cana.boolean_network.BooleanNetwork.from_file" title="cana.boolean_network.BooleanNetwork.from_file"><code class="xref py py-func docutils literal notranslate"><span class="pre">from_file()</span></code></a> <a class="reference internal" href="#cana.boolean_network.BooleanNetwork.from_dict" title="cana.boolean_network.BooleanNetwork.from_dict"><code class="xref py py-func docutils literal notranslate"><span class="pre">from_dict()</span></code></a></p>
+</div>
+</dd></dl>
+
+<dl class="py method">
+<dt id="cana.boolean_network.BooleanNetwork.from_file">
+<em class="property"><span class="pre">classmethod</span> </em><code class="sig-name descname"><span class="pre">from_file</span></code><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">file</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">type</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'cnet'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">keep_constants</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/cana/boolean_network.html#BooleanNetwork.from_file"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#cana.boolean_network.BooleanNetwork.from_file" title="Permalink to this definition">¶</a></dt>
+<dd><p>Load the Boolean Network from a file.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>file</strong> (<em>string</em>) – The name of a file containing the Boolean Network.</p></li>
+<li><p><strong>type</strong> (<em>string</em>) – The type of file, either ‘cnet’ (default) or ‘logical’ for Boolean logical rules.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>The boolean network object.</p>
+</dd>
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p><a class="reference internal" href="#cana.boolean_network.BooleanNetwork" title="cana.boolean_network.BooleanNetwork">BooleanNetwork</a> (object)</p>
+</dd>
+</dl>
+<div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<p><code class="xref py py-func docutils literal notranslate"><span class="pre">from_string()</span></code> <a class="reference internal" href="#cana.boolean_network.BooleanNetwork.from_dict" title="cana.boolean_network.BooleanNetwork.from_dict"><code class="xref py py-func docutils literal notranslate"><span class="pre">from_dict()</span></code></a></p>
+</div>
+</dd></dl>
+
+<dl class="py method">
+<dt id="cana.boolean_network.BooleanNetwork.from_string_boolean">
+<em class="property"><span class="pre">classmethod</span> </em><code class="sig-name descname"><span class="pre">from_string_boolean</span></code><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">string</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">keep_constants</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/cana/boolean_network.html#BooleanNetwork.from_string_boolean"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#cana.boolean_network.BooleanNetwork.from_string_boolean" title="Permalink to this definition">¶</a></dt>
+<dd><p>Instanciates a Boolean Network from a Boolean update rules format.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>string</strong> (<em>string</em>) – A boolean update rules format representation of a Boolean Network.</p>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>The boolean network object.</p>
+</dd>
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p>(<a class="reference internal" href="#cana.boolean_network.BooleanNetwork" title="cana.boolean_network.BooleanNetwork">BooleanNetwork</a>)</p>
+</dd>
+</dl>
+<p class="rubric">Examples</p>
+<p>String should be structured as follow</p>
+<div class="highlight-text notranslate"><div class="highlight"><pre><span></span># BOOLEAN RULES (this is a comment)
+# node_name*=node_input_1 [logic operator] node_input_2 ...
+NODE3*=NODE1 AND NODE2 ...
+</pre></div>
+</div>
+<div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<p><code class="xref py py-func docutils literal notranslate"><span class="pre">from_string()</span></code> <a class="reference internal" href="#cana.boolean_network.BooleanNetwork.from_dict" title="cana.boolean_network.BooleanNetwork.from_dict"><code class="xref py py-func docutils literal notranslate"><span class="pre">from_dict()</span></code></a></p>
+</div>
+</dd></dl>
+
+<dl class="py method">
+<dt id="cana.boolean_network.BooleanNetwork.from_string_cnet">
+<em class="property"><span class="pre">classmethod</span> </em><code class="sig-name descname"><span class="pre">from_string_cnet</span></code><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">string</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">keep_constants</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/cana/boolean_network.html#BooleanNetwork.from_string_cnet"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#cana.boolean_network.BooleanNetwork.from_string_cnet" title="Permalink to this definition">¶</a></dt>
+<dd><p>Instanciates a Boolean Network from a string in cnet format.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>string</strong> (<em>string</em>) – A cnet format representation of a Boolean Network.</p>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>(BooleanNetwork)</p>
+</dd>
+</dl>
+<p class="rubric">Examples</p>
+<p>String should be structured as follow:</p>
+<div class="highlight-text notranslate"><div class="highlight"><pre><span></span>#.v = number of nodes
+.v 1
+#.l = node label
+.l 1 node-a
+.l 2 node-b
+#.n = (node number) (in-degree) (input node 1) … (input node k)
+.n 1 2 4 5
+01 1 # transition rule
+</pre></div>
+</div>
+<div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<p><a class="reference internal" href="#cana.boolean_network.BooleanNetwork.from_file" title="cana.boolean_network.BooleanNetwork.from_file"><code class="xref py py-func docutils literal notranslate"><span class="pre">from_file()</span></code></a> <a class="reference internal" href="#cana.boolean_network.BooleanNetwork.from_dict" title="cana.boolean_network.BooleanNetwork.from_dict"><code class="xref py py-func docutils literal notranslate"><span class="pre">from_dict()</span></code></a></p>
+</div>
+</dd></dl>
+
+<dl class="py method">
+<dt id="cana.boolean_network.BooleanNetwork.get_node_name">
+<code class="sig-name descname"><span class="pre">get_node_name</span></code><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">iterable</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">[]</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/cana/boolean_network.html#BooleanNetwork.get_node_name"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#cana.boolean_network.BooleanNetwork.get_node_name" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return node names. Optionally, it returns only the names of the ids requested.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>iterable</strong> (<em>int</em><em>,</em><em>list</em><em>, </em><em>optional</em>) – The id (or list of ids) of nodes to which return their names.</p>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>The name of the nodes.</p>
+</dd>
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p>names (list)</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt id="cana.boolean_network.BooleanNetwork.mean_controlable_configurations">
+<code class="sig-name descname"><span class="pre">mean_controlable_configurations</span></code><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">cstg</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/cana/boolean_network.html#BooleanNetwork.mean_controlable_configurations"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#cana.boolean_network.BooleanNetwork.mean_controlable_configurations" title="Permalink to this definition">¶</a></dt>
+<dd><p>The Mean Fraction of Controlable Configurations</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>cstg</strong> (<em>networkx.DiGraph</em>) – The Controlled State-Transition-Graph.</p>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>Mean Fraction of Controlable Configurations.</p>
+</dd>
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p>(float)</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt id="cana.boolean_network.BooleanNetwork.mean_fraction_pinned_configurations">
+<code class="sig-name descname"><span class="pre">mean_fraction_pinned_configurations</span></code><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">pcstg_dict</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/cana/boolean_network.html#BooleanNetwork.mean_fraction_pinned_configurations"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#cana.boolean_network.BooleanNetwork.mean_fraction_pinned_configurations" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns the mean Fraction of successfully Pinned Configurations</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>pcstg_dict</strong> (<em>dict of networkx.DiGraph</em>) – The dictionary of Pinned Controlled State-Transition-Graphs.</p>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>the mean Fraction of successfully Pinned Configurations</p>
+</dd>
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p>(int)</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt id="cana.boolean_network.BooleanNetwork.mean_reachable_attractors">
+<code class="sig-name descname"><span class="pre">mean_reachable_attractors</span></code><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">cag</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">norm</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/cana/boolean_network.html#BooleanNetwork.mean_reachable_attractors"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#cana.boolean_network.BooleanNetwork.mean_reachable_attractors" title="Permalink to this definition">¶</a></dt>
+<dd><p>The Mean Fraction of Reachable Attractors to a specific Controlled Attractor Graph (CAG).</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>cag</strong> (<em>networkx.DiGraph</em>) – A Controlled Attractor Graph (CAG).</p>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>(float) Mean Fraction of Reachable Attractors</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt id="cana.boolean_network.BooleanNetwork.mean_reachable_configurations">
+<code class="sig-name descname"><span class="pre">mean_reachable_configurations</span></code><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">cstg</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/cana/boolean_network.html#BooleanNetwork.mean_reachable_configurations"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#cana.boolean_network.BooleanNetwork.mean_reachable_configurations" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns the Mean Fraction of Reachable Configurations</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>cstg</strong> (<em>networkx.DiGraph</em>) – The Controlled State-Transition-Graph.</p>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>Mean Fraction of Reachable Configurations</p>
+</dd>
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p>(float)</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt id="cana.boolean_network.BooleanNetwork.minimum_dominating_set_driver_nodes">
+<code class="sig-name descname"><span class="pre">minimum_dominating_set_driver_nodes</span></code><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">graph</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'structural'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">max_search</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">5</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">keep_self_loops</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">args</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/cana/boolean_network.html#BooleanNetwork.minimum_dominating_set_driver_nodes"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#cana.boolean_network.BooleanNetwork.minimum_dominating_set_driver_nodes" title="Permalink to this definition">¶</a></dt>
+<dd><p>The minimun set of necessary driver nodes to control the network based on Minimum Dominating Set (MDS) theory.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>max_search</strong> (<em>int</em>) – Maximum search of additional variables. Defaults to 5.</p></li>
+<li><p><strong>keep_self_loops</strong> (<em>bool</em>) – If self-loops are used in the computation.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>A list-of-lists with MDS solution nodes.</p>
+</dd>
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p>(list)</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt id="cana.boolean_network.BooleanNetwork.network_bias">
+<code class="sig-name descname"><span class="pre">network_bias</span></code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/cana/boolean_network.html#BooleanNetwork.network_bias"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#cana.boolean_network.BooleanNetwork.network_bias" title="Permalink to this definition">¶</a></dt>
+<dd><p>Network Bias. The sum of individual node biases divided by the number of nodes.
+Practically, it asks each node for their own bias.</p>
+<div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<p><a class="reference internal" href="node.html#cana.boolean_node.BooleanNode.bias" title="cana.boolean_node.BooleanNode.bias"><code class="xref py py-func docutils literal notranslate"><span class="pre">bias()</span></code></a></p>
+</div>
+</dd></dl>
+
+<dl class="py method">
+<dt id="cana.boolean_network.BooleanNetwork.number_interactions">
+<code class="sig-name descname"><span class="pre">number_interactions</span></code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/cana/boolean_network.html#BooleanNetwork.number_interactions"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#cana.boolean_network.BooleanNetwork.number_interactions" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns the number of interactions in the Structural Graph (SG).
+Practically, it returns the number of edges of the SG.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns</dt>
+<dd class="field-odd"><p>int</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt id="cana.boolean_network.BooleanNetwork.partial_derative_node">
+<code class="sig-name descname"><span class="pre">partial_derative_node</span></code><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">node</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">n_traj</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">10</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">t</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/cana/boolean_network.html#BooleanNetwork.partial_derative_node"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#cana.boolean_network.BooleanNetwork.partial_derative_node" title="Permalink to this definition">¶</a></dt>
+<dd><p>The partial derivative of node on all other nodes after t steps</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>node</strong> (<em>int</em>) – the node index for perturbations</p></li>
+<li><p><strong>t</strong> (<em>int</em>) – the number of time steps the system is run before impact is calculated.</p></li>
+<li><p><strong>n_traj</strong> (<em>int</em>) – the number of trajectories used to approximate the dynamical impact of a node.
+if 0 then the full STG is used to calculate the true value instead of the approximation method.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>the partial derivatives</p>
+</dd>
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p>(vector)</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt id="cana.boolean_network.BooleanNetwork.pinned_step">
+<code class="sig-name descname"><span class="pre">pinned_step</span></code><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">initial</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">pinned_binstate</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">pinned_var</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/cana/boolean_network.html#BooleanNetwork.pinned_step"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#cana.boolean_network.BooleanNetwork.pinned_step" title="Permalink to this definition">¶</a></dt>
+<dd><p>Steps the boolean network 1 step from the given initial input condition when the driver variables are pinned
+to their controlled states.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>initial</strong> (<em>string</em>) – the initial state.</p></li>
+<li><p><strong>n</strong> (<em>int</em>) – the number of steps.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>The stepped binary state.</p>
+</dd>
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p>(string)</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt id="cana.boolean_network.BooleanNetwork.pinning_controlled_state_transition_graph">
+<code class="sig-name descname"><span class="pre">pinning_controlled_state_transition_graph</span></code><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">driver_nodes</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">[]</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/cana/boolean_network.html#BooleanNetwork.pinning_controlled_state_transition_graph"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#cana.boolean_network.BooleanNetwork.pinning_controlled_state_transition_graph" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns a dictionary of Controlled State-Transition-Graph (CSTG)
+under the assumptions of pinning controllability.</p>
+<p>In practice, it copies the original STG, flips driver nodes (variables), and updates the CSTG.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>driver_nodes</strong> (<em>list</em>) – The list of driver nodes.</p>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>The Pinning Controlled State-Transition-Graph.</p>
+</dd>
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p>(networkx.DiGraph)</p>
+</dd>
+</dl>
+<div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<p><a class="reference internal" href="#cana.boolean_network.BooleanNetwork.controlled_state_transition_graph" title="cana.boolean_network.BooleanNetwork.controlled_state_transition_graph"><code class="xref py py-func docutils literal notranslate"><span class="pre">controlled_state_transition_graph()</span></code></a>, <a class="reference internal" href="#cana.boolean_network.BooleanNetwork.attractor_driver_nodes" title="cana.boolean_network.BooleanNetwork.attractor_driver_nodes"><code class="xref py py-func docutils literal notranslate"><span class="pre">attractor_driver_nodes()</span></code></a>, <a class="reference internal" href="#cana.boolean_network.BooleanNetwork.controlled_attractor_graph" title="cana.boolean_network.BooleanNetwork.controlled_attractor_graph"><code class="xref py py-func docutils literal notranslate"><span class="pre">controlled_attractor_graph()</span></code></a>.</p>
+</div>
+</dd></dl>
+
+<dl class="py method">
+<dt id="cana.boolean_network.BooleanNetwork.set_constant">
+<code class="sig-name descname"><span class="pre">set_constant</span></code><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">node</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">value</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/cana/boolean_network.html#BooleanNetwork.set_constant"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#cana.boolean_network.BooleanNetwork.set_constant" title="Permalink to this definition">¶</a></dt>
+<dd><p>Sets or unsets a node as a constant.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>node</strong> (<em>int</em>) – The node <code class="docutils literal notranslate"><span class="pre">id</span></code> in the logic dict.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt id="cana.boolean_network.BooleanNetwork.state_transition_graph">
+<code class="sig-name descname"><span class="pre">state_transition_graph</span></code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/cana/boolean_network.html#BooleanNetwork.state_transition_graph"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#cana.boolean_network.BooleanNetwork.state_transition_graph" title="Permalink to this definition">¶</a></dt>
+<dd><p>Creates and returns the full State Transition Graph (STG) for the Boolean Network.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns</dt>
+<dd class="field-odd"><p>The state transition graph for the Boolean Network.</p>
+</dd>
+<dt class="field-even">Return type</dt>
+<dd class="field-even"><p>(networkx.DiGraph)</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt id="cana.boolean_network.BooleanNetwork.state_transition_graph_reachability">
+<code class="sig-name descname"><span class="pre">state_transition_graph_reachability</span></code><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">filename</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/cana/boolean_network.html#BooleanNetwork.state_transition_graph_reachability"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#cana.boolean_network.BooleanNetwork.state_transition_graph_reachability" title="Permalink to this definition">¶</a></dt>
+<dd><p>Generates a State-Transition-Graph Reachability (STG-R) dictionary.
+This dict/file will be used by the State Transition Graph Control Analysis.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>filename</strong> (<em>string</em>) – The location to a file where the STG-R will be stored.</p>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>The STG-R in dict format.</p>
+</dd>
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p>(dict)</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt id="cana.boolean_network.BooleanNetwork.step">
+<code class="sig-name descname"><span class="pre">step</span></code><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">initial</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/cana/boolean_network.html#BooleanNetwork.step"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#cana.boolean_network.BooleanNetwork.step" title="Permalink to this definition">¶</a></dt>
+<dd><p>Steps the boolean network ‘n’ step from the given initial input condition.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>initial</strong> (<em>string</em>) – the initial state.</p></li>
+<li><p><strong>n</strong> (<em>int</em>) – the number of steps.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>The stepped binary state.</p>
+</dd>
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p>(string)</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt id="cana.boolean_network.BooleanNetwork.stg_indegree">
+<code class="sig-name descname"><span class="pre">stg_indegree</span></code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/cana/boolean_network.html#BooleanNetwork.stg_indegree"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#cana.boolean_network.BooleanNetwork.stg_indegree" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns the In-degrees of the State-Transition-Graph (STG). Sorted.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns</dt>
+<dd class="field-odd"><p>list</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt id="cana.boolean_network.BooleanNetwork.structural_controllability_driver_nodes">
+<code class="sig-name descname"><span class="pre">structural_controllability_driver_nodes</span></code><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">graph</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'structural'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">keep_self_loops</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">args</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/cana/boolean_network.html#BooleanNetwork.structural_controllability_driver_nodes"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#cana.boolean_network.BooleanNetwork.structural_controllability_driver_nodes" title="Permalink to this definition">¶</a></dt>
+<dd><p>The minimum set of necessary driver nodes to control the network based on Structural Controlability (SC) theory.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>keep_self_loops</strong> (<em>bool</em>) – If self-loops are used in the computation.</p>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>A list-of-lists with SC solution nodes.</p>
+</dd>
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p>(list)</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt id="cana.boolean_network.BooleanNetwork.structural_graph">
+<code class="sig-name descname"><span class="pre">structural_graph</span></code><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">remove_constants</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/cana/boolean_network.html#BooleanNetwork.structural_graph"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#cana.boolean_network.BooleanNetwork.structural_graph" title="Permalink to this definition">¶</a></dt>
+<dd><p>Calculates and returns the structural graph of the boolean network.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>remove_constants</strong> (<em>bool</em>) – Remove constants from the graph. Defaults to <code class="docutils literal notranslate"><span class="pre">False</span></code>.</p>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>The boolean network structural graph.</p>
+</dd>
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p>G (networkx.Digraph)</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt id="cana.boolean_network.BooleanNetwork.structural_indegrees">
+<code class="sig-name descname"><span class="pre">structural_indegrees</span></code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/cana/boolean_network.html#BooleanNetwork.structural_indegrees"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#cana.boolean_network.BooleanNetwork.structural_indegrees" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns the in-degrees of the Structural Graph. Sorted.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns</dt>
+<dd class="field-odd"><p>the number of in-degrees.</p>
+</dd>
+<dt class="field-even">Return type</dt>
+<dd class="field-even"><p>(int)</p>
+</dd>
+</dl>
+<div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<p><a class="reference internal" href="#cana.boolean_network.BooleanNetwork.structural_outdegrees" title="cana.boolean_network.BooleanNetwork.structural_outdegrees"><code class="xref py py-func docutils literal notranslate"><span class="pre">structural_outdegrees()</span></code></a>, <a class="reference internal" href="#cana.boolean_network.BooleanNetwork.effective_indegrees" title="cana.boolean_network.BooleanNetwork.effective_indegrees"><code class="xref py py-func docutils literal notranslate"><span class="pre">effective_indegrees()</span></code></a>, <a class="reference internal" href="#cana.boolean_network.BooleanNetwork.effective_outdegrees" title="cana.boolean_network.BooleanNetwork.effective_outdegrees"><code class="xref py py-func docutils literal notranslate"><span class="pre">effective_outdegrees()</span></code></a></p>
+</div>
+</dd></dl>
+
+<dl class="py method">
+<dt id="cana.boolean_network.BooleanNetwork.structural_outdegrees">
+<code class="sig-name descname"><span class="pre">structural_outdegrees</span></code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/cana/boolean_network.html#BooleanNetwork.structural_outdegrees"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#cana.boolean_network.BooleanNetwork.structural_outdegrees" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns the out-degrees of the Structural Graph. Sorted.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns</dt>
+<dd class="field-odd"><p>out-degrees.</p>
+</dd>
+<dt class="field-even">Return type</dt>
+<dd class="field-even"><p>(list)</p>
+</dd>
+</dl>
+<div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<p><a class="reference internal" href="#cana.boolean_network.BooleanNetwork.structural_indegrees" title="cana.boolean_network.BooleanNetwork.structural_indegrees"><code class="xref py py-func docutils literal notranslate"><span class="pre">structural_indegrees()</span></code></a>, <a class="reference internal" href="#cana.boolean_network.BooleanNetwork.effective_indegrees" title="cana.boolean_network.BooleanNetwork.effective_indegrees"><code class="xref py py-func docutils literal notranslate"><span class="pre">effective_indegrees()</span></code></a>, <a class="reference internal" href="#cana.boolean_network.BooleanNetwork.effective_outdegrees" title="cana.boolean_network.BooleanNetwork.effective_outdegrees"><code class="xref py py-func docutils literal notranslate"><span class="pre">effective_outdegrees()</span></code></a></p>
+</div>
+</dd></dl>
+
+<dl class="py method">
+<dt id="cana.boolean_network.BooleanNetwork.to_cnet">
+<code class="sig-name descname"><span class="pre">to_cnet</span></code><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">file</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">adjust_no_input</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/cana/boolean_network.html#BooleanNetwork.to_cnet"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#cana.boolean_network.BooleanNetwork.to_cnet" title="Permalink to this definition">¶</a></dt>
+<dd><p>Outputs the network logic to <code class="docutils literal notranslate"><span class="pre">.cnet</span></code> format, which is similar to the Berkeley Logic Interchange Format (BLIF).
+This is the format used by BNS to compute attractors.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>file</strong> (<em>string</em><em>,</em><em>optional</em>) – A string of the file to write the output to. If not supplied, a string will be returned.</p></li>
+<li><p><strong>adjust_no_input</strong> (<em>bool</em>) – Adjust output string for nodes with no input.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>The <code class="docutils literal notranslate"><span class="pre">.cnet</span></code> format string.</p>
+</dd>
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p>(string)</p>
+</dd>
+</dl>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>See <a class="reference external" href="https://people.kth.se/~dubrova/bns.html">BNS</a> for more information.</p>
+</div>
+</dd></dl>
+
+<dl class="py method">
+<dt id="cana.boolean_network.BooleanNetwork.trajectory">
+<code class="sig-name descname"><span class="pre">trajectory</span></code><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">initial</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">length</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">2</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/cana/boolean_network.html#BooleanNetwork.trajectory"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#cana.boolean_network.BooleanNetwork.trajectory" title="Permalink to this definition">¶</a></dt>
+<dd><p>Computes the trajectory of <code class="docutils literal notranslate"><span class="pre">length</span></code> steps without the State Transition Graph (STG).</p>
+</dd></dl>
+
+<dl class="py method">
+<dt id="cana.boolean_network.BooleanNetwork.trajectory_to_attractor">
+<code class="sig-name descname"><span class="pre">trajectory_to_attractor</span></code><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">initial</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">precompute_attractors</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">return_attractor</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/cana/boolean_network.html#BooleanNetwork.trajectory_to_attractor"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#cana.boolean_network.BooleanNetwork.trajectory_to_attractor" title="Permalink to this definition">¶</a></dt>
+<dd><p>Computes the trajectory starting at <cite>initial</cite> until it reaches an attracor (this is garanteed).</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>initial</strong> (<em>string</em>) – the initial binstate.</p></li>
+<li><p><strong>precompute_attractors</strong> (<em>bool</em>) – use precomputed attractors, default True.</p></li>
+<li><p><strong>return_attractor</strong> (<em>bool</em>) – also return the attractor reached, default False.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>the state trajectory between initial and the final attractor state.
+if return_attractor: (list): the attractor</p>
+</dd>
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p>(list)</p>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+<span class="target" id="module-cana.bns"></span><div class="section" id="bns-attractors-interface">
+<h2><a class="toc-backref" href="#id6">BNS Attractors Interface</a><a class="headerlink" href="#bns-attractors-interface" title="Permalink to this headline">¶</a></h2>
+<p>This module interfaces CANA with the [B]oolean [N]etworks with [S]ynchronous update (BNS) <span id="id3">[<a class="reference internal" href="../bibliography.html#id15">DT11</a>]</span> to compute attractors.</p>
+<blockquote>
+<div><p>BNS is a software tool for computing attractors in Boolean Networks with Synchronous update.
+Synchronous Boolean networks are used for the modeling of genetic regulatory networks.</p>
+<p>BNS implements the algorithm presented in which is based on a SAT-based bounded model checking.
+BNS uses much less space compared to BooleNet or other BDD-based approaches for computing attractors.
+It can handle several orders of magnitude larger networks.</p>
+</div></blockquote>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>You must have <code class="docutils literal notranslate"><span class="pre">bns</span></code> compiled for you system. Alternatively, you can download the binary from the <a class="reference external" href="https://people.kth.se/~dubrova/bns.html">bns website</a> directly.
+Last updated: March 2017.</p>
+</div>
+<dl class="py function">
+<dt id="cana.bns.attractors">
+<code class="sig-prename descclassname"><span class="pre">cana.bns.</span></code><code class="sig-name descname"><span class="pre">attractors</span></code><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">cnet</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">bnspath</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'/Users/rionbr/Sites/CANA/cana/bns'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">cleanup</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/cana/bns.html#attractors"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#cana.bns.attractors" title="Permalink to this definition">¶</a></dt>
+<dd><p>Makes a subprocess call to <cite>bns</cite> supplying a temporary file with the boolean logic.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>cnet</strong> (<em>file</em><em>,</em><em>string</em>) – A .cnet formated string or file.</p></li>
+<li><p><strong>bnspath</strong> (<em>string</em>) – The path to the bns binary.</p></li>
+<li><p><strong>cleanup</strong> (<em>bool</em>) – If cnet is a string, this function creates a temporary file. This forces the removal of this temp file.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>the list of attractors</p>
+</dd>
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p>list</p>
+</dd>
+</dl>
+</dd></dl>
+
+</div>
+</div>
+
+
+           </div>
+           
+          </div>
+          <footer>
+    <div class="rst-footer-buttons" role="navigation" aria-label="footer navigation">
+        <a href="canalization/index.html" class="btn btn-neutral float-right" title="Canalization" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+        <a href="node.html" class="btn btn-neutral float-left" title="Node" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>
+        &#169; Copyright 2021, Correia, R. B., Gates, A., Rocha, L. M..
+
+    </p>
+  </div>
+    
+    
+    
+    Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    
+    provided by <a href="https://readthedocs.org">Read the Docs</a>. 
+
+</footer>
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+  
+
+  <script type="text/javascript">
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script>
+
+  
+  
+    
+   
+
+</body>
+</html>

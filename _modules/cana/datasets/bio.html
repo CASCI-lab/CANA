@@ -1,0 +1,416 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" >
+<head>
+  <meta charset="utf-8" />
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  
+  <title>cana.datasets.bio &mdash; CANA 0.1 documentation</title>
+  
+
+  
+  <link rel="stylesheet" href="../../../_static/css/theme.css" type="text/css" />
+  <link rel="stylesheet" href="../../../_static/pygments.css" type="text/css" />
+
+  
+  
+
+  
+  
+
+  
+
+  
+  <!--[if lt IE 9]>
+    <script src="../../../_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+    
+      <script type="text/javascript" id="documentation_options" data-url_root="../../../" src="../../../_static/documentation_options.js"></script>
+        <script src="../../../_static/jquery.js"></script>
+        <script src="../../../_static/underscore.js"></script>
+        <script src="../../../_static/doctools.js"></script>
+    
+    <script type="text/javascript" src="../../../_static/js/theme.js"></script>
+
+    
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav">
+
+   
+  <div class="wy-grid-for-nav">
+    
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+          
+
+          
+            <a href="../../../index.html" class="icon icon-home"> CANA
+          
+
+          
+          </a>
+
+          
+            
+            
+              <div class="version">
+                0.1
+              </div>
+            
+          
+
+          
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+
+          
+        </div>
+
+        
+        <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+          
+            
+            
+              
+            
+            
+              <p class="caption"><span class="caption-text">Table of Contents:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../reference/index.html">API Reference</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../appendix/index.html">Appendix</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../bibliography.html">Bibliography</a></li>
+</ul>
+
+            
+          
+        </div>
+        
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+
+      
+      <nav class="wy-nav-top" aria-label="top navigation">
+        
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../../index.html">CANA</a>
+        
+      </nav>
+
+
+      <div class="wy-nav-content">
+        
+        <div class="rst-content">
+        
+          
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div role="navigation" aria-label="breadcrumbs navigation">
+
+  <ul class="wy-breadcrumbs">
+    
+      <li><a href="../../../index.html" class="icon icon-home"></a> &raquo;</li>
+        
+          <li><a href="../../index.html">Module code</a> &raquo;</li>
+        
+      <li>cana.datasets.bio</li>
+    
+    
+      <li class="wy-breadcrumbs-aside">
+        
+      </li>
+    
+  </ul>
+
+  
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+            
+  <h1>Source code for cana.datasets.bio</h1><div class="highlight"><pre>
+<span></span><span class="c1"># -*- coding: utf-8 -*-</span>
+<span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">Biological Boolean Networks</span>
+<span class="sd">=================================</span>
+
+<span class="sd">A series of biological Boolean networks that can be directly loaded for experimentation.</span>
+
+
+<span class="sd">&quot;&quot;&quot;</span>
+<span class="c1">#   Copyright (C) 2021 by</span>
+<span class="c1">#   Alex Gates &lt;ajgates42@gmail.com&gt;</span>
+<span class="c1">#   Rion Brattig Correia &lt;rionbr@gmail.com&gt;</span>
+<span class="c1">#   Xuan Wang &lt;xw47@indiana.edu&gt;</span>
+<span class="c1">#   Thomas Parmer &lt;tjparmer@indiana.edu&gt;</span>
+<span class="c1">#   All rights reserved.</span>
+<span class="c1">#   MIT license.</span>
+<span class="kn">import</span> <span class="nn">os</span>
+<span class="kn">from</span> <span class="nn">..</span> <span class="n">boolean_network</span> <span class="kn">import</span> <span class="nn">BooleanNetwork</span>
+
+
+<span class="n">_path</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">dirname</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">realpath</span><span class="p">(</span><span class="vm">__file__</span><span class="p">))</span>
+<span class="sd">&quot;&quot;&quot; Make sure we know what the current directory is &quot;&quot;&quot;</span>
+
+
+<div class="viewcode-block" id="THALIANA"><a class="viewcode-back" href="../../../reference/datasets/networks.html#cana.datasets.bio.THALIANA">[docs]</a><span class="k">def</span> <span class="nf">THALIANA</span><span class="p">():</span>
+    <span class="sd">&quot;&quot;&quot;Boolean network model of the control of flower morphogenesis in Arabidopsis thaliana</span>
+
+<span class="sd">    The network is defined in :cite:`Chaos:2006`.</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">        (BooleanNetwork)</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">return</span> <span class="n">BooleanNetwork</span><span class="o">.</span><span class="n">from_file</span><span class="p">(</span><span class="n">_path</span> <span class="o">+</span> <span class="s1">&#39;/thaliana.txt&#39;</span><span class="p">,</span> <span class="n">name</span><span class="o">=</span><span class="s2">&quot;Arabidopsis Thaliana&quot;</span><span class="p">,</span> <span class="n">keep_constants</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="DROSOPHILA"><a class="viewcode-back" href="../../../reference/datasets/networks.html#cana.datasets.bio.DROSOPHILA">[docs]</a><span class="k">def</span> <span class="nf">DROSOPHILA</span><span class="p">(</span><span class="n">cells</span><span class="o">=</span><span class="mi">1</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Drosophila Melanogaster boolean model.</span>
+<span class="sd">    This is a simplification of the original network defined in :cite:`Albert:2008`.</span>
+<span class="sd">    In the original model, some nodes receive inputs from neighboring cells.</span>
+<span class="sd">    In this single cell network, they are condensed (nhhnHH) and treated as constants.</span>
+
+<span class="sd">    There is currently only one model available, where the original neighboring cell signals are treated as constants.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        cells (int) : Which model to return.</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">        (BooleanNetwork)</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">if</span> <span class="n">cells</span> <span class="o">==</span> <span class="mi">1</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">BooleanNetwork</span><span class="o">.</span><span class="n">from_file</span><span class="p">(</span><span class="n">_path</span> <span class="o">+</span> <span class="s1">&#39;/drosophila_single_cell.txt&#39;</span><span class="p">,</span> <span class="n">name</span><span class="o">=</span><span class="s2">&quot;Drosophila Melanogaster&quot;</span><span class="p">,</span> <span class="n">keep_constants</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="ne">AttributeError</span><span class="p">(</span><span class="s1">&#39;Only single cell drosophila boolean model currently available.&#39;</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="BUDDING_YEAST"><a class="viewcode-back" href="../../../reference/datasets/networks.html#cana.datasets.bio.BUDDING_YEAST">[docs]</a><span class="k">def</span> <span class="nf">BUDDING_YEAST</span><span class="p">():</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+
+<span class="sd">    The network is defined in :cite:`Fangting:2004`.</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">        (BooleanNetwork)</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">return</span> <span class="n">BooleanNetwork</span><span class="o">.</span><span class="n">from_file</span><span class="p">(</span><span class="n">_path</span> <span class="o">+</span> <span class="s1">&#39;/yeast_cell_cycle.txt&#39;</span><span class="p">,</span> <span class="n">name</span><span class="o">=</span><span class="s2">&quot;Budding Yeast Cell Cycle&quot;</span><span class="p">,</span> <span class="n">keep_constants</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="MARQUESPITA"><a class="viewcode-back" href="../../../reference/datasets/networks.html#cana.datasets.bio.MARQUESPITA">[docs]</a><span class="k">def</span> <span class="nf">MARQUESPITA</span><span class="p">():</span>
+    <span class="sd">&quot;&quot;&quot;Boolean network used for the Two-Symbol schemata example.</span>
+
+<span class="sd">    The network is defined in :cite:`Marques-Pita:2013`.</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">        (BooleanNetwork)</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">return</span> <span class="n">BooleanNetwork</span><span class="o">.</span><span class="n">from_file</span><span class="p">(</span><span class="n">_path</span> <span class="o">+</span> <span class="s1">&#39;/marques-pita_rocha.txt&#39;</span><span class="p">,</span> <span class="n">name</span><span class="o">=</span><span class="s2">&quot;Marques-Pita &amp; Rocha&quot;</span><span class="p">,</span> <span class="n">keep_constants</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="LEUKEMIA"><a class="viewcode-back" href="../../../reference/datasets/networks.html#cana.datasets.bio.LEUKEMIA">[docs]</a><span class="k">def</span> <span class="nf">LEUKEMIA</span><span class="p">():</span>
+    <span class="sd">&quot;&quot;&quot;Boolean network model of survival signaling in T-LGL leukemia</span>
+
+<span class="sd">    The network is defined in :cite:`Zhang:2008`.</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">        (BooleanNetwork)</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">return</span> <span class="n">BooleanNetwork</span><span class="o">.</span><span class="n">from_file</span><span class="p">(</span><span class="n">_path</span> <span class="o">+</span> <span class="s1">&#39;/leukemia.txt&#39;</span><span class="p">,</span> <span class="nb">type</span><span class="o">=</span><span class="s1">&#39;logical&#39;</span><span class="p">,</span> <span class="n">name</span><span class="o">=</span><span class="s2">&quot;T-LGL Leukemia&quot;</span><span class="p">,</span> <span class="n">keep_constants</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="BREAST_CANCER"><a class="viewcode-back" href="../../../reference/datasets/networks.html#cana.datasets.bio.BREAST_CANCER">[docs]</a><span class="k">def</span> <span class="nf">BREAST_CANCER</span><span class="p">():</span>
+    <span class="sd">&quot;&quot;&quot;Boolean network model of signal transduction in ER+ breast cancer</span>
+
+<span class="sd">    The network is defined in :cite:`Zanudo:2017`.</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">        (BooleanNetwork)</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">return</span> <span class="n">BooleanNetwork</span><span class="o">.</span><span class="n">from_file</span><span class="p">(</span><span class="n">_path</span> <span class="o">+</span> <span class="s1">&#39;/breast_cancer.txt&#39;</span><span class="p">,</span> <span class="nb">type</span><span class="o">=</span><span class="s1">&#39;logical&#39;</span><span class="p">,</span> <span class="n">name</span><span class="o">=</span><span class="s2">&quot;ER+ Breast Cancer&quot;</span><span class="p">,</span> <span class="n">keep_constants</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span></div>
+
+
+<span class="n">_cell_collective_models</span> <span class="o">=</span> <span class="p">[</span>
+    <span class="s1">&#39;Apoptosis Network&#39;</span><span class="p">,</span>
+    <span class="s1">&#39;Arabidopsis thaliana Cell Cycle&#39;</span><span class="p">,</span>
+    <span class="s1">&#39;Aurora Kinase A in Neuroblastoma&#39;</span><span class="p">,</span>
+    <span class="s1">&#39;B bronchiseptica and T retortaeformis coinfection&#39;</span><span class="p">,</span>
+    <span class="s1">&#39;B cell differentiation&#39;</span><span class="p">,</span>
+    <span class="s1">&#39;Bordetella bronchiseptica&#39;</span><span class="p">,</span>
+    <span class="s1">&#39;Bortezomib Responses in U266 Human Myeloma Cells&#39;</span><span class="p">,</span>
+    <span class="s1">&#39;BT474 Breast Cell Line Long-term ErbB Network&#39;</span><span class="p">,</span>
+    <span class="s1">&#39;BT474 Breast Cell Line Short-term ErbB Network&#39;</span><span class="p">,</span>
+    <span class="s1">&#39;Budding Yeast Cell Cycle 2009&#39;</span><span class="p">,</span>
+    <span class="s1">&#39;Budding Yeast Cell Cycle&#39;</span><span class="p">,</span>
+    <span class="s1">&#39;Cardiac development&#39;</span><span class="p">,</span>
+    <span class="s1">&#39;CD4 T cell signaling&#39;</span><span class="p">,</span>
+    <span class="s1">&#39;CD4+ T Cell Differentiation and Plasticity&#39;</span><span class="p">,</span>
+    <span class="s1">&#39;CD4+ T cell Differentiation&#39;</span><span class="p">,</span>
+    <span class="s1">&#39;Cell Cycle Transcription by Coupled CDK and Network Oscillators&#39;</span><span class="p">,</span>
+    <span class="s1">&#39;Cholesterol Regulatory Pathway&#39;</span><span class="p">,</span>
+    <span class="s1">&#39;Colitis-associated colon cancer&#39;</span><span class="p">,</span>
+    <span class="s1">&#39;Cortical Area Development&#39;</span><span class="p">,</span>
+    <span class="s1">&#39;Death Receptor Signaling&#39;</span><span class="p">,</span>
+    <span class="s1">&#39;Differentiation of T lymphocytes&#39;</span><span class="p">,</span>
+    <span class="s1">&#39;EGFR &amp; ErbB Signaling&#39;</span><span class="p">,</span>
+    <span class="s1">&#39;FA BRCA pathway&#39;</span><span class="p">,</span>
+    <span class="s1">&#39;Fanconi anemia and checkpoint recovery&#39;</span><span class="p">,</span>
+    <span class="s1">&#39;FGF pathway of Drosophila Signalling Pathways&#39;</span><span class="p">,</span>
+    <span class="s1">&#39;Glucose Repression Signaling 2009&#39;</span><span class="p">,</span>
+    <span class="s1">&#39;Guard Cell Abscisic Acid Signaling&#39;</span><span class="p">,</span>
+    <span class="s1">&#39;HCC1954 Breast Cell Line Long-term ErbB Network&#39;</span><span class="p">,</span>
+    <span class="s1">&#39;HCC1954 Breast Cell Line Short-term ErbB Network&#39;</span><span class="p">,</span>
+    <span class="s1">&#39;HGF Signaling in Keratinocytes&#39;</span><span class="p">,</span>
+    <span class="s1">&#39;HH Pathway of Drosophila Signaling Pathways&#39;</span><span class="p">,</span>
+    <span class="s1">&#39;HIV-1 interactions with T Cell Signalling Pathway&#39;</span><span class="p">,</span>
+    <span class="s1">&#39;Human Gonadal Sex Determination&#39;</span><span class="p">,</span>
+    <span class="s1">&#39;IGVH mutations in chronic lymphocytic leukemia&#39;</span><span class="p">,</span>
+    <span class="s1">&#39;IL-1 Signaling&#39;</span><span class="p">,</span>
+    <span class="s1">&#39;IL-6 Signalling&#39;</span><span class="p">,</span>
+    <span class="s1">&#39;Influenza A Virus Replication Cycle&#39;</span><span class="p">,</span>
+    <span class="s1">&#39;Iron acquisition and oxidative stress response in aspergillus fumigatus&#39;</span><span class="p">,</span>
+    <span class="s1">&#39;Lac Operon&#39;</span><span class="p">,</span>
+    <span class="s1">&#39;Lymphoid and myeloid cell specification and transdifferentiation&#39;</span><span class="p">,</span>
+    <span class="s1">&#39;Lymphopoiesis Regulatory Network&#39;</span><span class="p">,</span>
+    <span class="s1">&#39;Mammalian Cell Cycle 2006&#39;</span><span class="p">,</span>
+    <span class="s1">&#39;Mammalian Cell Cycle&#39;</span><span class="p">,</span>
+    <span class="s1">&#39;MAPK Cancer Cell Fate Network&#39;</span><span class="p">,</span>
+    <span class="s1">&#39;Metabolic Interactions in the Gut Microbiome&#39;</span><span class="p">,</span>
+    <span class="s1">&#39;Neurotransmitter Signaling Pathway&#39;</span><span class="p">,</span>
+    <span class="s1">&#39;Oxidative Stress Pathway&#39;</span><span class="p">,</span>
+    <span class="s1">&#39;PC12 Cell Differentiation&#39;</span><span class="p">,</span>
+    <span class="s1">&#39;Predicting Variabilities in Cardiac Gene&#39;</span><span class="p">,</span>
+    <span class="s1">&#39;Pro-inflammatory Tumor Microenvironment in Acute Lymphoblastic Leukemia&#39;</span><span class="p">,</span>
+    <span class="s1">&#39;Processing of Spz Network from the Drosophila Signaling Pathway&#39;</span><span class="p">,</span>
+    <span class="s1">&#39;Regulation of the L-arabinose operon of Escherichia coli&#39;</span><span class="p">,</span>
+    <span class="s1">&#39;Senescence Associated Secretory Phenotype&#39;</span><span class="p">,</span>
+    <span class="s1">&#39;Septation Initiation Network&#39;</span><span class="p">,</span>
+    <span class="s1">&#39;Signal Transduction in Fibroblasts&#39;</span><span class="p">,</span>
+    <span class="s1">&#39;Signaling in Macrophage Activation&#39;</span><span class="p">,</span>
+    <span class="s1">&#39;Signaling Pathway for Butanol Production in Clostridium beijerinckii NRRL B-598&#39;</span><span class="p">,</span>
+    <span class="s1">&#39;SKBR3 Breast Cell Line Long-term ErbB Network&#39;</span><span class="p">,</span>
+    <span class="s1">&#39;SKBR3 Breast Cell Line Short-term ErbB Network&#39;</span><span class="p">,</span>
+    <span class="s1">&#39;Stomatal Opening Model&#39;</span><span class="p">,</span>
+    <span class="s1">&#39;T cell differentiation&#39;</span><span class="p">,</span>
+    <span class="s1">&#39;T Cell Receptor Signaling&#39;</span><span class="p">,</span>
+    <span class="s1">&#39;T-Cell Signaling 2006&#39;</span><span class="p">,</span>
+    <span class="s1">&#39;T-LGL Survival Network 2008&#39;</span><span class="p">,</span>
+    <span class="s1">&#39;T-LGL Survival Network 2011 Reduced Network&#39;</span><span class="p">,</span>
+    <span class="s1">&#39;T-LGL Survival Network 2011&#39;</span><span class="p">,</span>
+    <span class="s1">&#39;TOL Regulatory Network&#39;</span><span class="p">,</span>
+    <span class="s1">&#39;Toll Pathway of Drosophila Signaling Pathway&#39;</span><span class="p">,</span>
+    <span class="s1">&#39;Treatment of Castration-Resistant Prostate Cancer&#39;</span><span class="p">,</span>
+    <span class="s1">&#39;Trichostrongylus retortaeformis&#39;</span><span class="p">,</span>
+    <span class="s1">&#39;Tumour Cell Invasion and Migration&#39;</span><span class="p">,</span>
+    <span class="s1">&#39;VEGF Pathway of Drosophila Signaling Pathway&#39;</span><span class="p">,</span>
+    <span class="s1">&#39;Wg Pathway of Drosophila Signalling Pathways&#39;</span><span class="p">,</span>
+    <span class="s1">&#39;Yeast Apoptosis&#39;</span><span class="p">]</span>
+
+
+<div class="viewcode-block" id="load_cell_collective_model"><a class="viewcode-back" href="../../../reference/datasets/networks.html#cana.datasets.bio.load_cell_collective_model">[docs]</a><span class="k">def</span> <span class="nf">load_cell_collective_model</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Loads one of the Cell Collective :cite:`Helikar:2012` models.</span>
+<span class="sd">    Models collected on Aug 2020.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        name (str): the name of the model to be loaded.</span>
+<span class="sd">            Accepts: [&quot;Apoptosis Network&quot;, &quot;Arabidopsis thaliana Cell Cycle&quot;, &quot;Aurora Kinase A in Neuroblastoma&quot;, ...,</span>
+<span class="sd">            &quot;Wg Pathway of Drosophila Signalling Pathways&quot;, &quot;Yeast Apoptosis&quot;]</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">        (BooleanNetwork)</span>
+
+<span class="sd">    Note:</span>
+<span class="sd">        See source code for full list of models. Credits to Xuan Wang for compiling these models.</span>
+<span class="sd">        We are working on making a Cell Collective direct loader. </span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="c1">#</span>
+    <span class="k">if</span> <span class="n">name</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">_cell_collective_models</span><span class="p">:</span>
+        <span class="n">models_str</span> <span class="o">=</span> <span class="s2">&quot;&#39;&quot;</span> <span class="o">+</span> <span class="s2">&quot;&#39;,&#39;&quot;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">_cell_collective_models</span><span class="p">)</span> <span class="o">+</span> <span class="s2">&quot;&#39;&quot;</span>
+        <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span><span class="s1">&#39;Model name could not be found. Please specify one of the following models: </span><span class="si">{models:s}</span><span class="s1">.&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">models</span><span class="o">=</span><span class="n">models_str</span><span class="p">))</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">BooleanNetwork</span><span class="o">.</span><span class="n">from_file</span><span class="p">(</span><span class="n">_path</span> <span class="o">+</span> <span class="s1">&#39;/cell_collective/&#39;</span> <span class="o">+</span> <span class="n">name</span> <span class="o">+</span> <span class="s1">&#39;.txt&#39;</span><span class="p">,</span> <span class="n">name</span><span class="o">=</span><span class="n">name</span><span class="p">,</span> <span class="n">keep_constants</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="load_all_cell_collective_models"><a class="viewcode-back" href="../../../reference/datasets/networks.html#cana.datasets.bio.load_all_cell_collective_models">[docs]</a><span class="k">def</span> <span class="nf">load_all_cell_collective_models</span><span class="p">():</span>
+    <span class="sd">&quot;&quot;&quot;Load all the Cell Collective models, instanciating +70 models.</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">        (list)</span>
+
+<span class="sd">    Note:</span>
+<span class="sd">        See source code for full list of models.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">return</span> <span class="p">[</span><span class="n">load_cell_collective_model</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="n">name</span><span class="p">)</span> <span class="k">for</span> <span class="n">name</span> <span class="ow">in</span> <span class="n">_cell_collective_models</span><span class="p">]</span></div>
+</pre></div>
+
+           </div>
+           
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>
+        &#169; Copyright 2021, Correia, R. B., Gates, A., Rocha, L. M..
+
+    </p>
+  </div>
+    
+    
+    
+    Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    
+    provided by <a href="https://readthedocs.org">Read the Docs</a>. 
+
+</footer>
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+  
+
+  <script type="text/javascript">
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script>
+
+  
+  
+    
+   
+
+</body>
+</html>

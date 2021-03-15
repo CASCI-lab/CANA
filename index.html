@@ -1,49 +1,54 @@
 
 
 <!DOCTYPE html>
-<!--[if IE 8]><html class="no-js lt-ie9" lang="en" > <![endif]-->
-<!--[if gt IE 8]><!--> <html class="no-js" lang="en" > <!--<![endif]-->
+<html class="writer-html5" lang="en" >
 <head>
-  <meta charset="utf-8">
+  <meta charset="utf-8" />
   
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   
-  <title>CANAlization: Control &amp; Redundancy in Boolean Networks &mdash; CANA 0.0.2-alpha documentation</title>
+  <title>CANAlization: Control &amp; Redundancy in Boolean Networks &mdash; CANA 0.1 documentation</title>
+  
+
+  
+  <link rel="stylesheet" href="_static/css/theme.css" type="text/css" />
+  <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+
+  
   
 
   
   
-  
-  
 
   
 
   
+  <!--[if lt IE 9]>
+    <script src="_static/js/html5shiv.min.js"></script>
+  <![endif]-->
   
     
+      <script type="text/javascript" id="documentation_options" data-url_root="./" src="_static/documentation_options.js"></script>
+        <script src="_static/jquery.js"></script>
+        <script src="_static/underscore.js"></script>
+        <script src="_static/doctools.js"></script>
+    
+    <script type="text/javascript" src="_static/js/theme.js"></script>
 
-  
-
-  <link rel="stylesheet" href="static/css/theme.css" type="text/css" />
-  <link rel="stylesheet" href="static/pygments.css" type="text/css" />
+    
     <link rel="index" title="Index" href="genindex.html" />
     <link rel="search" title="Search" href="search.html" />
-    <link rel="next" title="Installation" href="install.html" /> 
-
-  
-  <script src="static/js/modernizr.min.js"></script>
-
+    <link rel="next" title="API Reference" href="reference/index.html" /> 
 </head>
 
 <body class="wy-body-for-nav">
 
    
   <div class="wy-grid-for-nav">
-
     
     <nav data-toggle="wy-nav-shift" class="wy-nav-side">
       <div class="wy-side-scroll">
-        <div class="wy-side-nav-search">
+        <div class="wy-side-nav-search" >
           
 
           
@@ -57,7 +62,7 @@
             
             
               <div class="version">
-                0.0.2
+                0.1
               </div>
             
           
@@ -74,6 +79,7 @@
           
         </div>
 
+        
         <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
           
             
@@ -81,19 +87,17 @@
               
             
             
-              <ul>
-<li class="toctree-l1"><a class="reference internal" href="install.html">Installation</a></li>
-<li class="toctree-l1"><a class="reference internal" href="notation.html">Notation</a></li>
-<li class="toctree-l1"><a class="reference internal" href="tutorial.html">Tutorials</a></li>
+              <p class="caption"><span class="caption-text">Table of Contents:</span></p>
+<ul>
 <li class="toctree-l1"><a class="reference internal" href="reference/index.html">API Reference</a></li>
-<li class="toctree-l1"><a class="reference internal" href="development.html">Development</a></li>
 <li class="toctree-l1"><a class="reference internal" href="appendix/index.html">Appendix</a></li>
-<li class="toctree-l1"><a class="reference internal" href="references.html">References</a></li>
+<li class="toctree-l1"><a class="reference internal" href="bibliography.html">Bibliography</a></li>
 </ul>
 
             
           
         </div>
+        
       </div>
     </nav>
 
@@ -128,19 +132,21 @@
 
 
 
+
+
 <div role="navigation" aria-label="breadcrumbs navigation">
 
   <ul class="wy-breadcrumbs">
     
-      <li><a href="#">Docs</a> &raquo;</li>
+      <li><a href="#" class="icon icon-home"></a> &raquo;</li>
         
       <li>CANAlization: Control &amp; Redundancy in Boolean Networks</li>
     
     
       <li class="wy-breadcrumbs-aside">
         
-            
-            <a href="sources/index.rst.txt" rel="nofollow"> View page source</a>
+          
+            <a href="_sources/index.rst.txt" rel="nofollow"> View page source</a>
           
         
       </li>
@@ -155,52 +161,29 @@
             
   <div class="section" id="canalization-control-redundancy-in-boolean-networks">
 <h1>CANAlization: Control &amp; Redundancy in Boolean Networks<a class="headerlink" href="#canalization-control-redundancy-in-boolean-networks" title="Permalink to this headline">¶</a></h1>
-<div class="section" id="description">
-<h2>Description:<a class="headerlink" href="#description" title="Permalink to this headline">¶</a></h2>
 <p>This package implements a series of methods used to study control, canalization and redundancy in Boolean Networks.</p>
-<p>If you are using this package, please consider citing the following papers, including our latest describing CANA.</p>
+<p>If you are using this package, please consider citing the following papers:</p>
 <blockquote>
-<div><a class="reference internal" href="references.html#cana-2018" id="id1">[CGWR18]</a> “R.B. Correia, A. Gates, X. Wang and L.M. Rocha [2018]. “<a class="reference external" href="https://www.informatics.indiana.edu/rocha/publications/FSB18.php">CANA: A python package for quantifying control and canalization in Boolean Networks</a>.” <em>Frontiers in Physiology</em>, <strong>9</strong>: 1046. doi: 10.3389/fphys.2018.01046.”</div></blockquote>
-<p>The original mathematical descriptions implemented in CANA can be seen in these papers.</p>
-<blockquote>
-<div><p><a class="reference internal" href="references.html#gates-2016" id="id3">[GR16]</a> “A. Gates and L.M. Rocha. [2016] “<a class="reference external" href="http://www.informatics.indiana.edu/rocha/publications/NSR16.php">Control of complex networks requires both structure and dynamics</a>.” <em>Scientific Reports</em> <strong>6</strong>, 24456. doi: 10.1038/srep24456.”</p>
-<p><a class="reference internal" href="references.html#gates-2014" id="id5">[GR14]</a> “A. Gates and L.M. Rocha [2014]. “<a class="reference external" href="http://www.informatics.indiana.edu/rocha/publications/alife14a.html">Structure and dynamics affect the controllability of complex systems</a>: a Preliminary Study”. <em>Artificial Life 14: Proceedings of the Fourteenth International Conference on the Synthesis and Simulation of Living Systems</em>: 429-430, MIT Press.”</p>
-<p><a class="reference internal" href="references.html#marques-pita-2013" id="id7">[MPR13]</a> “M. Marques-Pita and L.M. Rocha [2013]. “<a class="reference external" href="http://www.informatics.indiana.edu/rocha/publications/plos2012.html">Canalization and control in automata networks: body segmentation in Drosophila Melanogaster</a>”. <em>PLoS ONE</em>, <strong>8</strong> (3): e55946. doi:10.1371/journal.pone.0055946.”</p>
+<div><p><span id="id1">[<a class="reference internal" href="bibliography.html#id3">GRBCR21</a>]</span> “A.J. Gates, R.B. Correia, X. Wang, &amp; L.M. Rocha [2021]. “<a class="reference external" href="https://doi.org/10.1073/pnas.2022598118">The effective graph reveals redundancy, canalization, and control pathways in biochemical regulation and signaling</a>”. <em>Proceedings of the National Academy of Sciences (PNAS)</em>, <strong>118</strong> (12). doi: 10.1073/pnas.2022598118”</p>
+<p><span id="id3">[<a class="reference internal" href="bibliography.html#id5">CGWR18</a>]</span> “R.B. Correia, A. Gates, X. Wang and L.M. Rocha [2018]. “<a class="reference external" href="https://www.informatics.indiana.edu/rocha/publications/FSB18.php">CANA: A python package for quantifying control and canalization in Boolean Networks</a>.” <em>Frontiers in Physiology</em>, <strong>9</strong>: 1046. doi: 10.3389/fphys.2018.01046.”</p>
+<p><span id="id5">[<a class="reference internal" href="bibliography.html#id18">GR16</a>]</span> “A. Gates and L.M. Rocha. [2016] “<a class="reference external" href="http://www.informatics.indiana.edu/rocha/publications/NSR16.php">Control of complex networks requires both structure and dynamics</a>.” <em>Scientific Reports</em> <strong>6</strong>, 24456. doi: 10.1038/srep24456.”</p>
+<p><span id="id7">[<a class="reference internal" href="bibliography.html#id17">GR14</a>]</span> “A. Gates and L.M. Rocha [2014]. “<a class="reference external" href="http://www.informatics.indiana.edu/rocha/publications/alife14a.html">Structure and dynamics affect the controllability of complex systems</a>: a Preliminary Study”. <em>Artificial Life 14: Proceedings of the Fourteenth International Conference on the Synthesis and Simulation of Living Systems</em>: 429-430, MIT Press.”</p>
+<p><span id="id9">[<a class="reference internal" href="bibliography.html#id16">MPR13</a>]</span> “M. Marques-Pita and L.M. Rocha [2013]. “<a class="reference external" href="http://www.informatics.indiana.edu/rocha/publications/plos2012.html">Canalization and control in automata networks: body segmentation in Drosophila Melanogaster</a>”. <em>PLoS ONE</em>, <strong>8</strong> (3): e55946. doi:10.1371/journal.pone.0055946.”</p>
 </div></blockquote>
-</div>
 <div class="section" id="documentation">
 <h2>Documentation:<a class="headerlink" href="#documentation" title="Permalink to this headline">¶</a></h2>
+<p><strong>Tutorials</strong>: For examples of utilization pleasee see tutorials in <a class="reference external" href="https://github.com/rionbr/CANA/tree/master/tutorials">github.com/rionbr/CANA</a>.</p>
 <div class="toctree-wrapper compound">
+<p class="caption"><span class="caption-text">Table of Contents:</span></p>
 <ul>
-<li class="toctree-l1"><a class="reference internal" href="install.html">Installation</a><ul>
-<li class="toctree-l2"><a class="reference internal" href="install.html#download">Download</a></li>
-<li class="toctree-l2"><a class="reference internal" href="install.html#quick-install">Quick Install</a></li>
-<li class="toctree-l2"><a class="reference internal" href="install.html#requirements">Requirements</a></li>
-</ul>
-</li>
-<li class="toctree-l1"><a class="reference internal" href="notation.html">Notation</a><ul>
-<li class="toctree-l2"><a class="reference internal" href="notation.html#node-automata">Node (automata)</a></li>
-<li class="toctree-l2"><a class="reference internal" href="notation.html#network">Network</a></li>
-<li class="toctree-l2"><a class="reference internal" href="notation.html#wildcard">Wildcard</a></li>
-<li class="toctree-l2"><a class="reference internal" href="notation.html#two-symbol">Two-Symbol</a></li>
-</ul>
-</li>
-<li class="toctree-l1"><a class="reference internal" href="tutorial.html">Tutorials</a><ul>
-<li class="toctree-l2"><a class="reference internal" href="tutorial.html#instanciante-a-boolean-node">Instanciante a Boolean Node</a></li>
-<li class="toctree-l2"><a class="reference internal" href="tutorial.html#instanciante-a-boolean-network">Instanciante a Boolean Network</a></li>
-<li class="toctree-l2"><a class="reference internal" href="tutorial.html#state-transition-graph-stg-attractors">State-Transition-Graph (STG) &amp; Attractors</a></li>
-<li class="toctree-l2"><a class="reference internal" href="tutorial.html#control-driver-nodes">Control Driver Nodes</a></li>
-<li class="toctree-l2"><a class="reference internal" href="tutorial.html#lut-f-and-f-schematas">LUT, F’ and F’’ schematas</a></li>
-</ul>
-</li>
 <li class="toctree-l1"><a class="reference internal" href="reference/index.html">API Reference</a><ul>
-<li class="toctree-l2"><a class="reference internal" href="reference/boolean_node.html">Node</a><ul>
-<li class="toctree-l3"><a class="reference internal" href="reference/boolean_node.html#boolean-node">Boolean Node</a></li>
+<li class="toctree-l2"><a class="reference internal" href="reference/node.html">Node</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="reference/node.html#boolean-node">Boolean Node</a></li>
 </ul>
 </li>
-<li class="toctree-l2"><a class="reference internal" href="reference/boolean_network.html">Network</a><ul>
-<li class="toctree-l3"><a class="reference internal" href="reference/boolean_network.html#boolean-network">Boolean Network</a></li>
-<li class="toctree-l3"><a class="reference internal" href="reference/boolean_network.html#bns-attractors-interface">BNS Attractors Interface</a></li>
+<li class="toctree-l2"><a class="reference internal" href="reference/network.html">Network</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="reference/network.html#boolean-network">Boolean Network</a></li>
+<li class="toctree-l3"><a class="reference internal" href="reference/network.html#bns-attractors-interface">BNS Attractors Interface</a></li>
 </ul>
 </li>
 <li class="toctree-l2"><a class="reference internal" href="reference/canalization/index.html">Canalization</a><ul>
@@ -212,27 +195,24 @@
 <li class="toctree-l3"><a class="reference internal" href="reference/control/index.html#structure-based-control">Structure based control</a></li>
 </ul>
 </li>
-<li class="toctree-l2"><a class="reference internal" href="reference/datasets/index.html">Common Nodes &amp; Networks</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="reference/datasets/index.html">Datasets</a><ul>
 <li class="toctree-l3"><a class="reference internal" href="reference/datasets/nodes.html">Boolean Nodes</a></li>
 <li class="toctree-l3"><a class="reference internal" href="reference/datasets/networks.html">Biological Boolean Networks</a></li>
 <li class="toctree-l3"><a class="reference internal" href="reference/datasets/networks.html#network-motifs">Network Motifs</a></li>
 </ul>
 </li>
-<li class="toctree-l2"><a class="reference internal" href="reference/utils.html">Utilities</a></li>
+<li class="toctree-l2"><a class="reference internal" href="reference/ensemble.html">Ensemble Methods</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="reference/ensemble.html#random-boolean-network">Random Boolean Network</a></li>
 </ul>
 </li>
-<li class="toctree-l1"><a class="reference internal" href="development.html">Development</a><ul>
-<li class="toctree-l2"><a class="reference internal" href="development.html#notes">Notes</a></li>
-<li class="toctree-l2"><a class="reference internal" href="development.html#developing">Developing</a></li>
-<li class="toctree-l2"><a class="reference internal" href="development.html#changelog">Changelog</a></li>
-<li class="toctree-l2"><a class="reference internal" href="development.html#tests">Tests</a></li>
+<li class="toctree-l2"><a class="reference internal" href="reference/utils.html">Utilities</a></li>
 </ul>
 </li>
 <li class="toctree-l1"><a class="reference internal" href="appendix/index.html">Appendix</a><ul>
 <li class="toctree-l2"><a class="reference internal" href="appendix/index.html#r">R</a></li>
 </ul>
 </li>
-<li class="toctree-l1"><a class="reference internal" href="references.html">References</a></li>
+<li class="toctree-l1"><a class="reference internal" href="bibliography.html">Bibliography</a></li>
 </ul>
 </div>
 </div>
@@ -240,9 +220,9 @@
 <div class="section" id="indices-and-tables">
 <h1>Indices and tables<a class="headerlink" href="#indices-and-tables" title="Permalink to this headline">¶</a></h1>
 <ul class="simple">
-<li><a class="reference internal" href="genindex.html"><span class="std std-ref">Index</span></a></li>
-<li><a class="reference internal" href="py-modindex.html"><span class="std std-ref">Module Index</span></a></li>
-<li><a class="reference internal" href="search.html"><span class="std std-ref">Search Page</span></a></li>
+<li><p><a class="reference internal" href="genindex.html"><span class="std std-ref">Index</span></a></p></li>
+<li><p><a class="reference internal" href="py-modindex.html"><span class="std std-ref">Module Index</span></a></p></li>
+<li><p><a class="reference internal" href="search.html"><span class="std std-ref">Search Page</span></a></p></li>
 </ul>
 </div>
 
@@ -251,28 +231,28 @@
            
           </div>
           <footer>
-  
     <div class="rst-footer-buttons" role="navigation" aria-label="footer navigation">
-      
-        <a href="install.html" class="btn btn-neutral float-right" title="Installation" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right"></span></a>
-      
-      
+        <a href="reference/index.html" class="btn btn-neutral float-right" title="API Reference" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
     </div>
-  
 
   <hr/>
 
   <div role="contentinfo">
     <p>
-        &copy; Copyright 2017, Gates, A., Correia, R. B., Rocha, L. M..
-      Last updated on Aug 29, 2018.
+        &#169; Copyright 2021, Correia, R. B., Gates, A., Rocha, L. M..
 
     </p>
   </div>
-  Built with <a href="http://sphinx-doc.org/">Sphinx</a> using a <a href="https://github.com/rtfd/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>. 
+    
+    
+    
+    Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    
+    provided by <a href="https://readthedocs.org">Read the Docs</a>. 
 
 </footer>
-
         </div>
       </div>
 
@@ -281,34 +261,16 @@
   </div>
   
 
-
-  
-
-    <script type="text/javascript">
-        var DOCUMENTATION_OPTIONS = {
-            URL_ROOT:'./',
-            VERSION:'0.0.2-alpha',
-            LANGUAGE:'None',
-            COLLAPSE_INDEX:false,
-            FILE_SUFFIX:'.html',
-            HAS_SOURCE:  true,
-            SOURCELINK_SUFFIX: '.txt'
-        };
-    </script>
-      <script type="text/javascript" src="static/jquery.js"></script>
-      <script type="text/javascript" src="static/underscore.js"></script>
-      <script type="text/javascript" src="static/doctools.js"></script>
-      <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.1/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
-
-  
-
-  <script type="text/javascript" src="static/js/theme.js"></script>
-
   <script type="text/javascript">
       jQuery(function () {
           SphinxRtdTheme.Navigation.enable(true);
       });
-  </script> 
+  </script>
+
+  
+  
+    
+   
 
 </body>
 </html>
