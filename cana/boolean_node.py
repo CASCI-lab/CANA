@@ -3,10 +3,10 @@
 Boolean Node
 =============
 
-
+Main class for Boolean node objects.
 
 """
-#   Copyright (C) 2020 by
+#   Copyright (C) 2021 by
 #   Rion Brattig Correia <rionbr@gmail.com>
 #   Alex Gates <ajgates@gmail.com>
 #   Etienne Nzabarushimana <enzabaru@indiana.edu>
@@ -179,7 +179,7 @@ class BooleanNode(object):
             # A triplet of (min, mean, max) values
             if bound == 'lower':
                 redundancy = sum([all(pi) for pi in binstates2wildcard.values()]) / 2**self.k  # min(r_i)
-            elif bound == 'mean' or bound == 'ave':
+            elif bound == 'mean' or bound == 'avg':
                 redundancy = sum([sum(pi) / len(pi) for pi in binstates2wildcard.values()]) / 2**self.k  # <r_i>
             elif bound == 'upper':
                 redundancy = sum([any(pi) for pi in binstates2wildcard.values()]) / 2**self.k  # max(r_i)
@@ -201,7 +201,7 @@ class BooleanNode(object):
 
         Args:
             operator (function) : The operator to use while computing input redundancy for the node.
-                Defaults to `statistics.mean`, but `min` or `max` can be also considered. 
+                Defaults to `statistics.mean`, but `min` or `max` can be also considered.
             norm (bool) : Normalized between [0,1].
                 Use this value when comparing nodes with different input sizes. (Defaults to "True".)
 
@@ -211,11 +211,14 @@ class BooleanNode(object):
             (float) : The :math:`k_e` value.
 
         See Also:
-            :func:`input_redundancy`, :func:`input_symmetry`, :func:`~boolnets.boolean_network.BooleanNetwork.effective_graph`.
+            :func:`input_redundancy`, :func:`input_symmetry`, :func:`~cana.boolean_network.BooleanNetwork.effective_graph`.
         """
-    
         #
-        k_r = self.input_redundancy(operator=operator, norm=norm)
+        # Canalization can only occur when k>= 2
+        if self.k < 2:
+            return 0.0
+
+        k_r = self.input_redundancy(operator=operator, norm=False)
         #
         k_e = self.k - k_r
         if (norm):
@@ -236,10 +239,8 @@ class BooleanNode(object):
             (list) : The list of :math:`e_r` values.
 
         See Also:
-            :func:`input_redundancy`, :func:`input_symmetry`, :func:`~boolnets.boolean_network.BooleanNetwork.effective_graph`.
+            :func:`input_redundancy`, :func:`input_symmetry`, :func:`~cana.boolean_network.BooleanNetwork.effective_graph`.
         """
-        
-
         e_i = [1.0 - x_i for x_i in self.edge_redundancy(bound=bound)]
         return e_i
 
@@ -700,7 +701,7 @@ class BooleanNode(object):
             (float)
 
         See Also:
-            :func:`~boolnets.boolean_network.network_bias`
+            :func:`~cana.boolean_network.BooleanNetwork.network_bias`
         """
         return sum(map(int, self.outputs)) / 2**self.k
 
@@ -722,7 +723,7 @@ class BooleanNode(object):
             (float)
 
         See Also:
-            :func:`~boolnets.boolean_network.derrida_curve`
+            :func:`~cana.boolean_network.derrida_curve`
         """
         S_c_f = 0
         ic = min(c, self.k)
