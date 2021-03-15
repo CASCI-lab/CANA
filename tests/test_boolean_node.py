@@ -1,9 +1,8 @@
 # -*- coding: utf-8 -*-
 #
 # Tests for ``boolean_node.py``
-# These tests were hand calculated by Luis M. Rocha and implemented by Rion B. Correia.
+# These tests were manually calculated by Luis M. Rocha and implemented by Rion B. Correia.
 #
-from __future__ import division
 from cana.datasets.bools import CONTRADICTION, AND, OR, XOR, COPYx1, RULE90, RULE110
 from cana.utils import *
 
@@ -16,105 +15,77 @@ from cana.utils import *
 def test_input_redundancy_AND():
     """Test Input Redundancy - AND"""
     n = AND()
-    k_r, true_k_r = n.input_redundancy(bound='upper', norm=False), (3 / 4)
-    assert (k_r == true_k_r), ('Input Redundancy (lower) for AND node does not match. %s != %s' % (k_r, true_k_r))
-    k_r, true_k_r = n.input_redundancy(bound='lower', norm=False), (3 / 4)
-    assert (k_r == true_k_r), ('Input Redundancy (lower) for AND node does not match. %s != %s' % (k_r, true_k_r))
+    k_r, true_k_r = n.input_redundancy(norm=False), (3 / 4)
+    assert (k_r == true_k_r), ('Input Redundancy (mean) for AND node does not match. %s != %s' % (k_r, true_k_r))
 
-    k_r, true_k_r = n.input_redundancy(bound='upper', norm=True), (3 / 4) / 2
-    assert (k_r == true_k_r), ('Input Redundancy (lower, normed) for AND node does not match. %s != %s' % (k_r, true_k_r))
-    k_r, true_k_r = n.input_redundancy(bound='lower', norm=True), (3 / 4) / 2
-    assert (k_r == true_k_r), ('Input Redundancy (lower, normed) for AND node does not match. %s != %s' % (k_r, true_k_r))
+    k_r, true_k_r = n.input_redundancy(norm=True), (3 / 4) / 2
+    assert (k_r == true_k_r), ('Input Redundancy (mean, normed) for AND node does not match. %s != %s' % (k_r, true_k_r))
 
 
 # OR
 def test_input_redundancy_OR():
     """Test Input Redundancy - OR"""
     n = OR()
-    k_r, true_k_r = n.input_redundancy(bound='upper', norm=False), 3 / 4
-    assert (k_r == true_k_r), ('Input Redundancy (lower) for OR node does not match. %s != %s' % (k_r, true_k_r))
-    k_r, true_k_r = n.input_redundancy(bound='lower', norm=False), 3 / 4
-    assert (k_r == true_k_r), ('Input Redundancy (lower) for OR node does not match. %s != %s' % (k_r, true_k_r))
+    k_r, true_k_r = n.input_redundancy(norm=False), 3 / 4
+    assert (k_r == true_k_r), ('Input Redundancy (mean) for OR node does not match. %s != %s' % (k_r, true_k_r))
 
-    k_r, true_k_r = n.input_redundancy(bound='upper', norm=True), (3 / 4) / 2
-    assert (k_r == true_k_r), ('Input Redundancy (lower, normed) for OR node does not match. %s != %s' % (k_r, true_k_r))
-    k_r, true_k_r = n.input_redundancy(bound='lower', norm=True), (3 / 4) / 2
-    assert (k_r == true_k_r), ('Input Redundancy (lower, normed) for OR node does not match. %s != %s' % (k_r, true_k_r))
+    k_r, true_k_r = n.input_redundancy(norm=True), (3 / 4) / 2
+    assert (k_r == true_k_r), ('Input Redundancy (mean, normed) for OR node does not match. %s != %s' % (k_r, true_k_r))
 
 
 # XOR
 def test_input_redundancy_XOR():
     """Test Input Redundancy - XOR"""
     n = XOR()
-    k_r, true_k_r = n.input_redundancy(bound='upper', norm=False), 0
-    assert (k_r == true_k_r), ('Input Redundancy (lower) for XOR node does not match. %s != %s' % (k_r, true_k_r))
-    k_r, true_k_r = n.input_redundancy(bound='lower', norm=False), 0
-    assert (k_r == true_k_r), ('Input Redundancy (lower) for XOR node does not match. %s != %s' % (k_r, true_k_r))
+    k_r, true_k_r = n.input_redundancy(norm=False), 0
+    assert (k_r == true_k_r), ('Input Redundancy (mean) for XOR node does not match. %s != %s' % (k_r, true_k_r))
 
-    k_r, true_k_r = n.input_redundancy(bound='upper', norm=True), 0
-    assert (k_r == true_k_r), ('Input Redundancy (lower, normed) for XOR node does not match. %s != %s' % (k_r, true_k_r))
-    k_r, true_k_r = n.input_redundancy(bound='lower', norm=True), 0
-    assert (k_r == true_k_r), ('Input Redundancy (lower, normed) for XOR node does not match. %s != %s' % (k_r, true_k_r))
+    k_r, true_k_r = n.input_redundancy(norm=True), 0
+    assert (k_r == true_k_r), ('Input Redundancy (mean, normed) for XOR node does not match. %s != %s' % (k_r, true_k_r))
 
 
 # CONTRADICTION
 def test_input_redundancy_CONTRADICTION():
     """Test Input Redundancy - CONTRADICTION"""
     n = CONTRADICTION()
-    k_r, true_k_r = n.input_redundancy(bound='upper', norm=False), 2.
-    assert (k_r == true_k_r), ('Input Redundancy (upper) for CONTRADICTION node does not match. %s != %s' % (k_r, true_k_r))
-    k_r, true_k_r = n.input_redundancy(bound='lower', norm=False), 2.
-    assert (k_r == true_k_r), ('Input Redundancy (lower) for CONTRADICTION node does not match. %s != %s' % (k_r, true_k_r))
+    k_r, true_k_r = n.input_redundancy(norm=False), 2.
+    assert (k_r == true_k_r), ('Input Redundancy (mean) for CONTRADICTION node does not match. %s != %s' % (k_r, true_k_r))
 
-    k_r, true_k_r = n.input_redundancy(bound='upper', norm=True), 1.
-    assert (k_r == true_k_r), ('Input Redundancy (upper, normed) for CONTRADICTION node does not match. %s != %s' % (k_r, true_k_r))
-    k_r, true_k_r = n.input_redundancy(bound='lower', norm=True), 1.
-    assert (k_r == true_k_r), ('Input Redundancy (lower, normed) for CONTRADICTION node does not match. %s != %s' % (k_r, true_k_r))
+    k_r, true_k_r = n.input_redundancy(norm=True), 1.
+    assert (k_r == true_k_r), ('Input Redundancy (mean, normed) for CONTRADICTION node does not match. %s != %s' % (k_r, true_k_r))
 
 
 # COPYx1
 def test_input_redundancy_COPYx1():
     """Test Input Redundancy - COPYx1"""
     n = COPYx1()
-    k_r, true_k_r = n.input_redundancy(bound='upper', norm=False), 1.
+    k_r, true_k_r = n.input_redundancy(norm=False), 1.
     assert (k_r == true_k_r), ('Input Redundancy (upper) for COPYx1 node does not match. %s != %s' % (k_r, true_k_r))
-    k_r, true_k_r = n.input_redundancy(bound='lower', norm=False), 1.
-    assert (k_r == true_k_r), ('Input Redundancy (lower) for COPYx1 node does not match. %s != %s' % (k_r, true_k_r))
 
-    k_r, true_k_r = n.input_redundancy(bound='upper', norm=True), 1 / 2
+    k_r, true_k_r = n.input_redundancy(norm=True), 1 / 2
     assert (k_r == true_k_r), ('Input Redundancy (upper, normed) for COPYx1 node does not match. %s != %s' % (k_r, true_k_r))
-    k_r, true_k_r = n.input_redundancy(bound='lower', norm=True), 1 / 2
-    assert (k_r == true_k_r), ('Input Redundancy (lower, normed) for COPYx1 node does not match. %s != %s' % (k_r, true_k_r))
 
 
 # RULE 90
 def test_input_redundancy_RULE90():
     """Test Input Redundancy - RULE90"""
     n = RULE90()
-    k_r, true_k_r = n.input_redundancy(bound='upper', norm=False), 8 / 8
+    k_r, true_k_r = n.input_redundancy(norm=False), 8 / 8
     assert (k_r == true_k_r), ('Input Redundancy (upper) for RULE90 node does not match. %s != %s' % (k_r, true_k_r))
-    k_r, true_k_r = n.input_redundancy(bound='lower', norm=False), 8 / 8
-    assert (k_r == true_k_r), ('Input Redundancy (lower) for RULE90 node does not match. %s != %s' % (k_r, true_k_r))
 
-    k_r, true_k_r = n.input_redundancy(bound='upper', norm=True), (8 / 8) / 3
+    k_r, true_k_r = n.input_redundancy(norm=True), (8 / 8) / 3
     assert (k_r == true_k_r), ('Input Redundancy (upper, normed) for RULE90 node does not match. %s != %s' % (k_r, true_k_r))
-    k_r, true_k_r = n.input_redundancy(bound='lower', norm=True), (8 / 8) / 3
-    assert (k_r == true_k_r), ('Input Redundancy (lower, normed) for RULE90 node does not match. %s != %s' % (k_r, true_k_r))
 
 
 # RULE 110
 def test_input_redundancy_RULE110():
     """Test Input Redundancy - RULE110"""
     n = RULE110()
-    k_r, true_k_r = n.input_redundancy(bound='upper', norm=False), 7 / 8
+    k_r, true_k_r = n.input_redundancy(norm=False), 7 / 8
     assert (k_r == true_k_r), ('Input Redundancy (upper) for RULE110 node does not match. %s != %s' % (k_r, true_k_r))
-    k_r, true_k_r = n.input_redundancy(bound='lower', norm=False), 7 / 8
-    assert (k_r == true_k_r), ('Input Redundancy (lower) for RULE110 node does not match. %s != %s' % (k_r, true_k_r))
 
-    k_r, true_k_r = n.input_redundancy(bound='upper', norm=True), (7 / 8) / 3
+    k_r, true_k_r = n.input_redundancy(norm=True), (7 / 8) / 3
     assert (k_r == true_k_r), ('Input Redundancy (upper, normed) for RULE110 node does not match. %s != %s' % (k_r, true_k_r))
-    k_r, true_k_r = n.input_redundancy(bound='lower', norm=True), (7 / 8) / 3
-    assert (k_r == true_k_r), ('Input Redundancy (lower, normed) for RULE110 node does not match. %s != %s' % (k_r, true_k_r))
 
 
 #
@@ -234,90 +205,66 @@ def test_edge_redundancy_RULE110():
 def test_effective_connectivity_AND():
     """Test Effective Connectivity - AND"""
     n = AND()
-    k_e, true_k_e = n.effective_connectivity(bound='upper', norm=False), 5 / 4
+    k_e, true_k_e = n.effective_connectivity(norm=False), 5 / 4
     assert (k_e == true_k_e), ('Effective Connectivity (node,upper bound) for AND node does not match. %s != %s' % (k_e, true_k_e))
-    k_e, true_k_e = n.effective_connectivity(bound='lower', norm=False), 5 / 4
-    assert (k_e == true_k_e), ('Effective Connectivity (node,lower bound) for AND node does not match. %s != %s' % (k_e, true_k_e))
 
-    k_e, true_k_e = n.effective_connectivity(bound='upper', norm=True), (5 / 4) / 2
+    k_e, true_k_e = n.effective_connectivity(norm=True), (5 / 4) / 2
     assert (k_e == true_k_e), ('Effective Connectivity (node,upper bound,normed) for AND node does not match. %s != %s' % (k_e, true_k_e))
-    k_e, true_k_e = n.effective_connectivity(bound='lower', norm=True), (5 / 4) / 2
-    assert (k_e == true_k_e), ('Effective Connectivity (node,lower bound,normed) for AND node does not match. %s != %s' % (k_e, true_k_e))
 
 
 # XOR
 def test_effective_connectivity_XOR():
     """Test Effective Connectivity - XOR"""
     n = XOR()
-    k_e, true_k_e = n.effective_connectivity(bound='upper', norm=False), 2.
+    k_e, true_k_e = n.effective_connectivity(norm=False), 2.
     assert (k_e == true_k_e), ('Effective Connectivity (node,upper bound) for XOR node does not match. %s != %s' % (k_e, true_k_e))
-    k_e, true_k_e = n.effective_connectivity(bound='lower', norm=False), 2.
-    assert (k_e == true_k_e), ('Effective Connectivity (node,lower bound) for XOR node does not match. %s != %s' % (k_e, true_k_e))
 
-    k_e, true_k_e = n.effective_connectivity(bound='upper', norm=True), 2. / 2
+    k_e, true_k_e = n.effective_connectivity(norm=True), 2. / 2
     assert (k_e == true_k_e), ('Effective Connectivity (node,upper bound,normed) for XOR node does not match. %s != %s' % (k_e, true_k_e))
-    k_e, true_k_e = n.effective_connectivity(bound='lower', norm=True), 2. / 2
-    assert (k_e == true_k_e), ('Effective Connectivity (node,lower bound,normed) for XOR node does not match. %s != %s' % (k_e, true_k_e))
 
 
 # CONTRADICTION
 def test_effective_connectivity_CONTRADICTION():
     """Test Effective Connectivity - CONTRADICTION"""
     n = CONTRADICTION()
-    k_e, true_k_e = n.effective_connectivity(bound='upper', norm=False), 0
+    k_e, true_k_e = n.effective_connectivity(norm=False), 0
     assert (k_e == true_k_e), ('Effective Connectivity (node,upper bound) for CONTRADICTION node does not match. %s != %s' % (k_e, true_k_e))
-    k_e, true_k_e = n.effective_connectivity(bound='lower', norm=False), 0
-    assert (k_e == true_k_e), ('Effective Connectivity (node,lower bound) for CONTRADICTION node does not match. %s != %s' % (k_e, true_k_e))
 
-    k_e, true_k_e = n.effective_connectivity(bound='upper', norm=True), 0
+    k_e, true_k_e = n.effective_connectivity(norm=True), 0
     assert (k_e == true_k_e), ('Effective Connectivity (node,upper bound,normed) for CONTRADICTION node does not match. %s != %s' % (k_e, true_k_e))
-    k_e, true_k_e = n.effective_connectivity(bound='lower', norm=True), 0
-    assert (k_e == true_k_e), ('Effective Connectivity (node,lower bound,normed) for CONTRADICTION node does not match. %s != %s' % (k_e, true_k_e))
 
 
 # COPYx1
 def test_effective_connectivity_COPYx1():
     """Test Effective Connectivity - COPYx1"""
     n = COPYx1()
-    k_e, true_k_e = n.effective_connectivity(bound='upper', norm=False), 1
+    k_e, true_k_e = n.effective_connectivity(norm=False), 1
     assert (k_e == true_k_e), ('Effective Connectivity (node,upper bound) for COPYx1 node does not match. %s != %s' % (k_e, true_k_e))
-    k_e, true_k_e = n.effective_connectivity(bound='lower', norm=False), 1
-    assert (k_e == true_k_e), ('Effective Connectivity (node,lower bound) for COPYx1 node does not match. %s != %s' % (k_e, true_k_e))
 
-    k_e, true_k_e = n.effective_connectivity(bound='upper', norm=True), 1 / 2
+    k_e, true_k_e = n.effective_connectivity(norm=True), 1 / 2
     assert (k_e == true_k_e), ('Effective Connectivity (node,upper bound,normed) for COPYx1 node does not match. %s != %s' % (k_e, true_k_e))
-    k_e, true_k_e = n.effective_connectivity(bound='lower', norm=True), 1 / 2
-    assert (k_e == true_k_e), ('Effective Connectivity (node,lower bound,normed) for COPYx1 node does not match. %s != %s' % (k_e, true_k_e))
 
 
 # RULE90
 def test_effective_connectivity_RULE90():
     """Test Effective Connectivity - RULE90"""
     n = RULE90()
-    k_e, true_k_e = n.effective_connectivity(bound='upper', norm=False), 3 - 1
+    k_e, true_k_e = n.effective_connectivity(norm=False), 3 - 1
     assert (k_e == true_k_e), ('Effective Connectivity (node,upper bound) for RULE90 node does not match. %s != %s' % (k_e, true_k_e))
-    k_e, true_k_e = n.effective_connectivity(bound='lower', norm=False), 3 - 1
-    assert (k_e == true_k_e), ('Effective Connectivity (node,lower bound) for RULE90 node does not match. %s != %s' % (k_e, true_k_e))
 
-    k_e, true_k_e = n.effective_connectivity(bound='upper', norm=True), (3 - 1) / 3
+    k_e, true_k_e = n.effective_connectivity(norm=True), (3 - 1) / 3
     assert (k_e == true_k_e), ('Effective Connectivity (node,upper bound,normed) for RULE90 node does not match. %s != %s' % (k_e, true_k_e))
-    k_e, true_k_e = n.effective_connectivity(bound='lower', norm=True), (3 - 1) / 3
-    assert (k_e == true_k_e), ('Effective Connectivity (node,lower bound,normed) for RULE90 node does not match. %s != %s' % (k_e, true_k_e))
 
 
 # RULE110
 def test_effective_connectivity_RULE110():
     """Test Effective Connectivity - RULE110"""
     n = RULE110()
-    k_e, true_k_e = n.effective_connectivity(bound='upper', norm=False), 3 - (7 / 8)
+    k_e, true_k_e = n.effective_connectivity(norm=False), 3 - (7 / 8)
     assert (k_e == true_k_e), ('Effective Connectivity (node,upper bound) for RULE110 node does not match. %s != %s' % (k_e, true_k_e))
-    k_e, true_k_e = n.effective_connectivity(bound='lower', norm=False), 3 - (7 / 8)
-    assert (k_e == true_k_e), ('Effective Connectivity (node,lower bound) for RULE110 node does not match. %s != %s' % (k_e, true_k_e))
 
-    k_e, true_k_e = n.effective_connectivity(bound='upper', norm=True), (3 - (7 / 8)) / 3
+    k_e, true_k_e = n.effective_connectivity(norm=True), (3 - (7 / 8)) / 3
     assert (k_e == true_k_e), ('Effective Connectivity (node,upper bound,normed) for RULE110 node does not match. %s != %s' % (k_e, true_k_e))
-    k_e, true_k_e = n.effective_connectivity(bound='lower', norm=True), (3 - (7 / 8)) / 3
-    assert (k_e == true_k_e), ('Effective Connectivity (node,lower bound,normed) for RULE110 node does not match. %s != %s' % (k_e, true_k_e))
 
 
 #
@@ -397,7 +344,116 @@ def test_edge_effectiveness_RULE110():
 
 
 #
-# Test Input Redundancy
+# Test Edge Symmetry
+#
+
+# AND
+def test_edge_symmetry_AND():
+    """Test Edge Symmetry - AND"""
+    n = AND()
+    k_s, true_k_s = n.edge_symmetry(bound='upper'), [2., 2.]
+    assert (k_s == true_k_s), ('Input Symmetry (upper) for AND node does not match. %s != %s' % (k_s, true_k_s))
+    k_s, true_k_s = n.edge_symmetry(bound='mean'), [2., 2.]
+    assert (k_s == true_k_s), ('Input Symmetry (mean) for AND node does not match. %s != %s' % (k_s, true_k_s))
+    k_s, true_k_s = n.edge_symmetry(bound='lower'), [2., 2.]
+    assert (k_s == true_k_s), ('Input Symmetry (lower) for AND node does not match. %s != %s' % (k_s, true_k_s))
+
+    k_s, true_k_s = n.edge_symmetry(bound='tuple'), [[(2, 2)] * 4, [(2, 2)] * 4]
+    assert (k_s == true_k_s), ('Edge symmetry (tuples) for AND node does not match. %s != %s' % (k_s, true_k_s))
+
+
+# OR
+def test_edge_symmetry_OR():
+    """Test Edge Symmetry - OR"""
+    n = OR()
+    k_s, true_k_s = n.edge_symmetry(bound='upper'), [2., 2.]
+    assert (k_s == true_k_s), ('Input Symmetry (input,upper bound) for OR node does not match. %s != %s' % (k_s, true_k_s))
+    k_s, true_k_s = n.edge_symmetry(bound='mean'), [2., 2.]
+    assert (k_s == true_k_s), ('Input Symmetry (input,mean) for OR node does not match. %s != %s' % (k_s, true_k_s))
+    k_s, true_k_s = n.edge_symmetry(bound='lower'), [2., 2.]
+    assert (k_s == true_k_s), ('Input Symmetry (input,lower bound) for OR node does not match. %s != %s' % (k_s, true_k_s))
+
+    k_s, true_k_s = n.edge_symmetry(bound='tuple'), [[(2, 2)] * 4, [(2, 2)] * 4]
+    assert (k_s == true_k_s), ('Input Redundancy (input,tuples) for XOR node does not match. %s != %s' % (k_s, true_k_s))
+
+
+# XOR
+def test_edge_symmetry_XOR():
+    """Test Edge Symmetry - XOR"""
+    n = XOR()
+    k_s, true_k_s = n.edge_symmetry(bound='upper'), [2., 2.]
+    assert (k_s == true_k_s), ('Input Symmetry (input,upper bound) for XOR node does not match. %s != %s' % (k_s, true_k_s))
+    k_s, true_k_s = n.edge_symmetry(bound='mean'), [2., 2.]
+    assert (k_s == true_k_s), ('Input Symmetry (input,mean) for XOR node does not match. %s != %s' % (k_s, true_k_s))
+    k_s, true_k_s = n.edge_symmetry(bound='lower'), [2., 2.]
+    assert (k_s == true_k_s), ('Input Symmetry (input,lower bound) for XOR node does not match. %s != %s' % (k_s, true_k_s))
+
+    k_s, true_k_s = n.edge_symmetry(bound='tuple'), [[(2, 2)] * 4, [(2, 2)] * 4]
+    assert (k_s == true_k_s), ('Input Redundancy (input,tuples) for XOR node does not match. %s != %s' % (k_s, true_k_s))
+
+
+# CONTRADICTION
+def test_edge_symmetry_CONTRADICTION():
+    """Test Edge Symmetry - CONTRADICTION"""
+    n = CONTRADICTION()
+    k_s, true_k_s = n.edge_symmetry(bound='upper'), [2., 2.]
+    assert (k_s == true_k_s), ('Input Symmetry (input,upper bound) for CONTRADICTION node does not match. %s != %s' % (k_s, true_k_s))
+    k_s, true_k_s = n.edge_symmetry(bound='mean'), [2., 2.]
+    assert (k_s == true_k_s), ('Input Symmetry (input,mean) for CONTRADICTION node does not match. %s != %s' % (k_s, true_k_s))
+    k_s, true_k_s = n.edge_symmetry(bound='lower'), [2., 2.]
+    assert (k_s == true_k_s), ('Input Symmetry (input,lower bound) for CONTRADICTION node does not match. %s != %s' % (k_s, true_k_s))
+
+    k_s, true_k_s = n.edge_symmetry(bound='tuple'), [[(2, 2)] * 4, [(2, 2)] * 4]
+    assert (k_s == true_k_s), ('Input Redundancy (input,tuples) for CONTRADICTION node does not match. %s != %s' % (k_s, true_k_s))
+
+
+# COPYx1
+def test_edge_symmetry_COPYx1():
+    """Test Edge Symmetry - COPYx1"""
+    n = COPYx1()
+    k_s, true_k_s = n.edge_symmetry(bound='upper'), [0., 0.]
+    assert (k_s == true_k_s), ('Input Symmetry (input,upper bound) for COPYx1 node does not match. %s != %s' % (k_s, true_k_s))
+    k_s, true_k_s = n.edge_symmetry(bound='mean'), [0., 0.]
+    assert (k_s == true_k_s), ('Input Symmetry (input,mean) for COPYx1 node does not match. %s != %s' % (k_s, true_k_s))
+    k_s, true_k_s = n.edge_symmetry(bound='lower'), [0., 0.]
+    assert (k_s == true_k_s), ('Input Symmetry (input,lower bound) for COPYx1 node does not match. %s != %s' % (k_s, true_k_s))
+
+    k_s, true_k_s = n.edge_symmetry(bound='tuple'), [[(0, 0)] * 4, [(0, 0)] * 4]
+    assert (k_s == true_k_s), ('Input Redundancy (input,tuples) for COPYx1 node does not match. %s != %s' % (k_s, true_k_s))
+
+
+# RULE90
+def test_edge_symmetry_RULE90():
+    """Test Edge Symmetry - RULE90"""
+    n = RULE90()
+    k_s, true_k_s = n.edge_symmetry(bound='upper'), [8 / 4, 0., 8 / 4]
+    assert (k_s == true_k_s), ('Input Symmetry (input,upper bound) for RULE90 node does not match. %s != %s' % (k_s, true_k_s))
+    k_s, true_k_s = n.edge_symmetry(bound='mean'), [8 / 4., 0., 8 / 4]
+    assert (k_s == true_k_s), ('Input Symmetry (input,mean) for RULE90 node does not match. %s != %s' % (k_s, true_k_s))
+    k_s, true_k_s = n.edge_symmetry(bound='lower'), [8 / 4., 0., 8 / 4]
+    assert (k_s == true_k_s), ('Input Symmetry (input,lower bound) for RULE90 node does not match. %s != %s' % (k_s, true_k_s))
+
+    k_s, true_k_s = n.edge_symmetry(bound='tuple'), [[(2, 2)] * 8, [(0, 0)] * 8, [(2, 2)] * 8]
+    assert (k_s == true_k_s), ('Input Redundancy (input,tuples) for RULE90 node does not match. %s != %s' % (k_s, true_k_s))
+
+
+# RULE110
+def test_input_symmetry_RULE110():
+    """Test Edge Symmetry - RULE110"""
+    n = RULE110()
+    k_s, true_k_s = n.edge_symmetry(bound='upper'), [13 / 8, 17 / 8, 17 / 8]
+    assert (k_s == true_k_s), ('Input Symmetry (input,upper bound) for RULE110 node does not match. %s != %s' % (k_s, true_k_s))
+    k_s, true_k_s = n.edge_symmetry(bound='mean'), [0.95833333333333326, 1.8333333333333333, 1.8333333333333333]  # NOT SURE ITS CORRECT!!!
+    assert (k_s == true_k_s), ('Input Symmetry (input,mean) for RULE110 node does not match. %s != %s' % (k_s, true_k_s))
+    k_s, true_k_s = n.edge_symmetry(bound='lower'), [0.375, 1.375, 1.375]  # NOT SURE ITS CORRECT!!!
+    assert (k_s == true_k_s), ('Input Symmetry (input,lower bound) for RULE110 node does not match. %s != %s' % (k_s, true_k_s))
+
+    k_s, true_k_s = n.edge_symmetry(bound='tuple'), [[(0, 0), (0, 2), (0, 2), (0, 2), (0, 0), (0, 2), (0, 2), (3, 3)], [(2, 2), (2, 2), (0, 2), (0, 2), (2, 2), (2, 2), (0, 2), (3, 3)], [(2, 2), (0, 2), (2, 2), (0, 2), (2, 2), (0, 2), (2, 2), (3, 3)]]
+    assert (k_s == true_k_s), ('Input Redundancy (input,tuples) for RULE110 node does not match. %s != %s' % (k_s, true_k_s))
+
+
+#
+# Test Input Symmetry
 #
 
 # AND
@@ -414,16 +470,6 @@ def test_input_symmetry_AND():
     k_s, true_k_s = n.input_symmetry(bound='lower', norm=True), (8 / 4) / 2
     assert (k_s == true_k_s), ('Input Symmetry (node,lower bound,normed) for AND node does not match. %s != %s' % (k_s, true_k_s))
 
-    k_s, true_k_s = n.input_symmetry(bound='upper', norm=False), [2., 2.]
-    assert (k_s == true_k_s), ('Input Symmetry (input,upper bound) for AND node does not match. %s != %s' % (k_s, true_k_s))
-    k_s, true_k_s = n.input_symmetry(bound='mean', norm=False), [2., 2.]
-    assert (k_s == true_k_s), ('Input Symmetry (input,mean) for AND node does not match. %s != %s' % (k_s, true_k_s))
-    k_s, true_k_s = n.input_symmetry(bound='lower', norm=False), [2., 2.]
-    assert (k_s == true_k_s), ('Input Symmetry (input,lower bound) for AND node does not match. %s != %s' % (k_s, true_k_s))
-
-    k_s, true_k_s = n.input_symmetry(bound='tuple', norm=False), [[(2, 2)] * 4, [(2, 2)] * 4]
-    assert (k_s == true_k_s), ('Input Redundancy (input,tuples) for AND node does not match. %s != %s' % (k_s, true_k_s))
-
 
 # OR
 def test_input_symmetry_OR():
@@ -438,16 +484,6 @@ def test_input_symmetry_OR():
     assert (k_s == true_k_s), ('Input Symmetry (node,upper bound,normed) for OR node does not match. %s != %s' % (k_s, true_k_s))
     k_s, true_k_s = n.input_symmetry(bound='lower', norm=True), (8 / 4) / 2
     assert (k_s == true_k_s), ('Input Symmetry (node,lower bound,normed) for OR node does not match. %s != %s' % (k_s, true_k_s))
-
-    k_s, true_k_s = n.input_symmetry(bound='upper', norm=False), [2., 2.]
-    assert (k_s == true_k_s), ('Input Symmetry (input,upper bound) for OR node does not match. %s != %s' % (k_s, true_k_s))
-    k_s, true_k_s = n.input_symmetry(bound='mean', norm=False), [2., 2.]
-    assert (k_s == true_k_s), ('Input Symmetry (input,mean) for OR node does not match. %s != %s' % (k_s, true_k_s))
-    k_s, true_k_s = n.input_symmetry(bound='lower', norm=False), [2., 2.]
-    assert (k_s == true_k_s), ('Input Symmetry (input,lower bound) for OR node does not match. %s != %s' % (k_s, true_k_s))
-
-    k_s, true_k_s = n.input_symmetry(bound='tuple', norm=False), [[(2, 2)] * 4, [(2, 2)] * 4]
-    assert (k_s == true_k_s), ('Input Redundancy (input,tuples) for XOR node does not match. %s != %s' % (k_s, true_k_s))
 
 
 # XOR
@@ -464,16 +500,6 @@ def test_input_symmetry_XOR():
     k_s, true_k_s = n.input_symmetry(bound='lower', norm=True), (8 / 4) / 2
     assert (k_s == true_k_s), ('Input Symmetry (node,lower bound,normed) for XOR node does not match. %s != %s' % (k_s, true_k_s))
 
-    k_s, true_k_s = n.input_symmetry(bound='upper', norm=False), [2., 2.]
-    assert (k_s == true_k_s), ('Input Symmetry (input,upper bound) for XOR node does not match. %s != %s' % (k_s, true_k_s))
-    k_s, true_k_s = n.input_symmetry(bound='mean', norm=False), [2., 2.]
-    assert (k_s == true_k_s), ('Input Symmetry (input,mean) for XOR node does not match. %s != %s' % (k_s, true_k_s))
-    k_s, true_k_s = n.input_symmetry(bound='lower', norm=False), [2., 2.]
-    assert (k_s == true_k_s), ('Input Symmetry (input,lower bound) for XOR node does not match. %s != %s' % (k_s, true_k_s))
-
-    k_s, true_k_s = n.input_symmetry(bound='tuple', norm=False), [[(2, 2)] * 4, [(2, 2)] * 4]
-    assert (k_s == true_k_s), ('Input Redundancy (input,tuples) for XOR node does not match. %s != %s' % (k_s, true_k_s))
-
 
 # CONTRADICTION
 def test_input_symmetry_CONTRADICTION():
@@ -488,16 +514,6 @@ def test_input_symmetry_CONTRADICTION():
     assert (k_s == true_k_s), ('Input Symmetry (node,upper bound,normed) for CONTRADICTION node does not match. %s != %s' % (k_s, true_k_s))
     k_s, true_k_s = n.input_symmetry(bound='lower', norm=True), (8 / 4) / 2
     assert (k_s == true_k_s), ('Input Symmetry (node,lower bound,normed) for CONTRADICTION node does not match. %s != %s' % (k_s, true_k_s))
-
-    k_s, true_k_s = n.input_symmetry(bound='upper', norm=False), [2., 2.]
-    assert (k_s == true_k_s), ('Input Symmetry (input,upper bound) for CONTRADICTION node does not match. %s != %s' % (k_s, true_k_s))
-    k_s, true_k_s = n.input_symmetry(bound='mean', norm=False), [2., 2.]
-    assert (k_s == true_k_s), ('Input Symmetry (input,mean) for CONTRADICTION node does not match. %s != %s' % (k_s, true_k_s))
-    k_s, true_k_s = n.input_symmetry(bound='lower', norm=False), [2., 2.]
-    assert (k_s == true_k_s), ('Input Symmetry (input,lower bound) for CONTRADICTION node does not match. %s != %s' % (k_s, true_k_s))
-
-    k_s, true_k_s = n.input_symmetry(bound='tuple', norm=False), [[(2, 2)] * 4, [(2, 2)] * 4]
-    assert (k_s == true_k_s), ('Input Redundancy (input,tuples) for CONTRADICTION node does not match. %s != %s' % (k_s, true_k_s))
 
 
 # COPYx1
@@ -514,16 +530,6 @@ def test_input_symmetry_COPYx1():
     k_s, true_k_s = n.input_symmetry(bound='lower', norm=True), (0 / 4) / 2
     assert (k_s == true_k_s), ('Input Symmetry (node,lower bound,normed) for COPYx1 node does not match. %s != %s' % (k_s, true_k_s))
 
-    k_s, true_k_s = n.input_symmetry(bound='upper', norm=False), [0., 0.]
-    assert (k_s == true_k_s), ('Input Symmetry (input,upper bound) for COPYx1 node does not match. %s != %s' % (k_s, true_k_s))
-    k_s, true_k_s = n.input_symmetry(bound='mean', norm=False), [0., 0.]
-    assert (k_s == true_k_s), ('Input Symmetry (input,mean) for COPYx1 node does not match. %s != %s' % (k_s, true_k_s))
-    k_s, true_k_s = n.input_symmetry(bound='lower', norm=False), [0., 0.]
-    assert (k_s == true_k_s), ('Input Symmetry (input,lower bound) for COPYx1 node does not match. %s != %s' % (k_s, true_k_s))
-
-    k_s, true_k_s = n.input_symmetry(bound='tuple', norm=False), [[(0, 0)] * 4, [(0, 0)] * 4]
-    assert (k_s == true_k_s), ('Input Redundancy (input,tuples) for COPYx1 node does not match. %s != %s' % (k_s, true_k_s))
-
 
 # RULE90
 def test_input_symmetry_RULE90():
@@ -538,16 +544,6 @@ def test_input_symmetry_RULE90():
     assert (k_s == true_k_s), ('Input Symmetry (node,upper bound,normed) for RULE90 node does not match. %s != %s' % (k_s, true_k_s))
     k_s, true_k_s = n.input_symmetry(bound='lower', norm=True), (4 / 3) / 3
     assert (k_s == true_k_s), ('Input Symmetry (node,lower bound,normed) for RULE90 node does not match. %s != %s' % (k_s, true_k_s))
-
-    k_s, true_k_s = n.input_symmetry(bound='upper', norm=False), [8 / 4, 0., 8 / 4]
-    assert (k_s == true_k_s), ('Input Symmetry (input,upper bound) for RULE90 node does not match. %s != %s' % (k_s, true_k_s))
-    k_s, true_k_s = n.input_symmetry(bound='mean', norm=False), [8 / 4., 0., 8 / 4]
-    assert (k_s == true_k_s), ('Input Symmetry (input,mean) for RULE90 node does not match. %s != %s' % (k_s, true_k_s))
-    k_s, true_k_s = n.input_symmetry(bound='lower', norm=False), [8 / 4., 0., 8 / 4]
-    assert (k_s == true_k_s), ('Input Symmetry (input,lower bound) for RULE90 node does not match. %s != %s' % (k_s, true_k_s))
-
-    k_s, true_k_s = n.input_symmetry(bound='tuple', norm=False), [[(2, 2)] * 8, [(0, 0)] * 8, [(2, 2)] * 8]
-    assert (k_s == true_k_s), ('Input Redundancy (input,tuples) for RULE90 node does not match. %s != %s' % (k_s, true_k_s))
 
 
 # RULE110
@@ -564,17 +560,9 @@ def test_input_symmetry_RULE110():
     k_s, true_k_s = n.input_symmetry(bound='lower', norm=True), ((3 / 8 + 11 / 8 + 11 / 8) / 3) / 3
     assert (k_s == true_k_s), ('Input Symmetry (node,lower bound,normed) for RULE110 node does not match. %s != %s' % (k_s, true_k_s))
 
-    k_s, true_k_s = n.input_symmetry(bound='upper', norm=False), [13 / 8, 17 / 8, 17 / 8]
-    assert (k_s == true_k_s), ('Input Symmetry (input,upper bound) for RULE110 node does not match. %s != %s' % (k_s, true_k_s))
-    k_s, true_k_s = n.input_symmetry(bound='mean', norm=False), [0.95833333333333326, 1.8333333333333333, 1.8333333333333333]  # NOT SURE ITS CORRECT!!!
-    assert (k_s == true_k_s), ('Input Symmetry (input,mean) for RULE110 node does not match. %s != %s' % (k_s, true_k_s))
-    k_s, true_k_s = n.input_symmetry(bound='lower', norm=False), [0.375, 1.375, 1.375]  # NOT SURE ITS CORRECT!!!
-    assert (k_s == true_k_s), ('Input Symmetry (input,lower bound) for RULE110 node does not match. %s != %s' % (k_s, true_k_s))
-
-    k_s, true_k_s = n.input_symmetry(bound='tuple', norm=False), [[(0, 0), (0, 2), (0, 2), (0, 2), (0, 0), (0, 2), (0, 2), (3, 3)], [(2, 2), (2, 2), (0, 2), (0, 2), (2, 2), (2, 2), (0, 2), (3, 3)], [(2, 2), (0, 2), (2, 2), (0, 2), (2, 2), (0, 2), (2, 2), (3, 3)]]
-    assert (k_s == true_k_s), ('Input Redundancy (input,tuples) for RULE110 node does not match. %s != %s' % (k_s, true_k_s))
-
-
+#
+# Test Sensitivity
+#
 def test_sensitivity_AND():
     """Test Sensitivity - AND"""
     n = AND()
