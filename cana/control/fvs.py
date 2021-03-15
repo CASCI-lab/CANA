@@ -9,7 +9,7 @@ that need to be removed from a directed graph so that the resulting graph has no
 Two methods are implemented here. A bruteforce and the Greedy Randomized Adaptive Search Procedure (GRASP) method by :cite:`Pardalos:1998`.
 
 """
-#   Copyright (C) 2017 by
+#   Copyright (C) 2021 by
 #   Alex Gates <ajgates42@gmail.com>
 #   Rion Brattig Correia <rionbr@gmail.com>
 #   All rights reserved.

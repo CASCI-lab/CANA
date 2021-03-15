@@ -11,7 +11,7 @@ __author__ = """\n""".join([
     'Luis M. Rocha <rocha@indiana.edu>'
 ])
 
-__copyright__ = u'2017, Correia, R. B., Gates, A., Rocha, L. M.'
+__copyright__ = u'2021, Correia, R. B., Gates, A., Rocha, L. M.'
 
 __version__ = '0.1'
 __release__ = '0.1'

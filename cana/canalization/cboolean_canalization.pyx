@@ -6,7 +6,7 @@
 Functions to compute the Quine-McCluskey algorithm in cython for increaed computation speed.
 
 """
-#   Copyright (C) 2020 by
+#   Copyright (C) 2021 by
 #   Rion Brattig Correia <rionbr@gmail.com>
 #   Alex Gates <ajgates42@gmail.com>
 #

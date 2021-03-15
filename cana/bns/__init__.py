@@ -35,13 +35,13 @@ _path = os.path.dirname(os.path.realpath(__file__))
 
 
 def attractors(cnet, bnspath=_path, cleanup=True):
-    """Makes a subprocess call to ``bns`` supplying a temporary file with the boolean logic.
+    """Makes a subprocess call to `bns` supplying a temporary file with the boolean logic.
 
     Args:
         cnet (file,string) : A .cnet formated string or file.
         bnspath (string) : The path to the bns binary.
-        cleanup (bool) : If cnet is a string, this function creates a temporary file.
-            This forces the removal of this temp file.
+        cleanup (bool) : If cnet is a string, this function creates a temporary file. This forces the removal of this temp file.
+
     Returns:
         list : the list of attractors
     """

@@ -10,16 +10,18 @@ from cana.cutils import *
 
 def flip_bitset_in_strstates(strstates, idxs):
     """Flips the binary value for a set of bits in a binary state.
-        Args:
-            binstate (string) : The binary state to flip.
-            idxs (int) : The indexes of the bits to flip.
-        Returns:
-            (list) : The flipped states
-        Example:
 
-            .. code-block:: python
-                flip_bit_in_strstates('000',[0,2]) -> ['100','001']
-        """
+    Args:
+        binstate (string) : The binary state to flip.
+        idxs (int) : The indexes of the bits to flip.
+
+    Returns:
+        (list) : The flipped states
+
+    Example:
+        >>> flip_bit_in_strstates('000',[0, 2])
+        ['100','001']
+    """
     return [flip_bit_in_strstates(strstates, idx) for idx in idxs]
 
 
@@ -54,10 +56,10 @@ def print_logic_table(outputs):
 
     Example:
         >>> print_logic_table([0,0,1,1])
-        >>> 00 : 0
-        >>> 01 : 0
-        >>> 10 : 1
-        >>> 11 : 1
+        00 : 0
+        01 : 0
+        10 : 1
+        11 : 1
 
     """
     k = int(math.log(len(outputs)) / math.log(2))
@@ -99,8 +101,9 @@ def isclose(a, b, rel_tol=1e-09, abs_tol=0.0):
     """Python 2 doesn't have math.isclose()
     Here is an equivalent function
     Use this to tell whether two float numbers are close enough
-        considering using == to compare floats is dangerous!
-        2.0*3.3 != 3.0*2.2 in python!
+    considering using == to compare floats is dangerous!
+    2.0*3.3 != 3.0*2.2 in python!
+
     Args:
         a (float) : the first float number
         b (float) : the second float number
@@ -125,10 +128,12 @@ def output_transitions(eval_line, input_list):
 
     Example:
         RAS*=(GRB2 or PLCG1) and not GAP
-        eval_line = "(GRB2 or PLCG1) and not GAP"
-        input_list = ['GRB2', 'PLCG1', 'GAP']
 
-        This function generates the following trial strings:
+        .. code-block:: python
+
+            >>> eval_line = "(GRB2 or PLCG1) and not GAP"
+            >>> input_list = ['GRB2', 'PLCG1', 'GAP']
+            >>> output_transitions(eval_line, input_list)
             000
             001
             010
@@ -138,10 +143,10 @@ def output_transitions(eval_line, input_list):
             110
             111
 
-            A variable is dynamically created for each member of the input list
-            and assigned the corresponding value from each trail string.
-            The original eval_line is then evaluated with each assignment
-            which results in the output list [0, 0, 1, 0, 1, 0, 1, 0]
+        A variable is dynamically created for each member of the input list
+        and assigned the corresponding value from each trail string.
+        The original eval_line is then evaluated with each assignment
+        which results in the output list [0, 0, 1, 0, 1, 0, 1, 0]
     """
     total = 2**len(input_list)  # Total combinations to try
     output_list = []

@@ -1,12 +1,12 @@
 # -*- coding: utf-8 -*-
 """
 Random Boolean Network
-================
+======================
 
-
+Methods to generate random ensembles of Boolean networks.
 
 """
-#   Copyright (C) 2017 by
+#   Copyright (C) 2021 by
 #   Alex Gates <ajgates@indiana.edu>
 #   Rion Brattig Correia <rionbr@gmail.com>
 #   Thomas Parmer <tjparmer@indiana.edu>
@@ -140,11 +140,13 @@ def from_string_boolean(self, string, keep_constants=True, **kwargs):
         (BooleanNetwork) : The boolean network object.
 
     Examples:
-        String should be structured as follow
-        ```
-        #BOOLEAN RULES
-        node_name*=node_input_1 [logic operator] node_input_2 ...
-        ```
+        String should be structured as follow:
+
+        .. code-block:: text
+
+            # BOOLEAN RULES (this is a comment)
+            # node_name*=node_input_1 [logic operator] node_input_2 ...
+            NODE3*=NODE1 AND NODE2 ...
 
     See also:
         :func:`from_string` :func:`from_dict`

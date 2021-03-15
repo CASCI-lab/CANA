@@ -3,10 +3,10 @@
 Boolean Network
 ================
 
-
+Main class for Boolean network objects.
 
 """
-#   Copyright (C) 2020 by
+#   Copyright (C) 2021 by
 #   Rion Brattig Correia <rionbr@gmail.com>
 #   Alex Gates <ajgates@indiana.edu>
 #   Thomas Parmer <tjparmer@indiana.edu>
@@ -116,22 +116,21 @@ class BooleanNetwork:
             (BooleanNetwork)
 
         Examples:
-            String should be structured as follow
-            ```
-            #.v = number of nodes
-            .v 1
-            #.l = node label
-            .l 1 node-a
-            .l 2 node-b
-            #.n = (node number) (in-degree) (input node 1) … (input node k)
-            .n 1 2 4 5
-            01 1 # transition rule
-            ```
+            String should be structured as follow:
+
+            .. code-block:: text
+
+                #.v = number of nodes
+                .v 1
+                #.l = node label
+                .l 1 node-a
+                .l 2 node-b
+                #.n = (node number) (in-degree) (input node 1) … (input node k)
+                .n 1 2 4 5
+                01 1 # transition rule
 
         See also:
             :func:`from_file` :func:`from_dict`
-
-        Note: see examples for more information.
         """
         network_file = StringIO(string)
         logic = defaultdict(dict)
@@ -190,10 +189,12 @@ class BooleanNetwork:
 
         Examples:
             String should be structured as follow
-            ```
-            #BOOLEAN RULES
-            node_name*=node_input_1 [logic operator] node_input_2 ...
-            ```
+
+            .. code-block:: text
+
+                # BOOLEAN RULES (this is a comment)
+                # node_name*=node_input_1 [logic operator] node_input_2 ...
+                NODE3*=NODE1 AND NODE2 ...
 
         See also:
             :func:`from_string` :func:`from_dict`
@@ -361,7 +362,7 @@ class BooleanNetwork:
         """Returns the out-degrees of the Structural Graph. Sorted.
 
         Returns:
-            (list)
+            (list) : out-degrees.
 
         See also:
             :func:`structural_indegrees`, :func:`effective_indegrees`, :func:`effective_outdegrees`
@@ -371,7 +372,7 @@ class BooleanNetwork:
 
     def effective_graph(self, bound='mean', threshold=None):
         """Computes and returns the effective graph of the network.
-        In practive it asks each :class:`~cana.boolean_node.BooleanNode` for their :func:`~cana.boolean_node.BooleanNode.effective_connectivity`.
+        In practive it asks each :class:`~cana.boolean_node.BooleanNode` for their :func:`~cana.boolean_node.BooleanNode.edge_effectiveness`.
 
         Args:
             bound (string) : The bound to which compute input redundancy.
@@ -384,7 +385,7 @@ class BooleanNetwork:
             (networkx.DiGraph) : directed graph
 
         See Also:
-            :func:`~cana.boolean_node.BooleanNode.effective_connectivity`
+            :func:`~cana.boolean_node.BooleanNode.edge_effectiveness`
         """
         if threshold is not None:
             self._eg = nx.DiGraph(name="Effective Graph: " + self.name + "(Threshold: {threshold:.2f})".format(threshold=threshold))
@@ -608,16 +609,16 @@ class BooleanNetwork:
         return trajectory
 
     def trajectory_to_attractor(self, initial, precompute_attractors=True, return_attractor=False):
-        """Computes the trajectory starting at ``initial`` until it reaches an attracor (this is garanteed)
+        """Computes the trajectory starting at `initial` until it reaches an attracor (this is garanteed).
 
         Args:
-            initial (string): the initial binstate.
-            precompute_attractors (bool): use precomputed attractors, default True
-            return_attractor (bool): also return the attractor reached, default False
+            initial (string) : the initial binstate.
+            precompute_attractors (bool) : use precomputed attractors, default True.
+            return_attractor (bool) : also return the attractor reached, default False.
+
         Returns:
-            (list): the state trajectory between initial and the final attractor state.
-            if return_attractor:
-                (list): the attractor
+            (list) : the state trajectory between initial and the final attractor state.
+            if return_attractor: (list): the attractor
         """
 
         # if the attractors are already precomputed, then we can check when we reach a known state
@@ -696,7 +697,7 @@ class BooleanNetwork:
             TODO
 
         See Also:
-            :func:`~cana.boolean_node.bias`
+            :func:`~cana.boolean_node.BooleanNode.bias`
         """
         return sum([node.bias() for node in self.nodes]) / self.Nnodes
 
@@ -874,7 +875,7 @@ class BooleanNetwork:
             (networkx.DiGraph) : The Pinning Controlled State-Transition-Graph.
 
         See also:
-            :func: `controlled_state_transition_graph`, :func:`attractor_driver_nodes`, :func:`controlled_attractor_graph`.
+            :func:`controlled_state_transition_graph`, :func:`attractor_driver_nodes`, :func:`controlled_attractor_graph`.
         """
         self._check_compute_variables(attractors=True)
 
@@ -909,11 +910,13 @@ class BooleanNetwork:
         return pcstg_dict
 
     def pinned_step(self, initial, pinned_binstate, pinned_var):
-        """ Steps the boolean network 1 step from the given initial input condition when the driver variables are pinned
+        """Steps the boolean network 1 step from the given initial input condition when the driver variables are pinned
         to their controlled states.
+
         Args:
             initial (string) : the initial state.
             n (int) : the number of steps.
+
         Returns:
             (string) : The stepped binary state.
         """
@@ -1036,6 +1039,7 @@ class BooleanNetwork:
 
     def fraction_pinned_attractors(self, pcstg_dict):
         """Returns the Number of Accessible Attractors
+
         Args:
             pcstg_dict (dict of networkx.DiGraph) : The dictionary of Pinned Controlled State-Transition-Graphs.
 
@@ -1157,7 +1161,6 @@ class BooleanNetwork:
     def structural_controllability_driver_nodes(self, graph='structural', keep_self_loops=True, *args, **kwargs):
         """The minimum set of necessary driver nodes to control the network based on Structural Controlability (SC) theory.
 
-    #
         Args:
             keep_self_loops (bool) : If self-loops are used in the computation.
 
@@ -1182,7 +1185,6 @@ class BooleanNetwork:
     def partial_derative_node(self, node, n_traj=10, t=1):
         """The partial derivative of node on all other nodes after t steps
 
-    #
         Args:
             node (int) : the node index for perturbations
 
@@ -1213,20 +1215,16 @@ class BooleanNetwork:
         return partial
 
     def approx_dynamic_impact(self, source, n_steps=1, target_set=None, bound='mean', threshold=0.0):
-        """
-            Use the network structure to approximate the dynamical impact of a perturbation to node for each of n_steps
+        """Use the network structure to approximate the dynamical impact of a perturbation to node for each of n_steps
+        for details see: Gates et al (2020).
 
-            for details see: Gates et al (2020)
-
-        #
-            Args:
+        Args:
             source (int) : the source index for perturbations
-
             n_steps (int) : the number of time steps
 
-            bound (str) : the bound for the effective graph
-                'mean' - edge effectiveness
-                'upper' - activity
+        bound (str) : the bound for the effective graph
+            'mean' - edge effectiveness
+            'upper' - activity
 
         Returns:
             (matrix) : approximate dynamical impact for each node at each step (2 x n_steps x n_nodes)
@@ -1306,7 +1304,11 @@ class BooleanNetwork:
 
 
     def dist_from_attractor(self):
-        "Find the distance from attractor for each configuration"
+        """Find the distance from attractor for each configuration.
+
+        Returns:
+            distance (dict). Nodes are dictionary indexes and distances the values.
+        """
         self._check_compute_variables(attractors=True)
 
         dist = {}  # stores [node, distance] pair

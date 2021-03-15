@@ -3,9 +3,10 @@
 Network Motifs
 ===============
 
+Simple network motifs in Networkx.DiGraph format that can be directly loaded.
 
 """
-#   Copyright (C) 2017 by
+#   Copyright (C) 2021 by
 #   Alex Gates <ajgates@gmail.com>
 #   Rion Brattig Correia <rionbr@gmail.com>
 #   All rights reserved.

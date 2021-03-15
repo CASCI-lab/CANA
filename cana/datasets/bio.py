@@ -3,13 +3,14 @@
 Biological Boolean Networks
 =================================
 
-Some of the commonly used biological boolean networks
+A series of biological Boolean networks that can be directly loaded for experimentation.
 
 
 """
-#   Copyright (C) 2017 by
+#   Copyright (C) 2021 by
 #   Alex Gates <ajgates42@gmail.com>
 #   Rion Brattig Correia <rionbr@gmail.com>
+#   Xuan Wang <xw47@indiana.edu>
 #   Thomas Parmer <tjparmer@indiana.edu>
 #   All rights reserved.
 #   MIT license.
@@ -174,7 +175,8 @@ _cell_collective_models = [
 
 
 def load_cell_collective_model(name=None):
-    """Loads one of the Cell Collective models.
+    """Loads one of the Cell Collective :cite:`Helikar:2012` models.
+    Models collected on Aug 2020.
 
     Args:
         name (str): the name of the model to be loaded.
@@ -184,7 +186,9 @@ def load_cell_collective_model(name=None):
     Returns:
         (BooleanNetwork)
 
-    Note: see source code for full list of models. Credits to Xuan Wang for compiling these models.
+    Note:
+        See source code for full list of models. Credits to Xuan Wang for compiling these models.
+        We are working on making a Cell Collective direct loader. 
     """
 
     #
@@ -201,6 +205,7 @@ def load_all_cell_collective_models():
     Returns:
         (list)
 
-    Note: see source code for full list of models.
+    Note:
+        See source code for full list of models.
     """
     return [load_cell_collective_model(name=name) for name in _cell_collective_models]

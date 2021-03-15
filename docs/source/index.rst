@@ -1,20 +1,18 @@
+
 CANAlization: Control & Redundancy in Boolean Networks
-============================================================
-
-.. only:: html
-
-Description:
--------------
+======================================================
 
 This package implements a series of methods used to study control, canalization and redundancy in Boolean Networks.
 
-If you are using this package, please consider citing the following papers, including our latest describing CANA.
+If you are using this package, please consider citing the following papers:
+
+	:cite:`Gates:2021` "A.J. Gates, R.B. Correia, X. Wang, & L.M. Rocha [2021]. "`The effective graph reveals redundancy, canalization, and control pathways in biochemical regulation and signaling`__". *Proceedings of the National Academy of Sciences (PNAS)*, **118** (12). doi: 10.1073/pnas.2022598118"
+
+	__ https://doi.org/10.1073/pnas.2022598118
 
 	:cite:`CANA:2018` "R.B. Correia, A. Gates, X. Wang and L.M. Rocha [2018]. "`CANA: A python package for quantifying control and canalization in Boolean Networks`__." *Frontiers in Physiology*, **9**: 1046. doi: 10.3389/fphys.2018.01046."
 
 	__ https://www.informatics.indiana.edu/rocha/publications/FSB18.php
-
-The original mathematical descriptions implemented in CANA can be seen in these papers.
 
 	:cite:`Gates:2016` "A. Gates and L.M. Rocha. [2016] "`Control of complex networks requires both structure and dynamics`__." *Scientific Reports* **6**, 24456. doi: 10.1038/srep24456."
 
@@ -30,22 +28,23 @@ The original mathematical descriptions implemented in CANA can be seen in these 
 
 
 Documentation:
----------------
+--------------
+
+**Tutorials**: For examples of utilization pleasee see tutorials in `github.com/rionbr/CANA`__.
+
+__ https://github.com/rionbr/CANA/tree/master/tutorials
 
 .. toctree::
-	:maxdepth: 3
+   :maxdepth: 3
+   :caption: Table of Contents:
 
-	install
-	notation
-	tutorial
-	reference/index
-	development
-	appendix/index
-	references
+   reference/index
+   appendix/index
+   bibliography
 
 
 Indices and tables
-===================
+==================
 
 * :ref:`genindex`
 * :ref:`modindex`

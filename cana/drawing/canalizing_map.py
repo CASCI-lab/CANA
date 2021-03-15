@@ -3,10 +3,10 @@
 Drawing the Canalizing Map (CM)
 ================================
 
-Methods to draw the Canalizing Map
+Methods to draw the Canalizing Map.
 
 """
-#   Copyright (C) 2017 by
+#   Copyright (C) 2021 by
 #   Rion Brattig Correia <rionbr@gmail.com>
 #   Alex Gates <ajgates@indiana.edu>
 #   All rights reserved.

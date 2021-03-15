@@ -5,7 +5,7 @@ Structural Controllability
 
 
 """
-#   Copyright (C) 2017 by
+#   Copyright (C) 2021 by
 #   Alex Gates <ajgates42@gmail.com>
 #   Rion Brattig Correia <rionbr@gmail.com>
 #   All rights reserved.
