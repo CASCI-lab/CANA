@@ -1,6 +1,6 @@
 __package__ = 'cana'
 __title__ = u'CANAlization: Control & Redundancy in Boolean Networks'
-__description__ = u'This package implements a series of methods used to study control, canalization and redundancy in Boolean Networks.'
+__description__ = u'This package implements a series of methods used to study control, canalization and redundancy in Boolean networks.'
 
 __author__ = """\n""".join([
     'Rion Brattig Correia <rionbr@gmail.com>',

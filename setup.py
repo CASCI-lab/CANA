@@ -17,6 +17,7 @@ setup(
     version=__version__,
     description=__description__,
     long_description=__description__,
+    long_description_content_type="text/plain",
     classifiers=[
         'Development Status :: 4 - Beta',
         'License :: OSI Approved :: MIT License',
