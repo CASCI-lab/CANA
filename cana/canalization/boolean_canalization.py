@@ -319,7 +319,7 @@ def find_two_symbols_v2(k=1, prime_implicants=None, verbose=False, verbose_level
     for (i, j) in itertools.combinations(TSs.keys(), 2):
         try:
             a_in_b, b_in_a = _check_schema_within_schema(TSs[i]['xl'], TSs[j]['xl'])
-        except e:
+        except:
             continue
         else:
             cx_a = TSs[i]['cx']
