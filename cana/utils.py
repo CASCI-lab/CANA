@@ -22,7 +22,7 @@ def flip_bitset_in_strstates(strstates, idxs):
         >>> flip_bit_in_strstates('000',[0, 2])
         ['100','001']
     """
-    return [flip_bit_in_strstates(strstates, idx) for idx in idxs]
+    return [flip_binstate_bit(strstates, idx) for idx in idxs]
 
 
 def flip_binstate_bit_set(binstate, idxs):
@@ -206,3 +206,89 @@ def pathlength(p, weights, rule='sum'):
         return min(weights[(p[ie], p[ie + 1])] for ie in range(len(p) - 1))
     elif rule == 'max':
         return max(weights[(p[ie], p[ie + 1])] for ie in range(len(p) - 1))
+
+def function_monotone(outputs, method='exact', nsamples=100, random_seed=None):
+    """
+    Determine if a given LUT is monotone.
+
+    Here we test every pair of inputs that are Hamming distance 1. (see Goldreich et al 2000)
+
+    Args:
+        outputs (list) : The transition outputs of the function.
+
+        method (str) :
+            'exact' - test all pairs of inputs
+            TODO: 'random' - sample pairs of inputs
+
+        nsamples (int) : when method=='random', specifies the number of samples.
+
+    Returns:
+        (Bool) : True if monotone.
+
+    Example:
+        >>> is_monotone(outputs=[0,0,0,1])
+    """
+    random.seed(random_seed)
+
+    k = int(np.log2(len(outputs)))
+
+    # for all input configurations
+    for input_confignum in range(2**k):
+
+        input_configbin = statenum_to_binstate(input_confignum, k)
+
+        # for all input states that are 0
+        for idx, state in enumerate(input_configbin):
+            if state == '0':
+                # we flip the 0 and check for monotone along the edge
+                next_confignum = binstate_to_statenum(flip_binstate_bit(input_configbin, idx))
+
+                # if the monotone property fails
+                if outputs[input_confignum] > outputs[next_confignum]:
+                    return False
+    return True
+
+def input_monotone(outputs, input_idx, activation=1):
+    """
+    Determine if a given LUT is monotone.
+
+    Here we test every pair of inputs that are Hamming distance 1. (see Goldreich et al 2000)
+
+    Args:
+        outputs (list) : The transition outputs of the function.
+
+        method (str) :
+            'exact' - test all pairs of inputs
+            TODO: 'random' - sample pairs of inputs
+
+        nsamples (int) : when method=='random', specifies the number of samples.
+
+    Returns:
+        (Bool) : True if monotone.
+
+    Example:
+        >>> is_monotone(outputs=[0,0,0,1])
+    """
+
+    k = int(np.log2(len(outputs)))
+
+    if k == 1:
+        return True
+    else:
+
+        monotone_configs = []
+        # for all input configurations
+        for input_confignum in range(2**(k-1)):
+
+            other_input_configbin = statenum_to_binstate(input_confignum, k-1)
+
+            input_confignum_0 = binstate_to_statenum(other_input_configbin[:input_idx] + '0' + other_input_configbin[input_idx:])
+
+            input_confignum_1 = binstate_to_statenum(other_input_configbin[:input_idx] + '1' + other_input_configbin[input_idx:])
+
+            if activation:
+                monotone_configs.append(outputs[input_confignum_0] <= outputs[input_confignum_1])
+            else:
+                monotone_configs.append(outputs[input_confignum_0] >= outputs[input_confignum_1])
+
+        return all(c==monotone_configs[0] for c in monotone_configs)
