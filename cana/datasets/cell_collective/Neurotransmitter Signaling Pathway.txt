@@ -1,0 +1,114 @@
+.v 16
+
+.l 1 Calcium
+.l 2 Packaging_Proteins
+.l 3 Calcineurin
+.l 4 COMT
+.l 5 Exocytosis
+.l 6 Protein_Phosphatase_1
+.l 7 Tryosine_hydroxylase
+.l 8 Protein_Kinase_A
+.l 9 Phospholipase_C
+.l 10 Glutamate_Receptor
+.l 11 DARPP32
+.l 12 Dopamine_Receptor_2
+.l 13 Adenylate_cyclase
+.l 14 Dopamine
+.l 15 Dopamine_Receptor_1
+.l 16 Glutamate
+
+# 1 Calcium 
+.n 1 2 9 10
+11 1
+10 1
+01 1
+00 0
+
+# 2 Packaging_Proteins 
+.n 2 1 10
+1 1
+0 0
+
+# 3 Calcineurin 
+.n 3 1 1
+1 1
+0 0
+
+# 4 COMT 
+.n 4 1 14
+1 1
+0 0
+
+# 5 Exocytosis 
+.n 5 1 2
+1 1
+0 0
+
+# 6 Protein_Phosphatase_1 
+.n 6 1 11
+1 0
+0 1
+
+# 7 Tryosine_hydroxylase 
+.n 7 1 7
+1 1
+0 0
+
+# 8 Protein_Kinase_A 
+.n 8 1 13
+1 1
+0 0
+
+# 9 Phospholipase_C 
+.n 9 1 12
+1 1
+0 0
+
+# 10 Glutamate_Receptor 
+.n 10 3 6 8 16
+111 0
+110 0
+101 0
+100 0
+011 1
+010 0
+001 0
+000 0
+
+# 11 DARPP32 
+.n 11 2 3 8
+11 0
+10 0
+01 1
+00 0
+
+# 12 Dopamine_Receptor_2 
+.n 12 1 14
+1 1
+0 0
+
+# 13 Adenylate_cyclase 
+.n 13 2 12 15
+11 0
+10 0
+01 1
+00 0
+
+# 14 Dopamine 
+.n 14 2 4 7
+11 0
+10 0
+01 1
+00 0
+
+# 15 Dopamine_Receptor_1 
+.n 15 1 14
+1 1
+0 0
+
+# 16 Glutamate 
+.n 16 1 16
+1 1
+0 0
+
+.e End of file

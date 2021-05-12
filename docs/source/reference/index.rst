@@ -11,9 +11,10 @@ API Reference
 	:name: mastertoc
 	:maxdepth: 2
 	
-	boolean_node
-	boolean_network
+	node
+	network
 	canalization/index
 	control/index
 	datasets/index
+	ensemble
 	utils

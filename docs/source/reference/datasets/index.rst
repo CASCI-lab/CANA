@@ -1,8 +1,9 @@
-.. currentmodule:: cana.network_files
 
-Common Nodes & Networks
-=========================
+Datasets
+========
 
+Preloaded Boolean nodes and networks that can be directly instanciated.
+A set of more than 70 Boolean networks from the Cell Collective are also available.
 
 .. toctree::
 	:maxdepth: 1

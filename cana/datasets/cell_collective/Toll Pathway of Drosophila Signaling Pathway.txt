@@ -1,0 +1,70 @@
+.v 11
+
+.l 1 Spz
+.l 2 MyD88
+.l 3 Tube
+.l 4 Pelle
+.l 5 Cactus
+.l 6 Toll
+.l 7 Targets
+.l 8 Dorsal
+.l 9 Dif
+.l 10 Nec
+.l 11 Slmb
+
+# 1 Spz 
+.n 1 1 10
+1 0
+0 1
+
+# 2 MyD88 
+.n 2 1 6
+1 1
+0 0
+
+# 3 Tube 
+.n 3 1 2
+1 1
+0 0
+
+# 4 Pelle 
+.n 4 1 3
+1 1
+0 0
+
+# 5 Cactus 
+.n 5 2 4 11
+11 0
+10 1
+01 1
+00 1
+
+# 6 Toll 
+.n 6 1 1
+1 1
+0 0
+
+# 7 Targets 
+.n 7 2 8 9
+11 1
+10 1
+01 1
+00 0
+
+# 8 Dorsal 
+.n 8 1 5
+1 0
+0 1
+
+# 9 Dif 
+.n 9 1 5
+1 0
+0 1
+
+# 10 Nec 
+.n 10 0
+
+# 11 Slmb 
+.n 11 0
+
+.e End of file
