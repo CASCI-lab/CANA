@@ -129,7 +129,7 @@ def flip_bit(bit):
 	"""
 	if isinstance(bit, str):
 		return '0' if (bit=='1') else '1'
-	elif isinstance(bit, int) or isintance(bit, bool):
+	elif isinstance(bit, int) or isinstance(bit, bool):
 		return 0 if (bit == 1) else 1
 	else:
 		raise TypeError("'bit' type format must be either 'string', 'int' or 'boolean'")

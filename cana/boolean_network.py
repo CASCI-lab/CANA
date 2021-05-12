@@ -14,9 +14,9 @@ Boolean Network
 #	MIT license.
 from collections import defaultdict
 try:
-	import cStringIO.StringIO as StringIO
-except ImportError:
 	from io import StringIO
+except ImportError:
+	import cStringIO.StringIO as StringIO
 import numpy as np
 import networkx as nx
 import random
@@ -27,6 +27,7 @@ from cana.control import fvs, mds, sc
 from cana.utils import *
 import warnings
 import re
+import os
 #
 #
 class BooleanNetwork:
@@ -34,12 +35,13 @@ class BooleanNetwork:
 
 
 	"""
-	def __init__(self, name='', Nnodes=0, logic=None, sg=None, stg=None, stg_r=None, _ef=None, attractors=None,
+	def __init__(self, name='',filepath='', Nnodes=0, logic=None, sg=None, stg=None, stg_r=None, _ef=None, attractors=None,
 			constants={}, Nconstants=0, keep_constants=False,
 			bin2num=binstate_to_statenum, num2bin=statenum_to_binstate,
 			verbose=False, *args, **kwargs):
 
 		self.name = name 							# Name of the Network
+		self.filepath = filepath
 		self.Nnodes = Nnodes 						# Number of Nodes
 		self.logic = logic 							# A dict that contains the network logic {<id>:{'name':<string>,'in':<list-input-node-id>,'out':<list-output-transitions>},..}
 		self._sg = sg 								# Structure-Graph (SG)
@@ -136,16 +138,19 @@ class BooleanNetwork:
 		logic = defaultdict(dict)
 
 		line = network_file.readline()
+		setting = 0
 		while line != "":
 			if line[0] != '#' and line != '\n':
+				if '.s' in line:
+					setting = Nnodes = int(line.split()[1])
 				# .v <#-nodes>
-				if '.v' in line:
+				elif '.v' in line:
 					Nnodes = int(line.split()[1])
 					for inode in range(Nnodes):
 						logic[inode] = {'name':'','in':[],'out':[]}
 				# .l <node-id> <node-name>
 				elif '.l' in line:
-					logic[int(line.split()[1])-1]['name'] = line.split()[2]
+					logic[int(line.split()[1])-1]['name'] = str(line.split()[2])
 				# .n <node-id> <#-inputs> <input-node-id>
 				elif '.n' in line:
 					inode = int(line.split()[1]) - 1
@@ -156,19 +161,28 @@ class BooleanNetwork:
 					logic[inode]['out'] = [0 for i in range(2**indegree) if indegree > 0]
 
 					logic_line = network_file.readline().strip()
-
-					if indegree <= 0:
-						if logic_line == '':
-							logic[inode]['in'] = [inode]
-							logic[inode]['out'] = [0,1]
+					if setting ==0: 
+						if indegree <= 0:
+							if logic_line == '':
+								logic[inode]['in'] = [inode]
+								logic[inode]['out'] = [0,1]
+							else:
+								logic[inode]['out'] = [int(logic_line)]
 						else:
-							logic[inode]['out'] = [int(logic_line)]
-					else:
-						while logic_line != '\n' and logic_line != '' and len(logic_line)>1:
-							for nlogicline in expand_logic_line(logic_line):
-								logic[inode]['out'][binstate_to_statenum(nlogicline.split()[0])] = int(nlogicline.split()[1])
-							logic_line = network_file.readline().strip()
-
+							while logic_line != '\n' and logic_line != '' and len(logic_line)>1:
+								for nlogicline in expand_logic_line(logic_line):
+									logic[inode]['out'][binstate_to_statenum(nlogicline.split()[0])] = int(nlogicline.split()[1])
+								logic_line = network_file.readline().strip()
+					elif setting ==1:
+						if indegree <= 0:
+							if logic_line == '':
+								logic[inode]['in'] = [inode]
+								logic[inode]['out'] = [0,1]
+							else:
+								logic[inode]['out'] = [int(logic_line)]
+						else:
+							for position in range(0,len(logic_line),1):
+								logic[inode]['out'][position] = int(logic_line[position])
 				# .e = end of file
 				elif '.e' in line:
 					break
@@ -254,13 +268,16 @@ class BooleanNetwork:
 			name = kwargs['name']
 		else:
 			name = ''
+		if 'filepath' in kwargs:
+			filepath = kwargs['filepath']
+		else: filepath=''
 		if keep_constants:
 			for i, nodelogic in logic.items():
 				# No inputs? It's a constant!
 				if len(nodelogic['in']) == 0:
 					constants[i] = logic[i]['out'][0]
 
-		return BooleanNetwork(name=name, logic=logic, Nnodes=Nnodes, constants=constants, keep_constants=keep_constants)
+		return BooleanNetwork(name=name, filepath=filepath, logic=logic, Nnodes=Nnodes, constants=constants, keep_constants=keep_constants)
 
 	def to_cnet(self, file=None, adjust_no_input=False):
 		"""Outputs the network logic to ``.cnet`` format, which is similar to the Berkeley Logic Interchange Format (BLIF).
@@ -503,12 +520,47 @@ class BooleanNetwork:
 		# joins the results from each node output
 		assert len(initial) == self.Nnodes
 		return ''.join( [ node.step(node.input_mask(initial) ) for node in self.nodes] )
+	
+	def stochastic_step(self,state,prob=-1):
+		'''
+		Returns a state that is a strocastic update based off of:
+			the probability number - all nodes have the same probablity of turning on or off
+		If none are inputed the probability will len(state)**-1
+		'''
+		if prob!=-1:
+			for i in range(0,len(state),1):
+				if random.random() <= prob:
+					state = flip_binstate_bit(state,i)
+		else:
+			prob = len(state)**(-1)
+			for i in range(0,len(state),1):
+				if random.random() <= prob:
+					state = flip_binstate_bit(state,i)
+		return state
 
-	def trajectory(self, initial, length=2):
+	def trajectory(self, initial=-1, length=2):
 		"""Computes the trajectory of ``length`` steps without the State Transition Graph (STG)."""
+		if initial== -1: initial = random_binstate(self.Nnodes) 
 		trajectory = [initial]
 		for istep in range(length):
 			trajectory.append(self.step(trajectory[-1]))
+			if trajectory[-1] in trajectory[:-1]: break
+		return trajectory
+
+	def stochastic_trajectory(self,initial=-1,length=2,noise=-1):
+		'''
+		This computes a synchronous stochastic update of a specified length, without calculation of attractors, based off of an initial state and a specific noise value.
+		If there is not an initial state, a random state will be generated.
+		If there is not an initial length, it will be a length of 2. 
+		If there is not a noise level, each node will have a probability of transitioning based off of 1/Nnodes.
+		'''
+		if initial==-1: initial=random_binstate(self.Nnodes) #get a random state if needed
+		pinitial = stochastic_state_update(initial,prob=noise) # get a random update of the initial state
+		trajectory = [(initial,pinitial)] #put into trajectory as intial state, random update state. 
+		for istep in range(0,length,1):
+			nxstate = self.step(trajectory[-1][1])
+			pnxstate = stochastic_step(nxstate,prob=noise)
+			trajectory.append((nxstate,pnxstate))
 		return trajectory
 
 	def trajectory_to_attractor(self, initial):

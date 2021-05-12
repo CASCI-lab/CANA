@@ -466,7 +466,10 @@ class BooleanNode(object):
 		Returns:
 			output (bool) : the output value.
 		"""
-		return self.outputs[binstate_to_statenum(input_state)]
+		rt = self.outputs[binstate_to_statenum(input_state)]
+		if rt=='2': #handling for uncertainty in the outputs due to incomplete information
+			rt = str(random.randint(0,1))
+		return rt
 
 	def activities_old(self):
 		"""

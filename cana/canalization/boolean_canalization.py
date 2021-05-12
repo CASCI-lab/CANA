@@ -17,9 +17,9 @@ import pandas as pd
 import itertools
 from .. utils import *
 try:
-	from Queue import Queue, PriorityQueue
-except ImportError:
 	from queue import Queue, PriorityQueue
+except ImportError:
+	from Queue import Queue, PriorityQueue
 from collections import deque
 
 __author__ = """\n""".join([
@@ -119,18 +119,20 @@ def _adjacent(imp1, imp2):
 		imp1 (string): implicant 2
 	Returns:
 		(bool)
+	06/10/2020 - Preformance enhancement 10% improvement. 
 	"""
-	differences = 0
-	match = []
-	for m1, m2 in zip(imp1, imp2):
+	differences = False
+	# match = []
+	p = list(range(len(imp1)))
+	for m1, m2 , p1 in zip(imp1, imp2, p):
 		if m1 == m2:
-			match.append(m1)
+			pass #match.append(m1)
 		elif differences:
 			return False
 		else:
-			differences += 1
-			match.append('2')
-	return "".join(match)
+			differences = True
+			match = p1 # match.append('2')
+	return "%s2%s"%(imp1[0:match],imp1[match+1:len(imp1)]) #"".join(match)
 
 def __pi_covers(implicant, input, symbol=['2','#',2]):
 	"""Determines if a minterm is covered by a specific implicant.
