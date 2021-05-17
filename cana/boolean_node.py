@@ -753,3 +753,25 @@ class BooleanNode(object):
                                 ''.join(mut_config)):
                             S_c_f += ncr(max_k - self.k, c - ic)
             return S_c_f / float(ncr(max_k, c)) / float(2 ** self.k)
+
+    def input_signs(self):
+        """
+        Determine if a each input can be considered activation (1), inhibition (-1), or neither (0).
+
+        Here we test every pair of inputs that are Hamming distance 1. (see Goldreich et al 2000)
+
+        Returns:
+            (list) : The list of input signs.
+
+        Example:
+            >>> is_monotone(outputs=[0,0,0,1])
+        """
+
+        # first test if the inputs are activation inputs (more common in bio networks)
+        input_sign_list = [int(input_monotone(self.outputs, idx, activation=1)) for idx in range(self.k)]
+
+        # for those inputs that are not activation inputs (more common in bio networks),
+        # then test for inhibition
+        input_sign_list = [-1*int(input_monotone(self.outputs, idx, activation=-1)) if sign==0 else sign for idx, sign in enumerate(input_sign_list)]
+
+        return input_sign_list

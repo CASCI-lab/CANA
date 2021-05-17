@@ -286,9 +286,9 @@ def input_monotone(outputs, input_idx, activation=1):
 
             input_confignum_1 = binstate_to_statenum(other_input_configbin[:input_idx] + '1' + other_input_configbin[input_idx:])
 
-            if activation:
+            if activation == 1:
                 monotone_configs.append(outputs[input_confignum_0] <= outputs[input_confignum_1])
-            else:
+            elif activation == -1:
                 monotone_configs.append(outputs[input_confignum_0] >= outputs[input_confignum_1])
 
         return all(c==monotone_configs[0] for c in monotone_configs)
