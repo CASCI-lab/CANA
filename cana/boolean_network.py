@@ -370,6 +370,25 @@ class BooleanNetwork:
         self._check_compute_variables(sg=True)
         return sorted([d for n, d in self._sg.out_degree()], reverse=True)
 
+    def signed_interaction_graph(self):
+    	"""Calculates and returns the signed interaction graph of the boolean network.  Here, edge weights denote
+    	if an interaction is activation (1), inhibition (-1), or cannot be classified (0).
+
+        Returns:
+            G (networkx.Digraph) : The boolean network structural graph.
+        """
+        signed_ig = nx.DiGraph(name="Signed Interaction Graph: " + self.name)
+        signed_ig.add_nodes_from((i, {'label': n.name}) for i, n in enumerate(self.nodes))
+        
+        for target in range(self.Nnodes):
+        	
+        	input_signs = self.nodes[target].input_signs()
+            
+            for idx,source in enumerate(self.logic[target]['in']):
+                signed_ig.add_edge(source, target, **{'weight': input_signs[idx]})
+
+        return signed_ig
+
     def effective_graph(self, bound='mean', threshold=None):
         """Computes and returns the effective graph of the network.
         In practive it asks each :class:`~cana.boolean_node.BooleanNode` for their :func:`~cana.boolean_node.BooleanNode.edge_effectiveness`.
