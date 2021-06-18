@@ -50,8 +50,7 @@ class BooleanNetwork:
         self._attractors = attractors               # Network Attractors
         #
         self.keep_constants = keep_constants        # Keep/Include constants in some of the computations
-        self.constants = constants                  # A dict that contains of constant variables in the network
-        self.Nconstants = len(constants)            # Number of constant variables
+        #self.constants = constants                  # A dict that contains of constant variables in the network
         #
         self.Nstates = 2**Nnodes                    # Number of possible states in the network 2^N
         #
@@ -70,10 +69,12 @@ class BooleanNetwork:
             node = BooleanNode(id=i, name=name, k=k, inputs=inputs, outputs=outputs, network=self)
             self.nodes.append(node)
 
+        self.Nconstants = sum([n.constant for n in self.nodes])  # Number of constant variables
+        #
         self.input_nodes = [i for i in range(Nnodes) if (self.nodes[i].constant or ((self.nodes[i].k == 1) and (i in self.nodes[i].inputs)))]
         #
-        self.bin2num = bin2num                      # Helper function. Converts binstate to statenum. It gets updated by `_update_trans_func`
-        self.num2bin = num2bin                      # Helper function. Converts statenum to binstate. It gets updated by `_update_trans_func`
+        self.bin2num = None                      # Helper function. Converts binstate to statenum. It gets updated by `_update_trans_func`
+        self.num2bin = None                      # Helper function. Converts statenum to binstate. It gets updated by `_update_trans_func`
         self._update_trans_func()                   # Updates helper functions and other variables
 
     def __str__(self):
@@ -237,7 +238,7 @@ class BooleanNetwork:
 
     @classmethod
     def from_dict(self, logic, keep_constants=True, **kwargs):
-        """Instanciaets a BoolleanNetwork from a logic dictionary.
+        """Instanciaets a BooleanNetwork from a logic dictionary.
 
         Args:
             logic (dict) : The logic dict.
@@ -250,7 +251,6 @@ class BooleanNetwork:
             :func:`from_file` :func:`from_dict`
         """
         Nnodes = len(logic)
-        keep_constants = keep_constants
         constants = {}
         if 'name' in kwargs:
             name = kwargs['name']
@@ -332,7 +332,7 @@ class BooleanNetwork:
                 self._sg.add_edge(source, target, **{'weight': 1.})
 
         if remove_constants:
-            self._sg.remove_nodes_from(self.constants.keys())
+            self._sg.remove_nodes_from(self.get_constants().keys())
         #
         return self._sg
 
@@ -371,20 +371,20 @@ class BooleanNetwork:
         return sorted([d for n, d in self._sg.out_degree()], reverse=True)
 
     def signed_interaction_graph(self):
-    	"""Calculates and returns the signed interaction graph of the boolean network.  Here, edge weights denote
-    	if an interaction is activation (1), inhibition (-1), or cannot be classified (0).
+        """Calculates and returns the signed interaction graph of the boolean network.  Here, edge weights denote
+        if an interaction is activation (1), inhibition (-1), or cannot be classified (0).
 
         Returns:
             G (networkx.Digraph) : The boolean network structural graph.
         """
         signed_ig = nx.DiGraph(name="Signed Interaction Graph: " + self.name)
         signed_ig.add_nodes_from((i, {'label': n.name}) for i, n in enumerate(self.nodes))
-        
+
         for target in range(self.Nnodes):
-        	
-        	input_signs = self.nodes[target].input_signs()
-            
-            for idx,source in enumerate(self.logic[target]['in']):
+
+            input_signs = self.nodes[target].input_signs()
+
+            for idx, source in enumerate(self.logic[target]['in']):
                 signed_ig.add_edge(source, target, **{'weight': input_signs[idx]})
 
         return signed_ig
@@ -603,11 +603,10 @@ class BooleanNetwork:
         return sorted(self._stg.in_degree().values(), reverse=True)
 
     def step(self, initial):
-        """Steps the boolean network 'n' step from the given initial input condition.
+        """Steps the boolean network from the given initial configuration.
 
         Args:
-            initial (string) : the initial state.
-            n (int) : the number of steps.
+            initial (string) : the initial configuration state.
 
         Returns:
             (string) : The stepped binary state.
@@ -617,7 +616,7 @@ class BooleanNetwork:
         #   asks node to step with the input
         #   append output to list
         # joins the results from each node output
-        assert len(initial) == self.Nnodes
+        assert len(initial) == self.Nnodes, "The initial configuration state does not match the number of nodes"
         return ''.join([node.step(node.input_mask(initial)) for node in self.nodes])
 
     def trajectory(self, initial, length=2):
@@ -729,38 +728,37 @@ class BooleanNetwork:
         prob_vec = np.array([len(wcc) for wcc in nx.weakly_connected_components(self._stg)]) / 2.0**self.Nnodes
         return entropy(prob_vec, base=base)
 
-    def set_constant(self, node, value=None):
+    def set_constant(self, node, constant=True, state=None):
         """Sets or unsets a node as a constant.
 
         Args:
             node (int) : The node ``id`` in the logic dict.
-
-        Todo:
-            This functions needs to better handle node_id and node_name
+            constant (Boolean) : Whether to set or unset the node as a constant.
+            state (str; optional) : The state value to which to set the node. Either '0' or '1'; default to current state value.
         """
-        if value is not None:
-            self.nodes[node].constant = True
-            self.nodes[node].constant_value = value
-            self.Nconstants += 1
-        else:
-            self.nodes[node].constant = False
-            self.nodes[node].constant_value = value
-            self.Nconstants -= 1
-
+        # Se a node to a constant or not
+        self.nodes[node].set_constant(constant=constant, state=state)
+        # Update the number of constant nodes
+        self.Nconstants = sum([n.constant for n in self.nodes])
         self._update_trans_func()
 
-    def remove_all_constants(self):
+    def get_constants(self):
+        """Retrieved a dictionary containing all constant nodes"""
+        return {i: node for i, node in enumerate(self.nodes) if node.constant}
+
+    def unset_all_constants(self):
         self.keep_constants = False
-        for inode in self.constants:
-            self.set_constant(inode, None)
+        for node in self.nodes:
+            node.set_constant(constant=False)
 
     def _update_trans_func(self):
-        """
+        """Sets the correct functions to convert from binary-state format to/from numeric-state format.
 
         """
         if self.keep_constants:
             self.Nstates = 2**(self.Nnodes - self.Nconstants)
-            constant_template = [None if not (ivar in self.constants.keys()) else self.constants[ivar] for ivar in range(self.Nnodes)]
+            # The template is a list that identifies the values of constant nodes: [None, '1', None, '0'].
+            constant_template = [None if not node.constant else node.state for node in self.nodes]
             self.bin2num = lambda bs: constantbinstate_to_statenum(bs, constant_template)
             self.num2bin = lambda sn: binstate_to_constantbinstate(
                 statenum_to_binstate(sn, base=self.Nnodes - self.Nconstants), constant_template)
@@ -822,7 +820,7 @@ class BooleanNetwork:
         """
         nodeids = list(range(self.Nnodes))
         if self.keep_constants:
-            for cv in self.constants.keys():
+            for cv in self.get_constants().keys():
                 nodeids.remove(cv)
 
         attractor_controllers_found = []
@@ -863,7 +861,7 @@ class BooleanNetwork:
 
         if self.keep_constants:
             for dv in driver_nodes:
-                if dv in self.constants:
+                if dv in self.get_constants():
                     warnings.warn("Cannot control a constant variable '%s'! Skipping" % self.nodes[dv].name )
 
         # attractor_states = [s for att in self._attractors for s in att]
@@ -900,7 +898,7 @@ class BooleanNetwork:
 
         if self.keep_constants:
             for dv in driver_nodes:
-                if dv in self.constants:
+                if dv in self.get_constants():
                     warnings.warn("Cannot control a constant variable {dv:s}'! Skipping".format(dv=self.nodes[dv].name))
 
         uncontrolled_system_size = self.Nnodes - len(driver_nodes)
@@ -962,7 +960,7 @@ class BooleanNetwork:
 
         if self.keep_constants:
             for dv in driver_nodes:
-                if dv in self.constants:
+                if dv in self.get_constants():
                     warnings.warn("Cannot control a constant variable '%s'! Skipping" % self.nodes[dv].name )
 
         attractor_states = [s for att in self._attractors for s in att]

@@ -207,6 +207,7 @@ def pathlength(p, weights, rule='sum'):
     elif rule == 'max':
         return max(weights[(p[ie], p[ie + 1])] for ie in range(len(p) - 1))
 
+
 def function_monotone(outputs, method='exact', nsamples=100, random_seed=None):
     """
     Determine if a given LUT is monotone.
@@ -248,6 +249,7 @@ def function_monotone(outputs, method='exact', nsamples=100, random_seed=None):
                     return False
     return True
 
+
 def input_monotone(outputs, input_idx, activation=1):
     """
     Determine if a given LUT is monotone.
@@ -278,9 +280,9 @@ def input_monotone(outputs, input_idx, activation=1):
 
         monotone_configs = []
         # for all input configurations
-        for input_confignum in range(2**(k-1)):
+        for input_confignum in range(2**(k - 1)):
 
-            other_input_configbin = statenum_to_binstate(input_confignum, k-1)
+            other_input_configbin = statenum_to_binstate(input_confignum, k - 1)
 
             input_confignum_0 = binstate_to_statenum(other_input_configbin[:input_idx] + '0' + other_input_configbin[input_idx:])
 
@@ -291,4 +293,4 @@ def input_monotone(outputs, input_idx, activation=1):
             elif activation == -1:
                 monotone_configs.append(outputs[input_confignum_0] >= outputs[input_confignum_1])
 
-        return all(c==monotone_configs[0] for c in monotone_configs)
+        return all(c == monotone_configs[0] for c in monotone_configs)
