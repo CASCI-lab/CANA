@@ -32,7 +32,7 @@ class BooleanNode(object):
         self.name = name                        # the name of the node
         self.k = k                              # k is the number of inputs
         self.inputs = list(map(int, inputs))    # the ids of the input nodes
-        self.state = state                      # the initial state of the node
+        self.state = str(int(state))            # the initial state of the node. internally this is treated as a string.
         self.outputs = list(map(str, outputs))  # the list of transition outputs
         self.network = network                  # the BooleanNetwork object this nodes belongs to
         self.verbose = verbose                  # verbose mode
@@ -47,13 +47,11 @@ class BooleanNode(object):
         if (k != 0) and (k != int(np.log2(len(outputs)))):
             raise ValueError('Number of k (inputs) do not match the number of output transitions')
 
-        # If all outputs are either positive or negative, this node can be treated as a constant.
+        # If all outputs are either positive or negative, the node is treated as a constant.
         if (len(set(outputs)) == 1) or (constant):
-            self.constant = True
-            self.step = self.constant_step
+            self.set_constant(constant=True, state=outputs[0])
         else:
-            self.constant = False
-            self.step = self.dynamic_step
+            self.set_constant(constant=False)
 
         # Canalization Variables
         self._prime_implicants = None           # A tuple of negative and positive prime implicants.
@@ -67,7 +65,7 @@ class BooleanNode(object):
         else:
             outputs = '[' + ','.join(map(str, self.outputs)) + ']'
         inputs = '[' + ','.join(map(str, self.inputs)) + ']'
-        return "<BNode(id={id:d}, name='{name:s}', k={k:d}, inputs={inputs:s}, state={state:d}, outputs={outputs:s} constant={constant:b})>".format(
+        return "<BNode(id={id}, name='{name}', k={k}, inputs={inputs:s}, state='{state}', outputs={outputs} constant={constant})>".format(
             id=self.id, name=self.name, k=self.k, inputs=inputs, state=self.state, outputs=outputs, constant=self.constant)
 
     @classmethod
@@ -90,6 +88,40 @@ class BooleanNode(object):
         state = kwargs.pop('state') if 'state' in kwargs else False
 
         return BooleanNode(id=id, name=name, k=k, inputs=inputs, state=state, outputs=outputs, *args, **kwargs)
+
+    def set_constant(self, constant=True, state=None):
+        """Sets whether the node is to be treated as a contant
+
+        Args:
+            constant (Boolean) : Whether to set or unset the node as a constant.
+            state (str; optional) : The state value to which to set the node. Either '0' or '1'; default to current state value.
+        """
+        if constant:
+            self.constant = True
+            self.step = self.constant_step
+        else:
+            self.constant = False
+            self.step = self.dynamic_step
+        # Set an optional value to the node 
+        if state is not None:
+            self.state = str(int(state))
+
+    def constant_step(self, input_state):
+        """Treat the node as a constant variable, always returning its state.
+        """
+        return self.state
+
+    def dynamic_step(self, input_state):
+        """Returns the output of the node based on a specific input.
+
+        Args:
+            input (str) : an input to the node (e.g.: '0111' -> 7).
+
+        Returns:
+            output (bool) : the output value.
+        """
+        self.state = self.outputs[binstate_to_statenum(input_state)]
+        return self.state
 
     def input_redundancy(self, operator=mean, norm=True):
         r"""The Input Redundancy :math:`k_{r}` is the mean number of unnecessary inputs (or ``#``) in the Prime Implicants Look Up Table (LUT).
@@ -473,23 +505,6 @@ class BooleanNode(object):
             output (str) : the masked state
         """
         return ''.join(compress(binstate, self.mask))
-
-    def constant_step(self, input_state):
-        """
-            Treat the node as a constant
-        """
-        return self.outputs[0]
-
-    def dynamic_step(self, input_state):
-        """ Returns the output of the node based on a specific input
-
-        Args:
-            input (list) : an input to the node.
-
-        Returns:
-            output (bool) : the output value.
-        """
-        return self.outputs[binstate_to_statenum(input_state)]
 
     def activities(self):
         return self.effective_connectivity(mode='input', bound='upper')
