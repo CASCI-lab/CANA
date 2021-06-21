@@ -674,7 +674,7 @@ class BooleanNode(object):
         return
     def _save_attribute(self,attribute,fileName,lookupTableNumber):
         if os.path.exists(fileName):
-            pick = pickle.load(fileName)
+            pick = pickle.load(open(fileName,'rb'))
         else:
             pick = {}
         if lookupTableNumber not in pick:
@@ -699,7 +699,7 @@ class BooleanNode(object):
                 for output in set(self.outputs):
                     output_binstates = outputs_to_binstates_of_given_type(self.outputs, output=output, k=self.k)
                     self._prime_implicants[output] = cBCanalization.find_implicants_qm(input_binstates=output_binstates)
-
+                if self._canalization_save: self._save_attribute('_prime_implicants',fileName,lookupTableNumber)
         elif 'pi_coverage' in kwargs:
             self._check_compute_canalization_variables(prime_implicants=True)
             if self._pi_coverage is None and self._canalization_save:
@@ -711,7 +711,7 @@ class BooleanNode(object):
 
                 # make sure every inputstate was covered by at least one prime implicant
                 assert len(self._pi_coverage) == 2**self.k
-
+                if self._canalization_save: self._save_attribute('_pi_coverage',fileName,lookupTableNumber)
         elif 'two_symbols' in kwargs:
             self._check_compute_canalization_variables(prime_implicants=True)
             if self._two_symbols is None and self._canalization_save:
@@ -734,13 +734,14 @@ class BooleanNode(object):
                         BCanalization.find_two_symbols_v2(k=self.k, prime_implicants=pi0),
                         BCanalization.find_two_symbols_v2(k=self.k, prime_implicants=pi1)
                     )
+                if self._canalization_save: self._save_attribute('_two_symbols',fileName,lookupTableNumber)
         elif 'ts_coverage' in kwargs:
             self._check_compute_canalization_variables(two_symbols=True)
             if self._ts_coverage is None and self._canalization_save:
                 self._get_saved_attribute('_ts_coverage',fileName,lookupTableNumber)
             if self._ts_coverage is None:
                 self._ts_coverage = BCanalization.computes_ts_coverage(self.k, self.outputs, self._two_symbols)
-
+                if self._canalization_save: self._save_attribute('_ts_coverage',fileName,lookupTableNumber)
         else:
             raise Exception('Canalization variable name not found. %s' % kwargs)
         return True

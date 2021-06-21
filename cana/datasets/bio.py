@@ -30,7 +30,7 @@ def THALIANA():
     Returns:
         (BooleanNetwork)
     """
-    return BooleanNetwork.from_file(_path + '/thaliana.txt', name="Arabidopsis Thaliana", keep_constants=True)
+    return BooleanNetwork.from_file(_path + '/thaliana.txt', name="Arabidopsis Thaliana", keep_constants=True, _canalization_save=True)
 
 
 def DROSOPHILA(cells=1):
@@ -209,3 +209,76 @@ def load_all_cell_collective_models():
         See source code for full list of models.
     """
     return [load_cell_collective_model(name=name) for name in _cell_collective_models]
+
+def Regan2012Apoptosis():
+    """ Boolean network model of Apoptosis
+    
+    Retruns:
+        (BooleanNetwork)
+    """
+    return BooleanNetwork.from_file(_path + '/Regan/Regan2012Apoptosis.txt',type='logical',name='Regan2012Apoptosis', keep_constrants=True)
+def Regan2014Combined():
+    """ Boolean network model of restriction switches
+    
+    Retruns:
+        (BooleanNetwork)
+    """
+    return BooleanNetwork.from_file(_path + '/Regan/Regan2014Combined.txt',type='logical',name='Regan2014Combined', keep_constrants=True,_canalization_save=True)
+def Regan2014PhaseSwitch():
+    """ Boolean network model of Phase Switch from 2014
+    
+    Retruns:
+        (BooleanNetwork)
+    """
+    return BooleanNetwork.from_file(_path + '/Regan/Regan2014PhaseSwitch.txt',type='logical',name='Regan2014PhaseSwitch', keep_constrants=True)
+def Regan2014RestrictionSwitch():
+    """ Boolean network model of Restriction Switch from 2014
+    
+    Retruns:
+        (BooleanNetwork)
+    """
+    return BooleanNetwork.from_file(_path + '/Regan/Regan2014RestrictionSwitch.txt',type='logical',name='Regan2014RestrictionSwitch', keep_constrants=True)
+
+def Regan2019ApoptoticSwitch():
+    """ Boolean network model of Phase Switch from 2014
+    
+    Retruns:
+        (BooleanNetwork)
+    """
+    return BooleanNetwork.from_file(_path + '/Regan/Regan2019ApoptoticSwitch.txt',type='logical',name='Regan2019ApoptoticSwitch', keep_constrants=True)
+def Regan2019OriginLicensingSwitch():
+    """ Boolean network model of Phase Switch from 2014
+    
+    Retruns:
+        (BooleanNetwork)
+    """
+    return BooleanNetwork.from_file(_path + '/Regan/Regan2019OriginLicensingSwitch.txt',type='logical',name='Regan2019OriginLicensingSwitch', keep_constrants=True)
+def Regan2019PhaseSwitch():
+    """ Boolean network model of Phase Switch from 2014
+    
+    Retruns:
+        (BooleanNetwork)
+    """
+    return BooleanNetwork.from_file(_path + '/Regan/Regan2019PhaseSwitch.txt',type='logical',name='Regan2019PhaseSwitch', keep_constrants=True)
+def Regan2019PI3K():
+    """ Boolean network model of Phase Switch from 2014
+    
+    Retruns:
+        (BooleanNetwork)
+    """
+    return BooleanNetwork.from_file(_path + '/Regan/Regan2019PI3K.txt',type='logical',name='Regan2019PI3K', keep_constrants=True)
+def Regan2019PI3Kcellcycleapoptosis():
+    """ Boolean network model of Phase Switch from 2014
+    
+    Retruns:
+        (BooleanNetwork)
+    """
+    return BooleanNetwork.from_file(_path + '/Regan/Regan2019PI3Kcellcycleapoptosis.txt',type='logical',name='Regan2019PI3Kcellcycleapoptosis', keep_constrants=True)
+def Regan2019RestrictionSwitch():
+    """ Boolean network model of Phase Switch from 2014
+    
+    Retruns:
+        (BooleanNetwork)
+    """
+    return BooleanNetwork.from_file(_path + '/Regan/Regan2019RestrictionSwitch.txt',type='logical',name='Regan2019RestrictionSwitch', keep_constrants=True)
+

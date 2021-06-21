@@ -262,7 +262,7 @@ class BooleanNetwork:
                 if len(nodelogic['in']) == 0:
                     constants[i] = logic[i]['out'][0]
 
-        return BooleanNetwork(name=name, logic=logic, Nnodes=Nnodes, constants=constants, keep_constants=keep_constants)
+        return BooleanNetwork(logic=logic, Nnodes=Nnodes, constants=constants, keep_constants=keep_constants, **kwargs)
 
     def to_cnet(self, file=None, adjust_no_input=False):
         """Outputs the network logic to ``.cnet`` format, which is similar to the Berkeley Logic Interchange Format (BLIF).
