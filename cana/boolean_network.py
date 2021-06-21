@@ -66,7 +66,7 @@ class BooleanNetwork:
             k = len(logic[i]['in'])
             inputs = [self.name2int[logic[j]['name']] for j in logic[i]['in']]
             outputs = logic[i]['out']
-            node = BooleanNode(id=i, name=name, k=k, inputs=inputs, outputs=outputs, network=self)
+            node = BooleanNode(id=i, name=name, k=k, inputs=inputs, outputs=outputs, network=self,*args,**kwargs)
             self.nodes.append(node)
 
         self.Nconstants = sum([n.constant for n in self.nodes])  # Number of constant variables

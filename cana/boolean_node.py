@@ -13,6 +13,8 @@ Main class for Boolean node objects.
 #   All rights reserved.
 #   MIT license.
 from __future__ import division
+import os
+import pickle
 import numpy as np
 import pandas as pd
 from statistics import mean
@@ -58,6 +60,7 @@ class BooleanNode(object):
         self._two_symbols = None                # The Two Symbol (TS) Schemata
         self._pi_coverage = None                # The Coverage of inputs by Prime Implicants schemata
         self._ts_coverage = None                # The Coverage of inputs by Two Symbol schemata
+        self._canalization_save = kwargs.get('_canalization_save',False) # Boolean, if the general results should be saved.
 
     def __str__(self):
         if len(self.outputs) > 10:
@@ -654,12 +657,43 @@ class BooleanNode(object):
         self._check_compute_canalization_variables(ts_coverage=True)
         return self._ts_coverage
 
+    def _get_general_file_name(self):
+        lookupTableNumber = binstate_to_statenum(''.join(self.outputs))
+        fileName = 'k%s-LT%s'%(self.k,lookupTableNumber)
+        # This is for k>9
+        if len(fileName)>200: fileName = fileName[0:199]
+        fileName = os.path.dirname(os.path.realpath(__file__))+'/GeneralData/'+fileName+'.pickle'
+        return fileName,lookupTableNumber
+    
+    def _get_saved_attribute(self,attribute,fileName,lookupTableNumber):
+        # We don't really want to load into RAM massive files (250 MB)
+        if os.path.exists(fileName) and os.stat(fileName).st_size < (2**28): 
+            pick = pickle.load(open(fileName,'rb'))
+            if lookupTableNumber in pick:
+                setattr(self,attribute,pick[lookupTableNumber].get(attribute,None))
+        return
+    def _save_attribute(self,attribute,fileName,lookupTableNumber):
+        if os.path.exists(fileName):
+            pick = pickle.load(fileName)
+        else:
+            pick = {}
+        if lookupTableNumber not in pick:
+            pick[lookupTableNumber]={}
+        pick[lookupTableNumber][attribute] = getattr(self,attribute,None)
+        os.makedirs(os.path.dirname(fileName), exist_ok=True)
+        pickle.dump(pick,open(fileName,'wb')) 
+        return
+
     def _check_compute_canalization_variables(self, **kwargs):
         """ Recursevely check if the requested canalization variables are instantiated/computed, otherwise computes them in order.
         For example: to compute `two_symbols` we need `prime_implicants` first.
         Likewise, to compute `prime_implicants` we need the `transition_density_table` first.
         """
+        if self._canalization_save:
+            fileName,lookupTableNumber = self._get_general_file_name()
         if 'prime_implicants' in kwargs:
+            if self._prime_implicants is None and self._canalization_save:
+                self._get_saved_attribute('_prime_implicants',fileName,lookupTableNumber)
             if self._prime_implicants is None:
                 self._prime_implicants = dict()
                 for output in set(self.outputs):
@@ -668,6 +702,8 @@ class BooleanNode(object):
 
         elif 'pi_coverage' in kwargs:
             self._check_compute_canalization_variables(prime_implicants=True)
+            if self._pi_coverage is None and self._canalization_save:
+                self._get_saved_attribute('_pi_coverage',fileName,lookupTableNumber)
             if self._pi_coverage is None:
                 self._pi_coverage = dict()
                 for output, piset in self._prime_implicants.items():
@@ -678,6 +714,8 @@ class BooleanNode(object):
 
         elif 'two_symbols' in kwargs:
             self._check_compute_canalization_variables(prime_implicants=True)
+            if self._two_symbols is None and self._canalization_save:
+                self._get_saved_attribute('_two_symbols',fileName,lookupTableNumber)
             if self._two_symbols is None:
                 # this is a temporary fix until we update 'find_two_symbols' to cython.
                 if '0' in self._prime_implicants:
@@ -698,6 +736,8 @@ class BooleanNode(object):
                     )
         elif 'ts_coverage' in kwargs:
             self._check_compute_canalization_variables(two_symbols=True)
+            if self._ts_coverage is None and self._canalization_save:
+                self._get_saved_attribute('_ts_coverage',fileName,lookupTableNumber)
             if self._ts_coverage is None:
                 self._ts_coverage = BCanalization.computes_ts_coverage(self.k, self.outputs, self._two_symbols)
 
