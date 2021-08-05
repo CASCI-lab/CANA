@@ -189,13 +189,15 @@ def computes_pi_coverage(k, outputs, prime_implicants):
 
 
 # Two Symbols Functions
-def find_two_symbols_v2(k=1, prime_implicants=None, verbose=False, verbose_level=0):
+def find_two_symbols_v2(k=1, prime_implicants=None, forDCM=False, verbose=False, verbose_level=0,**kwargs):
     """This function calculates the permutation, two-symbol (TS), list of schematas.
     This implementation considers '11' and '00' as a possible input permutation.
 
     Args:
         k (int): The number of inputs.
         prime_implicants (list): The prime implicants computed.
+        forDCM (bool): If calculation is for making a DCM, this will make the returned two symbol be completely accurate. 
+                       If this option is True for calcuation of input symmetry, input symmetry will be underestimated. 
 
     Returns:
         final_list (list) : The list of two-symbol schematas.
@@ -270,14 +272,22 @@ def find_two_symbols_v2(k=1, prime_implicants=None, verbose=False, verbose_level
             print(">>> Exists permutation groups?:", (perm_groups != -1))
             print(">>> Are groups already in F''?:", ((schematas.tolist(), perm_groups) in TS))
         if (perm_groups != -1) and not ((schematas.tolist(), perm_groups) in TS):
-            # do some weird permutation group testing
-            allowed_perm_groups = _check_schemata_permutations_v2(schematas, perm_groups, verbose=verbose, verbose_level=verbose_level)
-            if verbose and verbose_level > 15:
-                print('>>> Permutation testing result:', allowed_perm_groups)
-            if allowed_perm_groups is not None:
+            if forDCM:
+                # Do some normal permutation group testing - Comprehensive testing. 
+                allowed_perm_groups = _check_schemata_permutations_v3(schematas,perm_groups,verbose=verbose,verbose_level=verbose_level)
                 if verbose and verbose_level > 15:
-                    print(">>> RESULTS: adding F'': %s , Idxs: %s" % (schematas.tolist(), allowed_perm_groups))
-                TS.append((schematas.tolist(), allowed_perm_groups))
+                    print('>>> Permutation testing result:', allowed_perm_groups)
+                if allowed_perm_groups:
+                    TS.append((schematas.tolist(),perm_groups))
+            else:
+                # do some weird permutation group testing - Pairwise tests only
+                allowed_perm_groups = _check_schemata_permutations_v2(schematas, perm_groups, verbose=verbose, verbose_level=verbose_level)
+                if verbose and verbose_level > 15:
+                    print('>>> Permutation testing result:', allowed_perm_groups)
+                if allowed_perm_groups is not None:
+                    if verbose and verbose_level > 15:
+                        print(">>> RESULTS: adding F'': %s , Idxs: %s" % (schematas.tolist(), allowed_perm_groups))
+                    TS.append((schematas.tolist(), allowed_perm_groups))
 
         else:
             if verbose and verbose_level > 10:
@@ -498,6 +508,20 @@ def _check_schemata_permutations_v2(schematas, perm_groups, verbose=False, verbo
             return allowed_perm_groups
     return None
 
+def _check_schemata_permutations_v3(schematas, perm_groups, verbose=False, verbose_level=0):
+    '''
+    Checks all interactions to make sure that the perm_groups are within scope of the schematas. 
+    Returns True if the permutation groups are contained within the schematas
+    Returns False if the permutation groups are not contained within the schematas.
+    '''
+    # generate all possible permutations from the perm_groups given
+    potential_perms = _expand_ts_logic(schematas,perm_groups)
+    ls_schematas = schematas.tolist() 
+    for perm in potential_perms:
+        if perm not in ls_schematas:
+            print("Warning: Symmetry is present, but unable to be calculated exactly with this algorithm.")
+            return False
+    return True
 
 def _can_swap_v2(schemata_subset, verbose=False, verbose_level=0):
     """Determines if two schemata subsets can be swapped"""

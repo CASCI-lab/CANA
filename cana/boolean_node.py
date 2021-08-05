@@ -501,7 +501,7 @@ class BooleanNode(object):
         See Also:
             :func:`boolean_network.dynamics_canalization_map` for the DCM and :func:`drawing.draw_canalizing_map_graphviz` for plotting.
         """
-        self._check_compute_canalization_variables(two_symbols=True)
+        self._check_compute_canalization_variables(two_symbols=True, forDCM=True)
 
         ts0s, ts1s = self._two_symbols
 
@@ -673,8 +673,8 @@ class BooleanNode(object):
                 # /end fix
                 self._two_symbols = \
                     (
-                        BCanalization.find_two_symbols_v2(k=self.k, prime_implicants=pi0),
-                        BCanalization.find_two_symbols_v2(k=self.k, prime_implicants=pi1)
+                        BCanalization.find_two_symbols_v2(k=self.k, prime_implicants=pi0,**kwargs),
+                        BCanalization.find_two_symbols_v2(k=self.k, prime_implicants=pi1,**kwargs)
                     )
         elif 'ts_coverage' in kwargs:
             self._check_compute_canalization_variables(two_symbols=True)
