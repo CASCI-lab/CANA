@@ -248,7 +248,7 @@ def find_two_symbols_v2(k=1, prime_implicants=None, forDCM=False, verbose=False,
             print('>>> COLUMN Schema Counts:')
         # find the permutation groups based on column counts
         perm_groups = _check_col_counts_v3(counts_matrix=column_counts, verbose=verbose, verbose_level=verbose_level)
-
+        # if there are perm_groups
         if (perm_groups != -1):
             if verbose and verbose_level > 10:
                 print('>>> There are permutable groups! Lets loop them')
@@ -288,7 +288,7 @@ def find_two_symbols_v2(k=1, prime_implicants=None, forDCM=False, verbose=False,
                     if verbose and verbose_level > 15:
                         print(">>> RESULTS: adding F'': %s , Idxs: %s" % (schematas.tolist(), allowed_perm_groups))
                     TS.append((schematas.tolist(), allowed_perm_groups))
-
+        #if there are not perm groups, cycle through again, but with different combos of schemas
         else:
             if verbose and verbose_level > 10:
                 print('>>> Generate combinations of schematas (m-1) and add to Queue')
