@@ -30,27 +30,28 @@ def THALIANA():
     Returns:
         (BooleanNetwork)
     """
-    return BooleanNetwork.from_file(_path + '/thaliana.txt', name="Arabidopsis Thaliana", keep_constants=True, _canalization_save=True)
+    return BooleanNetwork.from_file(_path + '/thaliana.txt', name="Arabidopsis thaliana", keep_constants=True)
 
 
 def DROSOPHILA(cells=1):
-    """Drosophila Melanogaster boolean model.
-    This is a simplification of the original network defined in :cite:`Albert:2008`.
-    In the original model, some nodes receive inputs from neighboring cells.
-    In this single cell network, they are condensed (nhhnHH) and treated as constants.
-
-    There is currently only one model available, where the original neighboring cell signals are treated as constants.
+    """Drosophila melanogaster boolean model.
+    This was firt defined in :cite:`Albert:2008`.
+    Two models are available in CANA, the original parasegment (4 cells) and a single cell simplification of the model.
+    In the original parasegment model, some nodes receive inputs from neighboring cells.
+    In the single cell model, they are condensed (nhhnHH) and treated as constants.
 
     Args:
-        cells (int) : Which model to return.
+        cells (int) : Which model to return. Accepts either 1 or 4. Default is 1.
 
     Returns:
         (BooleanNetwork)
     """
     if cells == 1:
-        return BooleanNetwork.from_file(_path + '/drosophila_single_cell.txt', name="Drosophila Melanogaster", keep_constants=True)
+        return BooleanNetwork.from_file(_path + '/drosophila_single_cell.txt', name="Drosophila melanogaster (single cell)", keep_constants=True)
+    elif cells == 4:
+        return BooleanNetwork.from_file(_path + '/drosophila_parasegment.txt', name='Drosophila melanogaster (parasegment)', keep_constants=True)
     else:
-        raise AttributeError('Only single cell drosophila boolean model currently available.')
+        raise AttributeError('Only drosophila single cell (cells=1) or parasegment (cells=4) models available.')
 
 
 def BUDDING_YEAST():

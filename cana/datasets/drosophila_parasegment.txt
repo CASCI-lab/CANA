@@ -1,0 +1,464 @@
+# This is our implementation of the 4-cell parasegment drosophila network first described in
+#
+# > Albert, R., & Othmer, H. G. (2003). The topology of the regulatory interactions predicts the expression pattern of the segment polarity genes in Drosophila melanogaster. Journal of theoretical biology, 223(1), 1–18. https://doi.org/10.1016/s0022-5193(03)00035-3
+#
+# and later analized in
+# > M. Marques-Pita and L.M. Rocha (2013). Canalization and control in automata networks: body segmentation in Drosophila Melanogaster. PLoS ONE, 8(3): e55946. doi:10.1371/journal.pone.0055946.
+#
+
+#
+# Total number of nodes 
+#
+.v 60
+
+#
+# labels of nodes and names of corresponding nodes
+#
+
+#
+# CELL 1
+#
+.l 1 SLP
+.l 2 wg
+.l 3 WG
+.l 4 en
+.l 5 EN
+.l 6 hh
+.l 7 HH
+.l 8 ptc
+.l 9 PTC
+.l 10 PH
+.l 11 SMO
+.l 12 ci
+.l 13 CI
+.l 14 CIA
+.l 15 CIR
+
+#
+# CELL 2
+#
+.l 16 SLP
+.l 17 wg
+.l 18 WG
+.l 19 en
+.l 20 EN
+.l 21 hh
+.l 22 HH
+.l 23 ptc
+.l 24 PTC
+.l 25 PH
+.l 26 SMO
+.l 27 ci
+.l 28 CI
+.l 29 CIA
+.l 30 CIR
+
+#
+# CELL 3
+#
+.l 31 SLP
+.l 32 wg
+.l 33 WG
+.l 34 en
+.l 35 EN
+.l 36 hh
+.l 37 HH
+.l 38 ptc
+.l 39 PTC
+.l 40 PH
+.l 41 SMO
+.l 42 ci
+.l 43 CI
+.l 44 CIA
+.l 45 CIR
+
+#
+# CELL 4
+#
+.l 46 SLP
+.l 47 wg
+.l 48 WG
+.l 49 en
+.l 50 EN
+.l 51 hh
+.l 52 HH
+.l 53 ptc
+.l 54 PTC
+.l 55 PH
+.l 56 SMO
+.l 57 ci
+.l 58 CI
+.l 59 CIA
+.l 60 CIR
+
+#
+# Logic for each node
+#
+#.n (node number) (in-degree) (input node 1) ... (input node k)
+# - is a wild-card
+
+#
+# CELL 1
+#
+
+# 1 : SLP_i = 0 if CELL == 1 OR 3; 1 if CELL == 2 OR 4
+.n 1 0
+0
+
+# 2 : wg_i = (CIA_i AND SLP_i AND NOT CIR_i) OR (wg_i AND (CIA_i OR SLP_i) AND NOT CIR_i)
+.n 2 4 1 2 14 15
+1010 1
+1110 1
+1110 1
+0110 1
+1100 1
+
+# 3 : WG_i = wg_i
+.n 3 1 2
+1 1
+
+# 4 : en_i = (WG_{i-1} OR WG_{i+1}) AND NOT SLP_i
+.n 4 3 1 18 48
+001 1
+010 1
+
+# 5 : EN_i = en_i
+.n 5 1 4
+1 1
+
+# 6 : hh_i = EN_i AND NOT CIR_i
+.n 6 2 5 15
+10 1
+
+# 7 : HH_i = hh_i
+.n 7 1 6
+1 1
+
+# 8 : ptc_i = CIA_i AND NOT EN_i AND NOT CIR_i
+.n 8 3 5 14 15
+010 1
+
+# 9 : PTC_i = ptc_i OR (PTC_i AND NOT HH_{i-1} AND NOT HH_{i+1})
+.n 9 4 8 9 22 52
+0100 1
+1000 1
+1001 1
+1010 1
+1011 1
+1100 1
+1101 1
+1110 1
+1111 1
+
+# 10 : PH_i = PTC_i AND (HH_{i-1} OR HH_{i+1})
+.n 10 3 9 22 52
+101 1
+110 1
+111 1
+
+# 11 : SMO_i = NOT PTC_i OR HH_{i-1} OR HH_{i+1}
+.n 11 3 9 22 52
+000 1
+001 1
+010 1
+011 1
+101 1
+110 1
+111 1
+
+# 12 : ci_i = NOT EN_i
+.n 12 1 5
+0 1
+
+# 13 : CI_i = ci_i
+.n 13 1 12
+1 1
+
+# 14 : CIA_i = CI_i AND (SMO_i OR hh_{i-1} OR hh_{h+1})
+.n 14 4 13 11 21 51
+1001 1
+1010 1
+1011 1
+1100 1
+1101 1
+1110 1
+1111 1
+
+# 15 : CIR_i = CI_i AND NOT SMO_i AND NOT hh_{i-1} AND NOT hh_{i+1}
+.n 15 4 13 11 21 51
+1000 1
+
+#
+# CELL 2
+#
+
+# 16 : SLP_i = 0 if CELL == 1 OR 3; 1 if CELL == 2 OR 4
+.n 16 0
+1
+
+# 17 : wg_i = (CIA_i AND SLP_i AND NOT CIR_i) OR (wg_i AND (CIA_i OR SLP_i) AND NOT CIR_i)
+.n 17 4 16 17 29 30
+1010 1
+1110 1
+1110 1
+0110 1
+1100 1
+
+# 18 : WG_i = wg_i
+.n 18 1 17
+1 1
+
+# 19 : en_i = (WG_{i-1} OR WG_{i+1}) AND NOT SLP_i
+.n 19 3 16 33 3
+001 1
+010 1
+
+# 20 : EN_i = en_i
+.n 20 1 19
+1 1
+
+# 21 : hh_i = EN_i AND NOT CIR_i
+.n 21 2 20 30
+10 1
+
+# 22 : HH_i = hh_i
+.n 22 1 21
+1 1
+
+# 23 : ptc_i = CIA_i AND NOT EN_i AND NOT CIR_i
+.n 23 3 20 29 30
+010 1
+
+# 24 : PTC_i = ptc_i OR (PTC_i AND NOT HH_{i-1} AND NOT HH_{i+1})
+.n 24 4 23 24 37 7
+0100 1
+1000 1
+1001 1
+1010 1
+1011 1
+1100 1
+1101 1
+1110 1
+1111 1
+
+# 25 : PH_i = PTC_i AND (HH_{i-1} OR HH_{i+1})
+.n 25 3 24 37 7
+101 1
+110 1
+111 1
+
+# 26 : SMO_i = NOT PTC_i OR HH_{i-1} OR HH_{i+1}
+.n 26 3 24 37 7
+000 1
+001 1
+010 1
+011 1
+101 1
+110 1
+111 1
+
+# 27 : ci_i = NOT EN_i
+.n 27 1 20
+0 1
+
+# 28 : CI_i = ci_i
+.n 28 1 27
+1 1
+
+# 29 : CIA_i = CI_i AND (SMO_i OR hh_{i-1} OR hh_{h+1})
+.n 29 4 28 26 36 6
+1001 1
+1010 1
+1011 1
+1100 1
+1101 1
+1110 1
+1111 1
+
+# 30 : CIR_i = CI_i AND NOT SMO_i AND NOT hh_{i-1} AND NOT hh_{i+1}
+.n 30 4 28 26 36 6
+1000 1
+
+#
+# CELL 3
+#
+
+# 31 : SLP_i = 0 if CELL == 1 OR 3; 1 if CELL == 2 OR 4
+.n 31 0
+0
+
+# 32 : wg_i = (CIA_i AND SLP_i AND NOT CIR_i) OR (wg_i AND (CIA_i OR SLP_i) AND NOT CIR_i)
+.n 32 4 31 32 44 45
+1010 1
+1110 1
+1110 1
+0110 1
+1100 1
+
+# 33 : WG_i = wg_i
+.n 33 1 32
+1 1
+
+# 34 : en_i = (WG_{i-1} OR WG_{i+1}) AND NOT SLP_i
+.n 34 3 31 48 18
+001 1
+010 1
+
+# 35 : EN_i = en_i
+.n 35 1 34
+1 1
+
+# 36 : hh_i = EN_i AND NOT CIR_i
+.n 36 2 35 45
+10 1
+
+# 37 : HH_i = hh_i
+.n 37 1 36
+1 1
+
+# 38 : ptc_i = CIA_i AND NOT EN_i AND NOT CIR_i
+.n 38 3 35 44 45
+010 1
+
+# 39 : PTC_i = ptc_i OR (PTC_i AND NOT HH_{i-1} AND NOT HH_{i+1})
+.n 39 4 38 39 52 22
+0100 1
+1000 1
+1001 1
+1010 1
+1011 1
+1100 1
+1101 1
+1110 1
+1111 1
+
+# 40 : PH_i = PTC_i AND (HH_{i-1} OR HH_{i+1})
+.n 40 3 39 52 22
+101 1
+110 1
+111 1
+
+# 41 : SMO_i = NOT PTC_i OR HH_{i-1} OR HH_{i+1}
+.n 41 3 39 52 22
+000 1
+001 1
+010 1
+011 1
+101 1
+110 1
+111 1
+
+# 42 : ci_i = NOT EN_i
+.n 42 1 35
+0 1
+
+# 43 : CI_i = ci_i
+.n 43 1 42
+1 1
+
+# 44 : CIA_i = CI_i AND (SMO_i OR hh_{i-1} OR hh_{h+1})
+.n 44 4 43 41 51 21
+1001 1
+1010 1
+1011 1
+1100 1
+1101 1
+1110 1
+1111 1
+
+# 45 : CIR_i = CI_i AND NOT SMO_i AND NOT hh_{i-1} AND NOT hh_{i+1}
+.n 45 4 43 41 51 21
+1000 1
+
+#
+# CELL 4
+#
+
+# 46 : SLP_i = 0 if CELL == 1 OR 3; 1 if CELL == 2 OR 4
+.n 46 0
+1
+
+# 47 : wg_i = (CIA_i AND SLP_i AND NOT CIR_i) OR (wg_i AND (CIA_i OR SLP_i) AND NOT CIR_i)
+.n 47 4 46 47 59 60
+1010 1
+1110 1
+1110 1
+0110 1
+1100 1
+
+# 48 : WG_i = wg_i
+.n 48 1 47
+1 1
+
+# 49 : en_i = (WG_{i-1} OR WG_{i+1}) AND NOT SLP_i
+.n 49 3 46 3 33
+001 1
+010 1
+
+# 50 : EN_i = en_i
+.n 50 1 49
+1 1
+
+# 51 : hh_i = EN_i AND NOT CIR_i
+.n 51 2 50 60
+10 1
+
+# 52 : HH_i = hh_i
+.n 52 1 51
+1 1
+
+# 53 : ptc_i = CIA_i AND NOT EN_i AND NOT CIR_i
+.n 53 3 50 59 60
+010 1
+
+# 54 : PTC_i = ptc_i OR (PTC_i AND NOT HH_{i-1} AND NOT HH_{i+1})
+.n 54 4 53 54 7 37
+0100 1
+1000 1
+1001 1
+1010 1
+1011 1
+1100 1
+1101 1
+1110 1
+1111 1
+
+# 55 : PH_i = PTC_i AND (HH_{i-1} OR HH_{i+1})
+.n 55 3 54 7 37
+101 1
+110 1
+111 1
+
+# 56 : SMO_i = NOT PTC_i OR HH_{i-1} OR HH_{i+1}
+.n 56 3 54 7 37
+000 1
+001 1
+010 1
+011 1
+101 1
+110 1
+111 1
+
+# 57 : ci_i = NOT EN_i
+.n 57 1 50
+0 1
+
+# 58 : CI_i = ci_i
+.n 58 1 57
+1 1
+
+# 59 : CIA_i = CI_i AND (SMO_i OR hh_{i-1} OR hh_{h+1})
+.n 59 4 58 56 6 36
+1001 1
+1010 1
+1011 1
+1100 1
+1101 1
+1110 1
+1111 1
+
+# 60 : CIR_i = CI_i AND NOT SMO_i AND NOT hh_{i-1} AND NOT hh_{i+1}
+.n 60 4 58 56 6 36
+1000 1
+
+.e End of file

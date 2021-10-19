@@ -406,15 +406,13 @@ class BooleanNode(object):
 
         return df
 
-    def schemata_look_up_table(self, type='pi', pi_symbol=u'#', ts_symbol_unicode=u"\u030A", ts_symbol_latex=u"\circ", format='pandas'):
+    def schemata_look_up_table(self, type='pi', pi_symbol='#', ts_symbol_list=["\u030A", "\u032F"]):
         """ Returns the simplified schemata Look Up Table (LUT)
 
         Args:
             type (string) : The type of schemata to return, either Prime Implicants ``pi`` or Two-Symbol ``ts``. Defaults to 'pi'.
-            pi_symbol (unicode) : The Prime Implicant don't care symbol. Default is ``#``.
-            ts_symbol_unicode (unicode) : A unicode string for the Two Symbol permutable symbol. Default is ``u"\u030A"``.
-            ts_symbol_latex (unicode) : The latex string for Two Symbol permutable symbol. Default is ``\circ``.
-            format (string) : The format to return. Possible values are ``pandas`` (default) and ``latex``.
+            pi_symbol (str) : The Prime Implicant don't care symbol. Default is ``#``.
+            ts_symbol_list (list) : A list containing Two Symbol permutable symbols. Default is ``["\u030A", "\u032F"]``.
 
         Returns:
             (pandas.DataFrame or Latex): the schemata LUT
@@ -449,54 +447,36 @@ class BooleanNode(object):
 
             for output, ts in zip([0, 1], [ts0s, ts1s]):
                 for i, (schemata, permutables, samesymbols) in enumerate(ts):
-                    string = u''
+                    string = ''
                     if len(permutables):
+                        string += '('
                         # Permutable
                         for j, permutable in enumerate(permutables):
-
-                            if format == 'latex':
-                                if j > 0:
-                                    string += u' \,  | \, '
-                                string += r' '.join([x if (k not in permutable) else '\overset{%s}{%s}' % (ts_symbol_latex, unicode(x)) for k,x in enumerate(schemata, start=0)])
-                            else:
-                                if j > 0:
-                                    string += u' | '
-                                string += u''.join([x if (k not in permutable) else u'%s%s' % (x, ts_symbol_unicode) for k, x in enumerate(schemata, start=0)])
+                            #
+                            ts_symbol_unicode = ts_symbol_list[j]
+                            if j > 0:
+                                string += ' | '
+                            string += u''.join([x if (k not in permutable) else u'%s%s' % (x, ts_symbol_unicode) for k, x in enumerate(schemata, start=0)])
+                        string += ')'
 
                     else:
-                        string += schemata
-                    """
+                        string += '(' + schemata + ')'
+
                     if len(samesymbols):
+                        string += ' | ('
                         # Same Symbol
-                        for j,samesymbol in enumerate(samesymbols):
-                            if j>0:
-                                sstring+= ' | '
-                            sstring += ''.join([x if (k not in samesymbol) else unicode(x)+ts_symbols[-1] for k,x in enumerate(schemata, start=0)])
-                    """
+                        for j, samesymbol in enumerate(samesymbols):
+                            ts_symbol_unicode = ts_symbol_list[j]
+                            if j > 0:
+                                string += ' | '
+                            string += ''.join([x if (k not in samesymbol) else u'%s%s' % (x, ts_symbol_unicode) for k, x in enumerate(schemata, start=0)])
+                        string += ')'
                     r.append((string, output))
         else:
             raise AttributeError('The schemata type could not be found. Try "PI" (Prime Implicants) or "TS" (Two-Symbol).')
 
-        # Output Format (Latex Table or Pandas DataFrame)
-        if format == 'latex':
-            out = r"\begin{array}{ | c | r | l }" + "\n"
-            out += r"\hline" + "\n"
-            out += r" & In: & Out: \\" + "\n"
-            out += r"\hline" + "\n"
-            for i, (string, output) in enumerate(r):
-                string = string.replace('2','\%s' % (pi_symbol))
-                out += r"%d & %s & %s \\" % (i, string, output) + r"\hline" + "\n"
-            out += r"\hline" + "\n"
-            out += r"\end{array}" + "\n"
-            return out
-
-        elif format == 'pandas':
-
-            r = [(schemata.replace('2', pi_symbol), output) for schemata, output in r]
-            return pd.DataFrame(r, columns=['In:', 'Out:'])
-
-        else:
-            AttributeError('The format type could not be found. Try "pandas" "latex".')
+        r = [(schemata.replace('2', pi_symbol), output) for schemata, output in r]
+        return pd.DataFrame(r, columns=['Input', 'Output'])
 
     def input_mask(self, binstate):
         """ Returns the mask applied to the binary state binstate
