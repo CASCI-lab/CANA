@@ -245,11 +245,6 @@ class BooleanNode(object):
         See Also:
             :func:`input_redundancy`, :func:`input_symmetry`, :func:`~cana.boolean_network.BooleanNetwork.effective_graph`.
         """
-        #
-        # Canalization can only occur when k>= 2
-        if self.k < 2:
-            return 0.0
-
         k_r = self.input_redundancy(operator=operator, norm=False)
         #
         k_e = self.k - k_r
