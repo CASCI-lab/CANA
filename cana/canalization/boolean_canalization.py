@@ -221,7 +221,7 @@ def find_two_symbols_v2(k=1, prime_implicants=None, verbose=False, verbose_level
 
     # Init Queue
     Q = deque()
-    Q_history = set()
+    Q_history = {}
     Q.append(pi_matrix)
     i = 0
 
@@ -287,12 +287,12 @@ def find_two_symbols_v2(k=1, prime_implicants=None, verbose=False, verbose_level
                     idxs_subset = list(idxs_subset)
                     schemata_subset = schematas[idxs_subset, :]
                     # This schemata has already been inserted onto the Queue before?
-                    if schemata_subset.tostring() not in Q_history:
+                    if not _schema_in_Q_history(schemata_subset,Q_history):
                         if verbose and verbose_level > 25:
                             print('>>> QUEUE: appending (idxs: %s)' % (idxs_subset))
                             print(schemata_subset)
                         Q.append(schemata_subset)
-                        Q_history.add(schemata_subset.tostring())
+                        Q_history = _add_schema_to_Q_history(schemata_subset,Q_history)
                     else:
                         if verbose and verbose_level > 25:
                             print('>>> QUEUE: duplicate, skip (idxs: %s)' % (idxs_subset))
@@ -401,6 +401,33 @@ def find_two_symbols_v2(k=1, prime_implicants=None, verbose=False, verbose_level
 
     return TSf
 
+def _add_schema_to_Q_history(schemata_subset,Q_history={}):
+    '''
+    Makes a dictionary tree structure for Q_history for efficient storage and retreival.
+    Adds a schemata_subset into the Q_history, returning Q_history.
+    '''
+    Q_level = Q_history
+    for schemata in schemata_subset:
+        schemata = schemata.tostring()
+        if schemata in Q_level:
+            Q_level=Q_level[schemata]
+        else: 
+            Q_level[schemata]={}
+            Q_level=Q_level[schemata]
+    return Q_history
+    
+def _schema_in_Q_history(schemata_subset,Q_history):
+    '''
+    Returns True if schemata_subset is in Q_history, otherwise returns False.
+    '''
+    Q_level = Q_history
+    for schemata in schemata_subset:
+        schemata = schemata.tostring()
+        if schemata not in Q_level:
+            return False
+        else:
+            Q_level=Q_level[schemata]
+    return True
 
 def _calc_ts_complexity(tss, pers):
     """ Calculates the complexity of a TS schema

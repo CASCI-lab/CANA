@@ -66,7 +66,7 @@ class BooleanNetwork:
             k = len(logic[i]['in'])
             inputs = [self.name2int[logic[j]['name']] for j in logic[i]['in']]
             outputs = logic[i]['out']
-            node = BooleanNode(id=i, name=name, k=k, inputs=inputs, outputs=outputs, network=self)
+            node = BooleanNode(id=i, name=name, k=k, inputs=inputs, outputs=outputs, network=self,*args,**kwargs)
             self.nodes.append(node)
 
         self.Nconstants = sum([n.constant for n in self.nodes])  # Number of constant variables
@@ -262,7 +262,7 @@ class BooleanNetwork:
                 if len(nodelogic['in']) == 0:
                     constants[i] = logic[i]['out'][0]
 
-        return BooleanNetwork(name=name, logic=logic, Nnodes=Nnodes, constants=constants, keep_constants=keep_constants)
+        return BooleanNetwork(logic=logic, Nnodes=Nnodes, constants=constants, keep_constants=keep_constants, **kwargs)
 
     def to_cnet(self, file=None, adjust_no_input=False):
         """Outputs the network logic to ``.cnet`` format, which is similar to the Berkeley Logic Interchange Format (BLIF).
