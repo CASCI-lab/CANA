@@ -35,7 +35,7 @@ class BooleanNetwork:
 
     """
 
-    def __init__(self, name='', Nnodes=0, logic=None, sg=None, stg=None, stg_r=None, _ef=None, attractors=None,
+    def __init__(self, name='', Nnodes=0, logic=None, sg=None, stg=None, stg_r=None, _eg=None, attractors=None,
                  constants={}, Nconstants=0, keep_constants=False,
                  bin2num=binstate_to_statenum, num2bin=statenum_to_binstate,
                  verbose=False, *args, **kwargs):
@@ -406,22 +406,24 @@ class BooleanNetwork:
         See Also:
             :func:`~cana.boolean_node.BooleanNode.edge_effectiveness`
         """
-        if threshold is not None:
-            self._eg = nx.DiGraph(name="Effective Graph: " + self.name + "(Threshold: {threshold:.2f})".format(threshold=threshold))
-        else:
-            self._eg = nx.DiGraph(name="Effective Graph: " + self.name + "(Threshold: None)")
+        if self._eg is None:
+            if threshold is not None:
+                self._eg = nx.DiGraph(name="Effective Graph: " + self.name + "(Threshold: {threshold:.2f})".format(threshold=threshold))
+            else:
+                self._eg = nx.DiGraph(name="Effective Graph: " + self.name + "(Threshold: None)")
 
-        # Add Nodes
-        for i, node in enumerate(self.nodes, start=0):
-            self._eg.add_node(i, **{'label': node.name})
+            # Add Nodes
+            for i, node in enumerate(self.nodes, start=0):
+                self._eg.add_node(i, **{'label': node.name})
 
-        # Add Edges
-        for i, node in enumerate(self.nodes, start=0):
-            e_is = node.edge_effectiveness(bound=bound)
-            for inputs, e_i in zip(self.logic[i]['in'], e_is):
-                # If there is a threshold, only return those number above the threshold. Else, return all edges.
-                if (threshold is None) or ((threshold is not None) and (e_i > threshold)):
-                    self._eg.add_edge(inputs, i, **{'weight': e_i})
+            # Add Edges
+            for i, node in enumerate(self.nodes, start=0):
+                e_is = node.edge_effectiveness(bound=bound)
+                
+                for inputs, e_i in zip(self.logic[i]['in'], e_is):
+                    # If there is a threshold, only return those number above the threshold. Else, return all edges.
+                    if (threshold is None) or ((threshold is not None) and (e_i > threshold)):
+                        self._eg.add_edge(inputs, i, **{'weight': e_i})
 
         return self._eg
 
