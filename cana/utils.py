@@ -44,6 +44,19 @@ def flip_binstate_bit_set(binstate, idxs):
         flipset.append(binstate)
     return flipset
 
+def negate_LUT_input(outputs, idx):
+    """For a LUT defined by the output list, it negates the input.
+
+    Args:
+        outputs (list) : The output list defining the LUT.
+        idxs (int) : The indexes of the input to negate.
+
+    Returns:
+        (list) : The new output with input idx negated
+    """
+    k = int(np.log2(len(outputs)))
+    return [outputs[binstate_to_statenum(flip_binstate_bit(statenum_to_binstate(istate, k), idx))] for istate in range(len(outputs))]
+
 
 def print_logic_table(outputs):
     """Print Logic Table
