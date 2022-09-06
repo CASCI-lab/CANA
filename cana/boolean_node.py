@@ -102,7 +102,7 @@ class BooleanNode(object):
         else:
             self.constant = False
             self.step = self.dynamic_step
-        # Set an optional value to the node 
+        # Set an optional value to the node
         if state is not None:
             self.state = str(int(state))
 
@@ -152,9 +152,10 @@ class BooleanNode(object):
         See also:
             :func:`effective_connectivity`, :func:`input_symmetry`, :func:`edge_redundancy`.
         """
-        # Canalization can only occur when k>= 2
-        if self.k < 2:
-            return 0.0
+        # Canalization can only occur when k>= 2 (incorrect: k=1 has redundancy if constant function)
+        # NOTE: commented out by Austin Marcus 8/10/22
+        # if self.k < 2:
+        #     return 0.0
 
         self._check_compute_canalization_variables(pi_coverage=True)
 
@@ -482,7 +483,14 @@ class BooleanNode(object):
         return ''.join(compress(binstate, self.mask))
 
     def activities(self):
-        return self.effective_connectivity(mode='input', bound='upper')
+        return self.edge_effectiveness(bound="upper")
+
+    def sensitivity(self, norm=False):
+        x = sum(self.activities())
+        if norm:
+            return x / self.k
+        else:
+            return x
 
     def canalizing_map(self, output=None):
         """ Computes the node Canalizing Map (CM).
