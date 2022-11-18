@@ -11,17 +11,8 @@ Installation:
 Pull and install the code directly from the github [project page](https://github.com/rionbr/CANA).
 
 ```
-    pip install git+git://github.com/rionbr/CANA
+    pip install git+https://github.com/rionbr/CANA
 ```
-
-** Latest PyPI stable release **
-
-This package is available in pypi. Just run the following command on terminal to install.
-
-```
-    $ pip install cana
-```
-
 
 Docs:
 -------
