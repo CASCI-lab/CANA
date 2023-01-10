@@ -10,29 +10,23 @@ from cana.cutils import outputs_to_binstates_of_given_type
 
 def getTss(outputs):
     """Compute unique representation of two-symbol schemata from Boolean output table.
-    Assume that prime-implicant caclulation is correct.
+    Assume that prime-implicant calculation is correct.
     
     arguments:
-    outputs -- string representing the lookup table of the function
+    outputs -- string representing the lookup table of the function, going from input 0...0 to 1...1
     """
     k = int(math.log(len(outputs)) / math.log(2))
-    # bs0 = outputs_to_binstates_of_given_type(outputs=outputs, output=0, k=k)
-    # bs1 = outputs_to_binstates_of_given_type(outputs=outputs, output=1, k=k)
-    # pi0, pi1 = find_implicants_qm(bs0), find_implicants_qm(bs1) # TODO: weird issue. when this file run as script causes error. 
-    # pi0 = set([pi.replace('#', '2') for pi in pi0])
-    # pi1 = set([pi.replace('#', '2') for pi in pi1])
-    # print(pi0)
-    # ts0, ts1 = find_two_symbols_v2(k=k, prime_implicants=pi0), find_two_symbols_v2(k=k, prime_implicants=pi1)
-    
-    # ALTERNATIVE
     node = BooleanNode(k=k, inputs=range(k), outputs=list(outputs))
     node._check_compute_canalization_variables(two_symbols="i dont matter")
     ts0, ts1 = node._two_symbols
 
     return {0:ts0, 1:ts1}
 
-def test_bulk():
-    nodes = getCCnodes()#[0:800]
+def test_cc():
+    """Test two-symbol symmetry correctness for all Cell Collective nodes.
+    Note: currently only does so for non-constant nodes with k<=7.
+    """
+    nodes = getCCnodes()
     fails = []
     log = []
     for node in nodes:
@@ -54,6 +48,7 @@ def test_bulk():
     assert len(fails) == 0, f"{len(fails)} failures"
 
 def doTSStest(func, true_ts0, true_ts1):
+    """Test whether the two-symbol calculation of a given function matches the manually-computed answer."""
     true_ts0 = reorderTwoSymbolOutput(true_ts0)
     true_ts1 = reorderTwoSymbolOutput(true_ts1)
     tsss = getTss(func)
@@ -73,7 +68,6 @@ def test_two_symbol_OR():
     true_ts1 = [("12", [[0,1]], [])]
     doTSStest(f, true_ts0, true_ts1)
 
-# TODO: randomly fails test sometimes. sometimes returns t0 with [0,1] same-symbol group
 def test_two_symbol_AB_C():
     f = "01010111"
     t0 = [
@@ -181,49 +175,10 @@ def test_two_symbol_Lymphoid_IL7r():
             ("222020", [[1,5]], [])
          ]
     t1 = [
-            ("010221", [[2,4]], []),
+            ("210221", [[2,4]], []),
             ("120122", [[2,4]], [])
          ]
     doTSStest(f, t0, t1)
 
 if __name__ == "__main__":
-    # f = "00000001"
-    # ts = getTss(f)
-    # # x = computes_ts_coverage(3, f, ts[0])
-    # t0 = [
-    #         (list("022"), [[0,1,2]], [])
-    #      ]
-    # t1 = [
-    #         (list("111"), [], [])
-    #      ]
-
-    # x = compareTs(ts[0], t0)
-    # print(x)
-    # x = compareTs(ts[1], t1)
-    # print(x)
-
-    # f = "0001000100011111"
-    # t0 = [
-    #         ("0202", [[0,1]], []),
-    #         ("0220", [[0,1]], []),
-    #         ("0202", [[2,3]], []),
-    #         ("2002", [[2,3]], [])
-    #      ]
-    # t1 = [
-    #         ("1122", [], []),
-    #         ("2211", [], [])
-    #      ]
-    # ts = getTss(f)
-    # print(ts)
-    # x = compareTs(ts[0], t0)
-    # print(x)
-    # x = compareTs(ts[1], t1)
-    # print(ts[1])
-    # print(x)
-    
-    f = "0000000000000000010101010101000000110011001100000111011101110000"
-    pis = getPis(f)
-    print(pis[0])
-    ts = getTss(f)
-    print(ts[0])
-    print(compare(pis[0], ts[0]))
+    test_two_symbol_Lymphoid_IL7r()

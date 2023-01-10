@@ -1,5 +1,4 @@
-from itertools import permutations
-from itertools import product
+from itertools import permutations, product
 from cana.datasets.bio import load_all_cell_collective_models
 from cana.boolean_node import BooleanNode
 import math
@@ -24,6 +23,7 @@ def reorderTwoSymbolOutput(tss):
     return tssNew
 
 def expandTs(ts):
+    """Expand a two-symbol schemata to the set of all schema (with don't cares) it encodes"""
     # expand ts
     tss = [i[0] for i in ts]
     perms = [i[1] for i in ts]
@@ -54,6 +54,7 @@ def expandTs(ts):
 
 # each element of pi is a string
 def expandPi(pi):
+    """Expand a schemata with don't cares into the set of all schema it encodes"""
     out = set()
     for s in pi:
         # count number of 2s
@@ -73,11 +74,10 @@ def expandPi(pi):
 def compare(pi, ts):
     x = expandPi(expandTs(ts))
     y = expandPi(pi)
-    print("pi", x)
-    print("ts", y)
     return x==y, x-y, y-x
 
 def getPis(outputs):
+    """Compute prime implicants from a string function representation"""
     k = int(math.log(len(outputs)) / math.log(2))
     node = BooleanNode(k=k, inputs=range(k), outputs=list(outputs))
     node._check_compute_canalization_variables(prime_implicants="i dont matter")
@@ -89,7 +89,7 @@ def getCCnodes():
     nodes = []
     for network in networks:
         for node in network.nodes:
-            if node.k < 8 and "1" in node.outputs and "0" in node.outputs:
+            if node.k < 8 and "1" in node.outputs and "0" in node.outputs: # select non-constant with k<=7
                 nodes.append(node)
     # fs = ["".join(n.outputs) for n in nodes]
     return nodes
