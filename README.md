@@ -14,6 +14,16 @@ Pull and install the code directly from the github [project page](https://github
     pip install git+https://github.com/rionbr/CANA
 ```
 
+Please note that CANA uses Cython. For it to compile you may need to install the following:
+
+- `pip install python3-dev`
+- `pip install Cython`
+
+As well as the following system packages:
+
+- python3-distutils
+- cython
+
 Docs:
 -------
 
