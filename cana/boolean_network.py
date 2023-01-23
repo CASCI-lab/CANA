@@ -304,7 +304,7 @@ class BooleanNetwork:
         if file is None:
             return bns_string
         else:
-            if isinstance(file, string):
+            if isinstance(file, str):
                 with open(file, 'w') as iofile:
                     iofile.write(bns_string)
                     iofile.close()
@@ -533,7 +533,7 @@ class BooleanNetwork:
             :func:`effective_outdegrees`, :func:`structural_indegrees`, :func:`structural_outdegrees`
         """
         self._check_compute_variables(eg=True)
-        return sorted([d for n, d in self._eg.in_degree()], reverse=True)
+        return sorted([d for n, d in self._eg.in_degree(weight='weight')], reverse=True)
 
     def effective_outdegrees(self):
         """Returns the out-degrees of the Effective Graph. Sorted.
@@ -545,7 +545,7 @@ class BooleanNetwork:
             :func:`effective_indegrees`, :func:`structural_indegrees`, :func:`structural_outdegrees`
         """
         self._check_compute_variables(eg=True)
-        return sorted([d for n, d in self._eg.out_degree()], reverse=True)
+        return sorted([d for n, d in self._eg.out_degree(weight='weight')], reverse=True)
 
     def activity_graph(self, threshold=None):
         """
