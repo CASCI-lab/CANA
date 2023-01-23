@@ -5,11 +5,30 @@
 #
 from cana.datasets.bools import CONTRADICTION, AND, OR, XOR, COPYx1, RULE90, RULE110
 from cana.utils import *
+from cana.boolean_node import BooleanNode
 
 
 #
 # Test Input Redundancy
 #
+
+def test_input_redundancy_constant():
+    """Test Input Redundancy - constant"""
+    n = BooleanNode(k=1, outputs=list("00"))
+    k_r, true_k_r = n.input_redundancy(norm=False), 1
+    assert (k_r == true_k_r), ('Input Redundancy (mean) for CONSTANT node does not match. %s != %s' % (k_r, true_k_r))
+
+    k_r, true_k_r = n.input_redundancy(norm=True), 1
+    assert (k_r == true_k_r), ('Input Redundancy (mean, normed) for CONSTANT node does not match. %s != %s' % (k_r, true_k_r))
+
+def test_input_redundancy_identity():
+    """Test Input Redundancy - identity"""
+    n = BooleanNode(k=1, outputs=list("01"))
+    k_r, true_k_r = n.input_redundancy(norm=False), 0
+    assert (k_r == true_k_r), ('Input Redundancy (mean) for identity node does not match. %s != %s' % (k_r, true_k_r))
+
+    k_r, true_k_r = n.input_redundancy(norm=True), 0
+    assert (k_r == true_k_r), ('Input Redundancy (mean, normed) for identity node does not match. %s != %s' % (k_r, true_k_r))
 
 # AND
 def test_input_redundancy_AND():
