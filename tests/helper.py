@@ -2,6 +2,11 @@ from itertools import permutations, product
 from cana.datasets.bio import load_all_cell_collective_models
 from cana.boolean_node import BooleanNode
 import math
+import random
+
+def randNode(k):
+    func = [random.randint(0,1) for i in range(2**k)]
+    return BooleanNode(k=k, inputs=list(range(k)), outputs=func)
 
 def reorderTwoSymbolOutput(tss):
     """Convert a list of two-symbol schemata to a set of two-symbol schemata with unique orderings for equality testing.
@@ -51,6 +56,14 @@ def expandTs(ts):
             obsSet.add("".join(tPerm))
     # return obsSet == trueSet, obsSet
     return obsSet
+
+def enumerateImplicants(func):
+    implicants = {"0": set(), "1": set()}
+    k = int(math.log(len(func)) / math.log(2))
+    for i, output in enumerate(func, start=0):
+        cond = f"{bin(i)[2:]:0>{k}}"
+        implicants[output].add(cond)
+    return implicants
 
 # each element of pi is a string
 def expandPi(pi):
@@ -128,5 +141,6 @@ if __name__ == "__main__":
     # print(expandPi(expandTs(t0)))
 
     # x = {'221122', '222200', '002222', '202202', '022220'}
-    x = {"2212"}
-    print(expandPi(x))
+    # x = {"2212"}
+    # print(expandPi(x))
+    print(enumerateImplicants("01001011"))

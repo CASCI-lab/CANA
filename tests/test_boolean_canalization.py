@@ -307,5 +307,37 @@ def test_RULE_110():
     assert (ts0 == true_ts0), ('Two Symbol for 0 does not match. %s != %s' % (ts0, true_ts0))
     assert (ts1 == true_ts1), ('Two Symbol for 1 does not match. %s != %s' % (ts1, true_ts1))
 
+def test_prime_implicants_random():
+    """Test if prime implicants are computed correctly on random functions."""
+
+    # generate list of random functions
+    nodes_tmp = [randNode(k) for k in range(1, 10) for i in range(500)]
+    nodes = {"".join(map(str, n.outputs)): n for n in nodes_tmp}
+    # compute prime implicants
+    pis = dict()
+    for f, n in nodes.items():
+        n._check_compute_canalization_variables(prime_implicants=True)
+        if "0" in n._prime_implicants:
+            zeros = n._prime_implicants["0"]
+        else:
+            zeros = set()
+        if "1" in n._prime_implicants:
+            ones = n._prime_implicants["1"]
+        else:
+            ones = set()
+        pis[f] = {"0": set(i.replace("#", "2") for i in zeros),
+                  "1": set(i.replace("#", "2") for i in ones)}
+
+    # expand and compare
+    for f in nodes:
+        truth = enumerateImplicants(f)
+        for out in ["0", "1"]:
+            expanded = set()
+            # for pi in pis[f][out]:
+            #     print(pi)
+            #     expanded = expanded.union(expandPi(pi))
+            expanded = expandPi(pis[f][out])
+            assert expanded == truth[out], expanded
+
 if __name__ == "__main__":
-    test_K1()
+    test_prime_implicants_random()
