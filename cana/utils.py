@@ -265,24 +265,21 @@ def function_monotone(outputs, method='exact', nsamples=100, random_seed=None):
 
 def input_monotone(outputs, input_idx, activation=1):
     """
-    Determine if a given LUT is monotone.
-
-    Here we test every pair of inputs that are Hamming distance 1. (see Goldreich et al 2000)
+    Determine if a given input is activating or inhibiting in a given function.
 
     Args:
         outputs (list) : The transition outputs of the function.
 
-        method (str) :
-            'exact' - test all pairs of inputs
-            TODO: 'random' - sample pairs of inputs
+        input_idx (int) : The input to test.
 
-        nsamples (int) : when method=='random', specifies the number of samples.
+        activation (1 or -1) : Whether to test for activation or inhibition.
 
     Returns:
-        (Bool) : True if monotone.
+        (Bool) : True if monotone with respect to activation or inhibition.
 
     Example:
-        >>> is_monotone(outputs=[0,0,0,1])
+        >>> input_monotone([0,1,0,0], 0, activation=1) == False
+        >>> input_monotone([0,1,0,0], 0, activation=-1) == True
     """
 
     k = int(np.log2(len(outputs)))
