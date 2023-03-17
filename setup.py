@@ -1,5 +1,4 @@
 from setuptools import setup, find_packages
-from cana import __package__, __description__, __version__
 from Cython.Build import cythonize
 
 
@@ -11,6 +10,9 @@ def readme():
 # cythonize awesomeness
 ext_modules = ["cana/cutils.pyx", "cana/canalization/cboolean_canalization.pyx"]
 
+__package__ = 'cana'
+__description__ = u'This package implements a series of methods used to study control, canalization and redundancy in Boolean networks.'
+__version__ = '0.2.0'
 
 setup(
     name=__package__,
@@ -21,7 +23,7 @@ setup(
     classifiers=[
         'Development Status :: 4 - Beta',
         'License :: OSI Approved :: MIT License',
-        'Programming Language :: Python :: 2.7',
+        'Programming Language :: Python :: 3',
         'Intended Audience :: Science/Research',
         'Topic :: Scientific/Engineering :: Information Analysis',
     ],
@@ -43,7 +45,7 @@ setup(
         'scipy',
         'networkx',
         'pandas',
-        'cython'
+        'Cython'
     ],
     include_package_data=True,
     zip_safe=False,

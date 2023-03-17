@@ -193,6 +193,8 @@ def find_two_symbols_v2(k=1, prime_implicants=None, verbose=False, verbose_level
     """This function calculates the permutation, two-symbol (TS), list of schematas.
     This implementation considers '11' and '00' as a possible input permutation.
 
+    Finds totally symmetric groups of input variables on the maximal subsets of the one-symbol schemata.
+
     Args:
         k (int): The number of inputs.
         prime_implicants (list): The prime implicants computed.
@@ -231,73 +233,46 @@ def find_two_symbols_v2(k=1, prime_implicants=None, verbose=False, verbose_level
         n_schematas = schematas.shape[0]
         i += 1
 
-        if verbose:
-            if verbose_level == 1:
-                if (i % 500 == 0):
-                    print('>>> QUEUE: pop | A (m=%d) | Queue size: %d' % (n_schematas, len(Q)))
-            elif verbose_level > 5:
-                print('>>> QUEUE: pop | A (m=%d) | Queue size: %d' % (n_schematas, len(Q)))
-            if verbose_level > 10:
-                print(schematas)
-
         # count the number of [0's, 1's, 2's] in each column
         column_counts = _count_cols_symbols(pi_matrix=schematas, verbose=verbose, verbose_level=verbose_level)
-        if verbose and verbose_level > 10:
-            print('>>> COLUMN Schema Counts:')
-        # find the permutation groups based on column counts
+
+        # find the possible permutation groups based on column counts
         perm_groups = _check_col_counts(counts_matrix=column_counts, verbose=verbose, verbose_level=verbose_level)
 
-        if (perm_groups != -1):
-            if verbose and verbose_level > 10:
-                print('>>> There are permutable groups! Lets loop them')
+        if (perm_groups != -1): # if there are some possible permutation groups
             for x_group in perm_groups:
-                if verbose and verbose_level > 20:
-                    print('>>> x_group:', x_group)
-                    print('>>> Truncated schemata matrix:')
-                    print(schematas[:, x_group].T)
                 # find the row counts by taking the transpose of the truncated schemata list
                 row_counts = _count_cols_symbols(pi_matrix=schematas[:, x_group].T, verbose=verbose, verbose_level=verbose_level)
-                if verbose and verbose_level > 20:
-                    print('>>> ROW Schema Counts:')
-                    print(row_counts)
                 # make sure all row counts are the same
                 if not (row_counts == row_counts[0]).all():
-                    if verbose and verbose_level > 20:
-                        print('>>> row_counts are NOT the same (-1)')
-                    perm_groups = -1
+                    perm_groups = -1 # permutation groups won't work
 
-        if verbose and verbose_level > 10:
-            print(">>> Exists permutation groups?:", (perm_groups != -1))
-            print(">>> Are groups already in F''?:", ((schematas.tolist(), perm_groups) in TS))
+        # cond1 = permutation groups are still possible AND schemata subset not yet added to output
         cond1 = (perm_groups != -1) and not ((schematas.tolist(), perm_groups) in TS)
+        # cond2 = True if a valid permutation group was found
         cond2 = False
         if cond1:
-            # WARNING: it is possible for row and col counts to be the same but the schema should be split into 2 group-invariant symbols
+            # NOTE: it is possible for row and col counts to be the same but the schema should be split into 2 group-invariant symbols
             # if none of the given perm groups work on a given schema, it will start looking at subsets of the schema
             # but it should also try all partitions of each element in the perm group list because there may be 2 disjoint symmetries within the same schema with all identical row & col counts
+
+            # actually test if columns can be permuted arbitrarily in schemata subset
             allowed_perm_groups = _check_schemata_permutations(schematas, perm_groups, verbose=verbose, verbose_level=verbose_level)
             if allowed_perm_groups is not None:
                 TS.append((schematas.tolist(), allowed_perm_groups))
                 cond2 = True
 
-        # WARNING: possible that cond1 is true, but cond2 is false. The previous logic would then not parition the schema further
-        if not cond1 or not cond2:
-            if verbose and verbose_level > 10:
-                print('>>> Generate combinations of schematas (m-1) and add to Queue')
+        # NOTE: possible that cond1 is true, but cond2 is false. The previous logic would then not parition the schema further
+        # add all subsets of of schemata of size one less than before to queue
+        if not cond1 or not cond2: # no valid perm groups were found
             if schematas.shape[0] > 2:
                 for idxs_subset in itertools.combinations(np.arange(0, n_schematas), (n_schematas - 1)):
                     idxs_subset = list(idxs_subset)
                     schemata_subset = schematas[idxs_subset, :]
                     # This schemata has already been inserted onto the Queue before?
                     if schemata_subset.tostring() not in Q_history:
-                        if verbose and verbose_level > 25:
-                            print('>>> QUEUE: appending (idxs: %s)' % (idxs_subset))
-                            print(schemata_subset)
                         Q.append(schemata_subset)
                         Q_history.add(schemata_subset.tostring())
-                    else:
-                        if verbose and verbose_level > 25:
-                            print('>>> QUEUE: duplicate, skip (idxs: %s)' % (idxs_subset))
     
 
     if verbose:

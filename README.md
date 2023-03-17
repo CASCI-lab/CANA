@@ -6,6 +6,13 @@ This package implements a series of methods used to study control, canalization 
 Installation:
 -------------
 
+** Latest stable release **
+
+- from PYPI
+```
+    pip install cana
+```
+
 ** Latest development release on GitHub **
 
 Pull and install the code directly from the github [project page](https://github.com/rionbr/CANA).
@@ -16,13 +23,7 @@ Pull and install the code directly from the github [project page](https://github
 
 Please note that CANA uses Cython. For it to compile you may need to install the following:
 
-- `pip install python3-dev`
 - `pip install Cython`
-
-As well as the following system packages:
-
-- python3-distutils
-- cython
 
 Docs:
 -------
