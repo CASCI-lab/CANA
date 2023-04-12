@@ -6,6 +6,7 @@
 from cana.datasets.bools import CONTRADICTION, AND, OR, XOR, COPYx1, RULE90, RULE110
 from cana.utils import *
 from cana.boolean_node import BooleanNode
+import numpy as np
 
 
 #
@@ -606,3 +607,75 @@ def test_sensitivity_XOR():
     assert isclose(s, true_s), ("c-sensitivity(1,'forceK',3) for XOR does not match, %s != %s" % (s, true_s))
     s, true_s = n.c_sensitivity(2, 'forceK', 3), 2 / 3
     assert isclose(s, true_s), ("c-sensitivity(2,'forceK',3) for XOR does not match, %s != %s" % (s, true_s))
+
+# edge symmetry2 tests
+
+# AND
+def test_edge_symmetry2_AND():
+    """Test Edge Symmetry - AND"""
+    n = AND()
+    k_s, true_k_s = n.edge_symmetry2(op=np.mean), [3.0/4, 3.0/4]
+    assert (k_s == true_k_s), ('Input Symmetry (avg) for AND node does not match. %s != %s' % (k_s, true_k_s))
+    k_s, true_k_s = n.edge_symmetry2(op=max), [3.0/4, 3.0/4]
+    assert (k_s == true_k_s), ('Input Symmetry (max) for AND node does not match. %s != %s' % (k_s, true_k_s))
+
+    k_s, true_k_s = n.edge_symmetry2(op=np.mean, sameSymbolSymmetry=True), [1.0, 1.0]
+    assert (k_s == true_k_s), ('Input Symmetry (same symbol) (avg) for AND node does not match. %s != %s' % (k_s, true_k_s))
+    k_s, true_k_s = n.edge_symmetry2(op=max, sameSymbolSymmetry=True), [1.0, 1.0]
+    assert (k_s == true_k_s), ('Input Symmetry (same symbol) (max) for AND node does not match. %s != %s' % (k_s, true_k_s))
+
+# XOR
+def test_edge_symmetry2_XOR():
+    """Test Edge Symmetry - XOR"""
+    n = XOR()
+    k_s, true_k_s = n.edge_symmetry2(op=np.mean), [0.5, 0.5]
+    assert (k_s == true_k_s), ('Input Symmetry (avg) for XOR node does not match. %s != %s' % (k_s, true_k_s))
+    k_s, true_k_s = n.edge_symmetry2(op=max), [0.5, 0.5]
+    assert (k_s == true_k_s), ('Input Symmetry (max) for XOR node does not match. %s != %s' % (k_s, true_k_s))
+
+    k_s, true_k_s = n.edge_symmetry2(op=np.mean, sameSymbolSymmetry=True), [1, 1]
+    assert (k_s == true_k_s), ('Input Symmetry (avg) for XOR node does not match. %s != %s' % (k_s, true_k_s))
+    k_s, true_k_s = n.edge_symmetry2(op=max, sameSymbolSymmetry=True), [1, 1]
+    assert (k_s == true_k_s), ('Input Symmetry (max) for XOR node does not match. %s != %s' % (k_s, true_k_s))
+
+# COPYx1
+def test_edge_symmetry2_COPYx1():
+    """Test Edge Symmetry - COPYx1"""
+    n = COPYx1()
+    k_s, true_k_s = n.edge_symmetry2(op=np.mean), [0., 0.]
+    assert (k_s == true_k_s), ('Input Symmetry (avg) for COPYx1 node does not match. %s != %s' % (k_s, true_k_s))
+    k_s, true_k_s = n.edge_symmetry2(op=max), [0., 0.]
+    assert (k_s == true_k_s), ('Input Symmetry (max) for COPYx1 node does not match. %s != %s' % (k_s, true_k_s))
+
+    k_s, true_k_s = n.edge_symmetry2(op=np.mean, sameSymbolSymmetry=True), [0., 0.]
+    assert (k_s == true_k_s), ('Input Symmetry (avg) for COPYx1 node does not match. %s != %s' % (k_s, true_k_s))
+    k_s, true_k_s = n.edge_symmetry2(op=max, sameSymbolSymmetry=True), [0., 0.]
+    assert (k_s == true_k_s), ('Input Symmetry (max) for COPYx1 node does not match. %s != %s' % (k_s, true_k_s))
+
+# RULE90
+def test_edge_symmetry2_RULE90():
+    """Test Edge Symmetry - RULE90"""
+    n = RULE90()
+    k_s, true_k_s = n.edge_symmetry2(op=np.mean), [0.5, 0, 0.5]
+    assert (k_s == true_k_s), ('Input Symmetry (avg) for RULE90 node does not match. %s != %s' % (k_s, true_k_s))
+    k_s, true_k_s = n.edge_symmetry2(op=max), [0.5, 0, 0.5]
+    assert (k_s == true_k_s), ('Input Symmetry (max) for RULE90 node does not match. %s != %s' % (k_s, true_k_s))
+
+    k_s, true_k_s = n.edge_symmetry2(op=np.mean, sameSymbolSymmetry=True), [1.0, 0.0, 1.0]
+    assert (k_s == true_k_s), ('Input Symmetry (avg) for RULE90 node does not match. %s != %s' % (k_s, true_k_s))
+    k_s, true_k_s = n.edge_symmetry2(op=max, sameSymbolSymmetry=True), [1.0, 0.0, 1.0]
+    assert (k_s == true_k_s), ('Input Symmetry (max) for RULE90 node does not match. %s != %s' % (k_s, true_k_s))
+
+# SBF from Cell cycle transcription by coupled CDK
+def test_edge_symmetry2_SBF():
+    """Test Edge Symmetry - SBF -- cell cycle transcription by coupled CDK"""
+    n = BooleanNode(outputs=list("0111" + "0"*12), k=4)
+    k_s, true_k_s = n.edge_symmetry2(op=np.mean), [0.65625, 0.65625, 0.1875, 0.1875]
+    assert (k_s == true_k_s), ('Input Symmetry (avg) for SBF node does not match. %s != %s' % (k_s, true_k_s))
+    k_s, true_k_s = n.edge_symmetry2(op=max), [0.75, 0.75, 0.1875, 0.1875]
+    assert (k_s == true_k_s), ('Input Symmetry (max) for SBF node does not match. %s != %s' % (k_s, true_k_s))
+
+    k_s, true_k_s = n.edge_symmetry2(op=np.mean, sameSymbolSymmetry=True), [1.0]*4
+    assert (k_s == true_k_s), ('Input Symmetry (avg) for SBF node does not match. %s != %s' % (k_s, true_k_s))
+    k_s, true_k_s = n.edge_symmetry2(op=max, sameSymbolSymmetry=True), [1.0]*4
+    assert (k_s == true_k_s), ('Input Symmetry (max) for SBF node does not match. %s != %s' % (k_s, true_k_s))

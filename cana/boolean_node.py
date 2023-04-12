@@ -152,10 +152,6 @@ class BooleanNode(object):
         See also:
             :func:`effective_connectivity`, :func:`input_symmetry`, :func:`edge_redundancy`.
         """
-        # Canalization can only occur when k>= 2 (incorrect: k=1 has redundancy if constant function)
-        # NOTE: commented out by Austin Marcus 8/10/22
-        # if self.k < 2:
-        #     return 0.0
 
         self._check_compute_canalization_variables(pi_coverage=True)
 
@@ -304,12 +300,36 @@ class BooleanNode(object):
         # Generate a per input coverage
         # ex: {0: {'11': [], '10': [], '00': [], '01': []}, 1: {'11': [], '10': [], '00': [], '01': []}}
         # ts_input_coverage = { input : { binstate: [ idxs.count(input) for schema,reps,sms in tss for idxs in reps+sms ] for binstate,tss in self._ts_coverage.items() } for input in range(self.k) }
-        ts_input_coverage = {input: {binstate: [len(idxs) if input in idxs else 0 for schema, reps, sms in tss for idxs in reps + sms] for binstate, tss in self._ts_coverage.items()} for input in range(self.k)}
+        ts_input_coverage = {input: {binstate: [len(idxs) if input in idxs else 0
+                                        for schema, reps, sms in tss
+                                        for idxs in reps + sms]
+                                        for binstate, tss in self._ts_coverage.items()}
+                                        for input in range(self.k)}
+        ts_input_coverage2 = {}
+        for binstate, tss in self._ts_coverage.items():
+        #     print(f"binstate: {binstate}")
+        #     print(f"tss: {tss}")
+            for input in range(self.k):
+                l = []
+                if input not in ts_input_coverage2.keys():
+                    ts_input_coverage2[input] = {}
+                for schema, reps, sms in tss:
+        #             print(f"reps: {reps}")
+                    for idxs in reps+sms:
+        #                 print(f"idxs: {idxs}")
+                        if input in idxs:
+                            l.append(len(idxs))
+                        else:
+                            l.append(0)
+                ts_input_coverage2[input][binstate] = l
+        # print(ts_input_coverage)
+        # print(ts_input_coverage2)
 
         # Loop ever input node
         for input, binstates in ts_input_coverage.items():
             # {'numstate': [number-of-ts's for each match], '10': [0, 2] ...}
             numstates = {binstate_to_statenum(binstate): permuts for binstate, permuts in binstates.items()}
+        #     print(numstates)
 
             # A triplet of (min, mean, max) values
             if bound in ['lower', 'mean', 'upper']:
@@ -331,6 +351,39 @@ class BooleanNode(object):
             symmetries.append(s_i)
 
         return symmetries  # s_i
+
+    def edge_symmetry2(self, op=np.mean, sameSymbolSymmetry=False):
+        if self.k < 2:
+            return [0.0]
+        self._check_compute_canalization_variables(ts_coverage=True)
+
+        # get mapping from input to binstates to whether or not that input has a symmetric dot
+        ts_input_coverage2 = {}
+        for binstate, tss in self._ts_coverage.items():
+            for input in range(self.k):
+                l = []
+                if input not in ts_input_coverage2.keys():
+                    ts_input_coverage2[input] = {}
+                for schema, reps, sms in tss:
+                    symGroups = reps if not sameSymbolSymmetry else reps + sms
+                    if len(symGroups) == 0:
+                        symGroups = []
+                    else: # flatten
+                        symGroups = [i for group in symGroups for i in group]
+                    l.append(1 if input in symGroups else 0)
+                ts_input_coverage2[input][binstate] = l
+
+        # compute aggregation of above depending on operator
+        out = []
+        for input in ts_input_coverage2:
+            l = []
+            for binstate in ts_input_coverage2[input]:
+                l.append(op(ts_input_coverage2[input][binstate]))
+            out.append(np.mean(l))
+        return out
+
+    def input_symmetry2(self, norm=False, **kwargs):
+        return sum(self.edge_symmetry2(op=np.mean, **kwargs)) / (2**self.k if norm else 1)
 
     def input_symmetry(self, bound='upper', norm=True):
         r"""The Input Symmetry is a measure of permutation redundancy.
