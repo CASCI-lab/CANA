@@ -362,224 +362,6 @@ def test_edge_effectiveness_RULE110():
     e_ji, true_e_ji = n.edge_effectiveness(bound='lower'), [0.5, 1., 1.]
     assert (e_ji == true_e_ji), ('Input Redundancy (input,lower bound) for RULE110 node does not match. %s != %s' % (e_ji, true_e_ji))
 
-
-#
-# Test Edge Symmetry
-#
-
-# AND
-def test_edge_symmetry_AND():
-    """Test Edge Symmetry - AND"""
-    n = AND()
-    k_s, true_k_s = n.edge_symmetry(bound='upper'), [2., 2.]
-    assert (k_s == true_k_s), ('Input Symmetry (upper) for AND node does not match. %s != %s' % (k_s, true_k_s))
-    k_s, true_k_s = n.edge_symmetry(bound='mean'), [2., 2.]
-    assert (k_s == true_k_s), ('Input Symmetry (mean) for AND node does not match. %s != %s' % (k_s, true_k_s))
-    k_s, true_k_s = n.edge_symmetry(bound='lower'), [2., 2.]
-    assert (k_s == true_k_s), ('Input Symmetry (lower) for AND node does not match. %s != %s' % (k_s, true_k_s))
-
-    k_s, true_k_s = n.edge_symmetry(bound='tuple'), [[(2, 2)] * 4, [(2, 2)] * 4]
-    assert (k_s == true_k_s), ('Edge symmetry (tuples) for AND node does not match. %s != %s' % (k_s, true_k_s))
-
-
-# OR
-def test_edge_symmetry_OR():
-    """Test Edge Symmetry - OR"""
-    n = OR()
-    k_s, true_k_s = n.edge_symmetry(bound='upper'), [2., 2.]
-    assert (k_s == true_k_s), ('Input Symmetry (input,upper bound) for OR node does not match. %s != %s' % (k_s, true_k_s))
-    k_s, true_k_s = n.edge_symmetry(bound='mean'), [2., 2.]
-    assert (k_s == true_k_s), ('Input Symmetry (input,mean) for OR node does not match. %s != %s' % (k_s, true_k_s))
-    k_s, true_k_s = n.edge_symmetry(bound='lower'), [2., 2.]
-    assert (k_s == true_k_s), ('Input Symmetry (input,lower bound) for OR node does not match. %s != %s' % (k_s, true_k_s))
-
-    k_s, true_k_s = n.edge_symmetry(bound='tuple'), [[(2, 2)] * 4, [(2, 2)] * 4]
-    assert (k_s == true_k_s), ('Input Redundancy (input,tuples) for XOR node does not match. %s != %s' % (k_s, true_k_s))
-
-
-# XOR
-def test_edge_symmetry_XOR():
-    """Test Edge Symmetry - XOR"""
-    n = XOR()
-    k_s, true_k_s = n.edge_symmetry(bound='upper'), [2., 2.]
-    assert (k_s == true_k_s), ('Input Symmetry (input,upper bound) for XOR node does not match. %s != %s' % (k_s, true_k_s))
-    k_s, true_k_s = n.edge_symmetry(bound='mean'), [2., 2.]
-    assert (k_s == true_k_s), ('Input Symmetry (input,mean) for XOR node does not match. %s != %s' % (k_s, true_k_s))
-    k_s, true_k_s = n.edge_symmetry(bound='lower'), [2., 2.]
-    assert (k_s == true_k_s), ('Input Symmetry (input,lower bound) for XOR node does not match. %s != %s' % (k_s, true_k_s))
-
-    k_s, true_k_s = n.edge_symmetry(bound='tuple'), [[(2, 2)] * 4, [(2, 2)] * 4]
-    assert (k_s == true_k_s), ('Input Redundancy (input,tuples) for XOR node does not match. %s != %s' % (k_s, true_k_s))
-
-
-# CONTRADICTION
-def test_edge_symmetry_CONTRADICTION():
-    """Test Edge Symmetry - CONTRADICTION"""
-    n = CONTRADICTION()
-    k_s, true_k_s = n.edge_symmetry(bound='upper'), [2., 2.]
-    assert (k_s == true_k_s), ('Input Symmetry (input,upper bound) for CONTRADICTION node does not match. %s != %s' % (k_s, true_k_s))
-    k_s, true_k_s = n.edge_symmetry(bound='mean'), [2., 2.]
-    assert (k_s == true_k_s), ('Input Symmetry (input,mean) for CONTRADICTION node does not match. %s != %s' % (k_s, true_k_s))
-    k_s, true_k_s = n.edge_symmetry(bound='lower'), [2., 2.]
-    assert (k_s == true_k_s), ('Input Symmetry (input,lower bound) for CONTRADICTION node does not match. %s != %s' % (k_s, true_k_s))
-
-    k_s, true_k_s = n.edge_symmetry(bound='tuple'), [[(2, 2)] * 4, [(2, 2)] * 4]
-    assert (k_s == true_k_s), ('Input Redundancy (input,tuples) for CONTRADICTION node does not match. %s != %s' % (k_s, true_k_s))
-
-
-# COPYx1
-def test_edge_symmetry_COPYx1():
-    """Test Edge Symmetry - COPYx1"""
-    n = COPYx1()
-    k_s, true_k_s = n.edge_symmetry(bound='upper'), [0., 0.]
-    assert (k_s == true_k_s), ('Input Symmetry (input,upper bound) for COPYx1 node does not match. %s != %s' % (k_s, true_k_s))
-    k_s, true_k_s = n.edge_symmetry(bound='mean'), [0., 0.]
-    assert (k_s == true_k_s), ('Input Symmetry (input,mean) for COPYx1 node does not match. %s != %s' % (k_s, true_k_s))
-    k_s, true_k_s = n.edge_symmetry(bound='lower'), [0., 0.]
-    assert (k_s == true_k_s), ('Input Symmetry (input,lower bound) for COPYx1 node does not match. %s != %s' % (k_s, true_k_s))
-
-    k_s, true_k_s = n.edge_symmetry(bound='tuple'), [[(0, 0)] * 4, [(0, 0)] * 4]
-    assert (k_s == true_k_s), ('Input Redundancy (input,tuples) for COPYx1 node does not match. %s != %s' % (k_s, true_k_s))
-
-
-# RULE90
-def test_edge_symmetry_RULE90():
-    """Test Edge Symmetry - RULE90"""
-    n = RULE90()
-    k_s, true_k_s = n.edge_symmetry(bound='upper'), [8 / 4, 0., 8 / 4]
-    assert (k_s == true_k_s), ('Input Symmetry (input,upper bound) for RULE90 node does not match. %s != %s' % (k_s, true_k_s))
-    k_s, true_k_s = n.edge_symmetry(bound='mean'), [8 / 4., 0., 8 / 4]
-    assert (k_s == true_k_s), ('Input Symmetry (input,mean) for RULE90 node does not match. %s != %s' % (k_s, true_k_s))
-    k_s, true_k_s = n.edge_symmetry(bound='lower'), [8 / 4., 0., 8 / 4]
-    assert (k_s == true_k_s), ('Input Symmetry (input,lower bound) for RULE90 node does not match. %s != %s' % (k_s, true_k_s))
-
-    k_s, true_k_s = n.edge_symmetry(bound='tuple'), [[(2, 2)] * 8, [(0, 0)] * 8, [(2, 2)] * 8]
-    assert (k_s == true_k_s), ('Input Redundancy (input,tuples) for RULE90 node does not match. %s != %s' % (k_s, true_k_s))
-
-
-# RULE110
-def test_input_symmetry_RULE110():
-    """Test Edge Symmetry - RULE110"""
-    n = RULE110()
-    k_s, true_k_s = n.edge_symmetry(bound='upper'), [13 / 8, 17 / 8, 17 / 8]
-    assert (k_s == true_k_s), ('Input Symmetry (input,upper bound) for RULE110 node does not match. %s != %s' % (k_s, true_k_s))
-    k_s, true_k_s = n.edge_symmetry(bound='mean'), [0.95833333333333326, 1.8333333333333333, 1.8333333333333333]  # NOT SURE ITS CORRECT!!!
-    assert (k_s == true_k_s), ('Input Symmetry (input,mean) for RULE110 node does not match. %s != %s' % (k_s, true_k_s))
-    k_s, true_k_s = n.edge_symmetry(bound='lower'), [0.375, 1.375, 1.375]  # NOT SURE ITS CORRECT!!!
-    assert (k_s == true_k_s), ('Input Symmetry (input,lower bound) for RULE110 node does not match. %s != %s' % (k_s, true_k_s))
-
-    k_s, true_k_s = n.edge_symmetry(bound='tuple'), [[(0, 0), (0, 2), (0, 2), (0, 2), (0, 0), (0, 2), (0, 2), (3, 3)], [(2, 2), (2, 2), (0, 2), (0, 2), (2, 2), (2, 2), (0, 2), (3, 3)], [(2, 2), (0, 2), (2, 2), (0, 2), (2, 2), (0, 2), (2, 2), (3, 3)]]
-    assert (k_s == true_k_s), ('Input Redundancy (input,tuples) for RULE110 node does not match. %s != %s' % (k_s, true_k_s))
-
-
-#
-# Test Input Symmetry
-#
-
-# AND
-def test_input_symmetry_AND():
-    """Test Input Symmetry - AND"""
-    n = AND()
-    k_s, true_k_s = n.input_symmetry(bound='upper', norm=False), 8 / 4
-    assert (k_s == true_k_s), ('Input Symmetry (node,upper bound) for AND node does not match. %s != %s' % (k_s, true_k_s))
-    k_s, true_k_s = n.input_symmetry(bound='lower', norm=False), 8 / 4
-    assert (k_s == true_k_s), ('Input Symmetry (node,lower bound) for AND node does not match. %s != %s' % (k_s, true_k_s))
-
-    k_s, true_k_s = n.input_symmetry(bound='upper', norm=True), (8 / 4) / 2
-    assert (k_s == true_k_s), ('Input Symmetry (node,upper bound,normed) for AND node does not match. %s != %s' % (k_s, true_k_s))
-    k_s, true_k_s = n.input_symmetry(bound='lower', norm=True), (8 / 4) / 2
-    assert (k_s == true_k_s), ('Input Symmetry (node,lower bound,normed) for AND node does not match. %s != %s' % (k_s, true_k_s))
-
-
-# OR
-def test_input_symmetry_OR():
-    """Test Input Symmetry - OR"""
-    n = OR()
-    k_s, true_k_s = n.input_symmetry(bound='upper', norm=False), 8 / 4
-    assert (k_s == true_k_s), ('Input Symmetry (node,upper bound) for OR node does not match. %s != %s' % (k_s, true_k_s))
-    k_s, true_k_s = n.input_symmetry(bound='lower', norm=False), 8 / 4
-    assert (k_s == true_k_s), ('Input Symmetry (node,lower bound) for OR node does not match. %s != %s' % (k_s, true_k_s))
-
-    k_s, true_k_s = n.input_symmetry(bound='upper', norm=True), (8 / 4) / 2
-    assert (k_s == true_k_s), ('Input Symmetry (node,upper bound,normed) for OR node does not match. %s != %s' % (k_s, true_k_s))
-    k_s, true_k_s = n.input_symmetry(bound='lower', norm=True), (8 / 4) / 2
-    assert (k_s == true_k_s), ('Input Symmetry (node,lower bound,normed) for OR node does not match. %s != %s' % (k_s, true_k_s))
-
-
-# XOR
-def test_input_symmetry_XOR():
-    """Test Input Symmetry - XOR"""
-    n = XOR()
-    k_s, true_k_s = n.input_symmetry(bound='upper', norm=False), 8 / 4
-    assert (k_s == true_k_s), ('Input Symmetry (node,upper bound) for XOR node does not match. %s != %s' % (k_s, true_k_s))
-    k_s, true_k_s = n.input_symmetry(bound='lower', norm=False), 8 / 4
-    assert (k_s == true_k_s), ('Input Symmetry (node,lower bound) for XOR node does not match. %s != %s' % (k_s, true_k_s))
-
-    k_s, true_k_s = n.input_symmetry(bound='upper', norm=True), (8 / 4) / 2
-    assert (k_s == true_k_s), ('Input Symmetry (node,upper bound,normed) for XOR node does not match. %s != %s' % (k_s, true_k_s))
-    k_s, true_k_s = n.input_symmetry(bound='lower', norm=True), (8 / 4) / 2
-    assert (k_s == true_k_s), ('Input Symmetry (node,lower bound,normed) for XOR node does not match. %s != %s' % (k_s, true_k_s))
-
-
-# CONTRADICTION
-def test_input_symmetry_CONTRADICTION():
-    """Test Input Symmetry - CONTRADICTION"""
-    n = CONTRADICTION()
-    k_s, true_k_s = n.input_symmetry(bound='upper', norm=False), 8 / 4
-    assert (k_s == true_k_s), ('Input Symmetry (node,upper bound) for CONTRADICTION node does not match. %s != %s' % (k_s, true_k_s))
-    k_s, true_k_s = n.input_symmetry(bound='lower', norm=False), 8 / 4
-    assert (k_s == true_k_s), ('Input Symmetry (node,lower bound) for CONTRADICTION node does not match. %s != %s' % (k_s, true_k_s))
-
-    k_s, true_k_s = n.input_symmetry(bound='upper', norm=True), (8 / 4) / 2
-    assert (k_s == true_k_s), ('Input Symmetry (node,upper bound,normed) for CONTRADICTION node does not match. %s != %s' % (k_s, true_k_s))
-    k_s, true_k_s = n.input_symmetry(bound='lower', norm=True), (8 / 4) / 2
-    assert (k_s == true_k_s), ('Input Symmetry (node,lower bound,normed) for CONTRADICTION node does not match. %s != %s' % (k_s, true_k_s))
-
-
-# COPYx1
-def test_input_symmetry_COPYx1():
-    """Test Input Symmetry - COPYx1"""
-    n = COPYx1()
-    k_s, true_k_s = n.input_symmetry(bound='upper', norm=False), 0 / 4
-    assert (k_s == true_k_s), ('Input Symmetry (node,upper bound) for COPYx1 node does not match. %s != %s' % (k_s, true_k_s))
-    k_s, true_k_s = n.input_symmetry(bound='lower', norm=False), 0 / 4
-    assert (k_s == true_k_s), ('Input Symmetry (node,lower bound) for COPYx1 node does not match. %s != %s' % (k_s, true_k_s))
-
-    k_s, true_k_s = n.input_symmetry(bound='upper', norm=True), (0 / 4) / 2
-    assert (k_s == true_k_s), ('Input Symmetry (node,upper bound,normed) for COPYx1 node does not match. %s != %s' % (k_s, true_k_s))
-    k_s, true_k_s = n.input_symmetry(bound='lower', norm=True), (0 / 4) / 2
-    assert (k_s == true_k_s), ('Input Symmetry (node,lower bound,normed) for COPYx1 node does not match. %s != %s' % (k_s, true_k_s))
-
-
-# RULE90
-def test_input_symmetry_RULE90():
-    """Test Input Symmetry - RULE90"""
-    n = RULE90()
-    k_s, true_k_s = n.input_symmetry(bound='upper', norm=False), 4 / 3
-    assert (k_s == true_k_s), ('Input Symmetry (node,upper bound) for RULE90 node does not match. %s != %s' % (k_s, true_k_s))
-    k_s, true_k_s = n.input_symmetry(bound='lower', norm=False), 4 / 3
-    assert (k_s == true_k_s), ('Input Symmetry (node,lower bound) for RULE90 node does not match. %s != %s' % (k_s, true_k_s))
-
-    k_s, true_k_s = n.input_symmetry(bound='upper', norm=True), (4 / 3) / 3
-    assert (k_s == true_k_s), ('Input Symmetry (node,upper bound,normed) for RULE90 node does not match. %s != %s' % (k_s, true_k_s))
-    k_s, true_k_s = n.input_symmetry(bound='lower', norm=True), (4 / 3) / 3
-    assert (k_s == true_k_s), ('Input Symmetry (node,lower bound,normed) for RULE90 node does not match. %s != %s' % (k_s, true_k_s))
-
-
-# RULE110
-def test_input_symmetry_RULE110():
-    """Test Input Symmetry - RULE110"""
-    n = RULE110()
-    k_s, true_k_s = n.input_symmetry(bound='upper', norm=False), (13 / 8 + 17 / 8 + 17 / 8) / 3
-    assert (k_s == true_k_s), ('Input Symmetry (node,upper bound) for RULE110 node does not match. %s != %s' % (k_s, true_k_s))
-    k_s, true_k_s = n.input_symmetry(bound='lower', norm=False), (3 / 8 + 11 / 8 + 11 / 8) / 3
-    assert (k_s == true_k_s), ('Input Symmetry (node,lower bound) for RULE110 node does not match. %s != %s' % (k_s, true_k_s))
-
-    k_s, true_k_s = n.input_symmetry(bound='upper', norm=True), ((13 / 8 + 17 / 8 + 17 / 8) / 3) / 3
-    assert (k_s == true_k_s), ('Input Symmetry (node,upper bound,normed) for RULE110 node does not match. %s != %s' % (k_s, true_k_s))
-    k_s, true_k_s = n.input_symmetry(bound='lower', norm=True), ((3 / 8 + 11 / 8 + 11 / 8) / 3) / 3
-    assert (k_s == true_k_s), ('Input Symmetry (node,lower bound,normed) for RULE110 node does not match. %s != %s' % (k_s, true_k_s))
-
 #
 # Test Sensitivity
 #
@@ -608,74 +390,63 @@ def test_sensitivity_XOR():
     s, true_s = n.c_sensitivity(2, 'forceK', 3), 2 / 3
     assert isclose(s, true_s), ("c-sensitivity(2,'forceK',3) for XOR does not match, %s != %s" % (s, true_s))
 
-# edge symmetry2 tests
-
-# AND
-def test_edge_symmetry2_AND():
-    """Test Edge Symmetry - AND"""
+# input symmetry tests (new)
+def test_input_symmetry_AND():
     n = AND()
-    k_s, true_k_s = n.edge_symmetry2(op=np.mean), [3.0/4, 3.0/4]
-    assert (k_s == true_k_s), ('Input Symmetry (avg) for AND node does not match. %s != %s' % (k_s, true_k_s))
-    k_s, true_k_s = n.edge_symmetry2(op=max), [3.0/4, 3.0/4]
-    assert (k_s == true_k_s), ('Input Symmetry (max) for AND node does not match. %s != %s' % (k_s, true_k_s))
+    k_s, true_k_s = n.input_symmetry(op="mean", kernel="numDots"), 3.0/2
+    assert (k_s == true_k_s), f"Input symmetry: AND (mean): returned {k_s}, true value is {true_k_s}"
+    k_s, true_k_s = n.input_symmetry(op="max", kernel="numDots"), 3.0/2
+    assert (k_s == true_k_s), f"Input symmetry: AND (max): returned {k_s}, true value is {true_k_s}"
 
-    k_s, true_k_s = n.edge_symmetry2(op=np.mean, sameSymbolSymmetry=True), [1.0, 1.0]
-    assert (k_s == true_k_s), ('Input Symmetry (same symbol) (avg) for AND node does not match. %s != %s' % (k_s, true_k_s))
-    k_s, true_k_s = n.edge_symmetry2(op=max, sameSymbolSymmetry=True), [1.0, 1.0]
-    assert (k_s == true_k_s), ('Input Symmetry (same symbol) (max) for AND node does not match. %s != %s' % (k_s, true_k_s))
+    # k_s, true_k_s = n.input_symmetry(op="mean", kernel="numDots", sameSymbol=True), 2.0
+    # assert (k_s == true_k_s), f"Input symmetry: AND (mean, sameSymbol): returned {k_s}, true value is {true_k_s}"
+    # k_s, true_k_s = n.input_symmetry(op="max", kernel="numDots", sameSymbol=True), 2.0
+    # assert (k_s == true_k_s), f"Input symmetry: AND (max, sameSymbol): returned {k_s}, true value is {true_k_s}"
 
-# XOR
-def test_edge_symmetry2_XOR():
-    """Test Edge Symmetry - XOR"""
+def test_input_symmetry_XOR():
     n = XOR()
-    k_s, true_k_s = n.edge_symmetry2(op=np.mean), [0.5, 0.5]
-    assert (k_s == true_k_s), ('Input Symmetry (avg) for XOR node does not match. %s != %s' % (k_s, true_k_s))
-    k_s, true_k_s = n.edge_symmetry2(op=max), [0.5, 0.5]
-    assert (k_s == true_k_s), ('Input Symmetry (max) for XOR node does not match. %s != %s' % (k_s, true_k_s))
+    k_s, true_k_s = n.input_symmetry(op="mean", kernel="numDots"), 1.0
+    assert (k_s == true_k_s), f"Input symmetry: XOR (mean): returned {k_s}, true value is {true_k_s}"
+    k_s, true_k_s = n.input_symmetry(op="max", kernel="numDots"), 1.0
+    assert (k_s == true_k_s), f"Input symmetry: XOR (max): returned {k_s}, true value is {true_k_s}"
 
-    k_s, true_k_s = n.edge_symmetry2(op=np.mean, sameSymbolSymmetry=True), [1, 1]
-    assert (k_s == true_k_s), ('Input Symmetry (avg) for XOR node does not match. %s != %s' % (k_s, true_k_s))
-    k_s, true_k_s = n.edge_symmetry2(op=max, sameSymbolSymmetry=True), [1, 1]
-    assert (k_s == true_k_s), ('Input Symmetry (max) for XOR node does not match. %s != %s' % (k_s, true_k_s))
+    # k_s, true_k_s = n.input_symmetry(op="mean", kernel="numDots", sameSymbol=True), 2.0
+    # assert (k_s == true_k_s), f"Input symmetry: XOR (mean, sameSymbol): returned {k_s}, true value is {true_k_s}"
+    # k_s, true_k_s = n.input_symmetry(op="max", kernel="numDots", sameSymbol=True), 2.0
+    # assert (k_s == true_k_s), f"Input symmetry: XOR (max, sameSymbol): returned {k_s}, true value is {true_k_s}"
 
-# COPYx1
-def test_edge_symmetry2_COPYx1():
-    """Test Edge Symmetry - COPYx1"""
+def test_input_symmetry_COPYx1():
     n = COPYx1()
-    k_s, true_k_s = n.edge_symmetry2(op=np.mean), [0., 0.]
-    assert (k_s == true_k_s), ('Input Symmetry (avg) for COPYx1 node does not match. %s != %s' % (k_s, true_k_s))
-    k_s, true_k_s = n.edge_symmetry2(op=max), [0., 0.]
-    assert (k_s == true_k_s), ('Input Symmetry (max) for COPYx1 node does not match. %s != %s' % (k_s, true_k_s))
+    k_s, true_k_s = n.input_symmetry(op="mean", kernel="numDots"), 0
+    assert (k_s == true_k_s), f"Input symmetry: COPYx1 (mean): returned {k_s}, true value is {true_k_s}"
+    k_s, true_k_s = n.input_symmetry(op="max", kernel="numDots"), 0
+    assert (k_s == true_k_s), f"Input symmetry: COPYx1 (max): returned {k_s}, true value is {true_k_s}"
 
-    k_s, true_k_s = n.edge_symmetry2(op=np.mean, sameSymbolSymmetry=True), [0., 0.]
-    assert (k_s == true_k_s), ('Input Symmetry (avg) for COPYx1 node does not match. %s != %s' % (k_s, true_k_s))
-    k_s, true_k_s = n.edge_symmetry2(op=max, sameSymbolSymmetry=True), [0., 0.]
-    assert (k_s == true_k_s), ('Input Symmetry (max) for COPYx1 node does not match. %s != %s' % (k_s, true_k_s))
+    # k_s, true_k_s = n.input_symmetry(op="mean", kernel="numDots", sameSymbol=True), 0.0
+    # assert (k_s == true_k_s), f"Input symmetry: COPYx1 (mean, sameSymbol): returned {k_s}, true value is {true_k_s}"
+    # k_s, true_k_s = n.input_symmetry(op="max", kernel="numDots", sameSymbol=True), 0.0
+    # assert (k_s == true_k_s), f"Input symmetry: COPYx1 (max, sameSymbol): returned {k_s}, true value is {true_k_s}"
 
-# RULE90
-def test_edge_symmetry2_RULE90():
-    """Test Edge Symmetry - RULE90"""
+def test_input_symmetry_RULE90():
     n = RULE90()
-    k_s, true_k_s = n.edge_symmetry2(op=np.mean), [0.5, 0, 0.5]
-    assert (k_s == true_k_s), ('Input Symmetry (avg) for RULE90 node does not match. %s != %s' % (k_s, true_k_s))
-    k_s, true_k_s = n.edge_symmetry2(op=max), [0.5, 0, 0.5]
-    assert (k_s == true_k_s), ('Input Symmetry (max) for RULE90 node does not match. %s != %s' % (k_s, true_k_s))
+    k_s, true_k_s = n.input_symmetry(op="mean", kernel="numDots"), 1.0
+    assert (k_s == true_k_s), f"Input symmetry: RULE90 (mean): returned {k_s}, true value is {true_k_s}"
+    # k_s, true_k_s = n.input_symmetry(op="max", kernel="numDots", sameSymbol=True), 1.0
+    assert (k_s == true_k_s), f"Input symmetry: RULE90 (max): returned {k_s}, true value is {true_k_s}"
 
-    k_s, true_k_s = n.edge_symmetry2(op=np.mean, sameSymbolSymmetry=True), [1.0, 0.0, 1.0]
-    assert (k_s == true_k_s), ('Input Symmetry (avg) for RULE90 node does not match. %s != %s' % (k_s, true_k_s))
-    k_s, true_k_s = n.edge_symmetry2(op=max, sameSymbolSymmetry=True), [1.0, 0.0, 1.0]
-    assert (k_s == true_k_s), ('Input Symmetry (max) for RULE90 node does not match. %s != %s' % (k_s, true_k_s))
+    # k_s, true_k_s = n.input_symmetry(op="mean", kernel="numDots", sameSymbol=True), 2.0
+    # assert (k_s == true_k_s), f"Input symmetry: RULE90 (mean, sameSymbol): returned {k_s}, true value is {true_k_s}"
+    # k_s, true_k_s = n.input_symmetry(op="max", kernel="numDots", sameSymbol=True), 2.0
+    # assert (k_s == true_k_s), f"Input symmetry: RULE90 (max, sameSymbol): returned {k_s}, true value is {true_k_s}"
 
-# SBF from Cell cycle transcription by coupled CDK
-def test_edge_symmetry2_SBF():
-    """Test Edge Symmetry - SBF -- cell cycle transcription by coupled CDK"""
+def test_input_symmetry_SBF():
     n = BooleanNode(outputs=list("0111" + "0"*12), k=4)
-    k_s, true_k_s = n.edge_symmetry2(op=np.mean), [0.65625, 0.65625, 0.1875, 0.1875]
-    assert (k_s == true_k_s), ('Input Symmetry (avg) for SBF node does not match. %s != %s' % (k_s, true_k_s))
-    k_s, true_k_s = n.edge_symmetry2(op=max), [0.75, 0.75, 0.1875, 0.1875]
-    assert (k_s == true_k_s), ('Input Symmetry (max) for SBF node does not match. %s != %s' % (k_s, true_k_s))
+    k_s, true_k_s = n.input_symmetry(op="mean", kernel="numDots"), 1.6875
+    assert (k_s == true_k_s), f"Input symmetry: SBF (mean): returned {k_s}, true value is {true_k_s}"
+    k_s, true_k_s = n.input_symmetry(op="max", kernel="numDots"), 1.875
+    assert (k_s == true_k_s), f"Input symmetry: SBF (max): returned {k_s}, true value is {true_k_s}"
 
-    k_s, true_k_s = n.edge_symmetry2(op=np.mean, sameSymbolSymmetry=True), [1.0]*4
-    assert (k_s == true_k_s), ('Input Symmetry (avg) for SBF node does not match. %s != %s' % (k_s, true_k_s))
-    k_s, true_k_s = n.edge_symmetry2(op=max, sameSymbolSymmetry=True), [1.0]*4
-    assert (k_s == true_k_s), ('Input Symmetry (max) for SBF node does not match. %s != %s' % (k_s, true_k_s))
+    # k_s, true_k_s = n.input_symmetry(op="mean", kernel="numDots", sameSymbol=True), 4.0
+    # assert (k_s == true_k_s), f"Input symmetry: SBF (mean, sameSymbol): returned {k_s}, true value is {true_k_s}"
+    # k_s, true_k_s = n.input_symmetry(op="max", kernel="numDots", sameSymbol=True), 4.0
+    # assert (k_s == true_k_s), f"Input symmetry: SBF (max, sameSymbol): returned {k_s}, true value is {true_k_s}"

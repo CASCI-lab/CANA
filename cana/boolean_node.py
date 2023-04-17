@@ -268,161 +268,45 @@ class BooleanNode(object):
         e_i = [1.0 - x_i for x_i in self.edge_redundancy(bound=bound)]
         return e_i
 
-    def edge_symmetry(self, bound='upper'):
-        r"""Edge Symmetry is a measure of permutation redundancy of a single input.
-        Similar to the computation of Edge Effectiveness but using the Two-Symbol instead of the Prime Implicant schemata.
-
-        .. math::
-
-            s_i = \frac{ \sum_{f_{\alpha} \in F} \Phi_{\theta:f_{\alpha} \in \Theta_{\theta}} (n^{\circ}_i)}{ |F| }
-
-        where :math:`\Phi` is the function :math:`min` or :math:`max` and :math:`F` is the node LUT.
+    def symKernel_numDots(self, ts, sameSymbol=False):
+        """compute the number of variables involved in a symmetry group.
 
         Args:
-            bound (string) : The bound to which compute input symmetry.
-                Mode "node" accepts: ["lower", "upper"].
-                Mode "input" accepts: ["lower", "mean", "upper", "tuple"].
-                Defaults to "upper".
+            ts ([str, [[]], [[]]]) : two symbol schema
+            sameSymbol (bool) : whether or not to consider same-symbol symmetry
 
         Returns:
-            (float/list) : The :math:`k_s` or a list of :math:`r_i`.
-
-        See also:
-            :func:`input_redundancy`, :func:`effective_connectivity`
+            (int)
         """
-        # Canalization can only occur when k>= 2
-        if self.k < 2:
-            return [0.0]
+        if not sameSymbol:
+            l = ts[1]
+        else:
+            l = ts[1] + ts[2]
+        return len(set(i for group in l for i in group))
 
+    def _input_symmetry(self, aggOp, kernel):
         self._check_compute_canalization_variables(ts_coverage=True)
 
-        symmetries = []
-        # Generate a per input coverage
-        # ex: {0: {'11': [], '10': [], '00': [], '01': []}, 1: {'11': [], '10': [], '00': [], '01': []}}
-        # ts_input_coverage = { input : { binstate: [ idxs.count(input) for schema,reps,sms in tss for idxs in reps+sms ] for binstate,tss in self._ts_coverage.items() } for input in range(self.k) }
-        ts_input_coverage = {input: {binstate: [len(idxs) if input in idxs else 0
-                                        for schema, reps, sms in tss
-                                        for idxs in reps + sms]
-                                        for binstate, tss in self._ts_coverage.items()}
-                                        for input in range(self.k)}
-        ts_input_coverage2 = {}
-        for binstate, tss in self._ts_coverage.items():
-        #     print(f"binstate: {binstate}")
-        #     print(f"tss: {tss}")
-            for input in range(self.k):
-                l = []
-                if input not in ts_input_coverage2.keys():
-                    ts_input_coverage2[input] = {}
-                for schema, reps, sms in tss:
-        #             print(f"reps: {reps}")
-                    for idxs in reps+sms:
-        #                 print(f"idxs: {idxs}")
-                        if input in idxs:
-                            l.append(len(idxs))
-                        else:
-                            l.append(0)
-                ts_input_coverage2[input][binstate] = l
-        # print(ts_input_coverage)
-        # print(ts_input_coverage2)
+        summand = []
+        for fAlpha, fTheta in self._ts_coverage.items():
+            summand.append(aggOp(list(map(kernel, fTheta))))
+        return np.mean(summand)
 
-        # Loop ever input node
-        for input, binstates in ts_input_coverage.items():
-            # {'numstate': [number-of-ts's for each match], '10': [0, 2] ...}
-            numstates = {binstate_to_statenum(binstate): permuts for binstate, permuts in binstates.items()}
-        #     print(numstates)
-
-            # A triplet of (min, mean, max) values
-            if bound in ['lower', 'mean', 'upper']:
-                # Min, Mean or Max
-                if bound == 'upper':
-                    minmax = max
-                elif bound == 'mean':
-                    minmax = np.mean
-                elif bound == 'lower':
-                    minmax = min
-
-                s_i = sum(minmax(permuts) if len(permuts) else 0 for permuts in numstates.values()) / 2**self.k  # min(r_s)
-
-            elif bound == 'tuple':
-                # tuple (min,max) per input, per state
-                s_i = [(min(permuts), max(permuts)) if len(permuts) else (0, 0) for permuts in numstates.values()]  # (min,max)
-            else:
-                raise AttributeError('The bound you selected does not exist. Try "upper", "mean", "lower" or "tuple".')
-            symmetries.append(s_i)
-
-        return symmetries  # s_i
-
-    def edge_symmetry2(self, op=np.mean, sameSymbolSymmetry=False):
-        if self.k < 2:
-            return [0.0]
-        self._check_compute_canalization_variables(ts_coverage=True)
-
-        # get mapping from input to binstates to whether or not that input has a symmetric dot
-        ts_input_coverage2 = {}
-        for binstate, tss in self._ts_coverage.items():
-            for input in range(self.k):
-                l = []
-                if input not in ts_input_coverage2.keys():
-                    ts_input_coverage2[input] = {}
-                for schema, reps, sms in tss:
-                    symGroups = reps if not sameSymbolSymmetry else reps + sms
-                    if len(symGroups) == 0:
-                        symGroups = []
-                    else: # flatten
-                        symGroups = [i for group in symGroups for i in group]
-                    l.append(1 if input in symGroups else 0)
-                ts_input_coverage2[input][binstate] = l
-
-        # compute aggregation of above depending on operator
-        out = []
-        for input in ts_input_coverage2:
-            l = []
-            for binstate in ts_input_coverage2[input]:
-                l.append(op(ts_input_coverage2[input][binstate]))
-            out.append(np.mean(l))
-        return out
-
-    def input_symmetry2(self, norm=False, **kwargs):
-        return sum(self.edge_symmetry2(op=np.mean, **kwargs)) / (2**self.k if norm else 1)
-
-    def input_symmetry(self, bound='upper', norm=True):
-        r"""The Input Symmetry is a measure of permutation redundancy.
-        Similar to the computation of Input Redundancy but using the Two-Symbol instead of the Prime Implicant schemata.
-
-        .. math::
-
-            k_s = \frac{ \sum_{f_{\alpha} \in F} \Phi_{\theta:f_{\alpha} \in \Theta_{\theta}} (n^{\circ}) }{ |F| }
-
-        where :math:`\Phi` is the function :math:`min` or :math:`max` and :math:`F` is the node LUT.
+    def input_symmetry(self, aggOp="mean", kernel="numDots", sameSymbol=False):
+        """compute the input symmetry (k_s) of the boolean node, with variations via the specified functions.
+        Convenience wrapper for lower-level function.
 
         Args:
-            bound (string) : The bound to which compute input symmetry.
-                Mode "node" accepts: ["lower", "upper"].
-                Mode "input" accepts: ["lower", "mean", "upper", "tuple"].
-                Defaults to "upper".
-            norm (bool) : Normalized between [0,1].
-                Use this value when comparing nodes with different input sizes. (Defaults to "True".)
-
-                :math:`k^{*}_s(x) = \frac{ k_s(x) }{ k(x) }`.
+            aggOp : the function aggregating over all two-symbol schemata that redescribe a LUT entry
+            kernel : the function to compute on a given two-symbol schema
 
         Returns:
-            (float/list) : The :math:`k_s` or a list of :math:`r_i`.
-
-        See also:
-            :func:`input_redundancy`, :func:`effective_connectivity`
+            (float) : the mean over all LUT entries of the aggOp applied to the kernel of all two-symbol schemata that redescribe the LUT entry
         """
-        # Canalization can only occur when k>= 2
-        if self.k < 2:
-            return 0.0
-
-        self._check_compute_canalization_variables(ts_coverage=True)
-
-        k_s = sum(self.edge_symmetry(bound=bound)) / self.k
-
-        if (norm):
-            k_s = k_s / self.k
-
-        return k_s
+        strToOp = {"mean": np.mean, "max": max, "min": min}
+        strToKern = {"numDots": self.symKernel_numDots}
+        kernFunc = lambda x: strToKern[kernel](x, sameSymbol=sameSymbol)
+        return self._input_symmetry(strToOp[aggOp], kernFunc)
 
     def look_up_table(self):
         """ Returns the Look Up Table (LUT)
