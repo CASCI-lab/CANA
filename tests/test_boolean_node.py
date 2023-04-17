@@ -393,60 +393,60 @@ def test_sensitivity_XOR():
 # input symmetry tests (new)
 def test_input_symmetry_AND():
     n = AND()
-    k_s, true_k_s = n.input_symmetry(op="mean", kernel="numDots"), 3.0/2
+    k_s, true_k_s = n.input_symmetry(aggOp="mean", kernel="numDots"), 3.0/2
     assert (k_s == true_k_s), f"Input symmetry: AND (mean): returned {k_s}, true value is {true_k_s}"
-    k_s, true_k_s = n.input_symmetry(op="max", kernel="numDots"), 3.0/2
+    k_s, true_k_s = n.input_symmetry(aggOp="max", kernel="numDots"), 3.0/2
     assert (k_s == true_k_s), f"Input symmetry: AND (max): returned {k_s}, true value is {true_k_s}"
 
-    # k_s, true_k_s = n.input_symmetry(op="mean", kernel="numDots", sameSymbol=True), 2.0
+    # k_s, true_k_s = n.input_symmetry(aggOp="mean", kernel="numDots", sameSymbol=True), 2.0
     # assert (k_s == true_k_s), f"Input symmetry: AND (mean, sameSymbol): returned {k_s}, true value is {true_k_s}"
-    # k_s, true_k_s = n.input_symmetry(op="max", kernel="numDots", sameSymbol=True), 2.0
+    # k_s, true_k_s = n.input_symmetry(aggOp="max", kernel="numDots", sameSymbol=True), 2.0
     # assert (k_s == true_k_s), f"Input symmetry: AND (max, sameSymbol): returned {k_s}, true value is {true_k_s}"
 
 def test_input_symmetry_XOR():
     n = XOR()
-    k_s, true_k_s = n.input_symmetry(op="mean", kernel="numDots"), 1.0
+    k_s, true_k_s = n.input_symmetry(aggOp="mean", kernel="numDots"), 1.0
     assert (k_s == true_k_s), f"Input symmetry: XOR (mean): returned {k_s}, true value is {true_k_s}"
-    k_s, true_k_s = n.input_symmetry(op="max", kernel="numDots"), 1.0
+    k_s, true_k_s = n.input_symmetry(aggOp="max", kernel="numDots"), 1.0
     assert (k_s == true_k_s), f"Input symmetry: XOR (max): returned {k_s}, true value is {true_k_s}"
 
-    # k_s, true_k_s = n.input_symmetry(op="mean", kernel="numDots", sameSymbol=True), 2.0
+    # k_s, true_k_s = n.input_symmetry(aggOp="mean", kernel="numDots", sameSymbol=True), 2.0
     # assert (k_s == true_k_s), f"Input symmetry: XOR (mean, sameSymbol): returned {k_s}, true value is {true_k_s}"
-    # k_s, true_k_s = n.input_symmetry(op="max", kernel="numDots", sameSymbol=True), 2.0
+    # k_s, true_k_s = n.input_symmetry(aggOp="max", kernel="numDots", sameSymbol=True), 2.0
     # assert (k_s == true_k_s), f"Input symmetry: XOR (max, sameSymbol): returned {k_s}, true value is {true_k_s}"
 
 def test_input_symmetry_COPYx1():
     n = COPYx1()
-    k_s, true_k_s = n.input_symmetry(op="mean", kernel="numDots"), 0
+    k_s, true_k_s = n.input_symmetry(aggOp="mean", kernel="numDots"), 0
     assert (k_s == true_k_s), f"Input symmetry: COPYx1 (mean): returned {k_s}, true value is {true_k_s}"
-    k_s, true_k_s = n.input_symmetry(op="max", kernel="numDots"), 0
+    k_s, true_k_s = n.input_symmetry(aggOp="max", kernel="numDots"), 0
     assert (k_s == true_k_s), f"Input symmetry: COPYx1 (max): returned {k_s}, true value is {true_k_s}"
 
-    # k_s, true_k_s = n.input_symmetry(op="mean", kernel="numDots", sameSymbol=True), 0.0
+    # k_s, true_k_s = n.input_symmetry(aggOp="mean", kernel="numDots", sameSymbol=True), 0.0
     # assert (k_s == true_k_s), f"Input symmetry: COPYx1 (mean, sameSymbol): returned {k_s}, true value is {true_k_s}"
-    # k_s, true_k_s = n.input_symmetry(op="max", kernel="numDots", sameSymbol=True), 0.0
+    # k_s, true_k_s = n.input_symmetry(aggOp="max", kernel="numDots", sameSymbol=True), 0.0
     # assert (k_s == true_k_s), f"Input symmetry: COPYx1 (max, sameSymbol): returned {k_s}, true value is {true_k_s}"
 
 def test_input_symmetry_RULE90():
     n = RULE90()
-    k_s, true_k_s = n.input_symmetry(op="mean", kernel="numDots"), 1.0
+    k_s, true_k_s = n.input_symmetry(aggOp="mean", kernel="numDots"), 1.0
     assert (k_s == true_k_s), f"Input symmetry: RULE90 (mean): returned {k_s}, true value is {true_k_s}"
-    # k_s, true_k_s = n.input_symmetry(op="max", kernel="numDots", sameSymbol=True), 1.0
+    # k_s, true_k_s = n.input_symmetry(aggOp="max", kernel="numDots", sameSymbol=True), 1.0
     assert (k_s == true_k_s), f"Input symmetry: RULE90 (max): returned {k_s}, true value is {true_k_s}"
 
-    # k_s, true_k_s = n.input_symmetry(op="mean", kernel="numDots", sameSymbol=True), 2.0
+    # k_s, true_k_s = n.input_symmetry(aggOp="mean", kernel="numDots", sameSymbol=True), 2.0
     # assert (k_s == true_k_s), f"Input symmetry: RULE90 (mean, sameSymbol): returned {k_s}, true value is {true_k_s}"
-    # k_s, true_k_s = n.input_symmetry(op="max", kernel="numDots", sameSymbol=True), 2.0
+    # k_s, true_k_s = n.input_symmetry(aggOp="max", kernel="numDots", sameSymbol=True), 2.0
     # assert (k_s == true_k_s), f"Input symmetry: RULE90 (max, sameSymbol): returned {k_s}, true value is {true_k_s}"
 
 def test_input_symmetry_SBF():
     n = BooleanNode(outputs=list("0111" + "0"*12), k=4)
-    k_s, true_k_s = n.input_symmetry(op="mean", kernel="numDots"), 1.6875
+    k_s, true_k_s = n.input_symmetry(aggOp="mean", kernel="numDots"), 1.6875
     assert (k_s == true_k_s), f"Input symmetry: SBF (mean): returned {k_s}, true value is {true_k_s}"
-    k_s, true_k_s = n.input_symmetry(op="max", kernel="numDots"), 1.875
+    k_s, true_k_s = n.input_symmetry(aggOp="max", kernel="numDots"), 1.875
     assert (k_s == true_k_s), f"Input symmetry: SBF (max): returned {k_s}, true value is {true_k_s}"
 
-    # k_s, true_k_s = n.input_symmetry(op="mean", kernel="numDots", sameSymbol=True), 4.0
+    # k_s, true_k_s = n.input_symmetry(aggOp="mean", kernel="numDots", sameSymbol=True), 4.0
     # assert (k_s == true_k_s), f"Input symmetry: SBF (mean, sameSymbol): returned {k_s}, true value is {true_k_s}"
-    # k_s, true_k_s = n.input_symmetry(op="max", kernel="numDots", sameSymbol=True), 4.0
+    # k_s, true_k_s = n.input_symmetry(aggOp="max", kernel="numDots", sameSymbol=True), 4.0
     # assert (k_s == true_k_s), f"Input symmetry: SBF (max, sameSymbol): returned {k_s}, true value is {true_k_s}"
