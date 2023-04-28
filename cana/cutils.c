@@ -207,7 +207,7 @@ END: Cython Metadata */
 #define CYTHON_FAST_PYCCALL  (CYTHON_FAST_PYCALL && PY_VERSION_HEX >= 0x030600B1)
 #endif
 #if CYTHON_USE_PYLONG_INTERNALS
-  #include "longintrepr.h"
+  #include "longintrepr.h" // TODO: this breaks in 3.11; need to regenerate 
   #undef SHIFT
   #undef BASE
   #undef MASK
