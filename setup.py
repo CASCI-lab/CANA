@@ -1,5 +1,5 @@
-from setuptools import setup, find_packages
-from Cython.Build import cythonize
+from setuptools import setup, find_packages, Extension
+# from Cython.Build import cythonize
 
 
 def readme():
@@ -8,7 +8,8 @@ def readme():
 
 
 # cythonize awesomeness
-ext_modules = ["cana/cutils.pyx", "cana/canalization/cboolean_canalization.pyx"]
+# ext_modules = ["cana/cutils.pyx", "cana/canalization/cboolean_canalization.pyx"]
+extensions = [Extension("cana.cutils", ["cana/cutils.c"]), Extension("cana.canalization.cboolean_canalization",["cana/canalization/cboolean_canalization.c"])]
 
 __package__ = 'cana'
 __description__ = u'This package implements a series of methods used to study control, canalization and redundancy in Boolean networks.'
@@ -45,9 +46,10 @@ setup(
         'scipy',
         'networkx',
         'pandas',
-        'Cython'
+        # 'Cython'
     ],
     include_package_data=True,
     zip_safe=False,
-    ext_modules=cythonize(ext_modules, include_path=[''], compiler_directives={'language_level': '3'})  # cython awesomeness
+    # ext_modules=cythonize(ext_modules, include_path=[''], compiler_directives={'language_level': '3'})  # cython awesomeness
+    ext_modules=extensions,
 )

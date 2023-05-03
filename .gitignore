@@ -1,5 +1,7 @@
 # Manualy defined
 experiments/
+*bulk_test_log.csv
+.vscode
 
 # Byte-compiled / optimized / DLL files
 __pycache__/

@@ -14,7 +14,7 @@ Main class for Boolean network objects.
 #   MIT license.
 from collections import defaultdict
 try:
-    import cStringIO.StringIO as StringIO
+    import cStringIO.StringIO as StringIO # type: ignore
 except ImportError:
     from io import StringIO
 import numpy as np
@@ -1449,7 +1449,7 @@ class BooleanNetwork:
         """
         try:
             node = self.nodes[id]
-        except error:
+        except Exception as error:
             raise AttributeError("Node with id {id:d} does not exist. {error::s}".format(id=id, error=error))
         else:
             return node.name
