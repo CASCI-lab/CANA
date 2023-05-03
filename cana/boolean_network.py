@@ -24,10 +24,26 @@ import itertools
 from cana.boolean_node import BooleanNode
 import cana.bns as bns
 from cana.control import fvs, mds, sc
-from cana.utils import *
+# from cana.utils import *
+from cana.utils import output_transitions, entropy, flip_binstate_bit_set
+from cana.cutils import (
+    recursive_map,
+    hamming_distance, 
+    flip_bit, 
+    random_binstate, 
+    expand_logic_line, 
+    constantbinstate_to_statenum,
+    binstate_to_constantbinstate, 
+    binstate_pinned_to_binstate, 
+    binstate_to_statenum,
+    statenum_to_binstate,
+    binstate_compare,
+    flip_binstate_bit,
+    )
 import warnings
 import re
 import copy
+import pickle
 
 
 class BooleanNetwork:

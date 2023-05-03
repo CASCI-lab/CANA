@@ -15,13 +15,19 @@ Main class for Boolean node objects.
 from __future__ import division
 import numpy as np
 import pandas as pd
+import networkx as nx
 from statistics import mean
-from itertools import compress, combinations
-from cana.canalization import boolean_canalization as BCanalization
-from cana.canalization import cboolean_canalization as cBCanalization
-from cana.utils import *
-from cana.cutils import *
+from itertools import compress, combinations, product
+import cana.canalization.boolean_canalization as BCanalization
+import cana.canalization.cboolean_canalization as cBCanalization
 
+from cana.cutils import (
+    binstate_to_statenum, 
+    statenum_to_binstate, 
+    outputs_to_binstates_of_given_type, 
+    flip_bit
+    )
+from cana.utils import ncr, input_monotone
 
 class BooleanNode(object):
     """
