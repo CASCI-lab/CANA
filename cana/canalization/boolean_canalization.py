@@ -16,7 +16,8 @@ Functions to compute the Quine-McCluskey algorithm.
 import numpy as np
 
 import itertools
-from .. utils import *
+from .. cutils import binstate_to_density,statenum_to_binstate
+
 
 from collections import deque
 
@@ -435,7 +436,7 @@ def _expand_ts_logic(two_symbols, permut_indexes):
             # Permutation of all possible combinations of the values that are permutable.
             for vals in itertools.permutations(implicant[idxs], len(idxs)):
                 # Generate a new schema
-                _implicant = copy.copy(implicant)
+                _implicant = np.copy(implicant)
                 _implicant[idxs] = vals
                 # Insert to list of logics if not already there
                 if not(_implicant.tolist() in logics):

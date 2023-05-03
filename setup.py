@@ -46,6 +46,7 @@ setup(
         'scipy',
         'networkx',
         'pandas',
+        'matplotlib',
         # 'Cython'
     ],
     include_package_data=True,

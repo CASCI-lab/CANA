@@ -5,7 +5,7 @@ import copy
 import math
 import operator as op
 from functools import reduce
-from cana.cutils import *
+from cana.cutils import binstate_to_statenum, statenum_to_binstate, flip_binstate_bit
 
 
 def flip_bitset_in_strstates(strstates, idxs):
@@ -242,7 +242,7 @@ def function_monotone(outputs, method='exact', nsamples=100, random_seed=None):
     Example:
         >>> is_monotone(outputs=[0,0,0,1])
     """
-    random.seed(random_seed)
+    # np.random.seed(random_seed)
 
     k = int(np.log2(len(outputs)))
 
