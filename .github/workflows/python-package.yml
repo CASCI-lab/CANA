@@ -38,6 +38,10 @@ jobs:
     - name: Install cana
       run: |
         python -m pip install .
+    - name: Clean up source
+      run: |
+        mkdir src/
+        mv cana/ src/
     - name: Test with pytest
       run: |
         pytest
