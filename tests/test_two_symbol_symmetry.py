@@ -1,6 +1,6 @@
 import math
 
-from helper import *
+import helpers.helper as helper
 
 from cana.boolean_node import BooleanNode
 from cana.canalization.boolean_canalization import *  # WARNING: some functions here differ from the file below!
@@ -29,15 +29,15 @@ def test_cc():
     """Test two-symbol symmetry correctness for all Cell Collective nodes.
     Note: currently only does so for non-constant nodes with k<=7.
     """
-    nodes = getCCnodes()
+    nodes = helper.getCCnodes()
     fails = []
     log = []
     for node in nodes:
         f = node.outputs
         ts = getTss(f)
-        pi = getPis(f)
+        pi = helper.getPis(f)
         for y in [0, 1]:
-            x = compare(pi[y], ts[y])
+            x = helper.compare(pi[y], ts[y])
             if not x[0]:  # False if not same sets
                 fails.append(x)
                 log.append(
@@ -48,13 +48,15 @@ def test_cc():
                             "".join(str(i) for i in node.outputs),
                             str(y),
                             str(node.k),
+                            str(pi),
+                            str(ts),
                         ]
                     )
                 )
     # print(len(fails), fails)
     # print([i for i in fails if i[2] != set()])
     with open("bulk_test_log.csv", "w") as fd:
-        columns = ["network", "node", "function", "PIs", "k"]
+        columns = ["network", "node", "function", "PIs", "k", "pi", "ts"]
         fd.write(", ".join(columns))
         fd.write("\n")
         fd.write("\n".join(log))
@@ -63,12 +65,12 @@ def test_cc():
 
 def doTSStest(func, true_ts0, true_ts1):
     """Test whether the two-symbol calculation of a given function matches the manually-computed answer."""
-    true_ts0 = reorderTwoSymbolOutput(true_ts0)
-    true_ts1 = reorderTwoSymbolOutput(true_ts1)
+    true_ts0 = helper.reorderTwoSymbolOutput(true_ts0)
+    true_ts1 = helper.reorderTwoSymbolOutput(true_ts1)
     tsss = getTss(func)
 
-    assert reorderTwoSymbolOutput(tsss[0]) == true_ts0, tsss[0]
-    assert reorderTwoSymbolOutput(tsss[1]) == true_ts1, tsss[1]
+    assert helper.reorderTwoSymbolOutput(tsss[0]) == true_ts0, tsss[0]
+    assert helper.reorderTwoSymbolOutput(tsss[1]) == true_ts1, tsss[1]
 
 
 def test_two_symbol_AND():
