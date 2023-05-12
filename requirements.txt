@@ -3,3 +3,4 @@ scipy
 networkx
 pandas
 matplotlib
+schematodes
