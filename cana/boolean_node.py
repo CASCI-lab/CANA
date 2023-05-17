@@ -28,6 +28,7 @@ from cana.cutils import (
     flip_bit
     )
 from cana.utils import ncr, input_monotone
+import functools
 
 class BooleanNode(object):
     """
@@ -313,6 +314,24 @@ class BooleanNode(object):
         strToKern = {"numDots": self.symKernel_numDots}
         kernFunc = lambda x: strToKern[kernel](x, sameSymbol=sameSymbol)
         return self._input_symmetry(strToOp[aggOp], kernFunc)
+
+    # refactor ks for speed, avg op only
+    def input_symmetry_mean(self):
+        """compute the input symmetry (k_s) of the boolean node.
+           Specifically, computes it using the avg operator for the summand.
+           Refactoring of input_symmetry for speed.
+
+        Returns:
+            (float)
+        """
+        summand = 0
+        # fTheta = a list of TS
+        for fTheta in self._ts_coverage.values():
+            inner = 0
+            for ts in fTheta:
+                inner += sum(len(i) for i in ts[1]) # assumes that indicies will ever only be in at most 1 group
+            summand += inner / len(fTheta)
+        return summand / 2**self.k
 
     def look_up_table(self):
         """ Returns the Look Up Table (LUT)
