@@ -220,7 +220,7 @@ def find_two_symbols_v2(k=1, prime_implicants=None, verbose=False, verbose_level
         return TSf
 
     prime_implicants = [[int(c) for c in pi] for pi in prime_implicants]
-    tss = sc.schemer(prime_implicants)
+    tss = sc.schemer(prime_implicants, max_symbol=2)
     TSf = []  # collect the two-symbol schemata and calculate the one-symbol symmetries
     for c in tss:
         representative = c.redescribed_schema[0]
