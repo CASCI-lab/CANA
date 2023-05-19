@@ -221,10 +221,17 @@ def find_two_symbols_v2(k=1, prime_implicants=None, verbose=False, verbose_level
 
     prime_implicants = [[int(c) for c in pi] for pi in prime_implicants]
     tss = sc.schemer(prime_implicants)
-
-    TSf = [
-        ["".join(map(str, c.redescribed_schema[0])), c.bubble_indices, []] for c in tss
-    ]
+    TSf = []  # collect the two-symbol schemata and calculate the one-symbol symmetries
+    for c in tss:
+        representative = c.redescribed_schema[0]
+        bubble_indices = c.bubble_indices
+        same_symbols_all = [
+            [i for i, _ in enumerate(representative) if representative[i] == x]
+            for x in [0, 1, 2]
+        ]
+        same_symbols = [x for x in same_symbols_all if len(x) > 1]
+        representative_str = "".join(map(str, representative))
+        TSf.append([representative_str, bubble_indices, same_symbols])
     return TSf
     # if not len(prime_implicants):
     #     return []
