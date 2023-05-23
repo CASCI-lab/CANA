@@ -83,6 +83,13 @@ def expandPi(pi):
     return out
 
 def compare(pi, ts):
+    """test if two functions represented by schemata are the same.
+    Args:
+        pi: the one-symbol schemata of function 1
+        ts: the two-symbol schemata of function 2
+    Returns:
+        3-tuple (bool, set, set)
+    """
     x = expandPi(expandTs(ts))
     y = expandPi(pi)
     return x==y, x-y, y-x

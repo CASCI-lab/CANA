@@ -445,9 +445,19 @@ class BooleanNode(object):
         return ''.join(compress(binstate, self.mask))
 
     def activities(self):
+        """compute the activities of each incoming edge of the node
+        Returns:
+            (list of floats)
+        """
         return self.edge_effectiveness(bound="upper")
 
     def sensitivity(self, norm=False):
+        """compute the sensitivity of the node. Does so by summing the activities of the edges
+        Args:
+            norm (bool) : whether or not to normalize by the number of inputs (k)
+        Returns:
+            (float)
+        """
         x = sum(self.activities())
         if norm:
             return x / self.k
