@@ -28,6 +28,7 @@ This module interfaces CANA with the [B]oolean [N]etworks with [S]ynchronous upd
 import os
 import subprocess
 import tempfile
+
 from cana.utils import binstate_to_statenum
 
 _path = os.path.dirname(os.path.realpath(__file__))
@@ -53,41 +54,45 @@ def attractors(cnet, bnspath=_path, cleanup=True):
     # If string, Creates a Temporary File to be supplied to BNS
     elif isinstance(cnet, str):
         tmp = tempfile.NamedTemporaryFile(delete=cleanup)
-        with open(tmp.name, 'w') as openfile:
+        with open(tmp.name, "w") as openfile:
             openfile.write(cnet)
         tmp.file.close()
         file = tmp.name
     else:
-        raise TypeError('The cnet input should be either a file to a .cnet file or a string containing the .cnet content')
+        raise TypeError(
+            "The cnet input should be either a file to a .cnet file or a string containing the .cnet content"
+        )
 
-    cmd = [os.path.join(_path, 'bns'), file]
+    cmd = [os.path.join(bnspath, "bns"), file]
     attractors = list()
 
     try:
         p = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
 
         current_attractor = []
-        for i, line in enumerate(p.stdout):
+        for _, line in enumerate(p.stdout):
             # Strip line
-            cleanline = line.decode('ascii').strip().replace('\n', '')
+            cleanline = line.decode("ascii").strip().replace("\n", "")
 
-            if 'Attractor' in cleanline:
+            if "Attractor" in cleanline:
                 attractors.append(current_attractor)
                 current_attractor = []
-            elif 'Node' in cleanline and 'assumed to be constant' in cleanline:
+            elif "Node" in cleanline and "assumed to be constant" in cleanline:
                 pass
-            elif 'Total' in cleanline:
+            elif "Total" in cleanline:
                 pass
-            elif 'Start searching for all atractors.' in cleanline:
+            elif "Start searching for all atractors." in cleanline:
                 pass
-            elif 'Depth' in cleanline:
+            elif "Depth" in cleanline:
                 pass
-            elif 'average' in cleanline:
+            elif "average" in cleanline:
                 pass
             elif len(cleanline) > 0:
                 current_attractor.append(binstate_to_statenum(cleanline))
 
     except OSError:
-        print("'BNS' could not be found! You must have it compiled or download the binary for your system from the 'bns' website (https://people.kth.se/~dubrova/bns.html).")
+        print(
+            "'BNS' could not be found! You must have it compiled or download the binary for your system from the 'bns' website (https://people.kth.se/~dubrova/bns.html)."
+        )
 
     return attractors

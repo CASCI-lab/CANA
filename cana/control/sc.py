@@ -27,12 +27,18 @@ def sc(directed_graph, keep_self_loops=True):
         If you only need the size of the set, see :func:`sc_min_size`.
     """
     # get the bipartite represenation of the directed graph
-    bipartite_graph, vertex_out, vertex_in = _directed_to_bipartite(directed_graph, keep_self_loops=keep_self_loops)
+    bipartite_graph, vertex_out, vertex_in = _directed_to_bipartite(
+        directed_graph, keep_self_loops=keep_self_loops
+    )
 
     # do the maximum matching on the bipartite representation
-    max_matching = nx.bipartite.hopcroft_karp_matching(bipartite_graph, top_nodes=vertex_out)
+    max_matching = nx.bipartite.hopcroft_karp_matching(
+        bipartite_graph, top_nodes=vertex_out
+    )
 
-    all_max_matchings = _enumerate_maximum_matchings(bipartite_graph, vertex_out, vertex_in, max_matching)
+    all_max_matchings = _enumerate_maximum_matchings(
+        bipartite_graph, vertex_out, vertex_in, max_matching
+    )
 
     sc_sets = []
     for M in all_max_matchings:
@@ -63,7 +69,9 @@ def sc_min_size(directed_graph, keep_self_loops=True):
         :func:`sc`
     """
     # get the bipartite represenation of the directed graph
-    bipartite_graph, vertex_out, vertex_in = _directed_to_bipartite(directed_graph, keep_self_loops=keep_self_loops)
+    bipartite_graph, _, vertex_in = _directed_to_bipartite(
+        directed_graph, keep_self_loops=keep_self_loops
+    )
 
     # do the maximum matching on the bipartite representation
     max_matching = nx.bipartite.hopcroft_karp_matching(bipartite_graph)
@@ -111,7 +119,7 @@ def _directed_to_bipartite(directed_graph, keep_self_loops=True):
         for v in directed_graph.successors(n):
             if keep_self_loops:
                 bipartite_graph.add_edge((n, True), (v, False))
-            elif (n != v):
+            elif n != v:
                 bipartite_graph.add_edge((n, True), (v, False))
 
     return bipartite_graph, vertex_out, vertex_in
@@ -153,7 +161,9 @@ def _enumerate_maximum_matchings(bipartite_graph, vertex_out, vertex_in, max_mat
 
     D = _make_matching_digraph(bipartite_graph, vertex_out, vertex_in, max_matching)
     D = _trim_unnecessary_edges(D)
-    matchings_list = _enumerate_maximum_matchings_iter(bipartite_graph, vertex_out, vertex_in, max_matching, D, matchings_list)
+    matchings_list = _enumerate_maximum_matchings_iter(
+        bipartite_graph, vertex_out, vertex_in, max_matching, D, matchings_list
+    )
 
     return matchings_list
 
@@ -187,9 +197,11 @@ def _make_matching_digraph(bipartite_graph, U, V, M):
 
 
 def _trim_unnecessary_edges(matching_digraph):
-    """
-    """
-    scc_subgraphs = [matching_digraph.subgraph(scc) for scc in nx.strongly_connected_components(matching_digraph)]
+    """ """
+    scc_subgraphs = [
+        matching_digraph.subgraph(scc)
+        for scc in nx.strongly_connected_components(matching_digraph)
+    ]
     trimmed_graph = scc_subgraphs[0]
     for next_subgraph in scc_subgraphs[1:]:
         trimmed_graph = nx.union(trimmed_graph, next_subgraph)
@@ -197,11 +209,8 @@ def _trim_unnecessary_edges(matching_digraph):
 
 
 def _enumerate_maximum_matchings_iter(G, U, V, M, D, matchings_list):
-    """
-
-    """
+    """ """
     if len(G) > 0 and not (D is None):
-
         # find the cycles in the matching digraph
         cycles = [c for c in nx.simple_cycles(D)]
 
@@ -217,17 +226,23 @@ def _enumerate_maximum_matchings_iter(G, U, V, M, D, matchings_list):
             Gplus, Uplus, Vplus, Mplus = _make_graph_plus(G, U, V, M, e)
             Dplus = _make_matching_digraph(Gplus, Uplus, Vplus, Mplus)
             Dplus = _trim_unnecessary_edges(Dplus)
-            matchings_list = _enumerate_maximum_matchings_iter(Gplus, Uplus, Vplus, Mplus, Dplus, matchings_list)
+            matchings_list = _enumerate_maximum_matchings_iter(
+                Gplus, Uplus, Vplus, Mplus, Dplus, matchings_list
+            )
 
             # and Problem minus:
             Gminus = _make_graph_minus(G, e)
             Dminus = _make_matching_digraph(Gminus, U, V, Mprime)
             Dminus = _trim_unnecessary_edges(Dminus)
-            matchings_list = _enumerate_maximum_matchings_iter(Gminus, U, V, Mprime, Dminus, matchings_list)
+            matchings_list = _enumerate_maximum_matchings_iter(
+                Gminus, U, V, Mprime, Dminus, matchings_list
+            )
 
         else:
             # if there are no cycles call the iter again without the matching digraph
-            matchings_list = _enumerate_maximum_matchings_iter(G, U, V, M, None, matchings_list)
+            matchings_list = _enumerate_maximum_matchings_iter(
+                G, U, V, M, None, matchings_list
+            )
 
     elif len(G) > 0:
         path = _find_path_length_two(G, V, M)
@@ -241,18 +256,21 @@ def _enumerate_maximum_matchings_iter(G, U, V, M, D, matchings_list):
             # now we have two subpromblems which result in new iterations
             # Problem plus:
             Gplus, Uplus, Vplus, Mplus = _make_graph_plus(G, U, V, M, e)
-            matchings_list = _enumerate_maximum_matchings_iter(Gplus, Uplus, Vplus, Mprime, None, matchings_list)
+            matchings_list = _enumerate_maximum_matchings_iter(
+                Gplus, Uplus, Vplus, Mprime, None, matchings_list
+            )
 
             # Problem minus with M:
             Gminus = _make_graph_minus(G, e)
-            matchings_list = _enumerate_maximum_matchings_iter(Gminus, U, V, M, None, matchings_list)
+            matchings_list = _enumerate_maximum_matchings_iter(
+                Gminus, U, V, M, None, matchings_list
+            )
 
     return matchings_list
 
 
 def _make_graph_plus(G, U, V, M, e):
-    """
-    """
+    """ """
     Gplus = G.copy()
     # remove the two endpoints and all adjacent edges
     Gplus.remove_node(e[0])
@@ -273,8 +291,7 @@ def _make_graph_plus(G, U, V, M, e):
 
 
 def _make_graph_minus(G, e):
-    """
-    """
+    """ """
     Gminus = G.copy()
     # remove the edge
     Gminus.remove_edge(e[0], e[1])
@@ -283,8 +300,7 @@ def _make_graph_minus(G, e):
 
 
 def _find_path_length_two(G, V, M):
-    """
-    """
+    """ """
     path = None
     for v in _listminus(V, M.keys()):
         for u in G.neighbors(v):
@@ -296,14 +312,12 @@ def _find_path_length_two(G, V, M):
 
 
 def _listminus(list1, list2):
-    """
-    """
+    """ """
     return [a for a in list1 if a not in list2]
 
 
 def _swap_edges_in_cycle(cycle, M):
-    """
-    """
+    """ """
     Mprime = dict(M)
     e = None
     cycle = cycle + [cycle[0]]
@@ -321,8 +335,7 @@ def _swap_edges_in_cycle(cycle, M):
 
 
 def _swap_edges_in_path(path, M):
-    """
-    """
+    """ """
     Mprime = dict(M)
     e = (path[2], path[1])
     m = Mprime[path[2]]

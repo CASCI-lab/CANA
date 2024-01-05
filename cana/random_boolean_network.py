@@ -6,22 +6,33 @@ Random Boolean Network
 Methods to generate random ensembles of Boolean networks.
 
 """
+import random
+import re
+
 #   Copyright (C) 2021 by
 #   Alex Gates <ajgates@indiana.edu>
 #   Rion Brattig Correia <rionbr@gmail.com>
 #   Thomas Parmer <tjparmer@indiana.edu>
 #   All rights reserved.
 #   MIT license.
-from collections import defaultdict, Counter
-import networkx as nx
-import random
-from cana.boolean_network import BooleanNetwork
-import re
+from collections import Counter, defaultdict
 from io import StringIO
+
+import networkx as nx
+
+from cana.boolean_network import BooleanNetwork
 from cana.utils import output_transitions
 
 
-def regular_boolean_network(N=10, K=2, bias=0.5, bias_constraint='soft', keep_constants=True, remove_multiedges=True, niter_remove=1000):
+def regular_boolean_network(
+    N=10,
+    K=2,
+    bias=0.5,
+    bias_constraint="soft",
+    keep_constants=True,
+    remove_multiedges=True,
+    niter_remove=1000,
+):
     """
     TODO: description
     """
@@ -33,21 +44,33 @@ def regular_boolean_network(N=10, K=2, bias=0.5, bias_constraint='soft', keep_co
     # the configuration graph creates a multigraph with self loops
     # the self loops are OK, but we should only have one copy of each edge
     if remove_multiedges:
-        regular_graph = _remove_duplicate_edges(graph=regular_graph, niter_remove=niter_remove)
+        regular_graph = _remove_duplicate_edges(
+            graph=regular_graph, niter_remove=niter_remove
+        )
 
     # A dict that contains the network logic {<id>:{'name':<string>,'in':<list-input-node-id>,'out':<list-output-transitions>},..}
     bn_dict = {
         node: {
-            'name': str(node),
-            'in': sorted([n for n in regular_graph.predecessors(node)]),
-            'out': random_automata_table(regular_graph.in_degree(node), bias, bias_constraint)
-        } for node in range(N)
+            "name": str(node),
+            "in": sorted([n for n in regular_graph.predecessors(node)]),
+            "out": random_automata_table(
+                regular_graph.in_degree(node), bias, bias_constraint
+            ),
+        }
+        for node in range(N)
     }
 
-    return BooleanNetwork.from_dict(bn_dict)
+    return BooleanNetwork.from_dict(bn_dict, keep_constants=keep_constants)
 
 
-def er_boolean_network(N=10, p=0.2, bias=0.5, bias_constraint='soft', remove_multiedges=True, niter_remove=1000):
+def er_boolean_network(
+    N=10,
+    p=0.2,
+    bias=0.5,
+    bias_constraint="soft",
+    remove_multiedges=True,
+    niter_remove=1000,
+):
     """
     TODO: description
     """
@@ -61,29 +84,32 @@ def er_boolean_network(N=10, p=0.2, bias=0.5, bias_constraint='soft', remove_mul
     # A dict that contains the network logic {<id>:{'name':<string>,'in':<list-input-node-id>,'out':<list-output-transitions>},..}
     bn_dict = {
         node: {
-            'name': str(node),
-            'in': sorted([n for n in er_graph.predecessors(node)]),
-            'out': random_automata_table(er_graph.in_degree(node), bias, bias_constraint)
-        } for node in range(N)
+            "name": str(node),
+            "in": sorted([n for n in er_graph.predecessors(node)]),
+            "out": random_automata_table(
+                er_graph.in_degree(node), bias, bias_constraint
+            ),
+        }
+        for node in range(N)
     }
 
     return BooleanNetwork.from_dict(bn_dict)
 
 
-def random_automata_table(indegree, bias, bias_constraint='soft'):
+def random_automata_table(indegree, bias, bias_constraint="soft"):
     """
     TODO: description
     """
-    if bias_constraint == 'soft':
+    if bias_constraint == "soft":
         return [int(random.random() < bias) for b in range(2**indegree)]
 
-    elif bias_constraint == 'hard':
+    elif bias_constraint == "hard":
         n_ones = int(bias * (2**indegree))
         output = [0] * (2**indegree - n_ones) + [1] * n_ones
         random.shuffle(output)
         return output
 
-    elif bias_constraint == 'soft_no_constant':
+    elif bias_constraint == "soft_no_constant":
         output = [int(random.random() < bias) for b in range(2**indegree)]
         if sum(output) == 0:
             output[0] = 1
@@ -98,7 +124,9 @@ def _remove_duplicate_edges(graph, niter_remove=100):
     edge_list = list(graph.edges())
     edge_frequency = Counter(edge_list)
 
-    duplicate_edges = [edge for edge, num_edge in edge_frequency.items() if num_edge > 1]
+    duplicate_edges = [
+        edge for edge, num_edge in edge_frequency.items() if num_edge > 1
+    ]
 
     iremove_iter = 0
     while len(duplicate_edges) > 0 and iremove_iter < niter_remove:
@@ -120,11 +148,16 @@ def _remove_duplicate_edges(graph, niter_remove=100):
 
                 edge_list = list(graph.edges())
 
-        duplicate_edges = [edge for edge, num_edge in edge_frequency.items() if num_edge > 1]
+        duplicate_edges = [
+            edge for edge, num_edge in edge_frequency.items() if num_edge > 1
+        ]
         iremove_iter += 1
 
     if iremove_iter >= niter_remove:
-        print("Warning: multi-edges were not successfully removed after %s iterations!!" % str(iremove_iter))
+        print(
+            "Warning: multi-edges were not successfully removed after %s iterations!!"
+            % str(iremove_iter)
+        )
 
     return graph
 
@@ -159,14 +192,10 @@ def from_string_boolean(self, string, keep_constants=True, **kwargs):
     line = network_file.readline()
     i = 0
     while line != "":
-        if line[0] == '#':
+        if line[0] == "#":
             line = network_file.readline()
             continue
-        logic[i] = {
-            'name': line.split("*")[0].strip(),
-            'in': [],
-            'out': []
-        }
+        logic[i] = {"name": line.split("*")[0].strip(), "in": [], "out": []}
         line = network_file.readline()
         i += 1
 
@@ -175,17 +204,28 @@ def from_string_boolean(self, string, keep_constants=True, **kwargs):
     line = network_file.readline()
     i = 0
     while line != "":
-        if line[0] == '#':
+        if line[0] == "#":
             line = network_file.readline()
             continue
         eval_line = line.split("=")[1]  # logical condition to evaluate
         # RE checks for non-alphanumeric character before/after node name (node names are included in other node names)
         # Additional characters added to eval_line to avoid start/end of string complications
-        input_names = [logic[node]['name'] for node in logic if re.compile('\W' + logic[node]['name'] + '\W').search('*' + eval_line + '*')]
-        input_nums = [node for input in input_names for node in logic if input == logic[node]['name']]
-        logic[i]['in'] = input_nums
+        input_names = [
+            logic[node]["name"]
+            for node in logic
+            if re.compile(r"\W" + logic[node]["name"] + r"\W").search(
+                "*" + eval_line + "*"
+            )
+        ]
+        input_nums = [
+            node
+            for input in input_names
+            for node in logic
+            if input == logic[node]["name"]
+        ]
+        logic[i]["in"] = input_nums
         # Determine output transitions
-        logic[i]['out'] = output_transitions(eval_line, input_names)
+        logic[i]["out"] = output_transitions(eval_line, input_names)
         line = network_file.readline()
         i += 1
 

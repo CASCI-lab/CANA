@@ -9,6 +9,9 @@ that need to be removed from a directed graph so that the resulting graph has no
 Two methods are implemented here. A bruteforce and the Greedy Randomized Adaptive Search Procedure (GRASP) method by :cite:`Pardalos:1998`.
 
 """
+import copy
+import itertools
+
 #   Copyright (C) 2021 by
 #   Alex Gates <ajgates42@gmail.com>
 #   Rion Brattig Correia <rionbr@gmail.com>
@@ -16,8 +19,6 @@ Two methods are implemented here. A bruteforce and the Greedy Randomized Adaptiv
 #   MIT license.
 import networkx as nx
 import numpy as np
-import itertools
-import copy
 
 
 #
@@ -51,7 +52,7 @@ def fvs_grasp(directed_graph, max_iter=100, keep_self_loops=True):
 
     reduced_graph = directed_graph.copy()
 
-    for i_iter in range(max_iter):
+    for _ in range(max_iter):
         alpha = np.random.random()
         S = _construct_greedy_randomized_solution(reduced_graph, alpha, S)
         S = _local_search(directed_graph.copy(), S)
@@ -102,7 +103,9 @@ def fvs_bruteforce(directed_graph, max_search=5, keep_self_loops=True):
 
         num_additional_var = 0
         while num_additional_var <= max_search and len(FVC_sets) == 0:
-            for an_combo in itertools.combinations(nonfvc_variables, num_additional_var):
+            for an_combo in itertools.combinations(
+                nonfvc_variables, num_additional_var
+            ):
                 possible_fvs = minfvc.union(an_combo)
 
                 if _is_acyclic(_graph_minus(directed_graph, possible_fvs)):
@@ -114,10 +117,9 @@ def fvs_bruteforce(directed_graph, max_search=5, keep_self_loops=True):
 
 
 def _graph_minus(graph, nodeset):
-    """
-    """
+    """ """
     newgraph = nx.DiGraph()
-    for (n1, n2) in graph.edges():
+    for n1, n2 in graph.edges():
         if n1 not in nodeset and n2 not in nodeset:
             newgraph.add_edge(n1, n2)
 
@@ -129,25 +131,29 @@ def _graph_minus(graph, nodeset):
 
 
 def _is_acyclic(graph):
-    """
-    """
+    """ """
     return nx.is_directed_acyclic_graph(graph)
 
 
 def _in0out0(directed_graph, S):
-    """
-    """
-    remove_set = set([n for n in directed_graph.nodes()
-                      if (directed_graph.in_degree(n) == 0 or directed_graph.out_degree(n) == 0)])
+    """ """
+    remove_set = set(
+        [
+            n
+            for n in directed_graph.nodes()
+            if (directed_graph.in_degree(n) == 0 or directed_graph.out_degree(n) == 0)
+        ]
+    )
     directed_graph.remove_nodes_from(remove_set)
     S = S.union(remove_set)
     return directed_graph, S, len(remove_set) == 0
 
 
 def _in1(directed_graph):
-    """
-    """
-    remove_set = set([n for n in directed_graph.nodes() if (directed_graph.in_degree(n) == 1)])
+    """ """
+    remove_set = set(
+        [n for n in directed_graph.nodes() if (directed_graph.in_degree(n) == 1)]
+    )
 
     for u in remove_set:
         v = list(directed_graph.predecessors(u))[0]
@@ -157,9 +163,10 @@ def _in1(directed_graph):
 
 
 def _out1(directed_graph):
-    """
-    """
-    remove_set = set([n for n in directed_graph.nodes() if (directed_graph.out_degree(n) == 1)])
+    """ """
+    remove_set = set(
+        [n for n in directed_graph.nodes() if (directed_graph.out_degree(n) == 1)]
+    )
 
     for u in remove_set:
         v = list(directed_graph.successors(u))[0]
@@ -170,8 +177,7 @@ def _out1(directed_graph):
 
 
 def _selfloop(directed_graph, S):
-    """
-    """
+    """ """
     remove_set = list(nx.nodes_with_selfloops(directed_graph))
 
     S = S.union(set(remove_set))
@@ -181,8 +187,7 @@ def _selfloop(directed_graph, S):
 
 
 def _reduce_instance_size(directed_graph, S):
-    """
-    """
+    """ """
     all_done = False
 
     while not all_done:
@@ -204,11 +209,12 @@ def _reduce_instance_size(directed_graph, S):
 
 
 def _restricted_candidate_list(directed_graph, alpha):
-    """
-    """
+    """ """
     nodelist = directed_graph.nodes()
 
-    G = np.multiply(directed_graph.in_degree(nodelist), directed_graph.out_degree(nodelist))
+    G = np.multiply(
+        directed_graph.in_degree(nodelist), directed_graph.out_degree(nodelist)
+    )
     Gmin = min(G)
     Gmax = max(G)
 
@@ -216,8 +222,7 @@ def _restricted_candidate_list(directed_graph, alpha):
 
 
 def _construct_greedy_randomized_solution(directed_graph, alpha, S):
-    """"
-    """
+    """ " """
     reduced_graph, S = _reduce_instance_size(directed_graph, S)
 
     while len(reduced_graph) > 0:
@@ -231,8 +236,7 @@ def _construct_greedy_randomized_solution(directed_graph, alpha, S):
 
 
 def _local_search(directed_graph, S):
-    """
-    """
+    """ """
     keep_going = True
 
     while keep_going:
@@ -251,7 +255,12 @@ def _local_search(directed_graph, S):
 
 
 def _root_variables(directed_graph, keep_self_loops=True):
-    """
-    """
-    return set([n for n in directed_graph.nodes()
-                if (directed_graph.in_degree(n) == 0) or ((not keep_self_loops) and (directed_graph.neighbors(n) == [n]))])
+    """ """
+    return set(
+        [
+            n
+            for n in directed_graph.nodes()
+            if (directed_graph.in_degree(n) == 0)
+            or ((not keep_self_loops) and (directed_graph.neighbors(n) == [n]))
+        ]
+    )
