@@ -1,11 +1,13 @@
-import networkx as nx
-import numpy as np
-from itertools import takewhile
 import copy
 import math
 import operator as op
 from functools import reduce
-from cana.cutils import binstate_to_statenum, statenum_to_binstate, flip_binstate_bit
+from itertools import takewhile
+
+import networkx as nx
+import numpy as np
+
+from cana.cutils import binstate_to_statenum, flip_binstate_bit, statenum_to_binstate
 
 
 def flip_bitset_in_strstates(strstates, idxs):
@@ -36,13 +38,16 @@ def flip_binstate_bit_set(binstate, idxs):
         (list) : The flipped states
     """
     flipset = []
-    if (len(idxs) != 0):
+    if len(idxs) != 0:
         fb = idxs.pop()
         flipset.extend(flip_binstate_bit_set(binstate, copy.copy(idxs)))
-        flipset.extend(flip_binstate_bit_set(flip_binstate_bit(binstate, fb), copy.copy(idxs)))
+        flipset.extend(
+            flip_binstate_bit_set(flip_binstate_bit(binstate, fb), copy.copy(idxs))
+        )
     else:
         flipset.append(binstate)
     return flipset
+
 
 def negate_LUT_input(outputs, idx):
     """For a LUT defined by the output list, it negates the input.
@@ -55,7 +60,14 @@ def negate_LUT_input(outputs, idx):
         (list) : The new output with input idx negated
     """
     k = int(np.log2(len(outputs)))
-    return [outputs[binstate_to_statenum(flip_binstate_bit(statenum_to_binstate(istate, k), idx))] for istate in range(len(outputs))]
+    return [
+        outputs[
+            binstate_to_statenum(
+                flip_binstate_bit(statenum_to_binstate(istate, k), idx)
+            )
+        ]
+        for istate in range(len(outputs))
+    ]
 
 
 def print_logic_table(outputs):
@@ -80,7 +92,7 @@ def print_logic_table(outputs):
         print(statenum_to_binstate(statenum, base=k) + " : " + str(outputs[statenum]))
 
 
-def entropy(prob_vector, logbase=2.):
+def entropy(prob_vector, logbase=2.0):
     """Calculates the entropy given a probability vector
 
     Todo:
@@ -88,7 +100,7 @@ def entropy(prob_vector, logbase=2.):
     """
     prob_vector = np.array(prob_vector)
     pos_prob_vector = prob_vector[prob_vector > 0]
-    return - np.sum(pos_prob_vector * np.log(pos_prob_vector) / np.log(logbase))
+    return -np.sum(pos_prob_vector * np.log(pos_prob_vector) / np.log(logbase))
 
 
 def ncr(n, r):
@@ -161,13 +173,13 @@ def output_transitions(eval_line, input_list):
         The original eval_line is then evaluated with each assignment
         which results in the output list [0, 0, 1, 0, 1, 0, 1, 0]
     """
-    total = 2**len(input_list)  # Total combinations to try
+    total = 2 ** len(input_list)  # Total combinations to try
     output_list = []
     for i in range(total):
         trial_string = statenum_to_binstate(i, len(input_list))
         # Evaluate trial_string by assigning value to each input variable
         for j, input in enumerate(input_list):
-            exec(input + '=' + trial_string[j])
+            exec(input + "=" + trial_string[j])
         output_list.append(int(eval(eval_line)))
 
     return output_list
@@ -197,7 +209,7 @@ def mindist_from_source(G, source):
     return dist
 
 
-def pathlength(p, weights, rule='sum'):
+def pathlength(p, weights, rule="sum"):
     """Calculate the length of path p, with weighted edges, given the length rule of:
 
     Ars:
@@ -211,17 +223,17 @@ def pathlength(p, weights, rule='sum'):
 
     TODO: update description
     """
-    if rule == 'sum':
+    if rule == "sum":
         return sum(weights[(p[ie], p[ie + 1])] for ie in range(len(p) - 1))
-    elif rule == 'prod':
+    elif rule == "prod":
         return np.prod([weights[(p[ie], p[ie + 1])] for ie in range(len(p) - 1)])
-    elif rule == 'min':
+    elif rule == "min":
         return min(weights[(p[ie], p[ie + 1])] for ie in range(len(p) - 1))
-    elif rule == 'max':
+    elif rule == "max":
         return max(weights[(p[ie], p[ie + 1])] for ie in range(len(p) - 1))
 
 
-def function_monotone(outputs, method='exact', nsamples=100, random_seed=None):
+def function_monotone(outputs, method="exact", nsamples=100, random_seed=None):
     """
     Determine if a given LUT is monotone.
 
@@ -248,14 +260,15 @@ def function_monotone(outputs, method='exact', nsamples=100, random_seed=None):
 
     # for all input configurations
     for input_confignum in range(2**k):
-
         input_configbin = statenum_to_binstate(input_confignum, k)
 
         # for all input states that are 0
         for idx, state in enumerate(input_configbin):
-            if state == '0':
+            if state == "0":
                 # we flip the 0 and check for monotone along the edge
-                next_confignum = binstate_to_statenum(flip_binstate_bit(input_configbin, idx))
+                next_confignum = binstate_to_statenum(
+                    flip_binstate_bit(input_configbin, idx)
+                )
 
                 # if the monotone property fails
                 if outputs[input_confignum] > outputs[next_confignum]:
@@ -287,20 +300,30 @@ def input_monotone(outputs, input_idx, activation=1):
     if k == 1:
         return True
     else:
-
         monotone_configs = []
         # for all input configurations
-        for input_confignum in range(2**(k - 1)):
-
+        for input_confignum in range(2 ** (k - 1)):
             other_input_configbin = statenum_to_binstate(input_confignum, k - 1)
 
-            input_confignum_0 = binstate_to_statenum(other_input_configbin[:input_idx] + '0' + other_input_configbin[input_idx:])
+            input_confignum_0 = binstate_to_statenum(
+                other_input_configbin[:input_idx]
+                + "0"
+                + other_input_configbin[input_idx:]
+            )
 
-            input_confignum_1 = binstate_to_statenum(other_input_configbin[:input_idx] + '1' + other_input_configbin[input_idx:])
+            input_confignum_1 = binstate_to_statenum(
+                other_input_configbin[:input_idx]
+                + "1"
+                + other_input_configbin[input_idx:]
+            )
 
             if activation == 1:
-                monotone_configs.append(outputs[input_confignum_0] <= outputs[input_confignum_1])
+                monotone_configs.append(
+                    outputs[input_confignum_0] <= outputs[input_confignum_1]
+                )
             elif activation == -1:
-                monotone_configs.append(outputs[input_confignum_0] >= outputs[input_confignum_1])
+                monotone_configs.append(
+                    outputs[input_confignum_0] >= outputs[input_confignum_1]
+                )
 
         return all(monotone_configs)

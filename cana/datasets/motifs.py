@@ -287,6 +287,6 @@ def network_motif(name=None):
         graph.add_edge(1, 3)
 
     else:
-        raise TypeError('The motif name could not be found.')
+        raise TypeError("The motif name could not be found.")
 
     return graph

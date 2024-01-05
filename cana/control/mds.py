@@ -35,7 +35,9 @@ def mds(directed_graph, max_search=5, keep_self_loops=True):
         MDS_sets = []
         nonroot_variables = set(directed_graph.nodes()) - set(root_var)
         for num_additional_var in range(1, max_search):
-            for an_combo in itertools.combinations(nonroot_variables, num_additional_var):
+            for an_combo in itertools.combinations(
+                nonroot_variables, num_additional_var
+            ):
                 possible_dvs = root_var.union(an_combo)
                 if len(_get_dominated_set(directed_graph, possible_dvs)) == N:
                     MDS_sets.append(possible_dvs)
@@ -55,7 +57,12 @@ def _get_dominated_set(directed_graph, dominatingset):
 
 
 def _root_variables(directed_graph, keep_self_loops=True):
-    """
-    """
-    return set([n for n in directed_graph.nodes()
-                if (directed_graph.in_degree(n) == 0) or ((not keep_self_loops) and (directed_graph.neighbors(n) == [n]))])
+    """ """
+    return set(
+        [
+            n
+            for n in directed_graph.nodes()
+            if (directed_graph.in_degree(n) == 0)
+            or ((not keep_self_loops) and (directed_graph.neighbors(n) == [n]))
+        ]
+    )

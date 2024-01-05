@@ -11,7 +11,7 @@ Commonly used boolean node functions.
 #   Rion Brattig Correia <rionbr@gmail.com>
 #   All rights reserved.
 #   MIT license.
-from .. boolean_network import BooleanNode
+from ..boolean_network import BooleanNode
 
 
 def AND():
@@ -99,7 +99,9 @@ def RULE90():
         111 : 0
 
     """
-    return BooleanNode.from_output_list(outputs=[0, 1, 0, 1, 1, 0, 1, 0], name="RULE 90")
+    return BooleanNode.from_output_list(
+        outputs=[0, 1, 0, 1, 1, 0, 1, 0], name="RULE 90"
+    )
 
 
 def RULE110():
@@ -117,4 +119,6 @@ def RULE110():
         111 : 0
 
     """
-    return BooleanNode.from_output_list(outputs=[0, 1, 1, 1, 0, 1, 1, 0], name="RULE 110")
+    return BooleanNode.from_output_list(
+        outputs=[0, 1, 1, 1, 0, 1, 1, 0], name="RULE 110"
+    )
