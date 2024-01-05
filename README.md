@@ -15,7 +15,7 @@ Installation:
 
 ** Latest development release on GitHub **
 
-Pull and install the code directly from the github [project page](https://github.com/rionbr/CANA).
+Pull and install the code directly from the github [project page](https://github.com/casci-lab/CANA).
 
 ```
     pip install git+https://github.com/CASCI-lab/CANA
@@ -28,7 +28,7 @@ Please note that CANA uses Cython. For it to compile you may need to install the
 Docs:
 -------
 
-The full documentation can be found at: [rionbr.github.io/CANA](https://rionbr.github.io/CANA)
+The full documentation can be found at: [casci-lab.github.io/CANA/](https://casci-lab.github.io/CANA/)
 
 
 Papers:
