@@ -21,6 +21,18 @@ from ..boolean_network import BooleanNetwork
 _path = os.path.dirname(os.path.realpath(__file__))
 """ Make sure we know what the current directory is """
 
+def TEMPY():
+    """
+    A temp txt file to test the loader.
+
+    Returns:
+        (BooleanNetwork)
+    """
+    return BooleanNetwork.from_file(
+        _path + "/tempy.txt",
+        name="Tempy",
+        keep_constants=True,
+    )
 
 def THALIANA():
     """Boolean network model of the control of flower morphogenesis in Arabidopsis thaliana

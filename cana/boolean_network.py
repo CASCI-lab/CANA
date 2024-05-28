@@ -174,7 +174,7 @@ class BooleanNetwork:
     @classmethod
     def from_string_cnet(self, string, keep_constants=True, **kwargs):
         """
-        Instanciates a Boolean Network from a string in cnet format.
+        Instanciates a Boolean Network from a string in cnet format. 
 
         Args:
             string (string): A cnet format representation of a Boolean Network.
@@ -220,10 +220,11 @@ class BooleanNetwork:
                     for jnode in range(indegree):
                         logic[inode]["in"].append(int(line.split()[3 + jnode]) - 1)
 
+                    # to generate with '?' output values
                     logic[inode]["out"] = [
-                        0 for i in range(2**indegree) if indegree > 0
-                    ]
-
+                        '?' for i in range(2**indegree) if indegree > 0
+                        ] # activate this for '?' output values
+                    
                     logic_line = network_file.readline().strip()
 
                     if indegree <= 0:
@@ -238,14 +239,51 @@ class BooleanNetwork:
                             and logic_line != ""
                             and len(logic_line) > 1
                         ):
+                            # Check for clashing entries.
                             for nlogicline in expand_logic_line(logic_line):
-                                logic[inode]["out"][
-                                    binstate_to_statenum(nlogicline.split()[0])
-                                ] = int(nlogicline.split()[1])
-                            logic_line = network_file.readline().strip()
+                                if logic[inode]["out"][binstate_to_statenum(nlogicline.split()[0])] in ['?', None, 2, '-']: # assigns output value if it is not assigned
+                                    logic[inode]["out"][binstate_to_statenum(nlogicline.split()[0])] = int(nlogicline.split()[1])
+                                elif logic[inode]["out"][binstate_to_statenum(nlogicline.split()[0])] == int(nlogicline.split()[1]): # if the output value is already assigned and is the same as the new output value 
+                                    pass
+                                else: # if the output value is already assigned and is different from the new output value
+                                    print("Entry clash in node ",(inode+1)," for ",{nlogicline.split()[0]}," i.e. State number: ",binstate_to_statenum(nlogicline.split()[0]))
+                                    logic[inode]["out"][binstate_to_statenum(nlogicline.split()[0])] = '!'
 
+                            logic_line = network_file.readline().strip()
+                    
+                    ## to generate with Prime Implicants(PI) 
+                    # logic[inode]["out"] = [
+                    #     '0' for i in range(2**indegree) if indegree > 0
+                    # ]
+
+                    # logic_line = network_file.readline().strip()
+
+                    # if indegree <= 0:
+                    #     if logic_line == "":
+                    #         logic[inode]["in"] = [inode]
+                    #         logic[inode]["out"] = [0, 1]
+                    #     else:
+                    #         logic[inode]["out"] = [int(logic_line)]
+                    # else:
+                    #     while (
+                    #         logic_line != "\n"
+                    #         and logic_line != ""
+                    #         and len(logic_line) > 1
+                    #     ):
+                    #         # Check for clashing entries.
+                    #         for nlogicline in expand_logic_line(logic_line):
+                    #             if logic[inode]["out"][binstate_to_statenum(nlogicline.split()[0])] in ['?', None, 2, '-','0']: # assigns output value if it is not assigned
+                    #                 logic[inode]["out"][binstate_to_statenum(nlogicline.split()[0])] = int(nlogicline.split()[1])
+                    #             elif logic[inode]["out"][binstate_to_statenum(nlogicline.split()[0])] == int(nlogicline.split()[1]): # if the output value is already assigned and is the same as the new output value 
+                    #                 pass
+                    #             else: # if the output value is already assigned and is different from the new output value
+                    #                 print("Entry clash in node ",(inode+1)," for ",{nlogicline.split()[0]}," i.e. State number: ",binstate_to_statenum(nlogicline.split()[0]))
+                    #                 logic[inode]["out"][binstate_to_statenum(nlogicline.split()[0])] = '1'
+
+                    #         logic_line = network_file.readline().strip()
                 # .e = end of file
                 elif ".e" in line:
+
                     break
             line = network_file.readline()
 
