@@ -13,7 +13,7 @@ matplotlib==3.7.5
 mccabe==0.7.0
 mypy==1.2.0
 mypy-extensions==1.0.0
-networkx==3.2
+networkx==3.1
 numpy==1.26.4
 packaging==23.1
 pandas==2.2.2
