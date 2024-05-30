@@ -20,7 +20,7 @@ extensions = [
 
 __package__ = "cana"
 __description__ = "This package implements a series of methods used to study control, canalization and redundancy in Boolean networks."
-__version__ = "0.2.0"
+__version__ = "1.0.0"
 
 setup(
     name=__package__,
@@ -54,7 +54,7 @@ setup(
         "networkx",
         "pandas",
         "matplotlib",
-        "schematodes",
+        "schematodes>=1.0.0",
         # 'Cython'
     ],
     include_package_data=True,
