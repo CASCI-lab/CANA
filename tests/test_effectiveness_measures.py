@@ -8,15 +8,16 @@ measures = [
     "ke_norm",
     "a",
     "s",
-    "s_norm"
+    "s_norm",
     # "kc",
     # "kc_norm"
 ]
 
+
 def doTest(func, ans):
     k = int(math.log(len(func)) / math.log(2))
     node = BooleanNode(k=k, inputs=range(k), outputs=list(func))
-    
+
     rets = {}
     for m in measures:
         if m == "kr":
@@ -41,15 +42,16 @@ def doTest(func, ans):
     for m in measures:
         assert rets[m] == ans[m], m
 
+
 def test_AND():
     f = "0001"
     ans = {
-        "kr": 3/4,
-        "kr_norm": 3/4/2,
-        "ke": 5/4,
-        "ke_norm": 5/4/2,
+        "kr": 3 / 4,
+        "kr_norm": 3 / 4 / 2,
+        "ke": 5 / 4,
+        "ke_norm": 5 / 4 / 2,
         "a": [0.5, 0.5],
         "s": 1,
-        "s_norm": 1/2
+        "s_norm": 1 / 2,
     }
     doTest(f, ans)
