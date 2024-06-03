@@ -468,3 +468,22 @@ def test_input_symmetry_SBF():
     # assert (k_s == true_k_s), f"Input symmetry simp: SBF (mean, sameSymbol): returned {k_s}, true value is {true_k_s}"
     # k_s, true_k_s = n.input_symmetry(aggOp="max", kernel="numDots", sameSymbol=True), 4.0
     # assert (k_s == true_k_s), f"Input symmetry: SBF (max, sameSymbol): returned {k_s}, true value is {true_k_s}"
+
+# Tests for partially-specified functions
+def test_partial_lut():
+    partial_lut = [
+        [('00','1'),('01','1')],
+        [('0-','1'),('10','1')],
+        [('001','1'),('01-','1'),('1-1','0')],
+        [('00--', '0'), ('1--1','1'), ('11--','0')]
+    ]
+    expected_filled = [
+        [('00','1'),('01','1'),('10','?'),('11','?')],
+        [('00','1'),('01','1'),('10','1'),('11','?')],
+        [('000','?'),('001','1'),('010','1'),('011','1'),('100','?'),('101','0'),('110','?'),('111','0')],
+        [('0000', '0'), ('0001', '0'), ('0010', '0'), ('0011', '0'), ('0100', '?'), ('0101', '?'), ('0110', '?'), ('0111', '?'), ('1000', '?'), ('1001', '1'), ('1010', '?'), ('1011', '1'), ('1100', '0'), ('1101', '!'),('1110', '0'), ('1111', '!')]
+    ]
+    for i, partial in enumerate(partial_lut):
+        filled = fill_out_lut(partial)
+        expected = expected_filled[i]
+        assert(filled==expected), f"Partial LUT filling failed: {filled} != {expected}"

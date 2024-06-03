@@ -327,3 +327,54 @@ def input_monotone(outputs, input_idx, activation=1):
                 )
 
         return all(monotone_configs)
+
+def fill_out_lut(partial_lut):
+    """
+    Fill out a partial LUT with missing entries.
+
+    Args:
+        partial_lut (list) : A list of tuples where each tuple is a pair of a binary string and a value.
+
+    Returns:
+        (list) : A list of tuples where each tuple is a pair of a binary string and a value.
+
+    Example:
+        >>> fill_out_lut([('00', 0), ('01', 0), ('1-', 1), ('11', 1)])
+        [('00', 0), ('01', 0), ('10', 1), ('11', 1)]
+    """
+
+    if len(set([len(x[0]) for x in partial_lut])) != 1:
+        raise ValueError('All the input entries of the partial LUT must be of the same length.')
+
+    k = len(partial_lut[0][0])
+
+    all_states = {entry[0]: entry[1] for entry in partial_lut}
+    for entry in partial_lut:
+        if not all([x in ['0','1','-','#','2','x'] for x in entry[0]]):
+            raise ValueError('All the input entries of the partial LUT must be valid binary strings.')
+        
+        elif any([x in ['-', '#','2','x'] for x in entry[0]]):
+            missing_data_indices = [i for i, x in enumerate(entry[0]) if x == '-']
+            table=[]
+            output_list_permutations=[]
+            for i in range(2 ** len(missing_data_indices)):
+                row = [int(x) for x in bin(i)[2:].zfill(len(missing_data_indices))]
+                table.append(row)
+                output_list_permutations.append(entry[0])
+                for j in range(len(missing_data_indices)):
+                    output_list_permutations[i] = output_list_permutations[i][:missing_data_indices[j]] + str(table[i][j]) + output_list_permutations[i][missing_data_indices[j]+1:] 
+            del all_states[entry[0]]
+            for perm in output_list_permutations:
+                if perm in all_states and all_states[perm] != entry[1]:
+                    # print('Clashing output values for entry:', perm)
+                    all_states[perm] = '!'
+                else:
+                    all_states[perm] = entry[1]
+
+    for i in range(2**k):
+        state = bin(i)[2:].zfill(k)
+        if state not in all_states:
+            all_states[state] = '?'
+    
+    all_states = sorted(all_states.items(), key=lambda x: x[0])
+    return all_states
