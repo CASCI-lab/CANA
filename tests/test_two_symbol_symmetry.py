@@ -3,9 +3,6 @@ import math
 import helpers.helper as helper
 
 from cana.boolean_node import BooleanNode
-from cana.canalization.boolean_canalization import *  # WARNING: some functions here differ from the file below!
-from cana.canalization.cboolean_canalization import *
-from cana.cutils import outputs_to_binstates_of_given_type
 
 # WARNING: ignoring detection of same-symbol symmetry for now. Complicating issues.
 

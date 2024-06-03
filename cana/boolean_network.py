@@ -1191,7 +1191,7 @@ class BooleanNetwork:
         return "".join(
             [
                 str(node.step("".join(initial[j] for j in self.logic[i]["in"])))
-                if not (i in pinned_var)
+                if i not in pinned_var
                 else initial[i]
                 for i, node in enumerate(self.nodes, start=0)
             ]
@@ -1582,7 +1582,7 @@ class BooleanNetwork:
         Gstr_shortest_dist, Gstr_shortest_paths = nx.single_source_dijkstra(
             Gstr, source, target=None, cutoff=n_steps
         )
-        Gstr_shortest_dist = {n: int(l) for n, l in Gstr_shortest_dist.items()}
+        Gstr_shortest_dist = {n: int(m) for n, m in Gstr_shortest_dist.items()}
 
         # in the effective graph, calcluate the dijkstra shortest paths from the source to all targets that are shorter than the cufoff
         # where the edge weight is given by the effective weight function
@@ -1593,14 +1593,14 @@ class BooleanNetwork:
         for itar, target in enumerate(target_set):
             # we dont need to worry about a path to iteself (source==target)
             # and if the target doesnt appear in the shortest path dict, then no path exists that is less than the cutoff
-            if target != source and not Gstr_shortest_dist.get(target, None) is None:
+            if target != source and Gstr_shortest_dist.get(target, None) is not None:
                 # the light cone is at least as big as the number of edges in the structural shorest path
                 impact_matrix[
                     0, list(range(Gstr_shortest_dist[target], n_steps + 1)), itar
                 ] = Gstr_shortest_dist[target]
 
                 # if the path exists, then the number of edges (timesteps) is one less than the number of nodes
-                if not Geff_shortest_paths.get(target, None) is None:
+                if Geff_shortest_paths.get(target, None) is not None:
                     eff_path_steps = len(Geff_shortest_paths[target]) - 1
                 else:
                     # or the path doesnt exist

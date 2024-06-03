@@ -42,7 +42,7 @@ def expandTs(ts):
     obsSet = set()
     # for each schema and its symmetries
     for t, g in zip(tss, perms):
-        if type(t) == str:
+        if isinstance(t, str):
             t = list(t)
         # for each subset of indices that can be permuted
         x = []

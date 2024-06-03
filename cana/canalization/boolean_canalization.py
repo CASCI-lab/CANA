@@ -296,7 +296,7 @@ def _expand_ts_logic(two_symbols, permut_indexes):
                 _implicant = np.copy(implicant)
                 _implicant[idxs] = vals
                 # Insert to list of logics if not already there
-                if not (_implicant.tolist() in logics):
+                if _implicant.tolist() not in logics:
                     logics.append(_implicant.tolist())
                     Q.append(_implicant.tolist())
     return logics
