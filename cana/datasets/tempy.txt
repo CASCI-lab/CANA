@@ -1,0 +1,59 @@
+# total number of nodes
+.v 7
+
+# labels of nodes and names of corresponding components
+.l 1 One
+.l 2 Two
+.l 3 Three
+.l 4 Four
+.l 5 Five
+.l 6 Six
+.l 7 Seven
+
+# 1 = One
+.n 1 0
+1
+
+# 2 = Two
+.n 2 0
+1
+
+# 3 = Three
+.n 3 0
+1
+
+# 4 = Four
+.n 4 0
+1
+
+# 5 = Five
+.n 5 0
+1
+
+# 6 = Six
+.n 6 2 1 2 
+00 0
+01 1
+11 1
+
+# 7 = Seven
+.n 7 6 1 2 3 4 5 6
+0--000 0
+--0--- 0
+1--111 0
+-1---- 0
+-01-10 1
+-0110- 1
+001-1- 1
+-01-01 1
+-010-1 1
+101-0- 1
+101--0 1
+001--1 1
+001--1 1
+0011-- 1
+1010-- 1
+-011-0 1
+-0101- 1
+
+.e end of file

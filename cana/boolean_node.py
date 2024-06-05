@@ -110,7 +110,12 @@ class BooleanNode(object):
 
     @classmethod
     def from_output_list(self, outputs=list(), *args, **kwargs):
-        """Instanciate a Boolean Node from a output transition list.
+        """
+        Instanciate a Boolean Node from a output transition list.
+        
+        For missing data labeled as '#', '-', None, or 'x': In this case, we replace the missing data with a placeholder value, such as '-'. This allows us to maintain the structure of the outputs list while indicating that the data is missing.
+
+        Complete line missing: If a complete line is missing from the outputs list, we can generate the missing rows as incomplete data. This can be done by extending the outputs list with the placeholder value '-' until it reaches the expected length of 2^k, where k is the number of inputs.
 
         Args:
             outputs (list) : The transition outputs of the node.
@@ -119,15 +124,26 @@ class BooleanNode(object):
             (BooleanNode) : the instanciated object.
 
         Example:
-            >>> BooleanNode.from_output_list(outputs=[0,0,0,1], name="AND")
+            >>> BooleanNode.from_output_list(outputs=[0,0,0,'-',1], name="EG")
         """
         id = kwargs.pop("id") if "id" in kwargs else 0
         name = kwargs.pop("name") if "name" in kwargs else "x"
-        k = int(np.log2(len(outputs)))
+        k = int(np.ceil(np.log2(len(outputs))))
         inputs = (
             kwargs.pop("inputs") if "inputs" in kwargs else [(x + 1) for x in range(k)]
         )
         state = kwargs.pop("state") if "state" in kwargs else False
+
+        # Replace 'None', '-', '#', or 'x' with '-'. 
+        for i , output in enumerate(outputs):
+            if output in [None, '-', '#', 'x']:
+                outputs[i] = '-'  # Placeholder value for missing data
+                print("Some of the lines contain data in the form of 'x', '#', None or '-'. These have been replaced with the placeholder value '-'. for internal consistency.")
+        
+        # Generate extra lines in the table to account for missing lines
+        if len(outputs) < 2**k:
+            print(f"The total lines inputted are {len(outputs)}. Generating the missing rows for upto 2^{k} = {2**k} lines with placeholder value '-'.") 
+            outputs.extend(['-'] * (2**k - len(outputs)))
 
         return BooleanNode(
             id=id,
