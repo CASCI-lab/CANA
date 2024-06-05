@@ -90,7 +90,10 @@ def plot_schemata(n, plotTS=True):
                         x + cwidth / 2,
                         y + cwidth / 10 * 4,
                         text=text,
-                        color=textcolor,TODO
+                        color=textcolor,
+                        va="center",
+                        ha="center",
+                        fontsize=14,
                         family="serif",
                     )
                 )
@@ -105,7 +108,7 @@ def plot_schemata(n, plotTS=True):
                 xticks.append(x + cwidth / 2)
                 x += cwidth + cxspace
 
-            x += sepcxspaceTODO
+            x += sepcxspace
             r = Rectangle(
                 (x, y),
                 width=cwidth,
