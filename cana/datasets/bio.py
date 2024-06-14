@@ -34,6 +34,19 @@ def TEMPY():
         keep_constants=True,
     )
 
+def PARTIAL_LUTS_DEMO():
+    """
+    A txt file with different types of Partial LUTs to demo the Partial Lut generation function.
+
+    Returns:
+        (BooleanNetwork)
+    """
+    return BooleanNetwork.from_file(
+        _path + "/partial_LUT_demo_nodes.txt",
+        name="Partial LUTs Demo",
+        keep_constants=True,
+    )
+
 def THALIANA():
     """Boolean network model of the control of flower morphogenesis in Arabidopsis thaliana
 

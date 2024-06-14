@@ -69,9 +69,10 @@ class BooleanNetwork:
         keep_constants=False,
         bin2num=None,
         num2bin=None,
-        verbose=False,
+        verbose=False, # Verbose mode for debugging purposes 
         *args,
         **kwargs
+        # TODO: [SRI] ask Jordan if we should add a requirement called complete = True or False so as to generate patial look up tables based on the completeness of the network
     ):
         # NOTE: *args and **kwargs don't do anything. I'm not sure why they wre added here, so I'm not going to remove them.
 
@@ -175,6 +176,7 @@ class BooleanNetwork:
     def from_string_cnet(self, string, keep_constants=True, **kwargs):
         """
         Instanciates a Boolean Network from a string in cnet format. 
+        The cnet format is similar to the Berkeley Logic Interchange Format (BLIF).
 
         Args:
             string (string): A cnet format representation of a Boolean Network.
@@ -250,7 +252,7 @@ class BooleanNetwork:
                                     logic[inode]["out"][binstate_to_statenum(nlogicline.split()[0])] = '!'
 
                             logic_line = network_file.readline().strip()
-                    
+                    # TODO: [SRI] check if I need to add a Prime Implicant condition in the function
                     ## to generate with Prime Implicants(PI) 
                     # logic[inode]["out"] = [
                     #     '0' for i in range(2**indegree) if indegree > 0
@@ -361,7 +363,7 @@ class BooleanNetwork:
 
     @classmethod
     def from_dict(self, logic, keep_constants=True, **kwargs):
-        """Instanciaets a BooleanNetwork from a logic dictionary.
+        """Instanciates a BooleanNetwork from a logic dictionary.
 
         Args:
             logic (dict) : The logic dict.
@@ -372,6 +374,20 @@ class BooleanNetwork:
 
         See also:
             :func:`from_file` :func:`from_dict`
+
+        Examples:
+            Logic should be structured as follow:
+
+            .. code-block:: python
+
+                logic = {
+                    0: {'name': 'A', 'in': [1,0], 'out': [0, 1, 0,1]},
+                    1: {'name': 'B', 'in': [0,2], 'out': [0, 1, 0, 1]},
+                    2: {'name': 'C', 'in': [0,1,2], 'out': [0, 1, 1, 0, 0, 1, 1, 0]}
+                }
+
+                # Instanciate the BooleanNetwork
+                bn = BooleanNetwork.from_dict(logic)
         """
         Nnodes = len(logic)
         constants = {}
@@ -891,7 +907,7 @@ class BooleanNetwork:
             return trajectory
 
     def attractor(self, initial):
-        """Computes the trajectory starting at ``initial`` until it reaches an attracor (this is garanteed)
+        """Computes the trajectory starting at ``initial`` until it reaches an attractor (this is guaranteed)
 
         Args:
             initial (string): the initial state.

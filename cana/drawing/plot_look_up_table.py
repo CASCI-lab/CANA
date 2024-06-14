@@ -18,7 +18,10 @@ def plot_look_up_table(n):
     -------
     None
     """
-
+    # Check if n.inputs has any values
+    if not n.inputs:
+        return print('No inputs to plot')
+        
     # Init values from BooleanNode
     k = n.k if n.k>=1 else 1
     inputs = n.inputs if not n.constant else [n.name]

@@ -34,7 +34,25 @@ def regular_boolean_network(
     niter_remove=1000,
 ):
     """
-    TODO: description
+    Generate a random regular boolean network.
+    
+    Args:
+        N (int) : Number of nodes in the network.
+        K (int) : Degree of each node in the network.
+        bias (float) : Bias for the output transitions.
+        bias_constraint (str) : Constraint for the bias. Options are 'soft', 'hard', 'soft_no_constant'.
+        keep_constants (bool) : Keep constant nodes.
+        remove_multiedges (bool) : Remove multi-edges.
+        niter_remove (int) : Number of iterations to try to remove duplicate edges.
+
+    Returns:
+        (BooleanNetwork) : The boolean network object.
+
+    Examples:
+        A regular boolean network with 10 nodes, each with 2 inputs and a bias of 0.5.
+
+        >>> bn = regular_boolean_network(N=10, K=2, bias=0.5)
+
     """
     din = [K] * N  # in-degree distrubtion
     dout = [K] * N  # out-degree distrubtion
@@ -72,7 +90,24 @@ def er_boolean_network(
     niter_remove=1000,
 ):
     """
-    TODO: description
+    Generate a random Erdos-Renyi boolean network.
+
+    Args:
+        N (int) : Number of nodes in the network.
+        p (float) : Probability for edge creation.
+        bias (float) : Bias for the output transitions.
+        bias_constraint (str) : Constraint for the bias. Options are 'soft', 'hard', 'soft_no_constant'.
+        remove_multiedges (bool) : Remove multi-edges.
+        niter_remove (int) : Number of iterations to try to remove duplicate edges.
+
+    Returns:
+        (BooleanNetwork) : The boolean network object.
+
+    Examples:
+        A random Erdos-Renyi boolean network with 10 nodes and a probability of 0.2.
+
+        >>> bn = er_boolean_network(N=10, p=0.2)
+        
     """
     er_graph = nx.erdos_renyi_graph(N, p, directed=True)
 
@@ -98,7 +133,21 @@ def er_boolean_network(
 
 def random_automata_table(indegree, bias, bias_constraint="soft"):
     """
-    TODO: description
+    Generate a random automata table.
+
+    Args:
+        indegree (int) : Number of inputs.
+        bias (float) : Bias for the output transitions.
+        bias_constraint (str) : Constraint for the bias. Options are 'soft', 'hard', 'soft_no_constant'.
+
+    Returns:
+        (list) : A list of output transitions.
+
+    Examples:
+        A random automata table with 2 inputs and a bias of 0.5.
+
+        >>> random_automata_table(indegree=2, bias=0.5)
+
     """
     if bias_constraint == "soft":
         return [int(random.random() < bias) for b in range(2**indegree)]
@@ -119,7 +168,15 @@ def random_automata_table(indegree, bias, bias_constraint="soft"):
 
 def _remove_duplicate_edges(graph, niter_remove=100):
     """
-    TODO: description
+    Remove duplicate edges from a graph.
+
+    Args:
+        graph (nx.DiGraph) : A directed graph.
+        niter_remove (int) : Number of iterations to try to remove duplicate edges.
+
+    Returns:
+        (nx.DiGraph) : A directed graph without duplicate edges.
+
     """
     edge_list = list(graph.edges())
     edge_frequency = Counter(edge_list)

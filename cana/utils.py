@@ -341,22 +341,33 @@ def fill_out_lut(partial_lut):
     Example:
         >>> fill_out_lut([('00', 0), ('01', 0), ('1-', 1), ('11', 1)])
         [('00', 0), ('01', 0), ('10', 1), ('11', 1)]
+
+    # TODO: [SRI] update function to handle txt file input style  to generate the partial LUT
+    # TODO: [SRI] fill up '?' symbols based on specified criteria- a coin toss, or specified bias
+    # TODO: [SRI] add bias criteria to handle incomplete output values
+    # TODO: [SRI] generate LUT with a specified effective connectivity
+    # TODO: [SRI] generate LUT from two symbol schemata, with a specified ratio of wildcard symbols
+    # TODO: [SRI] add tests for canonical rule logic, rule 90, rule 110
+    # TODO: [SRI] use examples COSA rule, GKL rule where you fill up LUT based on the annihilation inputs and see if it matches with the rules plus bias.
     """
 
+    # Check if all the input entries of the partial LUT are of the same length.
     if len(set([len(x[0]) for x in partial_lut])) != 1:
         raise ValueError('All the input entries of the partial LUT must be of the same length.')
 
     k = len(partial_lut[0][0])
 
     all_states = {entry[0]: entry[1] for entry in partial_lut}
+
     for entry in partial_lut:
         if not all([x in ['0','1','-','#','2','x'] for x in entry[0]]):
             raise ValueError('All the input entries of the partial LUT must be valid binary strings.')
         
-        elif any([x in ['-', '#','2','x'] for x in entry[0]]):
+        elif any([x in ['-', '#','2','x'] for x in entry[0]]): 
             missing_data_indices = [i for i, x in enumerate(entry[0]) if x == '-']
             table=[]
             output_list_permutations=[]
+
             for i in range(2 ** len(missing_data_indices)):
                 row = [int(x) for x in bin(i)[2:].zfill(len(missing_data_indices))]
                 table.append(row)
@@ -364,6 +375,7 @@ def fill_out_lut(partial_lut):
                 for j in range(len(missing_data_indices)):
                     output_list_permutations[i] = output_list_permutations[i][:missing_data_indices[j]] + str(table[i][j]) + output_list_permutations[i][missing_data_indices[j]+1:] 
             del all_states[entry[0]]
+
             for perm in output_list_permutations:
                 if perm in all_states and all_states[perm] != entry[1]:
                     # print('Clashing output values for entry:', perm)
@@ -374,7 +386,13 @@ def fill_out_lut(partial_lut):
     for i in range(2**k):
         state = bin(i)[2:].zfill(k)
         if state not in all_states:
-            all_states[state] = '?'
+            all_states[state] = '?' # TODO: [SRI] Add option to generate 0 or 1 with 0.5 probability
     
+    # Print a statement if there are any missing values '?' in the LUT. Else print a statement that the LUT is complete.
+    if '?' in all_states.values():
+        print('The LUT is incomplete. Missing values are represented by \'?\'')
+    else:
+        print('The LUT is complete.')
+
     all_states = sorted(all_states.items(), key=lambda x: x[0])
     return all_states

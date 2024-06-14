@@ -29,7 +29,7 @@ from cana.cutils import (
     outputs_to_binstates_of_given_type,
     statenum_to_binstate,
 )
-from cana.utils import input_monotone, ncr
+from cana.utils import input_monotone, ncr, fill_out_lut
 
 
 class BooleanNode(object):
@@ -155,6 +155,30 @@ class BooleanNode(object):
             *args,
             **kwargs
         )
+    
+    def from_partial_lut(partial_lut, *args, **kwargs):
+        """
+        Instanciate a Boolean Node from a partial look-up table.
+
+        Uses the fill_out_lut function to complete the look-up table. Extracts the output list from the completed look-up table. Then instanciates the Boolean Node from the output list using the from_output_list method.
+
+        Args:
+            partial_lut (list) : A partial look-up table of the node.
+
+        Returns:
+            (BooleanNode) : the instanciated object.
+
+        Example:
+            >>> BooleanNode.from_partial_lut(partial_lut=[('00', 0), ('01', 1), ('11', 1)], name="EG")
+                
+        """
+
+        generated_lut = fill_out_lut(partial_lut)
+        output_list = [x[1] for x in generated_lut]
+
+        return BooleanNode.from_output_list(output_list, *args, **kwargs)
+        
+
 
     def set_constant(self, constant=True, state=None):
         """Sets whether the node is to be treated as a contant
