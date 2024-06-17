@@ -157,7 +157,7 @@ class BooleanNode(object):
             **kwargs
         )
     
-    def from_partial_lut(partial_lut, fill_missing_output_randomly = False, required_node_bias = None, verbose= True, *args, **kwargs):
+    def from_partial_lut(partial_lut, fill_missing_output_randomly = False, required_node_bias = None, required_effective_connectivity= None,verbose= True, *args, **kwargs):
         """
         Instantiate a Boolean Node from a partial look-up table.
 
@@ -167,6 +167,7 @@ class BooleanNode(object):
             partial_lut (list) : A partial look-up table of the node.
             fill_missing_output_randomly (bool) : If True, missing output values are filled with random 0 or 1. If False, missing output values are filled with '?'.
             required_node_bias (float) : The required node bias to fill the missing output values with. If None, missing output values are filled with '?', or randomly if fill_missing_output is True.
+            required_effective_connectivity (float) : The required effective connectivity to fill the missing output values with. It will generate a node with the closest possible effective connectivity to the required effective connectivity.
             verbose (bool) : If True, print additional information. Default is True.
 
         Returns:
@@ -175,16 +176,28 @@ class BooleanNode(object):
         Example:
             >>> BooleanNode.from_partial_lut(partial_lut=[('00', 0), ('01', 1), ('11', 1)], required_node_bias=0.5, verbose=True, name="EG")
             >>> BooleanNode.from_partial_lut(partial_lut=[('00', 0), ('01', 1), ('11', 1)], fill_missing_output_randomly=True, verbose=False, name="EG")
+            >>> BooleanNode.from_partial_lut(partial_lut=[('00', 0), ('01', 1), ('11', 1)], required_effective_connectivity=0.5, verbose=True, name="EG")
+
+        Note:
+            The partial look-up table should be a list of tuples where each tuple contains a binary input state and the corresponding output value. For example, [('00', 0), ('01', 1), ('11', 1)].
+            The required node bias should be a float value between 0 and 1. 
+            The required effective connectivity should be a float value between 0 and 1.
+            The fill_missing_output_randomly should be a boolean value.
+        
         # TODO : [SRI] add tests for this
         """
               
+        # Checking if more than one out of required_effective_connectivity, requried_node_bias and fill_missing_output_randomly are True, then raise an error.
+        if sum([required_effective_connectivity is not None, required_node_bias is not None, fill_missing_output_randomly]) > 1:
+            raise ValueError("Only one of required_effective_connectvity, required_node_bias and fill_missing_output_randomly can be True. Please set the rest to False.")
+     
 
-        generated_lut = fill_out_lut(partial_lut, verbose=verbose)
+        generated_lut = fill_out_lut(partial_lut, verbose=False)
         output_list = [x[1] for x in generated_lut]
 
         generated_node = BooleanNode.from_output_list(output_list, *args, **kwargs)
 
-        # Fill missing output values with the specified bias or randomly
+        # Fill missing output values with the specified bias or with specified effective connectivity or randomly
 
         if required_node_bias is not None: # If required node bias is specified, then fill missing output values with the specified bias.
 
@@ -223,11 +236,37 @@ class BooleanNode(object):
             if verbose:
                 print(f"Generated the node with a bias of {generated_node.bias(verbose=False)}. This is the closest bias less than or equal to the required bias of {required_node_bias}.")
 
-        else:          
-            if fill_missing_output_randomly:
-                # Replace '?' in generated_node.outputs with 0 or 1 randomly
-                generated_node.outputs = [random.choice(['0', '1']) if output == '?' else output for output in generated_node.outputs]
+        elif fill_missing_output_randomly:
+            # Replace '?' in generated_node.outputs with 0 or 1 randomly
+            generated_node.outputs = [random.choice(['0', '1']) if output == '?' else output for output in generated_node.outputs]
         
+        elif required_effective_connectivity is not None:
+            generated_outputs = generated_node.outputs.copy()
+            missing_output_indices = [i for i, x in enumerate(generated_outputs) if x == '?']
+            # print(f"Missing output indices = {missing_output_indices}." if verbose else None)
+
+            missing_output_count = generated_outputs.count('?')
+            # print(f"No. of '?' in output = {missing_output_count}.")
+            permutations = list(product(*[('0', '1')] * (missing_output_count)))
+            # print(permutations)  
+            generated_node_permutations = [None] * len(permutations)
+
+            for count, permutation in enumerate(permutations):
+                for i, index in enumerate(missing_output_indices):
+                    generated_outputs[index] = permutation[i]
+                generated_node_permutations[count] = BooleanNode.from_output_list(generated_outputs)
+
+            # print(f"Total output permutations generated = {len(generated_node_permutations)}.")
+    
+            permutation_effective_connectivity = [x.effective_connectivity() for x in generated_node_permutations]
+            closest_value = min(permutation_effective_connectivity, key=lambda x: abs(x - required_effective_connectivity))
+            closest_index = permutation_effective_connectivity.index(closest_value)
+
+            generated_node = generated_node_permutations[closest_index]
+            print(f"Generated the node with the closest possible effective connectivity of {generated_node.effective_connectivity()}." if verbose else None)
+
+            if '?' in generated_node.outputs:
+                print("The LUT is incomplete. Missing values are represented by '?'." if verbose else None)
         return generated_node
         
 
@@ -541,6 +580,11 @@ class BooleanNode(object):
         See also:
             :func:`look_up_table`
         """
+        # Check if the outputs contain '?' and generate an error message if it does. 
+        if '?' in self.outputs:
+            print("Error (schemata_look_up_table): The outputs contain missing values. Please fill the missing values before generating the schemata look-up table.")
+            return False
+
         r = []
         # Prime Implicant LUT
         if type == "pi":

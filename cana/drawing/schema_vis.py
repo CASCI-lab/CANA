@@ -11,6 +11,10 @@ def plot_schemata(n, plotTS=True):
     # Init values from BooleanNode
     k = n.k if n.k >= 1 else 1
     outputs = np.array(n.outputs)
+
+    if "?" in outputs: # check if there are any '?' in the output.
+        print("Error (plot_schemata()): The output contains '?'")
+        return False
     if np.all(outputs[0] == outputs):
         return False
     inputs = n.inputs if not n.constant else [n.name]
