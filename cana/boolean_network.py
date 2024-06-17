@@ -178,6 +178,8 @@ class BooleanNetwork:
         Instanciates a Boolean Network from a string in cnet format. 
         The cnet format is similar to the Berkeley Logic Interchange Format (BLIF).
 
+        This function generates a Logic dictionary from the string and uses the :func:`~cana.boolean_network.BooleanNetwork.from_dict` method to generate the Boolean Network object.
+
         Args:
             string (string): A cnet format representation of a Boolean Network.
 
@@ -294,7 +296,7 @@ class BooleanNetwork:
     @classmethod
     def from_string_boolean(self, string, keep_constants=True, **kwargs):
         """
-        Instanciates a Boolean Network from a Boolean update rules format.
+        Instanciates a Boolean Network from a Boolean update rules format. Genetates a Logic dictionary from the string and uses the :func:`~cana.boolean_network.BooleanNetwork.from_dict` method to generate the Boolean Network object.
 
         Args:
             string (string) : A boolean update rules format representation of a Boolean Network.

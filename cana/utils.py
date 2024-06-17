@@ -328,12 +328,16 @@ def input_monotone(outputs, input_idx, activation=1):
 
         return all(monotone_configs)
 
-def fill_out_lut(partial_lut):
+def fill_out_lut(partial_lut, verbose= False):  
     """
     Fill out a partial LUT with missing entries.
 
     Args:
         partial_lut (list) : A list of tuples where each tuple is a pair of a binary string and a value.
+        fill_missing_output (bool) : If True, missing output values are filled with random 0 or 1. If False, missing output values are filled with '?'.
+
+
+
 
     Returns:
         (list) : A list of tuples where each tuple is a pair of a binary string and a value.
@@ -342,9 +346,6 @@ def fill_out_lut(partial_lut):
         >>> fill_out_lut([('00', 0), ('01', 0), ('1-', 1), ('11', 1)])
         [('00', 0), ('01', 0), ('10', 1), ('11', 1)]
 
-    # TODO: [SRI] update function to handle txt file input style  to generate the partial LUT
-    # TODO: [SRI] fill up '?' symbols based on specified criteria- a coin toss, or specified bias
-    # TODO: [SRI] add bias criteria to handle incomplete output values
     # TODO: [SRI] generate LUT with a specified effective connectivity
     # TODO: [SRI] generate LUT from two symbol schemata, with a specified ratio of wildcard symbols
     # TODO: [SRI] add tests for canonical rule logic, rule 90, rule 110
@@ -378,7 +379,7 @@ def fill_out_lut(partial_lut):
 
             for perm in output_list_permutations:
                 if perm in all_states and all_states[perm] != entry[1]:
-                    # print('Clashing output values for entry:', perm)
+                    print('Clashing output values for entry:', perm)
                     all_states[perm] = '!'
                 else:
                     all_states[perm] = entry[1]
@@ -386,13 +387,15 @@ def fill_out_lut(partial_lut):
     for i in range(2**k):
         state = bin(i)[2:].zfill(k)
         if state not in all_states:
-            all_states[state] = '?' # TODO: [SRI] Add option to generate 0 or 1 with 0.5 probability
-    
-    # Print a statement if there are any missing values '?' in the LUT. Else print a statement that the LUT is complete.
-    if '?' in all_states.values():
-        print('The LUT is incomplete. Missing values are represented by \'?\'')
-    else:
-        print('The LUT is complete.')
+            all_states[state] = '?' 
+
+    if verbose:
+        # Print a statement if there are any missing values '?' in the LUT. Else print a statement that the LUT is complete.
+        if '?' in all_states.values():
+            print('The LUT is incomplete. Missing values are represented by \'?\'')
+        else:
+            print('The LUT is complete.')
 
     all_states = sorted(all_states.items(), key=lambda x: x[0])
+
     return all_states

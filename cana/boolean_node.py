@@ -30,6 +30,7 @@ from cana.cutils import (
     statenum_to_binstate,
 )
 from cana.utils import input_monotone, ncr, fill_out_lut
+import random
 
 
 class BooleanNode(object):
@@ -156,27 +157,78 @@ class BooleanNode(object):
             **kwargs
         )
     
-    def from_partial_lut(partial_lut, *args, **kwargs):
+    def from_partial_lut(partial_lut, fill_missing_output_randomly = False, required_node_bias = None, verbose= True, *args, **kwargs):
         """
-        Instanciate a Boolean Node from a partial look-up table.
+        Instantiate a Boolean Node from a partial look-up table.
 
-        Uses the fill_out_lut function to complete the look-up table. Extracts the output list from the completed look-up table. Then instanciates the Boolean Node from the output list using the from_output_list method.
+        Uses the fill_out_lut function to complete the look-up table. Extracts the output list from the completed look-up table. Then instantiates the Boolean Node from the output list using the from_output_list method.
 
         Args:
             partial_lut (list) : A partial look-up table of the node.
+            fill_missing_output_randomly (bool) : If True, missing output values are filled with random 0 or 1. If False, missing output values are filled with '?'.
+            required_node_bias (float) : The required node bias to fill the missing output values with. If None, missing output values are filled with '?', or randomly if fill_missing_output is True.
+            verbose (bool) : If True, print additional information. Default is True.
 
         Returns:
-            (BooleanNode) : the instanciated object.
+            (BooleanNode) : the instantiated object.
 
         Example:
-            >>> BooleanNode.from_partial_lut(partial_lut=[('00', 0), ('01', 1), ('11', 1)], name="EG")
-                
+            >>> BooleanNode.from_partial_lut(partial_lut=[('00', 0), ('01', 1), ('11', 1)], required_node_bias=0.5, verbose=True, name="EG")
+            >>> BooleanNode.from_partial_lut(partial_lut=[('00', 0), ('01', 1), ('11', 1)], fill_missing_output_randomly=True, verbose=False, name="EG")
+        # TODO : [SRI] add tests for this
         """
+              
 
-        generated_lut = fill_out_lut(partial_lut)
+        generated_lut = fill_out_lut(partial_lut, verbose=verbose)
         output_list = [x[1] for x in generated_lut]
 
-        return BooleanNode.from_output_list(output_list, *args, **kwargs)
+        generated_node = BooleanNode.from_output_list(output_list, *args, **kwargs)
+
+        # Fill missing output values with the specified bias or randomly
+
+        if required_node_bias is not None: # If required node bias is specified, then fill missing output values with the specified bias.
+
+            # Checking if required node bias is within the achievable bias range of the node.
+
+            # Calculating max achievable bias
+            max_achievable_output = ['1' if output == '?' else output for output in generated_node.outputs]
+            max_achievable_bias = sum(map(int, max_achievable_output))/2**generated_node.k
+            min_achievable_bias = generated_node.bias(verbose=False)
+
+            # Calculating the number of '1' required to achieve the required bias.
+            required_ones = int(required_node_bias * 2**generated_node.k)
+            current_ones = generated_node.outputs.count('1')
+
+            # Checking if the required bias is achievable.
+            if required_node_bias > max_achievable_bias:
+                if verbose:
+                    print(f"Required Node Bias is greater than the maximum achievable bias ({max_achievable_bias}) of the node. Generating with the maximum achievable bias.")
+                required_node_bias = max_achievable_bias
+            
+            elif required_node_bias < min_achievable_bias:
+                min_achievable_bias = generated_node.bias(verbose=False)
+                if verbose:
+                    print(f"Required Node Bias is lower than the minimum achievable bias (bias = {min_achievable_bias}) of the node. Generating with the minimum achievable bias.")
+                required_node_bias = min_achievable_bias
+            
+            # Fill the missing output values to achieve the required bias as closely as possible.
+            required_ones = int(required_node_bias * 2**generated_node.k) # recalculating in case the required bias was adjusted in the above steps.
+            ones_to_be_generated = required_ones - current_ones
+            number_of_missing_values = generated_node.outputs.count('?')  
+
+            missing_output_values = ['1'] * ones_to_be_generated + ['0'] * (number_of_missing_values - ones_to_be_generated) # creating a shuffled list of 1 and 0 to replace the '?' with the right ratio required to achieve the required bias.
+            random.shuffle(missing_output_values)
+            generated_node.outputs = [missing_output_values.pop() if output== '?' else output for output in generated_node.outputs]
+
+            if verbose:
+                print(f"Generated the node with a bias of {generated_node.bias(verbose=False)}. This is the closest bias less than or equal to the required bias of {required_node_bias}.")
+
+        else:          
+            if fill_missing_output_randomly:
+                # Replace '?' in generated_node.outputs with 0 or 1 randomly
+                generated_node.outputs = [random.choice(['0', '1']) if output == '?' else output for output in generated_node.outputs]
+        
+        return generated_node
         
 
 
@@ -857,7 +909,7 @@ class BooleanNode(object):
             raise Exception("Canalization variable name not found. %s" % kwargs)
         return True
 
-    def bias(self):
+    def bias(self, verbose=True):
         r"""The node bias. The sum of the boolean output transitions divided by the number of entries (:math:`2^k`) in the LUT.
 
         .. math::
@@ -870,7 +922,15 @@ class BooleanNode(object):
         See Also:
             :func:`~cana.boolean_network.BooleanNetwork.network_bias`
         """
-        return sum(map(int, self.outputs)) / 2**self.k
+        if verbose:
+            if '?' in self.outputs:
+                print("Warning: There is a '?' value in the output. It will be treated as zero for the bias calculation.")
+
+        outputs = [0 if output == '?' else output for output in self.outputs] # added this condition so that bias function plays nice with '?' output values. It will treat missing outputs as 0.
+        
+        bias = sum(map(int, outputs)) / 2**self.k
+
+        return bias
 
     def c_sensitivity(self, c, mode="default", max_k=0):
         """Node c-sensitivity.
