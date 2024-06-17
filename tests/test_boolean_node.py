@@ -4,9 +4,8 @@
 # These tests were manually calculated by Luis M. Rocha and implemented by Rion B. Correia.
 #
 from cana.datasets.bools import CONTRADICTION, AND, OR, XOR, COPYx1, RULE90, RULE110
-from cana.utils import *
+from cana.utils import isclose
 from cana.boolean_node import BooleanNode
-import numpy as np
 
 
 #

@@ -210,7 +210,7 @@ def _trim_unnecessary_edges(matching_digraph):
 
 def _enumerate_maximum_matchings_iter(G, U, V, M, D, matchings_list):
     """ """
-    if len(G) > 0 and not (D is None):
+    if len(G) > 0 and D is not None:
         # find the cycles in the matching digraph
         cycles = [c for c in nx.simple_cycles(D)]
 
@@ -246,7 +246,7 @@ def _enumerate_maximum_matchings_iter(G, U, V, M, D, matchings_list):
 
     elif len(G) > 0:
         path = _find_path_length_two(G, V, M)
-        if not (path is None):
+        if path is not None:
             # swap edges in the path
             e, Mprime = _swap_edges_in_path(path, M)
             # this creates a new maximum matching, see if we already have it or add it
