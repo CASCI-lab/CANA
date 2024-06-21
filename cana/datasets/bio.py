@@ -7,6 +7,7 @@ A series of biological Boolean networks that can be directly loaded for experime
 
 
 """
+
 #   Copyright (C) 2021 by
 #   Alex Gates <ajgates42@gmail.com>
 #   Rion Brattig Correia <rionbr@gmail.com>
@@ -21,19 +22,6 @@ from ..boolean_network import BooleanNetwork
 _path = os.path.dirname(os.path.realpath(__file__))
 """ Make sure we know what the current directory is """
 
-
-def PARTIAL_LUTS_DEMO():
-    """
-    A txt file with different types of Partial LUTs to demo the Partial Lut generation function.
-
-    Returns:
-        (BooleanNetwork)
-    """
-    return BooleanNetwork.from_file(
-        _path + "/partial_LUT_demo_nodes.txt",
-        name="Partial LUTs Demo",
-        keep_constants=True,
-    )
 
 def THALIANA():
     """Boolean network model of the control of flower morphogenesis in Arabidopsis thaliana

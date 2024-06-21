@@ -6,6 +6,7 @@ Boolean Network
 Main class for Boolean network objects.
 
 """
+
 #   Copyright (C) 2021 by
 #   Rion Brattig Correia <rionbr@gmail.com>
 #   Alex Gates <ajgates@indiana.edu>
@@ -67,12 +68,12 @@ class BooleanNetwork:
         constants=None,
         Nconstants=None,
         keep_constants=False,
+        partial_lut=False,
         bin2num=None,
         num2bin=None,
-        verbose=False, # Verbose mode for debugging purposes 
+        verbose=False,  # Verbose mode for debugging purposes
         *args,
-        **kwargs
-        # TODO: [SRI] ask Jordan if we should add a requirement called complete = True or False so as to generate patial look up tables based on the completeness of the network
+        **kwargs,
     ):
         # NOTE: *args and **kwargs don't do anything. I'm not sure why they wre added here, so I'm not going to remove them.
 
@@ -96,6 +97,11 @@ class BooleanNetwork:
             )
 
         self.Nstates = 2**Nnodes  # Number of possible states in the network 2^N
+        #
+        self.partial_lut = (
+            partial_lut  # Generate with '?' output values a.k.a. partial look up tables
+        )
+
         #
         self.verbose = verbose
 
@@ -148,13 +154,16 @@ class BooleanNetwork:
     # I/O Methods
     #
     @classmethod
-    def from_file(self, file, type="cnet", keep_constants=True, **kwargs):
+    def from_file(
+        self, file, type="cnet", keep_constants=True, partial_lut=False, **kwargs
+    ):
         """
         Load the Boolean Network from a file.
 
         Args:
             file (string) : The name of a file containing the Boolean Network.
             type (string) : The type of file, either 'cnet' (default) or 'logical' for Boolean logical rules.
+            partial_lut (bool) : Generate with '?' output values a.k.a. partial look up tables. Defaults to False.
 
         Returns:
             BooleanNetwork (object) : The boolean network object.
@@ -165,7 +174,10 @@ class BooleanNetwork:
         with open(file, "r") as infile:
             if type == "cnet":
                 return self.from_string_cnet(
-                    infile.read(), keep_constants=keep_constants, **kwargs
+                    infile.read(),
+                    keep_constants=keep_constants,
+                    partial_lut=partial_lut,
+                    **kwargs,
                 )
             elif type == "logical":
                 return self.from_string_boolean(
@@ -173,15 +185,19 @@ class BooleanNetwork:
                 )
 
     @classmethod
-    def from_string_cnet(self, string, keep_constants=True, **kwargs):
+    def from_string_cnet(
+        self, string, keep_constants=True, partial_lut=False, **kwargs
+    ):
         """
-        Instanciates a Boolean Network from a string in cnet format. 
+        Instanciates a Boolean Network from a string in cnet format.
         The cnet format is similar to the Berkeley Logic Interchange Format (BLIF).
 
         This function generates a Logic dictionary from the string and uses the :func:`~cana.boolean_network.BooleanNetwork.from_dict` method to generate the Boolean Network object.
 
         Args:
             string (string): A cnet format representation of a Boolean Network.
+            partial_lut (bool): Generate with '?' output values a.k.a. partial look up tables. Defaults to False.
+
 
         Returns:
             (BooleanNetwork)
@@ -224,70 +240,117 @@ class BooleanNetwork:
                     for jnode in range(indegree):
                         logic[inode]["in"].append(int(line.split()[3 + jnode]) - 1)
 
-                    # to generate with '?' output values
-                    logic[inode]["out"] = [
-                        '?' for i in range(2**indegree) if indegree > 0
-                        ] # activate this for '?' output values
-                    
-                    logic_line = network_file.readline().strip()
+                    # to generate with '?' output values a.k.a. partial look up tables. If partial_lut is False, it generates with Prime Implicants(PI)(default)
+                    if partial_lut:
+                        logic[inode]["out"] = [
+                            "?" for i in range(2**indegree) if indegree > 0
+                        ]  # activate this for '?' output values
 
-                    if indegree <= 0:
-                        if logic_line == "":
-                            logic[inode]["in"] = [inode]
-                            logic[inode]["out"] = [0, 1]
+                        logic_line = network_file.readline().strip()
+
+                        if indegree <= 0:
+                            if logic_line == "":
+                                logic[inode]["in"] = [inode]
+                                logic[inode]["out"] = [0, 1]
+                            else:
+                                logic[inode]["out"] = [int(logic_line)]
                         else:
-                            logic[inode]["out"] = [int(logic_line)]
+                            while (
+                                logic_line != "\n"
+                                and logic_line != ""
+                                and len(logic_line) > 1
+                            ):
+                                # Check for clashing entries.
+                                for nlogicline in expand_logic_line(logic_line):
+                                    if logic[inode]["out"][
+                                        binstate_to_statenum(nlogicline.split()[0])
+                                    ] in [
+                                        "?",
+                                        None,
+                                        2,
+                                        "-",
+                                    ]:  # assigns output value if it is not assigned
+                                        logic[inode]["out"][
+                                            binstate_to_statenum(nlogicline.split()[0])
+                                        ] = int(nlogicline.split()[1])
+                                    elif (
+                                        logic[inode]["out"][
+                                            binstate_to_statenum(nlogicline.split()[0])
+                                        ]
+                                        == int(nlogicline.split()[1])
+                                    ):  # if the output value is already assigned and is the same as the new output value
+                                        pass
+                                    else:  # if the output value is already assigned and is different from the new output value
+                                        print(
+                                            "Entry clash in node ",
+                                            (inode + 1),
+                                            " for ",
+                                            {nlogicline.split()[0]},
+                                            " i.e. State number: ",
+                                            binstate_to_statenum(nlogicline.split()[0]),
+                                        )
+                                        logic[inode]["out"][
+                                            binstate_to_statenum(nlogicline.split()[0])
+                                        ] = "!"
+
+                                logic_line = network_file.readline().strip()
+
                     else:
-                        while (
-                            logic_line != "\n"
-                            and logic_line != ""
-                            and len(logic_line) > 1
-                        ):
-                            # Check for clashing entries.
-                            for nlogicline in expand_logic_line(logic_line):
-                                if logic[inode]["out"][binstate_to_statenum(nlogicline.split()[0])] in ['?', None, 2, '-']: # assigns output value if it is not assigned
-                                    logic[inode]["out"][binstate_to_statenum(nlogicline.split()[0])] = int(nlogicline.split()[1])
-                                elif logic[inode]["out"][binstate_to_statenum(nlogicline.split()[0])] == int(nlogicline.split()[1]): # if the output value is already assigned and is the same as the new output value 
-                                    pass
-                                else: # if the output value is already assigned and is different from the new output value
-                                    print("Entry clash in node ",(inode+1)," for ",{nlogicline.split()[0]}," i.e. State number: ",binstate_to_statenum(nlogicline.split()[0]))
-                                    logic[inode]["out"][binstate_to_statenum(nlogicline.split()[0])] = '!'
+                        # to generate with Prime Implicants(PI)
+                        logic[inode]["out"] = [
+                            "0" for i in range(2**indegree) if indegree > 0
+                        ]
 
-                            logic_line = network_file.readline().strip()
-                    # TODO: [SRI] check if I need to add a Prime Implicant condition in the function
-                    ## to generate with Prime Implicants(PI) 
-                    # logic[inode]["out"] = [
-                    #     '0' for i in range(2**indegree) if indegree > 0
-                    # ]
+                        logic_line = network_file.readline().strip()
 
-                    # logic_line = network_file.readline().strip()
+                        if indegree <= 0:
+                            if logic_line == "":
+                                logic[inode]["in"] = [inode]
+                                logic[inode]["out"] = [0, 1]
+                            else:
+                                logic[inode]["out"] = [int(logic_line)]
+                        else:
+                            while (
+                                logic_line != "\n"
+                                and logic_line != ""
+                                and len(logic_line) > 1
+                            ):
+                                # Check for clashing entries.
+                                for nlogicline in expand_logic_line(logic_line):
+                                    if logic[inode]["out"][
+                                        binstate_to_statenum(nlogicline.split()[0])
+                                    ] in [
+                                        "?",
+                                        None,
+                                        2,
+                                        "-",
+                                        "0",
+                                    ]:  # assigns output value if it is not assigned
+                                        logic[inode]["out"][
+                                            binstate_to_statenum(nlogicline.split()[0])
+                                        ] = int(nlogicline.split()[1])
+                                    elif (
+                                        logic[inode]["out"][
+                                            binstate_to_statenum(nlogicline.split()[0])
+                                        ]
+                                        == int(nlogicline.split()[1])
+                                    ):  # if the output value is already assigned and is the same as the new output value
+                                        pass
+                                    else:  # if the output value is already assigned and is different from the new output value
+                                        print(
+                                            "Entry clash in node ",
+                                            (inode + 1),
+                                            " for ",
+                                            {nlogicline.split()[0]},
+                                            " i.e. State number: ",
+                                            binstate_to_statenum(nlogicline.split()[0]),
+                                        )
+                                        logic[inode]["out"][
+                                            binstate_to_statenum(nlogicline.split()[0])
+                                        ] = "1"
 
-                    # if indegree <= 0:
-                    #     if logic_line == "":
-                    #         logic[inode]["in"] = [inode]
-                    #         logic[inode]["out"] = [0, 1]
-                    #     else:
-                    #         logic[inode]["out"] = [int(logic_line)]
-                    # else:
-                    #     while (
-                    #         logic_line != "\n"
-                    #         and logic_line != ""
-                    #         and len(logic_line) > 1
-                    #     ):
-                    #         # Check for clashing entries.
-                    #         for nlogicline in expand_logic_line(logic_line):
-                    #             if logic[inode]["out"][binstate_to_statenum(nlogicline.split()[0])] in ['?', None, 2, '-','0']: # assigns output value if it is not assigned
-                    #                 logic[inode]["out"][binstate_to_statenum(nlogicline.split()[0])] = int(nlogicline.split()[1])
-                    #             elif logic[inode]["out"][binstate_to_statenum(nlogicline.split()[0])] == int(nlogicline.split()[1]): # if the output value is already assigned and is the same as the new output value 
-                    #                 pass
-                    #             else: # if the output value is already assigned and is different from the new output value
-                    #                 print("Entry clash in node ",(inode+1)," for ",{nlogicline.split()[0]}," i.e. State number: ",binstate_to_statenum(nlogicline.split()[0]))
-                    #                 logic[inode]["out"][binstate_to_statenum(nlogicline.split()[0])] = '1'
-
-                    #         logic_line = network_file.readline().strip()
-                # .e = end of file
+                                logic_line = network_file.readline().strip()
                 elif ".e" in line:
-
                     break
             line = network_file.readline()
 
@@ -692,9 +755,9 @@ class BooleanNetwork:
 
                 # and update the conditional effective graph with the new edge effectiveness values
                 for i in range(newk):
-                    conditional_eg[new_successor_inputs[i]][n][
-                        "weight"
-                    ] = new_edge_effectiveness[i]
+                    conditional_eg[new_successor_inputs[i]][n]["weight"] = (
+                        new_edge_effectiveness[i]
+                    )
 
                 # now update the conditioned_logic in case these nodes are further modified by additional conditioned variables
                 conditioned_logic[n]["in"] = new_successor_inputs
@@ -1438,7 +1501,7 @@ class BooleanNetwork:
         max_search=11,
         keep_self_loops=True,
         *args,
-        **kwargs
+        **kwargs,
     ):
         """The minimum set of necessary driver nodes to control the network based on Feedback Vertex Set (FVS) theory.
 
@@ -1689,9 +1752,9 @@ class BooleanNetwork:
 
                     # once the lightcone includes the target node on the effective shortest path,
                     # then for all other steps the effective path is the best
-                    impact_matrix[
-                        1, list(range(eff_path_steps, n_steps + 1)), itar
-                    ] = inv_eff_weight_func(Geff_shortest_dist[target])
+                    impact_matrix[1, list(range(eff_path_steps, n_steps + 1)), itar] = (
+                        inv_eff_weight_func(Geff_shortest_dist[target])
+                    )
 
         return impact_matrix[:, 1:]
 
@@ -1771,7 +1834,7 @@ class BooleanNetwork:
                         DCM.add_edge(
                             in_nei[0],
                             out_nei[1],
-                            **{"type": "simplified", "mode": "selfloop"}
+                            **{"type": "simplified", "mode": "selfloop"},
                         )
                     # Link variables nodes directly
                     elif not any([DCM.nodes[tn]["type"] == "fusion" for tn in in_nei]):
@@ -1779,7 +1842,7 @@ class BooleanNetwork:
                         DCM.add_edge(
                             in_nei[0],
                             out_nei[1],
-                            **{"type": "simplified", "mode": "direct"}
+                            **{"type": "simplified", "mode": "direct"},
                         )
         # Remove Isolates
         isolates = list(nx.isolates(DCM))
