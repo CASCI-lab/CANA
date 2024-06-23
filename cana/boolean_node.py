@@ -1017,7 +1017,7 @@ class BooleanNode(object):
             verbose (bool) : If True, print additional information.
 
         Returns:
-            (BooleanNode) : the instantiated object.
+            List of BooleanNode objects with the required bias.
 
         Example:
             >>> BooleanNode.generate_with_required_bias(required_node_bias=0.5, verbose=True, name="EG")
@@ -1089,12 +1089,12 @@ class BooleanNode(object):
                 )
             # create a list of all possible unique arrangements of the missing output values
             combinations = list(islice(set(permutations(missing_output_values)), limit))
-
+            
             generated_node_permutations = [None] * len(combinations)
 
             for count, combination in enumerate(combinations):
                 combination = list(combination)
-                random.shuffle(combination)
+                # random.shuffle(combination) # shuffling the combination creates duplicates and misses some combinations.
                 generated_outputs = generated_node.outputs.copy()
                 for i, output in enumerate(generated_node.outputs):
                     if output == "?":
@@ -1112,12 +1112,12 @@ class BooleanNode(object):
                     print(
                         f"Generated {len(generated_node_permutations)} node(s) with a bias of {generated_node_permutations[0].bias(verbose=False)}. This is the closest bias less than or equal to the required bias of {bias}."
                     )
-            return generated_node_permutations
+            return generated_node_permutations  # returning a list of BooleanNode objects with the required bias.
 
     def generate_with_required_effective_connectivity(
         self,
         required_effective_connectivity=None,
-        limit=50,
+        # limit=50,
         verbose=False,
         *args,
         **kwargs,
