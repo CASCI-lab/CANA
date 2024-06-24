@@ -1081,6 +1081,7 @@ class BooleanNode(object):
                 ["1"] * ones_to_be_generated
                 + ["0"] * (number_of_missing_values - ones_to_be_generated)
             )  # creating a list of 1 and 0 to replace the '?' with the right ratio required to achieve the required bias.
+
             combinationsnumber = comb(number_of_missing_values, ones_to_be_generated)
 
             if combinationsnumber > limit:
@@ -1088,29 +1089,66 @@ class BooleanNode(object):
                     f"Total possible permutaions = {combinationsnumber}. Selecting {limit} permutations randomly."
                 )
             # create a list of all possible unique arrangements of the missing output values
-            combinations = list(islice(set(permutations(missing_output_values)), limit))
-            
-            generated_node_permutations = [None] * len(combinations)
+            # combinations = list(islice(set(permutations(missing_output_values)), limit))
+            def unique_permutations_missing_values(elements, n):
+                """
+                Generate n unique permutations of elements.
+                """
+                seen = set()
+                elements = list(elements)  # Ensure we can shuffle
+                random.shuffle(elements)  # Shuffle to ensure randomness in subsets
+                for perm in permutations(elements):
+                    perm_as_str = str(perm)  # Convert to string for hashability
+                    if perm_as_str not in seen:
+                        seen.add(perm_as_str)
+                        yield perm
+                        if len(seen) == n:
+                            return
 
-            for count, combination in enumerate(combinations):
-                combination = list(combination)
-                # random.shuffle(combination) # shuffling the combination creates duplicates and misses some combinations.
-                generated_outputs = generated_node.outputs.copy()
-                for i, output in enumerate(generated_node.outputs):
-                    if output == "?":
-                        generated_outputs[i] = combination.pop()
-                generated_node_permutations[count] = BooleanNode.from_output_list(
-                    generated_outputs, *args, **kwargs
-                )  # generating a list of nodes with all possible permutations of the missing output values that achieve the required bias.
+            combinations = unique_permutations_missing_values(
+                missing_output_values, combinationsnumber
+            )
+            generated_node_permutations = [None] * combinationsnumber
 
+            def node_permutations(combinations, node_outputs, *args, **kwargs):
+                for combination in combinations:
+                    combination = list(combination)
+                    generated_outputs = node_outputs.copy()
+                    for i, output in enumerate(node_outputs):
+                        if output == "?":
+                            generated_outputs[i] = combination.pop()
+                    yield BooleanNode.from_output_list(
+                        generated_outputs, *args, **kwargs
+                    )
+
+            generated_node_permutations = node_permutations(
+                combinations, generated_node.outputs, *args, **kwargs
+            )
+
+            # generated_node_permutations = [None] * combinationsnumber
+
+            # for count, combination in enumerate(combinations):
+            #     combination = list(combination)
+            #     # random.shuffle(combination) # shuffling the combination creates duplicates and misses some combinations.
+            #     generated_outputs = generated_node.outputs.copy()
+            #     for i, output in enumerate(generated_node.outputs):
+            #         if output == "?":
+            #             generated_outputs[i] = combination.pop()
+            #     generated_node_permutations[count] = BooleanNode.from_output_list(
+            #         generated_outputs, *args, **kwargs
+            #     )  # generating a list of nodes with all possible permutations of the missing output values that achieve the required bias.
+
+            output_bias_for_print = (
+                ones_to_be_generated + current_ones
+            ) / 2**generated_node.k  # for the print message in the end
             if verbose:
                 if min:
                     print(
-                        f"Generated {len(generated_node_permutations)} node(s) with a bias of {generated_node_permutations[0].bias(verbose=False)}. This is the closest achievable bias to the required bias of {bias}."
+                        f"Generated {combinationsnumber} node(s) with a bias of {output_bias_for_print}. This is the closest achievable bias to the required bias of {bias}."
                     )
                 else:
                     print(
-                        f"Generated {len(generated_node_permutations)} node(s) with a bias of {generated_node_permutations[0].bias(verbose=False)}. This is the closest bias less than or equal to the required bias of {bias}."
+                        f"Generated {combinationsnumber} node(s) with a bias of {output_bias_for_print}. This is the closest bias less than or equal to the required bias of {bias}."
                     )
             return generated_node_permutations  # returning a list of BooleanNode objects with the required bias.
 
