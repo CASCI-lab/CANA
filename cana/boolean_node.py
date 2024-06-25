@@ -1014,10 +1014,11 @@ class BooleanNode(object):
 
         Args:
             required_node_bias (float) : The required node bias to fill the missing output values with.
+            limit (int) : The maximum number of permutations to generate. If the total number of permutations is greater than the limit, then a random subset of the permutations is generated.
             verbose (bool) : If True, print additional information.
 
         Returns:
-            List of BooleanNode objects with the required bias.
+            A Generator of BooleanNode objects with the required bias.
 
         Example:
             >>> BooleanNode.generate_with_required_bias(required_node_bias=0.5, verbose=True, name="EG")
@@ -1025,7 +1026,6 @@ class BooleanNode(object):
         Note:
             The required node bias should be a float value between 0 and 1.
 
-            # TODO : [SRI] check why when run in a notebook does the cell take so long to run. It says pending. and takes forever to initialize and the runtime when finished is close to zero.
         """
         generated_node = self
         bias = required_node_bias  # making a copy for print statement at the end of function
@@ -1124,19 +1124,6 @@ class BooleanNode(object):
             generated_node_permutations = node_permutations(
                 combinations, generated_node.outputs, *args, **kwargs
             )
-
-            # generated_node_permutations = [None] * combinationsnumber
-
-            # for count, combination in enumerate(combinations):
-            #     combination = list(combination)
-            #     # random.shuffle(combination) # shuffling the combination creates duplicates and misses some combinations.
-            #     generated_outputs = generated_node.outputs.copy()
-            #     for i, output in enumerate(generated_node.outputs):
-            #         if output == "?":
-            #             generated_outputs[i] = combination.pop()
-            #     generated_node_permutations[count] = BooleanNode.from_output_list(
-            #         generated_outputs, *args, **kwargs
-            #     )  # generating a list of nodes with all possible permutations of the missing output values that achieve the required bias.
 
             output_bias_for_print = (
                 ones_to_be_generated + current_ones
