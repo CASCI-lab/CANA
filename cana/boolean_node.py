@@ -15,7 +15,7 @@ Main class for Boolean node objects.
 #   MIT license.
 from __future__ import division
 
-from itertools import combinations, compress, islice, product, permutations
+from itertools import combinations, compress, product, permutations
 from statistics import mean
 
 import networkx as nx
@@ -975,7 +975,6 @@ class BooleanNode(object):
             The partial look-up table should be a list of tuples where each tuple contains a binary input state and the corresponding output value. For example, [('00', 0), ('01', 1), ('11', 1)].
             The fill_missing_output_randomly should be a boolean value.
 
-        # TODO : [SRI] add tests for this
         """
 
         generated_lut = fill_out_lut(partial_lut, verbose=False)
@@ -1003,7 +1002,7 @@ class BooleanNode(object):
     def generate_with_required_bias(
         self,
         required_node_bias=None,
-        limit=1000,
+        # limit=1000,
         verbose=False,
         *args,
         **kwargs,
@@ -1084,10 +1083,10 @@ class BooleanNode(object):
 
             combinationsnumber = comb(number_of_missing_values, ones_to_be_generated)
 
-            if combinationsnumber > limit:
-                warnings.warn(
-                    f"Total possible permutaions = {combinationsnumber}. Selecting {limit} permutations randomly."
-                )
+            # if combinationsnumber > limit:
+            #     warnings.warn(
+            #         f"Total possible permutaions = {combinationsnumber}. Selecting {limit} permutations randomly."
+            #     )
             # create a list of all possible unique arrangements of the missing output values
             # combinations = list(islice(set(permutations(missing_output_values)), limit))
             def unique_permutations_missing_values(elements, n):
@@ -1095,9 +1094,11 @@ class BooleanNode(object):
                 Generate n unique permutations of elements.
                 """
                 seen = set()
-                elements = list(elements)  # Ensure we can shuffle
-                random.shuffle(elements)  # Shuffle to ensure randomness in subsets
+                # elements = list(elements)  # Ensure we can shuffle
+                # random.shuffle(elements)  # Shuffle to ensure randomness in subsets
                 for perm in permutations(elements):
+                    perm = list(perm)
+                    random.shuffle(perm)  # Shuffle to ensure randomness in subsets
                     perm_as_str = str(perm)  # Convert to string for hashability
                     if perm_as_str not in seen:
                         seen.add(perm_as_str)
@@ -1108,7 +1109,7 @@ class BooleanNode(object):
             combinations = unique_permutations_missing_values(
                 missing_output_values, combinationsnumber
             )
-            generated_node_permutations = [None] * combinationsnumber
+            generated_node_permutations = []
 
             def node_permutations(combinations, node_outputs, *args, **kwargs):
                 for combination in combinations:
@@ -1131,11 +1132,11 @@ class BooleanNode(object):
             if verbose:
                 if min:
                     print(
-                        f"Generated {combinationsnumber} node(s) with a bias of {output_bias_for_print}. This is the closest achievable bias to the required bias of {bias}."
+                        f"{combinationsnumber:.2e} possible permutation(s) with a bias of {output_bias_for_print}. This is the closest achievable bias to the required bias of {bias}."
                     )
                 else:
                     print(
-                        f"Generated {combinationsnumber} node(s) with a bias of {output_bias_for_print}. This is the closest bias less than or equal to the required bias of {bias}."
+                        f"{combinationsnumber:.2e} possible permutation(s) with a bias of {output_bias_for_print}. This is the closest bias less than or equal to the required bias of {bias}."
                     )
             return generated_node_permutations  # returning a list of BooleanNode objects with the required bias.
 

@@ -348,7 +348,6 @@ def fill_out_lut(partial_lut, verbose=False):
         [('00', 0), ('01', 0), ('10', 1), ('11', 1)]
 
     # TODO: [SRI] generate LUT from two symbol schemata, with a specified ratio of wildcard symbols
-    # TODO: [SRI] add tests for canonical rule logic, rule 90, rule 110
     # TODO: [SRI] use examples COSA rule, GKL rule where you fill up LUT based on the annihilation inputs and see if it matches with the rules plus bias.
     """
 
