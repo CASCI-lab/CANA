@@ -15,7 +15,7 @@ Main class for Boolean node objects.
 #   MIT license.
 from __future__ import division
 
-from itertools import combinations, compress, product, permutations
+from itertools import combinations, compress, product
 from statistics import mean
 
 import networkx as nx
@@ -835,7 +835,7 @@ class BooleanNode(object):
             raise Exception("Canalization variable name not found. %s" % kwargs)
         return True
 
-    def bias(self, verbose=True):
+    def bias(self, verbose=False):
         r"""The node bias. The sum of the boolean output transitions divided by the number of entries (:math:`2^k`) in the LUT.
 
         .. math::
@@ -850,8 +850,8 @@ class BooleanNode(object):
         """
         if verbose:
             if "?" in self.outputs:
-                print(
-                    "Warning: There is a '?' value in the output. It will be treated as zero for the bias calculation."
+                warnings.warn(
+                    "There is a '?' value in the output. It will be treated as zero for the bias calculation."
                 )
 
         outputs = [
