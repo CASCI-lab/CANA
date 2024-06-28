@@ -7,6 +7,7 @@ A series of biological Boolean networks that can be directly loaded for experime
 
 
 """
+
 #   Copyright (C) 2021 by
 #   Alex Gates <ajgates42@gmail.com>
 #   Rion Brattig Correia <rionbr@gmail.com>

@@ -6,6 +6,7 @@ Boolean Node
 Main class for Boolean node objects.
 
 """
+
 #   Copyright (C) 2021 by
 #   Rion Brattig Correia <rionbr@gmail.com>
 #   Alex Gates <ajgates@gmail.com>
@@ -29,7 +30,10 @@ from cana.cutils import (
     outputs_to_binstates_of_given_type,
     statenum_to_binstate,
 )
-from cana.utils import input_monotone, ncr
+from cana.utils import input_monotone, ncr, fill_out_lut
+import random
+import warnings
+from math import comb
 
 
 class BooleanNode(object):
@@ -47,7 +51,7 @@ class BooleanNode(object):
         network=None,
         verbose=False,
         *args,
-        **kwargs
+        **kwargs,
     ):
         self.id = id  # the id of the node
         self.name = name  # the name of the node
@@ -73,7 +77,7 @@ class BooleanNode(object):
             )
 
         # If all outputs are either positive or negative, the node is treated as a constant.
-        if (len(set(outputs)) == 1) or (constant):
+        if (len(set(outputs)) == 1 and ("?" not in outputs)) or (constant):
             self.set_constant(constant=True, state=outputs[0])
         else:
             self.set_constant(constant=False)
@@ -110,7 +114,8 @@ class BooleanNode(object):
 
     @classmethod
     def from_output_list(self, outputs=list(), *args, **kwargs):
-        """Instanciate a Boolean Node from a output transition list.
+        """
+        Instanciate a Boolean Node from a output transition list.
 
         Args:
             outputs (list) : The transition outputs of the node.
@@ -119,11 +124,18 @@ class BooleanNode(object):
             (BooleanNode) : the instanciated object.
 
         Example:
-            >>> BooleanNode.from_output_list(outputs=[0,0,0,1], name="AND")
+            >>> BooleanNode.from_output_list(outputs=[0,0,0,1], name="EG")
         """
         id = kwargs.pop("id") if "id" in kwargs else 0
         name = kwargs.pop("name") if "name" in kwargs else "x"
         k = int(np.log2(len(outputs)))
+
+        # checking if length of outputs is a power of 2, else raising an error.
+        if 2**k != len(outputs):
+            raise ValueError(
+                "The number of outputs should be a power of 2. The length of the outputs list should be 2^k."
+            )
+
         inputs = (
             kwargs.pop("inputs") if "inputs" in kwargs else [(x + 1) for x in range(k)]
         )
@@ -137,7 +149,7 @@ class BooleanNode(object):
             state=state,
             outputs=outputs,
             *args,
-            **kwargs
+            **kwargs,
         )
 
     def set_constant(self, constant=True, state=None):
@@ -427,14 +439,14 @@ class BooleanNode(object):
         return df
 
     def schemata_look_up_table(
-        self, type="pi", pi_symbol="#", ts_symbol_list=["\u030A", "\u032F"]
+        self, type="pi", pi_symbol="#", ts_symbol_list=["\u030a", "\u032f"]
     ):
         """Returns the simplified schemata Look Up Table (LUT)
 
         Args:
             type (string) : The type of schemata to return, either Prime Implicants ``pi`` or Two-Symbol ``ts``. Defaults to 'pi'.
             pi_symbol (str) : The Prime Implicant don't care symbol. Default is ``#``.
-            ts_symbol_list (list) : A list containing Two Symbol permutable symbols. Default is ``["\u030A", "\u032F"]``.
+            ts_symbol_list (list) : A list containing Two Symbol permutable symbols. Default is ``["\u030a", "\u032f"]``.
 
         Returns:
             (pandas.DataFrame or Latex): the schemata LUT
@@ -449,6 +461,12 @@ class BooleanNode(object):
         See also:
             :func:`look_up_table`
         """
+        # Check if the outputs contain '?' and generate an error message if it does.
+        if "?" in self.outputs:
+            raise ValueError(
+                "The look-up table contains '?' values. The schemata look-up table cannot be generated."
+            )
+
         r = []
         # Prime Implicant LUT
         if type == "pi":
@@ -576,7 +594,7 @@ class BooleanNode(object):
                     "value": 0,
                     "constant": self.constant,
                     "group": self.id,
-                }
+                },
             )
 
         if output is None or output == 1:
@@ -589,7 +607,7 @@ class BooleanNode(object):
                     "value": 1,
                     "constant": self.constant,
                     "group": self.id,
-                }
+                },
             )
 
         tid = 0
@@ -636,7 +654,7 @@ class BooleanNode(object):
                         "type": "threshold",
                         "tau": tau,
                         "group": self.id,
-                    }
+                    },
                 )
 
                 # Add Edges from Threshold node to output
@@ -666,7 +684,7 @@ class BooleanNode(object):
                                 "mode": "input",
                                 "value": iout,
                                 "group": self.id,
-                            }
+                            },
                         )
                     G.add_edge(iname, tname, **{"type": "literal"})
 
@@ -696,7 +714,7 @@ class BooleanNode(object):
                                     "mode": "input",
                                     "value": 0,
                                     "group": self.id,
-                                }
+                                },
                             )
                         G.add_edge(iname, fname, **{"type": "fusing"})
                     G.add_edge(fname, tname, **{"type": "fused"})
@@ -728,7 +746,7 @@ class BooleanNode(object):
                                     "mode": "input",
                                     "value": 1,
                                     "group": self.id,
-                                }
+                                },
                             )
                         G.add_edge(iname, fname, **{"type": "fusing"})
                     G.add_edge(fname, tname, **{"type": "fused"})
@@ -817,7 +835,7 @@ class BooleanNode(object):
             raise Exception("Canalization variable name not found. %s" % kwargs)
         return True
 
-    def bias(self):
+    def bias(self, verbose=False):
         r"""The node bias. The sum of the boolean output transitions divided by the number of entries (:math:`2^k`) in the LUT.
 
         .. math::
@@ -830,7 +848,19 @@ class BooleanNode(object):
         See Also:
             :func:`~cana.boolean_network.BooleanNetwork.network_bias`
         """
-        return sum(map(int, self.outputs)) / 2**self.k
+        if verbose:
+            if "?" in self.outputs:
+                warnings.warn(
+                    "There is a '?' value in the output. It will be treated as zero for the bias calculation."
+                )
+
+        outputs = [
+            0 if output == "?" else output for output in self.outputs
+        ]  # added this condition so that bias function plays nice with '?' output values. It will treat missing outputs as 0.
+
+        bias = sum(map(int, outputs)) / 2**self.k
+
+        return bias
 
     def c_sensitivity(self, c, mode="default", max_k=0):
         """Node c-sensitivity.
@@ -913,3 +943,263 @@ class BooleanNode(object):
         ]
 
         return input_sign_list
+
+    def from_partial_lut(
+        partial_lut,
+        fill_missing_output_randomly=False,
+        required_node_bias=None,
+        required_effective_connectivity=None,
+        verbose=False,
+        *args,
+        **kwargs,
+    ):
+        """
+        Instantiate a Boolean Node from a partial look-up table.
+
+        Uses the fill_out_lut function to complete the look-up table. Extracts the output list from the completed look-up table. Then instantiates the Boolean Node from the output list using the from_output_list method.
+
+        Args:
+            partial_lut (list) : A partial look-up table of the node.
+            fill_missing_output_randomly (bool) : If True, missing output values are filled with random 0 or 1. If False, missing output values are filled with '?'.
+            verbose (bool) : If True, print additional information.
+
+        Returns:
+            (BooleanNode) : the instantiated object.
+
+        Example:
+            >>> BooleanNode.from_partial_lut(partial_lut=[('00', 0), ('01', 1), ('11', 1)], verbose=True, name="EG")
+            >>> BooleanNode.from_partial_lut(partial_lut=[('00', 0), ('01', 1), ('11', 1)], fill_missing_output_randomly=True, verbose=False, name="EG")
+
+
+        Note:
+            The partial look-up table should be a list of tuples where each tuple contains a binary input state and the corresponding output value. For example, [('00', 0), ('01', 1), ('11', 1)].
+            The fill_missing_output_randomly should be a boolean value.
+
+        """
+
+        generated_lut = fill_out_lut(partial_lut, verbose=False)
+        output_list = [x[1] for x in generated_lut]
+
+        generated_node = BooleanNode.from_output_list(output_list, *args, **kwargs)
+
+        # Fill missing output values with the specified bias or with specified effective connectivity or randomly
+
+        if fill_missing_output_randomly: 
+            # Replace '?' in generated_node.outputs with 0 or 1 randomly
+            generated_node.outputs = [
+                random.choice(["0", "1"]) if output == "?" else output
+                for output in generated_node.outputs
+            ]
+
+        if verbose and "?" in generated_node.outputs:
+            print(
+                "The LUT is incomplete. Missing values are represented by '?'."
+                if verbose
+                else None
+            )
+        return generated_node
+
+    def generate_with_required_bias(
+        self,
+        required_node_bias=None,
+        verbose=False,
+        *args,
+        **kwargs,
+    ):
+        """
+        Generate a node with the required bias.
+        This node takes a boolean node with "?" output values and generates all possible nodes with the missing output values filled to achieve the required bias as closely as possible.
+
+        Args:
+            required_node_bias (float) : The required node bias to fill the missing output values with.
+            verbose (bool) : If True, print additional information.
+
+        Returns:
+            A Generator of BooleanNode objects with the required bias.
+
+        Example:
+            >>> BooleanNode.generate_with_required_bias(required_node_bias=0.5, verbose=True, name="EG")
+
+        Note:
+            The required node bias should be a float value between 0 and 1.
+
+        """
+        generated_node = self
+        bias = required_node_bias  # making a copy for print statement at the end of function
+        # Checking if more than one out of required_effective_connectivity, requried_node_bias and fill_missing_output_randomly are True, then raise an error.
+        if required_node_bias is None:
+            raise ValueError(
+                "Please specify the required node bias to generate the node with the required bias."
+            )
+
+        if (
+            required_node_bias is not None
+        ):  # If required node bias is specified, then fill missing output values with the specified bias.
+            # Checking if required node bias is within the achievable bias range of the node.
+
+            # Calculating max achievable bias
+            max_achievable_output = [
+                "1" if output == "?" else output for output in generated_node.outputs
+            ]
+            max_achievable_bias = (
+                sum(map(int, max_achievable_output)) / 2**generated_node.k
+            )
+
+            # Calculating the number of '1' required to achieve the required bias.
+            required_ones = int(required_node_bias * 2**generated_node.k)
+            current_ones = generated_node.outputs.count("1")
+
+            min_achievable_bias = current_ones / 2**generated_node.k
+            min = False  # flag to check if the required bias is less than the minimum achievable bias.
+            # Checking if the required bias is achievable.
+            if required_node_bias > max_achievable_bias:
+                if verbose:
+                    warnings.warn(
+                        f"Required Node Bias is greater than the maximum achievable bias ({max_achievable_bias}) of the node. Generating with the maximum achievable bias."
+                    )
+                required_node_bias = max_achievable_bias
+
+            elif required_node_bias < min_achievable_bias:
+                if verbose:
+                    warnings.warn(
+                        f"Required Node Bias is lower than the minimum achievable bias ({min_achievable_bias}) of the node. Generating with the minimum achievable bias."
+                    )
+                required_node_bias = min_achievable_bias
+                min = True
+
+            # Fill the missing output values to achieve the required bias as closely as possible.
+            required_ones = int(
+                required_node_bias * 2**generated_node.k
+            )  # recalculating in case the required bias was adjusted in the above steps.
+            ones_to_be_generated = required_ones - current_ones
+            number_of_missing_values = generated_node.outputs.count("?")
+
+            missing_output_values = (
+                ["1"] * ones_to_be_generated
+                + ["0"] * (number_of_missing_values - ones_to_be_generated)
+            )  # creating a list of 1 and 0 to replace the '?' with the right ratio required to achieve the required bias.
+
+            combinationsnumber = comb(number_of_missing_values, ones_to_be_generated)
+
+            def unique_permutations_missing_values(elements, n):
+                """
+                Generate n unique permutations of elements.
+                """
+                seen = set()
+
+                while len(seen) < n:
+                    perm = elements.copy()
+                    random.shuffle(perm)
+                    perm_as_str = str(perm)  # Convert to string for hashability
+                    if perm_as_str not in seen:
+                        seen.add(perm_as_str)
+                        yield perm
+                        if len(seen) == n:
+                            return
+
+            combinations = unique_permutations_missing_values(
+                missing_output_values, combinationsnumber
+            )
+            generated_node_permutations = []
+
+            def node_permutations(combinations, node_outputs, *args, **kwargs):
+                """
+                Applying the generated combinations to the missing output values and generating the BooleanNode objects.
+                """ 
+
+                for combination in combinations:
+                    combination = list(combination)
+                    generated_outputs = node_outputs.copy()
+                    for i, output in enumerate(node_outputs):
+                        if output == "?":
+                            generated_outputs[i] = combination.pop()
+                    yield BooleanNode.from_output_list(
+                        generated_outputs, *args, **kwargs
+                    )
+
+            generated_node_permutations = node_permutations(
+                combinations, generated_node.outputs, *args, **kwargs
+            )
+
+            output_bias_for_print = (
+                ones_to_be_generated + current_ones
+            ) / 2**generated_node.k  # for the print message in the end
+            if verbose:
+                if min:
+                    print(
+                        f"{combinationsnumber:.2e} possible permutation(s) with a bias of {output_bias_for_print}. This is the closest achievable bias to the required bias of {bias}."
+                    )
+                else:
+                    print(
+                        f"{combinationsnumber:.2e} possible permutation(s) with a bias of {output_bias_for_print}. This is the closest bias less than or equal to the required bias of {bias}."
+                    )
+            return generated_node_permutations  # returning a generator of BooleanNode objects with the required bias.
+
+    def generate_with_required_effective_connectivity(
+        self,
+        required_effective_connectivity=None,
+        # limit=50,
+        verbose=False,
+        *args,
+        **kwargs,
+    ):
+        """
+        Generate a node with the required effective connectivity.
+        This node takes a boolean node with "?" output values and generates all possible nodes with the missing output values filled to achieve the required effective connectivity as closely as possible.
+
+        Args:
+            required_effective_connectivity (float) : The required effective connectivity to fill the missing output values with. It will generate a node with the closest possible effective connectivity to the required effective connectivity.
+            verbose (bool) : If True, print additional information.
+
+        Returns:
+            (BooleanNode) : the instantiated object.
+
+        Example:
+            >>> BooleanNode.generate_with_required_effective_connectivity(required_effective_connectivity=0.5, verbose=True, name="EG")
+
+        Note:
+            The required effective connectivity should be a float value between 0 and 1.
+
+        # TODO : [SRI] to  cover the entire space of permutations evenly, what if i fill each node randomly and calculate the effective connectivity . then add them to a list of all nodes with sufficiently close effective connectivity? This option will only be activated if the calculated permutation space goes beyond a predecided threshold.
+        """
+
+        generated_node = self
+        if required_effective_connectivity is not None:
+            generated_outputs = generated_node.outputs.copy()
+            missing_output_indices = [
+                i for i, x in enumerate(generated_outputs) if x == "?"
+            ]
+            # print(f"Missing output indices = {missing_output_indices}." if verbose else None)
+
+            missing_output_count = generated_outputs.count("?")
+            # print(f"No. of '?' in output = {missing_output_count}.")
+            missing_permutations = list(product(*[("0", "1")] * (missing_output_count)))
+            # print(permutations)
+            generated_node_permutations = [None] * len(missing_permutations)
+
+            for count, missing_permutation in enumerate(missing_permutations):
+                for i, index in enumerate(missing_output_indices):
+                    generated_outputs[index] = missing_permutation[i]
+                generated_node_permutations[count] = BooleanNode.from_output_list(
+                    generated_outputs, *args, **kwargs
+                )  # generating a list of nodes with all possible permutations of the missing output values.
+
+            # print(f"Total output permutations generated = {len(generated_node_permutations)}.")
+
+            permutation_effective_connectivity = [
+                x.effective_connectivity() for x in generated_node_permutations
+            ]
+            closest_value = min(
+                permutation_effective_connectivity,
+                key=lambda x: abs(x - required_effective_connectivity),
+            )
+            closest_index = permutation_effective_connectivity.index(closest_value)
+
+            generated_node = generated_node_permutations[closest_index]
+            print(
+                f"Generated the node with the closest possible effective connectivity of {generated_node.effective_connectivity()}."
+                if verbose
+                else None
+            )
+
+        return generated_node

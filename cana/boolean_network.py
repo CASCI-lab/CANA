@@ -6,6 +6,7 @@ Boolean Network
 Main class for Boolean network objects.
 
 """
+
 #   Copyright (C) 2021 by
 #   Rion Brattig Correia <rionbr@gmail.com>
 #   Alex Gates <ajgates@indiana.edu>
@@ -69,9 +70,9 @@ class BooleanNetwork:
         keep_constants=False,
         bin2num=None,
         num2bin=None,
-        verbose=False,
+        verbose=False,  # Verbose mode for debugging purposes
         *args,
-        **kwargs
+        **kwargs,
     ):
         # NOTE: *args and **kwargs don't do anything. I'm not sure why they wre added here, so I'm not going to remove them.
 
@@ -95,6 +96,7 @@ class BooleanNetwork:
             )
 
         self.Nstates = 2**Nnodes  # Number of possible states in the network 2^N
+
         #
         self.verbose = verbose
 
@@ -147,7 +149,9 @@ class BooleanNetwork:
     # I/O Methods
     #
     @classmethod
-    def from_file(self, file, type="cnet", keep_constants=True, **kwargs):
+    def from_file(
+        self, file, type="cnet", keep_constants=True, **kwargs
+    ):
         """
         Load the Boolean Network from a file.
 
@@ -164,7 +168,9 @@ class BooleanNetwork:
         with open(file, "r") as infile:
             if type == "cnet":
                 return self.from_string_cnet(
-                    infile.read(), keep_constants=keep_constants, **kwargs
+                    infile.read(),
+                    keep_constants=keep_constants,
+                    **kwargs,
                 )
             elif type == "logical":
                 return self.from_string_boolean(
@@ -172,9 +178,14 @@ class BooleanNetwork:
                 )
 
     @classmethod
-    def from_string_cnet(self, string, keep_constants=True, **kwargs):
+    def from_string_cnet(
+        self, string, keep_constants=True, **kwargs
+    ):
         """
         Instanciates a Boolean Network from a string in cnet format.
+        The cnet format is similar to the Berkeley Logic Interchange Format (BLIF).
+
+        This function generates a Logic dictionary from the string and uses the :func:`~cana.boolean_network.BooleanNetwork.from_dict` method to generate the Boolean Network object.
 
         Args:
             string (string): A cnet format representation of a Boolean Network.
@@ -323,7 +334,7 @@ class BooleanNetwork:
 
     @classmethod
     def from_dict(self, logic, keep_constants=True, **kwargs):
-        """Instanciaets a BooleanNetwork from a logic dictionary.
+        """Instanciates a BooleanNetwork from a logic dictionary.
 
         Args:
             logic (dict) : The logic dict.
@@ -334,6 +345,20 @@ class BooleanNetwork:
 
         See also:
             :func:`from_file` :func:`from_dict`
+
+        Examples:
+            Logic should be structured as follow:
+
+            .. code-block:: python
+
+                logic = {
+                    0: {'name': 'A', 'in': [1,0], 'out': [0, 1, 0,1]},
+                    1: {'name': 'B', 'in': [0,2], 'out': [0, 1, 0, 1]},
+                    2: {'name': 'C', 'in': [0,1,2], 'out': [0, 1, 1, 0, 0, 1, 1, 0]}
+                }
+
+                # Instanciate the BooleanNetwork
+                bn = BooleanNetwork.from_dict(logic)
         """
         Nnodes = len(logic)
         constants = {}
@@ -636,9 +661,9 @@ class BooleanNetwork:
 
                 # and update the conditional effective graph with the new edge effectiveness values
                 for i in range(newk):
-                    conditional_eg[new_successor_inputs[i]][n][
-                        "weight"
-                    ] = new_edge_effectiveness[i]
+                    conditional_eg[new_successor_inputs[i]][n]["weight"] = (
+                        new_edge_effectiveness[i]
+                    )
 
                 # now update the conditioned_logic in case these nodes are further modified by additional conditioned variables
                 conditioned_logic[n]["in"] = new_successor_inputs
@@ -853,7 +878,7 @@ class BooleanNetwork:
             return trajectory
 
     def attractor(self, initial):
-        """Computes the trajectory starting at ``initial`` until it reaches an attracor (this is garanteed)
+        """Computes the trajectory starting at ``initial`` until it reaches an attractor (this is guaranteed)
 
         Args:
             initial (string): the initial state.
@@ -1191,7 +1216,7 @@ class BooleanNetwork:
         return "".join(
             [
                 str(node.step("".join(initial[j] for j in self.logic[i]["in"])))
-                if not (i in pinned_var)
+                if i not in pinned_var
                 else initial[i]
                 for i, node in enumerate(self.nodes, start=0)
             ]
@@ -1382,7 +1407,7 @@ class BooleanNetwork:
         max_search=11,
         keep_self_loops=True,
         *args,
-        **kwargs
+        **kwargs,
     ):
         """The minimum set of necessary driver nodes to control the network based on Feedback Vertex Set (FVS) theory.
 
@@ -1582,7 +1607,7 @@ class BooleanNetwork:
         Gstr_shortest_dist, Gstr_shortest_paths = nx.single_source_dijkstra(
             Gstr, source, target=None, cutoff=n_steps
         )
-        Gstr_shortest_dist = {n: int(l) for n, l in Gstr_shortest_dist.items()}
+        Gstr_shortest_dist = {n: int(m) for n, m in Gstr_shortest_dist.items()}
 
         # in the effective graph, calcluate the dijkstra shortest paths from the source to all targets that are shorter than the cufoff
         # where the edge weight is given by the effective weight function
@@ -1593,14 +1618,14 @@ class BooleanNetwork:
         for itar, target in enumerate(target_set):
             # we dont need to worry about a path to iteself (source==target)
             # and if the target doesnt appear in the shortest path dict, then no path exists that is less than the cutoff
-            if target != source and not Gstr_shortest_dist.get(target, None) is None:
+            if target != source and Gstr_shortest_dist.get(target, None) is not None:
                 # the light cone is at least as big as the number of edges in the structural shorest path
                 impact_matrix[
                     0, list(range(Gstr_shortest_dist[target], n_steps + 1)), itar
                 ] = Gstr_shortest_dist[target]
 
                 # if the path exists, then the number of edges (timesteps) is one less than the number of nodes
-                if not Geff_shortest_paths.get(target, None) is None:
+                if Geff_shortest_paths.get(target, None) is not None:
                     eff_path_steps = len(Geff_shortest_paths[target]) - 1
                 else:
                     # or the path doesnt exist
@@ -1633,9 +1658,9 @@ class BooleanNetwork:
 
                     # once the lightcone includes the target node on the effective shortest path,
                     # then for all other steps the effective path is the best
-                    impact_matrix[
-                        1, list(range(eff_path_steps, n_steps + 1)), itar
-                    ] = inv_eff_weight_func(Geff_shortest_dist[target])
+                    impact_matrix[1, list(range(eff_path_steps, n_steps + 1)), itar] = (
+                        inv_eff_weight_func(Geff_shortest_dist[target])
+                    )
 
         return impact_matrix[:, 1:]
 
@@ -1715,7 +1740,7 @@ class BooleanNetwork:
                         DCM.add_edge(
                             in_nei[0],
                             out_nei[1],
-                            **{"type": "simplified", "mode": "selfloop"}
+                            **{"type": "simplified", "mode": "selfloop"},
                         )
                     # Link variables nodes directly
                     elif not any([DCM.nodes[tn]["type"] == "fusion" for tn in in_nei]):
@@ -1723,7 +1748,7 @@ class BooleanNetwork:
                         DCM.add_edge(
                             in_nei[0],
                             out_nei[1],
-                            **{"type": "simplified", "mode": "direct"}
+                            **{"type": "simplified", "mode": "direct"},
                         )
         # Remove Isolates
         isolates = list(nx.isolates(DCM))

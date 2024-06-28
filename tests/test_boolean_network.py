@@ -1,5 +1,3 @@
-from cana.boolean_network import BooleanNetwork
-import networkx as nx
 from cana.datasets.bio import THALIANA
 
 def test_EG_weight_THALIANA():
