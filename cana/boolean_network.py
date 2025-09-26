@@ -500,7 +500,9 @@ class BooleanNetwork:
 
     def effective_graph(self, bound="mean", threshold=None):
         """Computes and returns the effective graph of the network.
-        In practive it asks each :class:`~cana.boolean_node.BooleanNode` for their :func:`~cana.boolean_node.BooleanNode.edge_effectiveness`.
+        In practice, it asks each :class:`~cana.boolean_node.BooleanNode` for their :func:`~cana.boolean_node.BooleanNode.edge_effectiveness`.
+        None thresholded effective graph is cached after the first computation. Thresholded effective graphs are computed from the cached
+        effective graph.
 
         Args:
             bound (string) : The bound to which compute input redundancy.
@@ -516,16 +518,9 @@ class BooleanNetwork:
             :func:`~cana.boolean_node.BooleanNode.edge_effectiveness`
         """
         if self._eg is None:
-            if threshold is not None:
-                self._eg = nx.DiGraph(
-                    name="Effective Graph: "
-                    + self.name
-                    + "(Threshold: {threshold:.2f})".format(threshold=threshold)
-                )
-            else:
-                self._eg = nx.DiGraph(
-                    name="Effective Graph: " + self.name + "(Threshold: None)"
-                )
+            self._eg = nx.DiGraph(
+                name="Effective Graph: " + self.name + "(Threshold: None)"
+            )
 
             # Add Nodes
             for i, node in enumerate(self.nodes, start=0):
@@ -536,13 +531,24 @@ class BooleanNetwork:
                 e_is = node.edge_effectiveness(bound=bound)
 
                 for inputs, e_i in zip(self.logic[i]["in"], e_is):
-                    # If there is a threshold, only return those number above the threshold. Else, return all edges.
-                    if (threshold is None) or (
-                        (threshold is not None) and (e_i > threshold)
-                    ):
-                        self._eg.add_edge(inputs, i, **{"weight": e_i})
+                    self._eg.add_edge(inputs, i, **{"weight": e_i})
 
-        return self._eg
+        if threshold is not None:
+            # make a copy of the effective graph
+            thresholded_eg = nx.DiGraph(
+                name="Effective Graph: "
+                     + self.name
+                     + "(Threshold: {threshold:.2f})".format(threshold=threshold)
+            )
+            thresholded_eg.add_nodes_from(self._eg.nodes(data=True))
+            # add edges
+            for i, j, d in self._eg.edges(data=True):
+                if d["weight"] > threshold:
+                    thresholded_eg.add_edge(i, j, **{"weight": d["weight"]})
+
+            return thresholded_eg
+        else:
+            return self._eg
 
     def conditional_effective_graph(
         self, conditioned_nodes={}, bound="mean", threshold=None
