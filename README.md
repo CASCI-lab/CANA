@@ -10,7 +10,7 @@ If you use `cana` in your research, please cite us and check out our related pap
 
 - A.M. Marcus, J.C. Rozum, H. Sizek, L.M. Rocha [2025]. "[CANA v1.0.0: efficient quantification of canalization in automata networks](https://doi.org/10.1093/bioinformatics/btaf461)". *Bioinformatics*. btaf461. doi: 10.1093/bioinformatics/btaf461
 
-
+- R.B. Correia, A.J. Gates, X. Wang, L.M. Rocha [2018]. "[CANA: A python package for quantifying control and canalization in Boolean Networks](https://www.informatics.indiana.edu/rocha/publications/FSB18.php)". *Frontiers in Physiology*. **9**: 1046. doi: 10.3389/fphys.2018.01046
 
 Installation:
 -------------
@@ -40,14 +40,14 @@ Docs:
 The full documentation can be found at: [casci-lab.github.io/CANA/](https://casci-lab.github.io/CANA/)
 
 
-Papers:
+Papers with the Theory, Formulations, and Analytical Examples:
 ---------
 
-- A.M. Marcus, J.C. Rozum, H. Sizek, L.M. Rocha [2025]. "[CANA v1.0.0: efficient quantification of canalization in automata networks](https://doi.org/10.1093/bioinformatics/btaf461)". *Bioinformatics*. btaf461. doi: 10.1093/bioinformatics/btaf461
+- F.X. Costa, J.C. Rozum, A.M. Marcus, L.M. Rocha [2023]. "[Effective Connectivity and Bias Entropy Improve Prediction of Dynamical Regime in Automata Networks](https://doi.org/10.3390/e25020374)". *Entropy*. 25(**2**):374. doi: 10.3390/e25020374.
+
+- S. Manicka, M. Marques-Pita, L.M. Rocha [2022]. "[Effective connectivity determines the critical dynamics of biochemical networks](https://doi.org/10.1098/rsif.2021.0659)". *Journal of the Royal Society Interface*. 19(**186**)20210659. doi: 10.1098/rsif.2021.0659.
 
 - A.J. Gates, R.B. Correia, X. Wang, L.M. Rocha [2021]. "[The effective graph reveals redundancy, canalization, and control pathways in biochemical regulation and signaling](https://doi.org/10.1073/pnas.2022598118)". *Proceedings of the National Academy of Sciences (PNAS)*. 118(**12**). doi: 10.1073/pnas.20225981186
-
-- R.B. Correia, A.J. Gates, X. Wang, L.M. Rocha [2018]. "[CANA: A python package for quantifying control and canalization in Boolean Networks](https://www.informatics.indiana.edu/rocha/publications/FSB18.php)". *Frontiers in Physiology*. **9**: 1046. doi: 10.3389/fphys.2018.01046
 
 - A. Gates and L.M. Rocha. [2016] "[Control of complex networks requires both structure and dynamics.](http://www.informatics.indiana.edu/rocha/publications/NSR16.php)" *Scientific Reports* **6**, 24456. doi: 10.1038/srep24456.
 
