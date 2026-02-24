@@ -20,7 +20,7 @@ extensions = [
 
 __package__ = "cana"
 __description__ = "This package implements a series of methods used to study control, canalization and redundancy in Boolean networks."
-__version__ = "1.0.0"
+__version__ = "1.0.1"
 
 setup(
     name=__package__,
