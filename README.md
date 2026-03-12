@@ -27,7 +27,7 @@ Installation:
 Pull and install the code directly from the github [project page](https://github.com/casci-lab/CANA).
 
 ```
-    pip install git+https://github.com/CASCI-lab/CANA
+    pip install git+https://github.com/CASCI-lab/CANA/ceg_visualization
 ```
 
 Please note that CANA uses Cython. For it to compile you may need to install the following:
