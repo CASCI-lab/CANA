@@ -175,12 +175,17 @@ def output_transitions(eval_line, input_list):
     """
     total = 2 ** len(input_list)  # Total combinations to try
     output_list = []
+    # Use an explicit namespace dict for exec/eval so that dynamically
+    # created variables are visible across calls.  In Python 3.13+
+    # (PEP 667) bare exec() inside a function writes to a snapshot of
+    # locals that eval() cannot see.
+    ns = {}
     for i in range(total):
         trial_string = statenum_to_binstate(i, len(input_list))
         # Evaluate trial_string by assigning value to each input variable
-        for j, input in enumerate(input_list):
-            exec(input + "=" + trial_string[j])
-        output_list.append(int(eval(eval_line)))
+        for j, input_name in enumerate(input_list):
+            ns[input_name] = int(trial_string[j])
+        output_list.append(int(eval(eval_line, ns)))
 
     return output_list
 
