@@ -27,7 +27,7 @@ Installation:
 Pull and install the code directly from the github [project page](https://github.com/casci-lab/CANA).
 
 ```
-    pip install git+https://github.com/CASCI-lab/CANA/ceg_visualization
+    pip install git+https://github.com/CASCI-lab/CANA
 ```
 
 Please note that CANA uses Cython. For it to compile you may need to install the following:
@@ -113,6 +113,9 @@ Run nosetests -v to perform tests and diagnoses on functions.
 
 Changelog
 ---------
+
+v0.1.0
+- Added visualization routines to drawing (effective graph and conditional effective graph)
 
 v0.1
 - Canalization methods ported to Cython
