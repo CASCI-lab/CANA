@@ -21,6 +21,18 @@ from ..boolean_network import BooleanNetwork
 _path = os.path.dirname(os.path.realpath(__file__))
 """ Make sure we know what the current directory is """
 
+def BT474_ErbB_S():
+    """Boolean network model of the control of HCC1954 Breast Cell Line Short-term ErbB Network model
+
+    The network is defined in :cite:`der Heyde:2014`.
+
+    Returns:
+        (BooleanNetwork)
+    """
+    return BooleanNetwork.from_file(
+        _path + "/cell_collective/BT474 Breast Cell Line Short-term ErbB Network.txt", name="BT474 Breast Cell Line Short-term ErbB", keep_constants=True
+    )
+
 
 def THALIANA():
     """Boolean network model of the control of flower morphogenesis in Arabidopsis thaliana
