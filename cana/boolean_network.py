@@ -55,8 +55,8 @@ from cana.utils import entropy, flip_binstate_bit_set, output_transitions
 def _signatures_distinguish_attractors(candidate_nodes, bin_attractors):
     """Necessary-condition pre-filter for pinning controllability.
 
-    Returns ``True`` iff each attractor in ``bin_attractors`` has a
-    distinct *signature* on ``candidate_nodes``. The signature is the
+    Returns ``True`` iff no obvious signature collision is detected
+    among attractors on ``candidate_nodes``. The signature is the
     tuple of values the candidate nodes take in the attractor:
 
     - **Fixed-point attractor** (length 1): signature is the tuple of
@@ -81,10 +81,13 @@ def _signatures_distinguish_attractors(candidate_nodes, bin_attractors):
             value of node ``k`` at the ``j``-th state of attractor ``i``.
 
     Returns:
-        bool: ``True`` iff signatures distinguish all attractors;
-        ``False`` on any signature collision (including the trivial
-        ``len(candidate_nodes) == 0`` case where signatures are all
-        empty tuples).
+        bool: ``True`` if no collision is found among fixed-point /
+        pin-constant signatures, and no flipping-cycle per-state
+        signature collides with a fixed-point signature. ``False``
+        on any detected collision (including the trivial
+        ``len(candidate_nodes) == 0`` case). Note: collisions
+        *among* flipping cycles are not checked here — those are
+        caught by the downstream pcstg sufficiency check.
     """
     if len(candidate_nodes) == 0:
         return False
@@ -1155,10 +1158,12 @@ class BooleanNetwork:
         network may admit a smaller set.
 
         Returns:
-            list: minimum-size driver sets (as tuples of node indices)
-            that achieve pinning control. If no set up to size
-            ``Nnodes - 1`` works (degenerate networks), returns
-            ``[list(range(Nnodes))]`` as the trivial fallback.
+            list of tuple: minimum-size driver sets (as tuples of node
+            indices) that achieve pinning control. For a single-
+            attractor network, returns ``[()]`` (the empty driver set).
+            If no set up to size ``Nnodes - 1`` works (degenerate
+            networks), returns ``[tuple(range(Nnodes))]`` as the
+            trivial fallback.
 
         See also:
             :func:`pinning_controlled_state_transition_graph`,
@@ -1168,14 +1173,25 @@ class BooleanNetwork:
         """
         self._check_compute_variables(attractors=True)
         if len(self._attractors) == 1:
-            return []
+            return [()]
         lower_bound = ceil(log2(len(self._attractors)))
         nodeids = list(range(self.Nnodes))
+        # Exclude constant nodes: they cannot distinguish attractors
+        # and waste combinatorial search effort. If you need to treat
+        # a constant node as a controllable driver (e.g. toggling a
+        # stimulus), modify the model to make it non-constant before
+        # calling this function.
+        if self.keep_constants:
+            constant_nodeids = set(self.get_constants().keys())
+            nodeids = [nodeid for nodeid in nodeids if nodeid not in constant_nodeids]
         bin_attractors = [
             [self.num2bin(state) for state in attr] for attr in self._attractors
         ]
         result = []
-        for n_pin in range(lower_bound, self.Nnodes):
+        max_pin = len(nodeids)
+        if lower_bound > max_pin:
+            return [tuple(range(self.Nnodes))]
+        for n_pin in range(lower_bound, max_pin + 1):
             if result:
                 break
             for pvs in itertools.combinations(nodeids, n_pin):
@@ -1199,7 +1215,7 @@ class BooleanNetwork:
                 if controlled:
                     result.append(pvs)
         if not result:
-            return [list(range(self.Nnodes))]
+            return [tuple(range(self.Nnodes))]
         return result
 
     def controlled_state_transition_graph(self, driver_nodes=[]):
@@ -1374,8 +1390,16 @@ class BooleanNetwork:
         See also:
             :func:`pinning_controlled_state_transition_graph`.
         """
-        assert len(initial) == self.Nnodes
-        assert len(pinned_binstate) == len(pinned_var)
+        if len(initial) != self.Nnodes:
+            raise ValueError(
+                "initial state length must equal Nnodes: "
+                "expected %d, got %d" % (self.Nnodes, len(initial))
+            )
+        if len(pinned_binstate) != len(pinned_var):
+            raise ValueError(
+                "pinned_binstate length must match pinned_var: "
+                "expected %d, got %d" % (len(pinned_var), len(pinned_binstate))
+            )
         # Build a quick lookup so the comprehension is O(Nnodes)
         # rather than O(Nnodes * |pinned_var|).
         pin_map = dict(zip(pinned_var, pinned_binstate))

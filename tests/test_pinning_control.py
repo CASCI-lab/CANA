@@ -96,13 +96,17 @@ def _build_two_fp_one_cycle():
     return BN
 
 
+def _find_attractor(BN, states):
+    """Find the index of an attractor by its state set (order-independent)."""
+    target = set(states)
+    for i, attr in enumerate(BN._attractors):
+        if set(attr) == target:
+            return i
+    raise ValueError(f"Attractor {states} not found in {BN._attractors}")
+
+
 # Node indices for readability in tests.
 A, B, C = 0, 1, 2
-
-# Attractor positions in BN._attractors after _build_two_fp_one_cycle().
-ATT_CYCLE = 0  # [2, 4] = {(010), (100)}
-ATT_FP_000 = 1  # [0]
-ATT_FP_111 = 2  # [7]
 
 
 # ---------------------------------------------------------------- #
@@ -113,8 +117,11 @@ ATT_FP_111 = 2  # [7]
 def test_fixture_has_expected_attractors():
     BN = _build_two_fp_one_cycle()
     assert BN.Nnodes == 3
-    # Order is implementation-defined but stable for this BN.
-    assert BN._attractors == [[2, 4], [0], [7]]
+    # Check attractor content, not ordering (order is implementation-defined).
+    att_sets = [set(a) for a in BN._attractors]
+    assert {2, 4} in att_sets  # length-2 cycle
+    assert {0} in att_sets      # fixed point 000
+    assert {7} in att_sets      # fixed point 111
 
 
 # ---------------------------------------------------------------- #
@@ -169,7 +176,7 @@ def test_pinned_step_multiple_pinned_vars():
 def test_pinned_step_length_mismatch_raises():
     """``pinned_binstate`` length must match ``pinned_var`` length."""
     BN = _build_two_fp_one_cycle()
-    with pytest.raises(AssertionError):
+    with pytest.raises(ValueError):
         BN.pinned_step("000", pinned_binstate="11", pinned_var=[A])
 
 
@@ -183,7 +190,7 @@ def test_pcstg_single_wcc_fixed_point_pin_A():
     attractor's src_pin should still be one WCC."""
     BN = _build_two_fp_one_cycle()
     pcstg_dict = BN.pinning_controlled_state_transition_graph([A])
-    fp_pcstg = pcstg_dict[tuple(BN._attractors[ATT_FP_000])]
+    fp_pcstg = pcstg_dict[tuple(BN._attractors[_find_attractor(BN, [0])])]
     n_wccs = sum(1 for _ in nx.weakly_connected_components(fp_pcstg))
     # All 4 states with A=0 flow into (000) → single WCC.
     assert n_wccs == 1
@@ -200,7 +207,7 @@ def test_pcstg_single_wcc_cycle_pin_flips_post_fix():
     """
     BN = _build_two_fp_one_cycle()
     pcstg_dict = BN.pinning_controlled_state_transition_graph([A])
-    cyc_pcstg = pcstg_dict[tuple(BN._attractors[ATT_CYCLE])]
+    cyc_pcstg = pcstg_dict[tuple(BN._attractors[_find_attractor(BN, [2, 4])])]
     n_wccs = sum(1 for _ in nx.weakly_connected_components(cyc_pcstg))
     assert n_wccs == 1
     assert len(cyc_pcstg) == 8
@@ -213,14 +220,14 @@ def test_pcstg_cycle_pin_constant_unaffected_by_fix():
     """
     BN = _build_two_fp_one_cycle()
     pcstg_dict = BN.pinning_controlled_state_transition_graph([C])
-    cyc_pcstg = pcstg_dict[tuple(BN._attractors[ATT_CYCLE])]
+    cyc_pcstg = pcstg_dict[tuple(BN._attractors[_find_attractor(BN, [2, 4])])]
     # 4 states with C=0; the cycle is one of three WCCs in this
     # restricted pcstg (the others are FP basins for (000) and (110)).
     assert len(cyc_pcstg) == 4
     n_wccs = sum(1 for _ in nx.weakly_connected_components(cyc_pcstg))
     assert n_wccs == 3
     # The cycle states must share a WCC.
-    cycle_states = set(BN._attractors[ATT_CYCLE])
+    cycle_states = set(BN._attractors[_find_attractor(BN, [2, 4])])
     cycle_wcc = next(
         wcc for wcc in nx.weakly_connected_components(cyc_pcstg)
         if cycle_states <= wcc
@@ -239,7 +246,7 @@ def test_pcf_pin_A_post_fix():
     BN = _build_two_fp_one_cycle()
     pcstg_dict = BN.pinning_controlled_state_transition_graph([A])
     pcf = BN.fraction_pinned_configurations(pcstg_dict)
-    # _attractors order: [cycle, fp000, fp111]
+    # All attractors fully controlled regardless of ordering.
     assert pcf == [1.0, 1.0, 1.0]
     assert BN.mean_fraction_pinned_configurations(pcstg_dict) == 1.0
 
