@@ -13,6 +13,7 @@ Main class for Boolean network objects.
 #   All rights reserved.
 #   MIT license.
 from collections import defaultdict
+from math import ceil, log2
 
 try:
     import cStringIO.StringIO as StringIO  # type: ignore
@@ -49,6 +50,64 @@ from cana.cutils import (
 
 # from cana.utils import *
 from cana.utils import entropy, flip_binstate_bit_set, output_transitions
+
+
+def _signatures_distinguish_attractors(candidate_nodes, bin_attractors):
+    """Necessary-condition pre-filter for pinning controllability.
+
+    Returns ``True`` iff each attractor in ``bin_attractors`` has a
+    distinct *signature* on ``candidate_nodes``. The signature is the
+    tuple of values the candidate nodes take in the attractor:
+
+    - **Fixed-point attractor** (length 1): signature is the tuple of
+      values at the single attractor state.
+    - **Limit-cycle attractor, pin constant within the cycle**: all
+      cycle states agree on the candidate nodes; the cycle is treated
+      as fixed-point-like with that single signature.
+    - **Limit-cycle attractor, pin flips within the cycle**: each
+      cycle state contributes its own signature; each must not
+      collide with another attractor's fixed-point-style signature.
+
+    This is a *necessary* condition, not sufficient: two attractors
+    that pass here may still fail the downstream PCSTG-WCC check
+    (e.g., two flipping cycles whose per-state signatures happen to
+    overlap on the candidate nodes — rare in practice). Sufficiency
+    is verified in :func:`BooleanNetwork.pinning_control_driver_nodes`.
+
+    Args:
+        candidate_nodes (list of int): node indices to check.
+        bin_attractors (list of list of str): attractors as lists of
+            binary state strings; ``bin_attractors[i][j][k]`` is the
+            value of node ``k`` at the ``j``-th state of attractor ``i``.
+
+    Returns:
+        bool: ``True`` iff signatures distinguish all attractors;
+        ``False`` on any signature collision (including the trivial
+        ``len(candidate_nodes) == 0`` case where signatures are all
+        empty tuples).
+    """
+    if len(candidate_nodes) == 0:
+        return False
+    fixed_signatures = set()
+    flipping_attractors = []
+    for attr in bin_attractors:
+        sig = tuple(attr[0][node] for node in candidate_nodes)
+        is_pin_constant = all(
+            tuple(state[node] for node in candidate_nodes) == sig
+            for state in attr[1:]
+        )
+        if len(attr) == 1 or is_pin_constant:
+            if sig in fixed_signatures:
+                return False
+            fixed_signatures.add(sig)
+        else:
+            flipping_attractors.append(attr)
+    for attr in flipping_attractors:
+        for state in attr:
+            sig = tuple(state[node] for node in candidate_nodes)
+            if sig in fixed_signatures:
+                return False
+    return True
 
 
 class BooleanNetwork:
@@ -1050,6 +1109,99 @@ class BooleanNetwork:
 
         return attractor_controllers_found
 
+    def pinning_control_driver_nodes(self):
+        """Find minimum-size driver sets that achieve pinning control.
+
+        A driver set ``D`` achieves *pinning control* if for every
+        attractor ``A`` of this Boolean network, pinning the nodes in
+        ``D`` to ``A``'s projection drives every initial configuration
+        to ``A``. Operationally, this requires the pinning-controlled
+        STG (``pcstg``) for each attractor to have exactly one
+        attracting strongly-connected component, and that SCC must
+        equal the target attractor's state set.
+
+        The search starts at the information-theoretic lower bound
+        ``ceil(log2(N_attractors))`` (you need that many bits to
+        distinguish the attractors at all) and increments until at
+        least one valid driver set is found. All minimum-size valid
+        sets are returned. A two-stage filter is used:
+
+        1. *Necessary-condition pre-filter*
+           (:func:`_signatures_distinguish_attractors`): cheap
+           combinatorial check that the candidate's signatures
+           distinguish all attractors. Skips the expensive pcstg build
+           for obviously-invalid candidates.
+        2. *Sufficiency check*: build pcstg per attractor; require
+           ``attracting_components(pcstg) == [set(att)]`` (a single
+           attracting SCC, equal to the target). The weaker
+           ``WCC == 1`` check used in earlier revisions only verifies
+           that the pcstg is connected — it does not verify that the
+           pcstg's unique attractor equals the intended target. For a
+           deterministic pcstg (fixed-point pinning) the pcstg always
+           has exactly one attracting SCC per WCC, but that SCC may
+           be some other state if the pin pattern happens to drive
+           the unpinned dynamics to a different attractor. The
+           Thaliana network exposed this in 2026; see test
+           ``test_thaliana_size5_false_positive_rejected_by_strict_check``.
+
+        This is the discrete/Boolean analog of FVS-based open-loop
+        control proved for ODE systems in Mochizuki & Fiedler 2013
+        ("Dynamics and Control at Feedback Vertex Sets II", JTB §7);
+        the Boolean version is supported by stable-motif theory
+        (Zañudo & Albert). FVS provides an upper bound on the driver-
+        set size; the search here may find smaller sets when the
+        discrete dynamics permit, since the FVS theorem requires a
+        guarantee for *all* nonlinearities while a specific Boolean
+        network may admit a smaller set.
+
+        Returns:
+            list: minimum-size driver sets (as tuples of node indices)
+            that achieve pinning control. If no set up to size
+            ``Nnodes - 1`` works (degenerate networks), returns
+            ``[list(range(Nnodes))]`` as the trivial fallback.
+
+        See also:
+            :func:`pinning_controlled_state_transition_graph`,
+            :func:`fraction_pinned_configurations`,
+            :func:`feedback_vertex_set_driver_nodes`,
+            :func:`_signatures_distinguish_attractors`.
+        """
+        self._check_compute_variables(attractors=True)
+        if len(self._attractors) == 1:
+            return []
+        lower_bound = ceil(log2(len(self._attractors)))
+        nodeids = list(range(self.Nnodes))
+        bin_attractors = [
+            [self.num2bin(state) for state in attr] for attr in self._attractors
+        ]
+        result = []
+        for n_pin in range(lower_bound, self.Nnodes):
+            if result:
+                break
+            for pvs in itertools.combinations(nodeids, n_pin):
+                if not _signatures_distinguish_attractors(
+                    list(pvs), bin_attractors
+                ):
+                    continue
+                controlled = True
+                pcstg_dict = self.pinning_controlled_state_transition_graph(
+                    list(pvs)
+                )
+                for att, pcstg in pcstg_dict.items():
+                    # Strict check: pcstg must have exactly one
+                    # attracting SCC, and that SCC must equal the
+                    # target attractor's state set. Pure
+                    # set/integer comparison — no floating point.
+                    attracting = list(nx.attracting_components(pcstg))
+                    if len(attracting) != 1 or attracting[0] != set(att):
+                        controlled = False
+                        break
+                if controlled:
+                    result.append(pvs)
+        if not result:
+            return [list(range(self.Nnodes))]
+        return result
+
     def controlled_state_transition_graph(self, driver_nodes=[]):
         """Returns the Controlled State-Transition-Graph (CSTG).
         In practice, it copies the original STG, flips driver nodes (variables), and updates the CSTG.
@@ -1124,6 +1276,16 @@ class BooleanNetwork:
 
         pcstg_dict = {}
         for att in self._attractors:
+            # For each STG edge ``(s_src, s_dst)`` *inside* the attractor,
+            # ``src_pin`` and ``dst_pin`` are the projections of those
+            # states onto the pinned variables. For a fixed-point
+            # attractor the self-loop gives ``src_pin == dst_pin``; for a
+            # length-L cycle the L tuples have ``dst_pin`` rotated one
+            # cycle-step ahead of ``src_pin``. (These are the same loop
+            # variables previously named ``attsource`` and ``attsink``;
+            # renamed because the old names suggested *attractor states*
+            # when they actually hold the *pin-bit projections* of those
+            # states.)
             dn_attractor_transitions = [
                 tuple(
                     "".join([self.num2bin(s)[dn] for dn in driver_nodes])
@@ -1136,12 +1298,12 @@ class BooleanNetwork:
                 self.bin2num(
                     binstate_pinned_to_binstate(
                         statenum_to_binstate(statenum, base=uncontrolled_system_size),
-                        attsource,
+                        src_pin,
                         pinned_var=driver_nodes,
                     )
                 )
                 for statenum in range(2**uncontrolled_system_size)
-                for attsource, attsink in dn_attractor_transitions
+                for src_pin, _dst_pin in dn_attractor_transitions
             ]
 
             pcstg = nx.DiGraph(name="STG: " + self.name)
@@ -1155,19 +1317,27 @@ class BooleanNetwork:
 
             pcstg.add_nodes_from((ps, {"label": ps}) for ps in pcstg_states)
 
-            for attsource, attsink in dn_attractor_transitions:
+            for src_pin, dst_pin in dn_attractor_transitions:
                 for statenum in range(2**uncontrolled_system_size):
                     initial = binstate_pinned_to_binstate(
                         statenum_to_binstate(statenum, base=uncontrolled_system_size),
-                        attsource,
+                        src_pin,
                         pinned_var=driver_nodes,
                     )
+                    # ``pinned_step`` advances the unpinned variables
+                    # using ``initial`` (which has ``src_pin`` at the
+                    # pinned positions) and writes ``dst_pin`` at the
+                    # pinned positions of the output. For fixed-point
+                    # attractors ``src_pin == dst_pin`` so the pinned
+                    # positions are unchanged; for cycles where the pin
+                    # flips, this is what connects positions of the
+                    # pcstg around the cycle.
                     pcstg.add_edge(
                         self.bin2num(initial),
                         self.bin2num(
                             self.pinned_step(
                                 initial,
-                                pinned_binstate=attsink,
+                                pinned_binstate=dst_pin,
                                 pinned_var=driver_nodes,
                             )
                         ),
@@ -1178,29 +1348,42 @@ class BooleanNetwork:
         return pcstg_dict
 
     def pinned_step(self, initial, pinned_binstate, pinned_var):
-        """Steps the boolean network 1 step from the given initial input condition when the driver variables are pinned
-        to their controlled states.
+        """Advance the network one Boolean step under pinning control.
+
+        Pinned variables are read as inputs to the node update
+        functions from ``initial`` (so the unpinned variables see the
+        *source* pin pattern when computing their next values), and
+        written as ``pinned_binstate`` in the output (the *destination*
+        pin pattern). For fixed-point pinning ``pinned_binstate`` is
+        the same pattern at every step; for limit-cycle pinning it
+        rotates one cycle position ahead of the source pin.
 
         Args:
-            initial (string) : the initial state.
-            n (int) : the number of steps.
+            initial (str) : the source binary state of length ``Nnodes``.
+            pinned_binstate (str) : destination values for the pinned
+                positions; must satisfy
+                ``len(pinned_binstate) == len(pinned_var)``.
+            pinned_var (list of int) : indices of the pinned variables.
 
         Returns:
-            (string) : The stepped binary state.
+            (str) : the next binary state, with pinned positions equal
+                to ``pinned_binstate`` and unpinned positions equal to
+                one Boolean step from ``initial`` (using the values in
+                ``initial`` — including the source pin — as inputs).
+
+        See also:
+            :func:`pinning_controlled_state_transition_graph`.
         """
-        # for every node:
-        #   node input = breaks down initial by node input
-        #   asks node to step with the input
-        #   append output to list
-        # joins the results from each node output
         assert len(initial) == self.Nnodes
+        assert len(pinned_binstate) == len(pinned_var)
+        # Build a quick lookup so the comprehension is O(Nnodes)
+        # rather than O(Nnodes * |pinned_var|).
+        pin_map = dict(zip(pinned_var, pinned_binstate))
         return "".join(
-            [
-                str(node.step("".join(initial[j] for j in self.logic[i]["in"])))
-                if not (i in pinned_var)
-                else initial[i]
-                for i, node in enumerate(self.nodes, start=0)
-            ]
+            pin_map[i]
+            if i in pin_map
+            else str(node.step("".join(initial[j] for j in self.logic[i]["in"])))
+            for i, node in enumerate(self.nodes, start=0)
         )
 
     def controlled_attractor_graph(self, driver_nodes=[]):
