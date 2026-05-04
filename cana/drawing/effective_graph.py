@@ -57,8 +57,8 @@ VIZ_CONFIG = {
     "NODE_MARGIN": ".05",
     "NODE_OUTLINE_COLOR": "black",
     "NODE_FILLCOLOR": "#edf7ed",
-    "INPUT_FILL": "#d299ff",
-    "SINK_FILL": "#22c55e",
+    "INPUT_FILL": "#edf7ed",
+    "SINK_FILL": "#edf7ed",
     "NODE_FONTNAME": "Helvetica",
     "NODE_FONTCOLOR": "black",
     "GRID_DX": 120.0,  # Increased from 2.0 (standard points)
@@ -525,11 +525,6 @@ def visualize_conditional_effective_graph(EG_cn, EG0, conditioned_nodes, sModel=
     # ==========================================================
     fill = cfg["NODE_FILLCOLOR"]
     
-    if nid in sinks_set:
-        fill = cfg["SINK_FILL"]
-    elif nid in inputs_set and nid not in sinks_set:
-        fill = cfg["INPUT_FILL"]
-
     # =====================
     # NODES
     # =====================
