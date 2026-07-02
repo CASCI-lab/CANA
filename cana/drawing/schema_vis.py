@@ -75,7 +75,9 @@ def plot_schemata(n, plotTS=True):
     x, y = 0.0, 0.0
     #
     for out, pis in zip([1, 0], [pi1s, pi0s]):
-        for pi in pis:
+        # Sort the prime-implicant set so rendered rows have a canonical,
+        # reproducible order (set iteration order is randomized per process).
+        for pi in sorted(pis):
             x = 0.0
             xticks = []
             for input in pi:
@@ -416,7 +418,9 @@ def plot_anni_gen_schemata(n, plotTS=True):
     xticks = []
 
     for out, pis in zip([1, 0], [pigs, pias]):
-        for pi in pis:
+        # Sort the prime-implicant set so rendered rows have a canonical,
+        # reproducible order (set iteration order is randomized per process).
+        for pi in sorted(pis):
             x = 0.0
             xticks = []
             for input in pi:

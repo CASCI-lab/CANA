@@ -512,7 +512,11 @@ class BooleanNode(object):
             pi1s = self._prime_implicants.get("1", [])
 
             for output, pi in zip([0, 1], [pi0s, pi1s]):
-                for schemata in pi:
+                # Prime implicants are stored as a Python set, whose iteration
+                # order is randomized per process (PYTHONHASHSEED). Sort so the
+                # returned rows have a canonical, reproducible order. Content is
+                # unaffected -- the prime-implicant set is mathematically unique.
+                for schemata in sorted(pi):
                     r.append((schemata, output))
 
         # Two Symbol LUT

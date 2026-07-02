@@ -201,7 +201,9 @@ def computes_pi_coverage(k, outputs, prime_implicants):
         else:
             transition = [outputs[statenum]]
         for t in transition:
-            for prime_implicant in prime_implicants[t]:
+            # prime_implicants[t] is a set; sort so the covering list order is
+            # canonical and reproducible across processes (PYTHONHASHSEED).
+            for prime_implicant in sorted(prime_implicants[t]):
                 if __pi_covers(prime_implicant, binstate):
                     covering_implicants.append(prime_implicant)
     #
@@ -238,6 +240,12 @@ def find_two_symbols_v2(k=1, prime_implicants=None, verbose=False, verbose_level
     if cached is not None:
         return copy.deepcopy(cached)
 
+    # `prime_implicants` arrives as a Python set, whose iteration order is
+    # randomized per process (PYTHONHASHSEED). Sorting it here means both the input
+    # handed to `sc.schemer` and (with the output sort below) the returned list are
+    # canonical and reproducible across processes.
+    prime_implicants = sorted(prime_implicants)
+
     # If this node has no input, yet it affects other nodes (fixed variable)
     if k == 0:
         TSf = []
@@ -260,6 +268,14 @@ def find_two_symbols_v2(k=1, prime_implicants=None, verbose=False, verbose_level
         same_symbols = [buckets[x] for x in (0, 1, 2) if len(buckets[x]) > 1]
         representative_str = "".join(map(str, representative))
         TSf.append([representative_str, bubble_indices, same_symbols])
+
+    # Canonicalize the returned order. The set of two-symbol schemata is uniquely
+    # determined by the prime-implicant set, but the order `sc.schemer` yields them
+    # is not guaranteed stable across processes; sorting makes `_two_symbols` (and
+    # therefore every downstream consumer -- schemata LUT, TS coverage, drawing)
+    # reproducible. The representative string is unique; repr() of the index groups
+    # is a total, deterministic tiebreak.
+    TSf.sort(key=lambda entry: (entry[0], repr(entry[1]), repr(entry[2])))
 
     _TWO_SYMBOLS_CACHE[cache_key] = TSf
     return copy.deepcopy(TSf)
