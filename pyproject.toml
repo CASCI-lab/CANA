@@ -1,9 +1,12 @@
 [build-system]
 requires = [
     "setuptools",
+    "setuptools-scm",
     # "Cython", 
     "wheel",
 ]
 build-backend = "setuptools.build_meta"
 [tool.pytest.ini_options]
 pythonpath = [".", "tests/", "tests/helpers/"]
+
+[tool.setuptools_scm]
