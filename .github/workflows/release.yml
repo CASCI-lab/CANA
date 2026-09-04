@@ -3,7 +3,7 @@ name: Release
 on:
   push:
     tags:
-      - "v*"
+      - "v*.*.*"
 
 jobs:
   build:
@@ -40,7 +40,7 @@ jobs:
 
       - name: Build package
         run: |
-          python -m build
+          python -m build --sdist
 
       - name: Show artifacts
         run: |
@@ -51,3 +51,42 @@ jobs:
         with:
           name: python-package
           path: dist/
+
+  github-release:
+    needs: build
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Download artifacts
+        uses: actions/download-artifact@v4
+        with:
+          name: python-package
+          path: dist/
+
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          files: dist/*
+
+  publish:
+    needs: build
+    runs-on: ubuntu-latest
+
+    # This environment name must match the environment registered
+    # in the PyPI Trusted Publisher configuration.
+    environment: pypi
+
+    permissions:
+      id-token: write
+
+    steps:
+      - name: Download artifacts
+        uses: actions/download-artifact@v4
+        with:
+          name: python-package
+          path: dist/
+
+      - name: Publish to PyPI
+        uses: pypa/gh-action-pypi-publish@release/v1
+        with:
+          packages-dir: dist/
