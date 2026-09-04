@@ -142,11 +142,17 @@ def isclose(a, b, rel_tol=1e-09, abs_tol=0.0):
 
 
 def output_transitions(eval_line, input_list):
-    """Returns an output list from combinatorically trying all input values
+    """Returns an output list from combinatorically trying all input values.
+
+    Each input variable is assigned every possible binary combination (0/1)
+    via a namespace dict, and the boolean expression is evaluated with
+    ``eval()`` (builtins disabled, but this is not a security boundary).
+    Expressions must be trusted boolean rules using ``and``, ``or``,
+    ``not``, and parentheses, as produced by CANA model files.
 
     Args:
-        eval_line (string) : logic or arithmetic line to evaluate
-        input_list (list) : list of input variables
+        eval_line (string) : boolean expression to evaluate (e.g. "A and not B")
+        input_list (list) : list of input variable names
 
     Returns:
         list of all possible output transitions (list)
@@ -168,19 +174,25 @@ def output_transitions(eval_line, input_list):
             110
             111
 
-        A variable is dynamically created for each member of the input list
-        and assigned the corresponding value from each trail string.
-        The original eval_line is then evaluated with each assignment
+        Each input variable is assigned the corresponding value from each
+        trial string via a namespace dict, and the expression is evaluated
         which results in the output list [0, 0, 1, 0, 1, 0, 1, 0]
     """
     total = 2 ** len(input_list)  # Total combinations to try
     output_list = []
+    # Use an explicit namespace dict for exec/eval so that dynamically
+    # created variables are visible across calls.  In Python 3.13+
+    # (PEP 667) bare exec() inside a function writes to a snapshot of
+    # locals that eval() cannot see.
+    ns = {}
+    safe_globals = {"__builtins__": {}}
+    code = compile(eval_line.strip(), "<string>", "eval")
     for i in range(total):
         trial_string = statenum_to_binstate(i, len(input_list))
         # Evaluate trial_string by assigning value to each input variable
-        for j, input in enumerate(input_list):
-            exec(input + "=" + trial_string[j])
-        output_list.append(int(eval(eval_line)))
+        for j, input_name in enumerate(input_list):
+            ns[input_name] = int(trial_string[j])
+        output_list.append(int(eval(code, safe_globals, ns)))
 
     return output_list
 
