@@ -51,7 +51,7 @@ jobs:
 
       - name: Build package
         run: |
-          python -m build
+          python -m build --sdist
 
       - name: Show artifacts
         run: |
