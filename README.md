@@ -114,6 +114,9 @@ Run nosetests -v to perform tests and diagnoses on functions.
 Changelog
 ---------
 
+Master
+- Added visualization routines to drawing (effective graph and conditional effective graph)
+
 v0.1
 - Canalization methods ported to Cython
 
