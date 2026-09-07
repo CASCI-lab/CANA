@@ -10,6 +10,7 @@ Methods to draw the Effective graph and the Conditional Effective graph.
 #   Yoshiaki Fujita <yfujita@binghamton.edu>
 #   All rights reserved.
 #   MIT license.
+
 import warnings
 import math
 import io
@@ -33,6 +34,8 @@ except ImportError as error:
     )
 import matplotlib.pyplot as plt
 from matplotlib.colors import LinearSegmentedColormap
+from matplotlib.patches import Patch
+from matplotlib.lines import Line2D
 
 try:
     import IPython
@@ -44,12 +47,20 @@ except ImportError as error:
     )
 from IPython.display import display, Markdown, HTML
 
+try:
+    import numpy as np
+except ImportError as error:
+    warnings.warn(
+        "'numpy' could not be loaded, you won't be able to plot graphs. Try installing it first. {error:s}".format(
+            error=error
+        )
+    )
+
 # ===========================
 # GLOBAL VISUALIZATION CONFIG
 # ===========================
 
 VIZ_CONFIG = {
-    "CANVAS_INCH": 7,
     "FONT_SIZE": "8",
     "EDGE_PENWIDTH": "4",
     "NODE_HEIGHT": "0.4",
@@ -60,12 +71,15 @@ VIZ_CONFIG = {
     "INPUT_FILL": "#edf7ed",
     "SINK_FILL": "#edf7ed",
     "NODE_FONTNAME": "Helvetica",
-    "NODE_FONTCOLOR": "black",
+    "NODE_FONTCOLOR": "#000000FF",
+    "NODE_FIX_0": "#FF0000FF",
+    "NODE_FIX_1": "#0000FFFF",
+    'ACTIONABLE': "#000000FF", 
+    'CONDITIONED': "#000000FF",
+    'REDUNDANT': "#4F4F4F60",
     "GRID_DX": 120.0,  # Increased from 2.0 (standard points)
     "GRID_DY": 80.0,   # Increased from 1.5
 }
-
-
 
 # ===========================
 # Common functions
@@ -173,10 +187,6 @@ def get_effective_node_color(nid, EG, norm_out, cmap):
     return fill, outline
 
 def get_effective_legend_fig(max_outdegree=10):
-    import matplotlib.pyplot as plt
-    import matplotlib as mpl
-    import numpy as np
-    from matplotlib.colors import LinearSegmentedColormap
 
     # 1. Replicate your colormap logic exactly
     cmap = LinearSegmentedColormap.from_list('custom', ['white', '#d62728'])
@@ -211,28 +221,37 @@ def get_effective_legend_fig(max_outdegree=10):
 
     return fig
 
-def visualize_effective_graph(EG, sModel='your model', threshold=0.0, manual_positions=None):
+def visualize_effective_graph(bn, sModel='your model', manual_positions=None, threshold=None):
+    """Visualize the effective graph (EG) of a Boolean network.
+    
+        Args:
+            bn (cana boolean network object): Target Boolean network model.
+            sModel (str, optional): The name of the model for plot titles/metadata.
+                Defaults to 'your model'.
+            manual_positions (dict, optional): Mapping of node IDs or names to (x,
+            y) tuples
+                specifying coordinate locations.
+            threshold (str, optional): Display threshold value used to compute the Effective graph, EG
+            (e.g., 0.0).
     """
-    Visualize the effective graph of a Boolean network, with optional manual node positions.
-
-    Parameters
-    ----------
-    EG : networkx directed graph
-        Effective graph.
-    sModel : str, optional
-        Model name for title.
-    threshold : float, optional
-        Threshold for effective graph edge weights.
-    manual_positions : dict, optional
-        Dictionary of node positions keyed by node ID (int) or node label (str).
-        Values are (x, y) coordinates, e.g., {0: (0,0), 'Zeb': (1,2)}
-    """
-
-    # --- Labels and layout ---
+    
+    # Get (/ compute) effective graph
+    if threshold == None:
+        if bn._eg == None:
+            # Compute effective graph
+            EG = bn.effective_graph()
+        else:
+            # Use computed effective graph
+            EG = bn._eg
+    else:
+        # Compute effective graph with threshold
+        EG = bn.effective_graph(threshold=threshold)
+    
+    # Labels and layout
     sg_label = {n: EG.nodes[n].get('label', str(n)) for n in EG.nodes()}
     positions, inputs_set, sinks_set, _ = compute_grid_layout(EG)
 
-    # --- Override with manual positions if provided ---
+    # Override with manual positions if provided
     if manual_positions:
         new_positions = {}
         for key, value in manual_positions.items():
@@ -245,45 +264,41 @@ def visualize_effective_graph(EG, sModel='your model', threshold=0.0, manual_pos
             new_positions[nid] = value
         positions.update(new_positions)
 
-    # --- Base Graphviz ---
+    # Base Graphviz
     pSG = create_base_graph()
-    #pSG = create_base_graph()
     cfg = VIZ_CONFIG
     max_penwidth = float(cfg["EDGE_PENWIDTH"])
 
-    # =====================
     # PRECOMPUTE NORMALIZATION FOR NODE COLORS
-    # =====================
     out_vals = [EG.out_degree(n, weight='weight') for n in EG.nodes()]
     vmin, vmax = min(out_vals), max(out_vals)
     norm_out = mpl.colors.Normalize(vmin=vmin, vmax=vmax)
     cmap = LinearSegmentedColormap.from_list('custom', ['white', '#d62728'])
     cmap.set_under('#2ca02c')  # nodes with zero out-degree
 
-    # 1. Calculate the grid dimensions first to get 'cols'
+    # Calculate the grid dimensions first to get 'cols'
     N_total = len(EG.nodes())
     cols = math.ceil(math.sqrt(N_total))
 
-    # 2. Your new Scaling Logic
     if cols > 4:
         size_multiplier = 0.9 ** (cols - 4)
     else:
         size_multiplier = 1.0
 
-    # 3. Apply the multiplier to the base config
+    # Apply the multiplier to the base config
     node_w = float(VIZ_CONFIG["WIDTH"]) * size_multiplier
     node_h = float(VIZ_CONFIG["NODE_HEIGHT"]) * size_multiplier
     base_font = 10 * size_multiplier # Starting point for font
 
     # =====================
-    # NODES
+    # NODES Drawing
     # =====================
     for nid in EG.nodes():
         label = sg_label[nid]
         x, y = positions[nid]
         fill, outline = get_effective_node_color(nid, EG, norm_out, cmap)
 
-    # --- DYNAMIC FONT CALCULATION ---
+    # DYNAMIC FONT CALCULATION 
         # Start with a base size (e.g., 12) and reduce it for longer labels
         # This formula shrinks the font as the character count increases
         base_size = 10
@@ -304,30 +319,33 @@ def visualize_effective_graph(EG, sModel='your model', threshold=0.0, manual_pos
                  fixedsize='true')
 
     # =====================
-    # EDGES (weighted)
+    # EDGES (weighted) Drawing
     # =====================
     for uid, vid, data in EG.edges(data=True):
         weight = data.get('weight', 1.0)
         penwidth = max_penwidth * float(weight)
-
+        uid_str, vid_str = str(uid), str(vid)
+        
         if uid == vid:
             # Self-loop
-            color = '#bdbdbd'
-            uid_draw = f"{uid}:w"
-            vid_draw = f"{vid}:c"
-        else:
             color = '#636363'
-            uid_draw = f"{uid}:w"  # :w forces the edge to the West (left) port
-            vid_draw = f"{vid}:c"  # :c forces the edge to the Center
+            uid_draw = uid_str + ':w'
+            vid_draw = vid_str + ':c'
+        else:
+            # Regular edge
+            color = '#636363'
+            uid_draw = uid_str  # Let Graphviz handle standard routing naturally
+            vid_draw = vid_str
 
-        pSG.edge(str(uid), str(vid), penwidth=str(penwidth), color=color)
+        # FIX: Pass uid_draw and vid_draw so Graphviz sees the ':w' and ':c' ports!
+        pSG.edge(uid_draw, vid_draw, penwidth=str(penwidth), color=color)
        
     # =====================
     # Display 
     # =====================
-    # 1. Display the Title/Condition
+    # Display the Title/Condition
     
-    if threshold != 0.0:
+    if threshold != None:
         title_str = f"##### Threshold Effective Graph: {sModel}"
         title_str += f"\n**Edge Weight Threshold:** {str(threshold)}"
     else:
@@ -335,8 +353,6 @@ def visualize_effective_graph(EG, sModel='your model', threshold=0.0, manual_pos
     
     display(Markdown(title_str))
     
-    #display(pSG)
-
     # Prepare Legend Image
     # Find the actual max out-degree from your data to scale the bar correctly
     current_max = max([EG.out_degree(n, weight='weight') for n in EG.nodes()])
@@ -352,7 +368,7 @@ def visualize_effective_graph(EG, sModel='your model', threshold=0.0, manual_pos
     # Prepare Graph Image (SVG is best for Graphviz)
     graph_svg = pSG.pipe(format='svg').decode('utf-8')
 
-    # 4. Final Side-by-Side Layout
+    # Final Side-by-Side Layout
     display(HTML(f"""
         <div style="display: flex; align-items: flex-start; justify-content: flex-start; gap: 30px; margin-top: 20px;">
             <div style="flex: 0 1 auto; border: 1px solid #eee; padding: 10px; border-radius: 8px;">
@@ -369,9 +385,6 @@ def visualize_effective_graph(EG, sModel='your model', threshold=0.0, manual_pos
 # =================================================================
 
 def get_legend_figure():
-    import matplotlib.pyplot as plt
-    from matplotlib.patches import Patch
-    from matplotlib.lines import Line2D
     
     # Reduced height (0.8) to keep it compact between graph and title
     fig, ax = plt.subplots(figsize=(12, 0.8)) 
@@ -394,17 +407,30 @@ def get_legend_figure():
     plt.axis('off')
     return fig
 
-def create_conditional_effective_graph(EG_cn, EG0, conditioned_nodes):
-
-    # Compute effective graph 
-    #EG_cn = bn.conditional_effective_graph(conditioned_nodes=conditioned_nodes, bound=bound, threshold=0.0)
-
-    print(type(EG_cn))
+def visualize_conditional_effective_graph(bn, conditioned_nodes, sModel='your model', conditioned_str=None, manual_positions=None, node_attribute_map=None, category_color_map=None):
+    """Visualize the conditional effective graph (EG_cn) of a Boolean network.
     
-    # Assign effective connectivity on edges
-    #dict_effconn = {nid: node.effective_connectivity(norm=False) 
-    #    for nid, node in enumerate(EG_cn.nodes,start=0) }
-    #nx.set_node_attributes(EG_cn, dict_effconn, 'effective_connectivity')
+        Args:
+            bn (cana boolean network object): Target Boolean network model.
+            conditioned_nodes (dict): Mapping of node IDs to their conditioned binary
+            states
+                used to generate EG_cn (e.g., {5: 0}).
+            sModel (str, optional): The name of the model for plot titles/metadata.
+                Defaults to 'your model'.
+            conditioned_str (str, optional): Human-readable description of the
+            conditioning
+                states to display on the visualization.
+            manual_positions (dict, optional): Mapping of node IDs or names to (x,
+            y) tuples
+                specifying coordinate locations.
+            node_attribute_map (dict, optional): Mapping of node IDs or names to functional
+                categories (e.g., {"CycD": "HSPC"}), used for conditional coloring.
+            category_color_map (dict, optional): Mapping of functional category strings
+                to hex color codes (e.g., {"HSPC": "#7486F4a0"}).
+        """
+
+    # Compute conditional effective graph
+    EG_cn = bn.conditional_effective_graph(conditioned_nodes=conditioned_nodes)
 
     # Add an attribute which discriminate conditioned nodes from non-conditioned node
     for node in EG_cn.nodes():
@@ -413,75 +439,31 @@ def create_conditional_effective_graph(EG_cn, EG0, conditioned_nodes):
         else:
             EG_cn.nodes[node]['conditioned'] = False
 
-    # Add removed edges due to their fully redandant character aquisitions 
-    # Identify edges become fully redundant due to conditioning
-    #EG = bn.effective_graph()
-    fully_redundant_edges = set(EG0.edges()) - set(EG_cn.edges())
-
-    # Add them to the conditional effective graph with an attribute
-    for u, v in fully_redundant_edges:
-        EG_cn.add_edge(u, v, fully_redundant=True)
-    for u, v in EG_cn.edges():
-        if 'fully_redundant' not in EG_cn[u][v]:
-            EG_cn[u][v]['fully_redundant'] = False
-
-    # Determine nodes whose ALL outgoing edges are fully redundant as fully redundant nodes
     fully_redundant_nodes = {}
     
     for nid in EG_cn.nodes():
-    
-        edges_out = [
-            (u, v, d) for (u, v, d) in EG_cn.out_edges(nid, data=True)
-            if v != u
+        # 1. Isolate edges that go to OTHER nodes (u != v)
+        external_edges = [
+            (u, v, d) for u, v, d in EG_cn.out_edges(nid, data=True) 
+            if u != v
         ]
-    
-        if len(edges_out) == 0:
+        
+        # 2. If it never had external edges (Sink Node), it's not 'redundant'
+        if len(external_edges) == 0:
             fully_redundant_nodes[nid] = False
             continue
-    
+        
+        # 3. Check if all EXTERNAL outgoing influence is dead (weight = 0)
+        # This ignores whether the self-loop is active or not.
         fully_redundant_nodes[nid] = all(
-            d.get('fully_redundant', False) for (_, _, d) in edges_out
+            d.get('weight', 0.0) == 0 for _, _, d in external_edges
         )
-    return EG_cn, fully_redundant_nodes
 
-def visualize_conditional_effective_graph(EG_cn, EG0, conditioned_nodes, sModel='your model', conditioned_str=None, manual_positions=None, node_attribute_map=None, category_color_map=None):
-    """
-    Visualize the conditional effective graph of a Boolean network
+    # Labels and layout
+    sg_label = {n: EG_cn.nodes[n].get('label', str(n)) for n in EG_cn.nodes()}
+    positions, inputs_set, sinks_set, _ = compute_grid_layout(EG_cn)
 
-    Parameters
-    ----------
-    EG_cn: networkx directed graph
-        Conditional Effective graph generated with conditioned_nodes.
-    EG0 : networkx directed graph
-        Effective graph generated with edge removal threshold 0.0.
-    conditioned_nodes: dictionary
-        Conditioned nodes used to generate EG_cn.
-    sModel : str, optional
-        Model name for title.
-    conditioned_str : str, optional
-        Conditioned nodes information for title.
-    manual_positions : dict, optional
-        Dictionary of node positions keyed by node ID (int) or node label (str).
-        Values are (x, y) coordinates, e.g., {0: (0,0), 'Zeb': (1,2)}
-    node_attribute_map : dict, optional
-    category_color_map : dict, optional
-    """
-
-    #from cana.boolean_network import BooleanNetwork as BN
-    #from IPython.display import display
-
-    DEFAULT_NODE_COLOR = VIZ_CONFIG["NODE_FILLCOLOR"]
-
-    #bn = BN.from_file(input_cnet, type='cnet')
-
-    # --- Build conditional effective graph ---
-    EG_cn_viz, fully_redundant_nodes = create_conditional_effective_graph(EG_cn, EG0, conditioned_nodes)
-
-    # --- Labels and layout ---
-    sg_label = {n: EG_cn_viz.nodes[n].get('label', str(n)) for n in EG_cn_viz.nodes()}
-    positions, inputs_set, sinks_set, _ = compute_grid_layout(EG_cn_viz)
-
-    # --- Override with manual positions if provided ---
+    # Override with manual positions if provided
     if manual_positions:
         new_positions = {}
         for key, value in manual_positions.items():
@@ -495,47 +477,38 @@ def visualize_conditional_effective_graph(EG_cn, EG0, conditioned_nodes, sModel=
             new_positions[nid] = value
         positions.update(new_positions)
 
-    # --- Base Graphviz ---
+    # Base Graphviz
     pSG = create_base_graph()
-    #if conditioned_str==None:
-    #    pSG = create_base_graph(f"Effective graph: {sModel}")
-    #else:
-    #    pSG = create_base_graph(f"Effective graph: {sModel} \n Condition:{conditioned_str}")
     
     cfg = VIZ_CONFIG
     max_penwidth = float(cfg["EDGE_PENWIDTH"])
 
-    # 1. Calculate the grid dimensions first to get 'cols'
+    # Calculate the grid dimensions first to get 'cols'
     N_total = len(EG_cn.nodes())
     cols = math.ceil(math.sqrt(N_total))
 
-    # 2. Your new Scaling Logic
     if cols > 4:
         size_multiplier = 0.9 ** (cols - 4)
     else:
         size_multiplier = 1.0
 
-    # 3. Apply the multiplier to the base config
+    # Apply the multiplier to the base config
     node_w = float(VIZ_CONFIG["WIDTH"]) * size_multiplier
     node_h = float(VIZ_CONFIG["NODE_HEIGHT"]) * size_multiplier
     base_font = 10 * size_multiplier # Starting point for font
 
-    # ==========================================================
-    # Determine Base Fill (default / sink / input)
-    # ==========================================================
-    fill = cfg["NODE_FILLCOLOR"]
     
     # =====================
-    # NODES
+    # Node drawing
     # =====================
-    for nid, d in EG_cn_viz.nodes(data=True):
+    for nid, d in EG_cn.nodes(data=True):
             label_text = sg_label[nid]
             x, y = positions[nid]
             
-            # 1. Determine Font
+            # Determine Font
             dynamic_font = max(6, 10 - (len(label_text) - 4) // 2) if len(label_text) > 4 else 10
     
-            # 2. Determine Background Color (Fill)
+            # Determine Background Color (Fill)
             # Start with default/input/sink
             node_fill = cfg["NODE_FILLCOLOR"]
             if nid in sinks_set:
@@ -551,9 +524,9 @@ def visualize_conditional_effective_graph(EG_cn, EG0, conditioned_nodes, sModel=
     
             # Apply grey if redundant (Move this up if you prefer category colors over grey)
             if fully_redundant_nodes.get(nid, False):
-                node_fill = '#C0C0C0'
+                node_fill = VIZ_CONFIG["REDUNDANT"]
     
-            # 3. Determine Border (Color & Style)
+            # Determine Border (Color & Style)
             border_color = "black"
             pen_w = "1"
             periph = "1"
@@ -563,13 +536,13 @@ def visualize_conditional_effective_graph(EG_cn, EG0, conditioned_nodes, sModel=
     
             if is_cond:
                 periph = "2" # Double border for the source of the condition
-                border_color = "blue" if c_state == 0 else "red"
+                border_color = VIZ_CONFIG["NODE_FIX_0"] if c_state == 0 else VIZ_CONFIG["NODE_FIX_1"]
                 pen_w = "1.5"
             elif c_state is not None:
-                border_color = "blue" if c_state == 0 else "red"
+                border_color = VIZ_CONFIG["NODE_FIX_0"] if c_state == 0 else VIZ_CONFIG["NODE_FIX_1"]
                 pen_w = "3" # Thick border for nodes affected by the condition
     
-            # 4. ONE SINGLE CALL TO DRAW
+            # ONE SINGLE CALL TO DRAW
             pSG.node(str(nid),
                      label=label_text,
                      pos=f"{x:.3f},{y:.3f}!",
@@ -583,11 +556,10 @@ def visualize_conditional_effective_graph(EG_cn, EG0, conditioned_nodes, sModel=
                      fixedsize='true',
                      style='filled')
 
-
     # =====================
-    # EDGES
+    # Edges drawing
     # =====================
-    for uid, vid, d in EG_cn_viz.edges(data=True):
+    for uid, vid, d in EG_cn.edges(data=True):
         uid_str, vid_str = str(uid), str(vid)
         weight = d.get('weight', 0)
         penwidth = float(max_penwidth) * weight
@@ -595,304 +567,56 @@ def visualize_conditional_effective_graph(EG_cn, EG0, conditioned_nodes, sModel=
 
         DASH_PENWIDTH = "3"
 
-        if d.get('fully_redundant', False):
-            pSG.edge(uid_str, vid_str, style='dashed', color='#00000040', penwidth=DASH_PENWIDTH)
-            continue
-        if source_state == 0:
-            pSG.edge(uid_str, vid_str, style='dashed', color='#0000FF70', penwidth=str(penwidth))
-            continue
+        # Determine resolved edge's attribute
+        if weight==0:
+            #pSG.edge(uid_str, vid_str, style='dashed', color=VIZ_CONFIG["REDUNDANT"], penwidth=DASH_PENWIDTH)
+            color=VIZ_CONFIG["REDUNDANT"]
+            style='dashed'
+            penwidth=DASH_PENWIDTH
+            #continue
+        elif source_state == 0:
+            #pSG.edge(uid_str, vid_str, style='dashed', color=VIZ_CONFIG["NODE_FIX_0"], penwidth=str(penwidth))
+            style='dashed'
+            color=VIZ_CONFIG["NODE_FIX_0"]
+            penwidth=str(penwidth)
+            #continue
         elif source_state == 1:
-            pSG.edge(uid_str, vid_str, style='dashed', color='#FF000070', penwidth=str(penwidth))
-            continue
-
-        if uid_str == vid_str:
-            color = '#636363'
+            #pSG.edge(uid_str, vid_str, style='dashed', color=VIZ_CONFIG["NODE_FIX_1"], penwidth=str(penwidth))
+            style='dashed'
+            color=VIZ_CONFIG["NODE_FIX_1"]
+            penwidth=str(penwidth)
+            #continue
+        else:
+            style='solid'
+            color = '#000000'
+            penwidth=str(penwidth)
+        
+        # Set viable edge attribute 
+        if uid_str == vid_str: #For self-loop
+            #color = '#000000'
             uid_draw = f"{uid}:w"
             vid_draw = f"{vid}:c"
         else:
-            color = '#000000'
+            #color = '#000000'
             uid_draw = uid_str
             vid_draw = vid_str
 
-        pSG.edge(uid_draw, vid_draw, penwidth=str(penwidth), color=color)
+        pSG.edge(uid_draw, vid_draw, style=style, penwidth=penwidth, color=color)
 
-    # 1. Display the Title/Condition
+    # =====================
+    # Display 
+    # =====================
+    # Display the Title/Condition
     title_str = f"##### Conditional Effective Graph: {sModel}"
     if conditioned_str:
         title_str += f"\n**Condition:** {conditioned_str}"
     
     display(Markdown(title_str))
 
-    # 2. Display the conditional effective graph
+    # Display the conditional effective graph
     display(pSG)
 
-    # 3. Display the Legend (Matplotlib)
-    fig_legend = get_legend_figure()
-    display(fig_legend)
-    plt.close(fig_legend) # Prevents double-display in some environments
-
-def visualize_conditional_effective_graph_old(EG_cn, EG0, conditioned_nodes, sModel='your model', conditioned_str=None, manual_positions=None, node_attribute_map=None, category_color_map=None):
-    """
-    Visualize the conditional effective graph of a Boolean network
-
-    Parameters
-    ----------
-    EG_cn: networkx directed graph
-        Conditional Effective graph generated with conditioned_nodes.
-    EG0 : networkx directed graph
-        Effective graph generated with edge removal threshold 0.0.
-    conditioned_nodes: dictionary
-        Conditioned nodes used to generate EG_cn.
-    sModel : str, optional
-        Model name for title.
-    conditioned_str : str, optional
-        Conditioned nodes information for title.
-    manual_positions : dict, optional
-        Dictionary of node positions keyed by node ID (int) or node label (str).
-        Values are (x, y) coordinates, e.g., {0: (0,0), 'Zeb': (1,2)}
-    node_attribute_map : dict, optional
-    category_color_map : dict, optional
-    """
-
-    #from cana.boolean_network import BooleanNetwork as BN
-    #from IPython.display import display
-
-    DEFAULT_NODE_COLOR = VIZ_CONFIG["NODE_FILLCOLOR"]
-
-    #bn = BN.from_file(input_cnet, type='cnet')
-
-    # --- Build conditional effective graph ---
-    EG_cn_viz, fully_redundant_nodes = create_conditional_effective_graph(EG_cn, EG0, conditioned_nodes)
-
-    # --- Labels and layout ---
-    sg_label = {n: EG_cn_viz.nodes[n].get('label', str(n)) for n in EG_cn_viz.nodes()}
-    positions, inputs_set, sinks_set, _ = compute_grid_layout(EG_cn_viz)
-
-    # --- Override with manual positions if provided ---
-    if manual_positions:
-        new_positions = {}
-        for key, value in manual_positions.items():
-            # Map label to node id if needed
-            if isinstance(key, str):
-                nid = next((n for n, lbl in sg_label.items() if lbl == key), None)
-                if nid is None:
-                    raise ValueError(f"Label '{key}' not found in network nodes.")
-            else:
-                nid = key
-            new_positions[nid] = value
-        positions.update(new_positions)
-
-    # --- Base Graphviz ---
-    pSG = create_base_graph()
-    #if conditioned_str==None:
-    #    pSG = create_base_graph(f"Effective graph: {sModel}")
-    #else:
-    #    pSG = create_base_graph(f"Effective graph: {sModel} \n Condition:{conditioned_str}")
-    
-    cfg = VIZ_CONFIG
-    max_penwidth = float(cfg["EDGE_PENWIDTH"])
-
-    # 1. Calculate the grid dimensions first to get 'cols'
-    N_total = len(EG_cn.nodes())
-    cols = math.ceil(math.sqrt(N_total))
-
-    # 2. Your new Scaling Logic
-    if cols > 4:
-        size_multiplier = 0.9 ** (cols - 4)
-    else:
-        size_multiplier = 1.0
-
-    # 3. Apply the multiplier to the base config
-    node_w = float(VIZ_CONFIG["WIDTH"]) * size_multiplier
-    node_h = float(VIZ_CONFIG["NODE_HEIGHT"]) * size_multiplier
-    base_font = 10 * size_multiplier # Starting point for font
-
-    # ==========================================================
-    # Determine Base Fill (default / sink / input)
-    # ==========================================================
-    fill = cfg["NODE_FILLCOLOR"]
-    
-    if nid in sinks_set:
-        fill = cfg["SINK_FILL"]
-    elif nid in inputs_set and nid not in sinks_set:
-        fill = cfg["INPUT_FILL"]
-
-    # =====================
-    # NODES
-    # =====================
-    for nid, d in EG_cn_viz.nodes(data=True):
-        
-        label_text = sg_label[nid]
-        x, y = positions[nid]
-        conditioned = d.get('conditioned', False)
-        conditioned_state = d.get('conditioned_state', None)
-
-        # --- DYNAMIC FONT CALCULATION ---
-        # Start with a base size (e.g., 12) and reduce it for longer labels
-        # This formula shrinks the font as the character count increases
-        base_size = 10
-        if len(label_text) > 4:
-            # Decrease font size by 1 point for every 2 extra characters
-            dynamic_font = max(6, base_size - (len(label_text) - 4) // 2)
-        else:
-            dynamic_font = base_size
-
-        # ==========================================================
-        # PRIORITY 0: Conditioned nodes (border emphasis)
-        # ==========================================================
-        if conditioned:
-    
-            #label_text = f'<<B>{label_text}</B>>'
-            #penwidth = "3"
-            color = "blue" if conditioned_state == 0 else "red"
-            
-            # Set color based on state
-            color = "blue" if conditioned_state == 0 else "red"
-            
-            pSG.node(str(nid),
-                     label=label_text,
-                     pos=f"{x:.3f},{y:.3f}!",
-                     fillcolor=fill,
-                     color=color,
-                     peripheries="2",       # Creates the double border
-                     penwidth="1.5",        # Optional: slightly thinner lines look cleaner for double borders
-                     width=str(node_w),
-                     height=str(node_h),
-                     fontsize=str(dynamic_font),
-                     fixedsize='true')
-            continue
-    
-        
-        # ==========================================================
-        # PRIORITY 1: Fully redundant nodes (DO NOT override color)
-        # ==========================================================
-        if fully_redundant_nodes.get(nid, False):
-    
-            fill = '#C0C0C0'
-    
-            if conditioned:
-                label_text = f'<<B>{label_text}</B>>'
-    
-            color = None
-            penwidth = "1"
-    
-            if conditioned_state == 0:
-                color = "blue"
-                penwidth = "3"
-            elif conditioned_state == 1:
-                color = "red"
-                penwidth = "3"
-    
-            pSG.node(str(nid),
-                     label=label_text,
-                     pos=f"{x:.3f},{y:.3f}!",
-                     color=color,
-                     fillcolor=fill,
-                     penwidth=penwidth,
-                     width=str(node_w),    # New Scaled Width
-                     height=str(node_h),   # New Scaled Height                 
-                     fontsize=str(dynamic_font),
-                     fixedsize='true')                    
-
-            continue
-    
-        # ==========================================================
-        # PRIORITY 2: Nodes with conditioned_state
-        # ==========================================================
-        if conditioned_state == 0:
-            pSG.node(str(nid),
-                     label=label_text,
-                     pos=f"{x:.3f},{y:.3f}!",
-                     fillcolor=fill,
-                     color="blue",
-                     penwidth="3",
-                     width=str(node_w),    # New Scaled Width
-                     height=str(node_h),   # New Scaled Height                 
-                     fontsize=str(dynamic_font),
-                     fixedsize='true')
-            continue
-    
-        elif conditioned_state == 1:
-            pSG.node(str(nid),
-                     label=label_text,
-                     pos=f"{x:.3f},{y:.3f}!",
-                     fillcolor=fill,
-                     color="red",
-                     penwidth="3",
-                     width=str(node_w),    # New Scaled Width
-                     height=str(node_h),   # New Scaled Height                 
-                     fontsize=str(dynamic_font),
-                     fixedsize='true')
-            continue
-
-    
-        # ==========================================================
-        # Apply Category Coloring (NEW SECTION)
-        # Only overrides base fill
-        # ==========================================================
-        if node_attribute_map and category_color_map:
-    
-            attr = node_attribute_map.get(label_text) or node_attribute_map.get(nid)
-    
-            if attr in category_color_map and category_color_map[attr]:
-                fill = category_color_map[attr]
-    
-        # ==========================================================
-        # PRIORITY 4: Normal nodes
-        # ==========================================================
-        pSG.node(str(nid),
-                 label=label_text,
-                 pos=f"{x:.3f},{y:.3f}!",
-                 fillcolor=fill,
-                 width=str(node_w),    # New Scaled Width
-                 height=str(node_h),   # New Scaled Height                 
-                 fontsize=str(dynamic_font),
-                 fixedsize='true')
-
-
-    # =====================
-    # EDGES
-    # =====================
-    for uid, vid, d in EG_cn_viz.edges(data=True):
-        uid_str, vid_str = str(uid), str(vid)
-        weight = d.get('weight', 0)
-        penwidth = float(max_penwidth) * weight
-        source_state = EG_cn.nodes[uid].get('conditioned_state', None)
-
-        DASH_PENWIDTH = "3"
-
-        if d.get('fully_redundant', False):
-            pSG.edge(uid_str, vid_str, style='dashed', color='#00000040', penwidth=DASH_PENWIDTH)
-            continue
-        if source_state == 0:
-            pSG.edge(uid_str, vid_str, style='dashed', color='#0000FF70', penwidth=str(penwidth))
-            continue
-        elif source_state == 1:
-            pSG.edge(uid_str, vid_str, style='dashed', color='#FF000070', penwidth=str(penwidth))
-            continue
-
-        if uid_str == vid_str:
-            color = '#636363'
-            uid_draw = f"{uid}:w"
-            vid_draw = f"{vid}:c"
-        else:
-            color = '#000000'
-            uid_draw = uid_str
-            vid_draw = vid_str
-
-        pSG.edge(uid_draw, vid_draw, penwidth=str(penwidth), color=color)
-
-    # 1. Display the Title/Condition
-    title_str = f"##### Conditional Effective Graph: {sModel}"
-    if conditioned_str:
-        title_str += f"\n**Condition:** {conditioned_str}"
-    
-    display(Markdown(title_str))
-
-    # 2. Display the conditional effective graph
-    display(pSG)
-
-    # 3. Display the Legend (Matplotlib)
+    # Display the Legend (Matplotlib)
     fig_legend = get_legend_figure()
     display(fig_legend)
     plt.close(fig_legend) # Prevents double-display in some environments
