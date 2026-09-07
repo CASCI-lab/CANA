@@ -16,45 +16,18 @@ import math
 import io
 import base64
 
-try:
-    import graphviz
-except ImportError as error:
-    warnings.warn(
-        "'Graphviz' could not be loaded, you won't be able to plot graphs. Try installing it first. {error:s}".format(
-            error=error
-        )
-    )
-try:
-    import matplotlib as mpl
-except ImportError as error:
-    warnings.warn(
-        "'matplotlib' could not be loaded, you won't be able to plot graphs. Try installing it first. {error:s}".format(
-            error=error
-        )
-    )
+import graphviz
+
+import matplotlib as mpl
 import matplotlib.pyplot as plt
 from matplotlib.colors import LinearSegmentedColormap
 from matplotlib.patches import Patch
 from matplotlib.lines import Line2D
 
-try:
-    import IPython
-except ImportError as error:
-    warnings.warn(
-        "'IPython' could not be loaded, you won't be able to plot graphs. Try installing it first. {error:s}".format(
-            error=error
-        )
-    )
+import IPython
 from IPython.display import display, Markdown, HTML
 
-try:
-    import numpy as np
-except ImportError as error:
-    warnings.warn(
-        "'numpy' could not be loaded, you won't be able to plot graphs. Try installing it first. {error:s}".format(
-            error=error
-        )
-    )
+import numpy as np
 
 # ===========================
 # GLOBAL VISUALIZATION CONFIG
