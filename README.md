@@ -114,7 +114,7 @@ Run nosetests -v to perform tests and diagnoses on functions.
 Changelog
 ---------
 
-v0.1.0
+Master
 - Added visualization routines to drawing (effective graph and conditional effective graph)
 
 v0.1
