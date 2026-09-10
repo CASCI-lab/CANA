@@ -23,6 +23,7 @@ import pandas as pd
 
 import cana.canalization.boolean_canalization as BCanalization
 import cana.canalization.cboolean_canalization as cBCanalization
+import cana.symmetry as symmetry
 from cana.cutils import (
     binstate_to_statenum,
     flip_bit,
@@ -397,6 +398,36 @@ class BooleanNode(object):
                 )  # assumes that indicies will ever only be in at most 1 group
             summand += inner / len(fTheta)
         return summand / 2**self.k
+
+    def distinct_symmetry(self):
+        """Compute the distinct permutation symmetry of the node LUT.
+
+        For each LUT entry, this computes the fraction of distinct input
+        permutations that preserve the same output, excluding the identity
+        permutation from both numerator and denominator.
+
+        Returns:
+            (float)
+
+        See also:
+            :func:`cana.symmetry.distinct_symmetry`
+        """
+        return symmetry.distinct_symmetry(self.outputs, self.k)
+
+    def raw_symmetry(self):
+        """Compute the raw symmetry of the node LUT.
+
+        LUT rows are grouped by input Hamming weight. For each row, this
+        computes the fraction of rows in the same weight group that have the
+        same output, then averages across all LUT rows.
+
+        Returns:
+            (float)
+
+        See also:
+            :func:`cana.symmetry.raw_symmetry`
+        """
+        return symmetry.raw_symmetry(self.outputs, self.k)
 
     def look_up_table(self):
         """Returns the Look Up Table (LUT)
