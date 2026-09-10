@@ -69,6 +69,7 @@ with the help of many others. Thanks to everyone who has improved ``CANA`` by co
 
 **Contributors**
 
+- Srikanth Iyer, github: [srikanth-iyer](https://github.com/srikanth-iyer)
 - Kyu Hyong Park, github: [kyuhyongpark](https://github.com/kyuhyongpark)
 - Yoshiaki Fujita, github: [yoshiakifujita](https://github.com/yoshiakifujita)
 - Jordan C. Rozum, github: [jcrozum](https://github.com/jcrozum)
@@ -98,6 +99,7 @@ Changelog
 ---------
 
 Master
+- Added calculation of distinct and raw symmetry
 - Added visualization routines to drawing (effective graph and conditional effective graph)
 
 v1.0.1
