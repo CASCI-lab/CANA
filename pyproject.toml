@@ -1,12 +1,81 @@
+[project]
+name = "cana"
+description = "This package implements a series of methods used to study control, canalization and redundancy in Boolean networks."
+readme = "README.md"
+license = {file = "LICENSE"}
+dynamic = ["version"]
+
+keywords = [
+    "boolean networks",
+    "canalization",
+    "redundancy",
+    "dynamical systems",
+    "computational biology",
+]
+
+authors = [
+    {name = "Alex Gates"},
+    {name = "Rion Brattig Correia", email = "rionbr@gmail.com"},
+]
+
+maintainers = [
+    {name = "Xuan Wang", email = "wangx@binghamton.edu"},
+    {name = "Felipe Xavier Costa", email = "fcosta@binghamton.edu"},
+    {name = "Kyu Hyong Park", email = "kyuhyongpark@gmail.com"},
+]
+
+classifiers = [
+    "Development Status :: 4 - Beta",
+    "License :: OSI Approved :: MIT License",
+    "Programming Language :: Python :: 3",
+    "Intended Audience :: Science/Research",
+    "Topic :: Scientific/Engineering :: Information Analysis",
+]
+
+requires-python = ">=3.10,<3.14"
+
+dependencies = [
+    "numpy",
+    "scipy",
+    "networkx",
+    "pandas",
+    "matplotlib",
+    "schematodes>=1.0.0",
+]
+
+[project.optional-dependencies]
+test = [
+    "pytest",
+]
+
+[project.urls]
+repository = "https://github.com/CASCI-lab/CANA"
+documentation = "https://casci-lab.github.io/CANA/"
+
 [build-system]
 requires = [
     "setuptools",
     "setuptools-scm",
-    # "Cython", 
-    "wheel",
 ]
 build-backend = "setuptools.build_meta"
-[tool.pytest.ini_options]
-pythonpath = [".", "tests/", "tests/helpers/"]
 
 [tool.setuptools_scm]
+
+[tool.setuptools]
+ext-modules = [
+    {name = "cana.cutils", sources = ["cana/cutils.c"]},
+    {name = "cana.canalization.cboolean_canalization", sources = ["cana/canalization/cboolean_canalization.c"]},
+]
+
+[tool.setuptools.packages.find]
+include = ["cana*"]
+
+[tool.setuptools.package-data]
+"cana.datasets" = [
+    "*.txt",
+    "bns/*.cnet",
+    "cell_collective/*.txt",
+]
+
+[tool.pytest.ini_options]
+pythonpath = [".", "tests/", "tests/helpers/"]
