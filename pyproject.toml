@@ -32,7 +32,7 @@ classifiers = [
     "Topic :: Scientific/Engineering :: Information Analysis",
 ]
 
-requires-python = ">=3.11"
+requires-python = ">=3.10"
 
 dependencies = [
     "numpy",
