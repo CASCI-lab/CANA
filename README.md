@@ -99,6 +99,7 @@ Changelog
 ---------
 
 Master
+- `BooleanNode.sensitivity` now computed directly from the LUT in the new `cana.sensitivity` module; previous formulation kept as `sensitivity_old`, values unchanged
 - Added calculation of distinct and raw symmetry
 - Added visualization routines to drawing (effective graph and conditional effective graph)
 

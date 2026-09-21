@@ -24,6 +24,7 @@ import pandas as pd
 import cana.canalization.boolean_canalization as BCanalization
 import cana.canalization.cboolean_canalization as cBCanalization
 import cana.symmetry as symmetry
+import cana.sensitivity as sensitivity
 from cana.cutils import (
     binstate_to_statenum,
     flip_bit,
@@ -566,17 +567,23 @@ class BooleanNode(object):
         return self.edge_effectiveness(bound="upper")
 
     def sensitivity(self, norm=False):
-        """compute the sensitivity of the node. Does so by summing the activities of the edges
+        """compute the average sensitivity of the node: the mean, over all input states,
+        of the number of single-input flips that change the output.
+
+        Delegates to :func:`cana.sensitivity.sensitivity`, which computes it directly from
+        the look-up table. Up to CANA 1.0.2 this was ``sum(self.activities())``, kept as
+        :func:`cana.sensitivity.sensitivity_old`; the two are bit-exactly equal, as
+        asserted in ``tests/test_boolean_node.py``
+        (``test_sensitivity_matches_original_implementation``).
+
         Args:
             norm (bool) : whether or not to normalize by the number of inputs (k)
         Returns:
             (float)
+        See Also:
+            :func:`cana.sensitivity.sensitivity`, :func:`activities`, :func:`c_sensitivity`.
         """
-        x = sum(self.activities())
-        if norm:
-            return x / self.k
-        else:
-            return x
+        return sensitivity.sensitivity(self.outputs, self.k, norm=norm)
 
     def canalizing_map(self, output=None):
         """Computes the node Canalizing Map (CM).
