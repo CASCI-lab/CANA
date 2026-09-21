@@ -99,6 +99,9 @@ Changelog
 ---------
 
 Master
+- Fixed `from_output_list`: rejects non-power-of-two output lists, returns subclass instances
+- Fixed undefined name in Cython `__pi_covers`
+- Fixed `input_symmetry_mean` failing on a fresh node
 - Added calculation of distinct and raw symmetry
 - Added visualization routines to drawing (effective graph and conditional effective graph)
 
