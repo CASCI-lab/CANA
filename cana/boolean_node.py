@@ -469,14 +469,17 @@ class BooleanNode(object):
         return df
 
     def schemata_look_up_table(
-        self, type="pi", pi_symbol="#", ts_symbol_list=["\u030A", "\u032F"]
+        self,
+        type="pi",
+        pi_symbol="#",
+        ts_symbol_list=["\u030A", "\u032F", "\u0303", "\u0330", "\u0306", "\u032E"],
     ):
         """Returns the simplified schemata Look Up Table (LUT)
 
         Args:
             type (string) : The type of schemata to return, either Prime Implicants ``pi`` or Two-Symbol ``ts``. Defaults to 'pi'.
             pi_symbol (str) : The Prime Implicant don't care symbol. Default is ``#``.
-            ts_symbol_list (list) : A list containing Two Symbol permutable symbols. Default is ``["\u030A", "\u032F"]``.
+            ts_symbol_list (list) : A list containing Two Symbol permutable symbols, one per permutation group of a schema (combining marks: ring above, inverted breve below, tilde, tilde below, breve, breve below). A ``ValueError`` is raised if a schema has more groups than symbols.
 
         Returns:
             (pandas.DataFrame or Latex): the schemata LUT
@@ -511,6 +514,11 @@ class BooleanNode(object):
 
             for output, ts in zip([0, 1], [ts0s, ts1s]):
                 for i, (schemata, permutables, samesymbols) in enumerate(ts):
+                    if max(len(permutables), len(samesymbols)) > len(ts_symbol_list):
+                        raise ValueError(
+                            "Schema %s has %d permutation groups but ts_symbol_list has only %d symbols; pass a longer ts_symbol_list."
+                            % (schemata, max(len(permutables), len(samesymbols)), len(ts_symbol_list))
+                        )
                     string = ""
                     if len(permutables):
                         string += "("
