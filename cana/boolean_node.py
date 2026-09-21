@@ -110,27 +110,35 @@ class BooleanNode(object):
         )
 
     @classmethod
-    def from_output_list(self, outputs=list(), *args, **kwargs):
+    def from_output_list(cls, outputs=list(), *args, **kwargs):
         """Instanciate a Boolean Node from a output transition list.
 
         Args:
-            outputs (list) : The transition outputs of the node.
+            outputs (list) : The transition outputs of the node. Its length must be a power of two, :math:`2^k`.
 
         Returns:
-            (BooleanNode) : the instanciated object.
+            (BooleanNode) : the instanciated object. Subclasses receive an instance of the subclass.
+
+        Raises:
+            ValueError : if the length of ``outputs`` is not a power of two.
 
         Example:
             >>> BooleanNode.from_output_list(outputs=[0,0,0,1], name="AND")
         """
+        n = len(outputs)
+        if n == 0 or n & (n - 1):
+            raise ValueError(
+                "The length of `outputs` must be a power of two (2**k); got {:d}.".format(n)
+            )
+        k = n.bit_length() - 1
         id = kwargs.pop("id") if "id" in kwargs else 0
         name = kwargs.pop("name") if "name" in kwargs else "x"
-        k = int(np.log2(len(outputs)))
         inputs = (
             kwargs.pop("inputs") if "inputs" in kwargs else [(x + 1) for x in range(k)]
         )
         state = kwargs.pop("state") if "state" in kwargs else False
 
-        return BooleanNode(
+        return cls(
             id=id,
             name=name,
             k=k,
@@ -388,6 +396,7 @@ class BooleanNode(object):
         Returns:
             (float)
         """
+        self._check_compute_canalization_variables(ts_coverage=True)
         summand = 0
         # fTheta = a list of TS
         for fTheta in self._ts_coverage.values():

@@ -7,6 +7,7 @@ from cana.datasets.bools import CONTRADICTION, AND, OR, XOR, COPYx1, RULE90, RUL
 from cana.utils import *
 from cana.boolean_node import BooleanNode
 import numpy as np
+import pytest
 
 
 #
@@ -468,3 +469,29 @@ def test_input_symmetry_SBF():
     # assert (k_s == true_k_s), f"Input symmetry simp: SBF (mean, sameSymbol): returned {k_s}, true value is {true_k_s}"
     # k_s, true_k_s = n.input_symmetry(aggOp="max", kernel="numDots", sameSymbol=True), 4.0
     # assert (k_s == true_k_s), f"Input symmetry: SBF (max, sameSymbol): returned {k_s}, true value is {true_k_s}"
+
+
+#
+# Test from_output_list
+#
+
+def test_from_output_list_rejects_non_power_of_two():
+    """from_output_list must not silently truncate k on a malformed list"""
+    for bad in ([], [0, 1, 1], [0] * 6, [1] * 129):
+        with pytest.raises(ValueError):
+            BooleanNode.from_output_list(bad)
+
+def test_from_output_list_returns_subclass():
+    """from_output_list must instantiate the class it is called on"""
+    class MyNode(BooleanNode):
+        pass
+
+    n = MyNode.from_output_list([0, 1, 1, 0], name="xor")
+    assert type(n) is MyNode
+    assert (n.k, n.name, n.outputs) == (2, "xor", list("0110"))
+    assert n.input_redundancy(norm=False) == XOR().input_redundancy(norm=False)
+
+def test_input_symmetry_mean_on_fresh_node():
+    """input_symmetry_mean must compute its own coverage instead of requiring input_symmetry() to run first"""
+    n = BooleanNode(outputs=list("0111" + "0"*12), k=4)
+    assert n.input_symmetry_mean() == 1.6875
