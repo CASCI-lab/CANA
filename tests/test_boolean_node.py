@@ -490,3 +490,8 @@ def test_from_output_list_returns_subclass():
     assert type(n) is MyNode
     assert (n.k, n.name, n.outputs) == (2, "xor", list("0110"))
     assert n.input_redundancy(norm=False) == XOR().input_redundancy(norm=False)
+
+def test_input_symmetry_mean_on_fresh_node():
+    """input_symmetry_mean must compute its own coverage instead of requiring input_symmetry() to run first"""
+    n = BooleanNode(outputs=list("0111" + "0"*12), k=4)
+    assert n.input_symmetry_mean() == 1.6875

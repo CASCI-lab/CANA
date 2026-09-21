@@ -396,6 +396,7 @@ class BooleanNode(object):
         Returns:
             (float)
         """
+        self._check_compute_canalization_variables(ts_coverage=True)
         summand = 0
         # fTheta = a list of TS
         for fTheta in self._ts_coverage.values():
