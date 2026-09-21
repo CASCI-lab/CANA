@@ -6,6 +6,7 @@
 from cana.datasets.bools import CONTRADICTION, AND, OR, XOR, COPYx1, RULE90, RULE110
 from cana.utils import *
 from cana.boolean_node import BooleanNode
+import cana.sensitivity as sensitivity
 import numpy as np
 import pytest
 
@@ -472,6 +473,38 @@ def test_input_symmetry_SBF():
 
 
 #
+# Test sensitivity (direct computation)
+#
+
+def test_sensitivity_hand_values():
+    """sensitivity: mean number of single-input flips that change the output"""
+    cases = [
+        (list("00"), 0.0),          # constant
+        (list("01"), 1.0),          # identity
+        (list("0000"), 0.0),        # constant, k=2
+        (list("0110"), 2.0),        # XOR: every flip changes the output
+        (list("0001"), 1.0),        # AND: 00,01,10 have one sensitive input, 11 has two
+        (list("00010111"), 1.5),    # majority k=3: 000 and 111 have none, the rest have two
+    ]
+    for outputs, true_s in cases:
+        n = BooleanNode.from_output_list(outputs)
+        s = n.sensitivity(norm=False)
+        assert s == true_s, f"sensitivity for {''.join(outputs)}: returned {s}, true value is {true_s}"
+        assert sensitivity.sensitivity(outputs, n.k) == true_s
+
+def test_sensitivity_matches_original_implementation():
+    """the direct sensitivity must be bit-exactly equal to sensitivity_old, the sum-of-activities implementation used up to CANA 1.0.2"""
+    import random
+    nodes = [AND(), OR(), XOR(), COPYx1(), CONTRADICTION(), RULE90(), RULE110()]
+    rng = random.Random(20260921)
+    for k in range(1, 8):
+        for _ in range(50 if k <= 5 else 15):
+            nodes.append(BooleanNode.from_output_list([rng.randint(0, 1) for _ in range(2**k)]))
+    for n in nodes:
+        for norm in (False, True):
+            s, s0 = n.sensitivity(norm=norm), sensitivity.sensitivity_old(n, norm=norm)
+            assert s == s0, f"sensitivity(norm={norm}) for k={n.k} outputs={''.join(n.outputs)}: {s!r} != sensitivity_old {s0!r}"
+        assert abs(n.sensitivity(norm=True) - n.c_sensitivity(1)) < 1e-12
 # Test from_output_list
 #
 
