@@ -186,7 +186,7 @@ def computes_pi_coverage(k, outputs, prime_implicants):
         else:
             transition = [outputs[statenum]]
         for t in transition:
-            for prime_implicant in prime_implicants[t]:
+            for prime_implicant in sorted(prime_implicants[t]):
                 if __pi_covers(prime_implicant, binstate):
                     covering_implicants.append(prime_implicant)
     #
@@ -215,6 +215,9 @@ def find_two_symbols_v2(k=1, prime_implicants=None, verbose=False, verbose_level
     if not prime_implicants:
         return []
 
+    # sorted: canonical order across processes (set iteration depends on PYTHONHASHSEED)
+    prime_implicants = sorted(prime_implicants)
+
     # If this node has no input, yet it affects other nodes (fixed variable)
     if k == 0:
         TSf = []
@@ -235,6 +238,7 @@ def find_two_symbols_v2(k=1, prime_implicants=None, verbose=False, verbose_level
         same_symbols = [x for x in same_symbols_all if len(x) > 1]
         representative_str = "".join(map(str, representative))
         TSf.append([representative_str, bubble_indices, same_symbols])
+    TSf.sort(key=lambda ts: (ts[0], repr(ts[1]), repr(ts[2])))
     return TSf
 
 

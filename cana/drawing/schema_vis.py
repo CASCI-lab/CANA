@@ -71,7 +71,7 @@ def plot_schemata(n, plotTS=True):
     x, y = 0.0, 0.0
     #
     for out, pis in zip([1, 0], [pi1s, pi0s]):
-        for pi in pis:
+        for pi in sorted(pis):
             x = 0.0
             xticks = []
             for input in pi:
