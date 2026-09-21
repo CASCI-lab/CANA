@@ -189,7 +189,7 @@ def return_pi_coverage(prime_implicants):
     """
 
     pi_coverage = dict()
-    for pi in prime_implicants:
+    for pi in sorted(prime_implicants):
         for binstate in expand_wildcard_schemata(pi):
             if binstate not in pi_coverage:
                 pi_coverage[binstate] = set()

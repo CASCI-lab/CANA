@@ -14,6 +14,7 @@ Main class for Boolean node objects.
 #   MIT license.
 from __future__ import division
 
+import math
 from itertools import combinations, compress, product
 from statistics import mean
 
@@ -225,7 +226,7 @@ class BooleanNode(object):
             for binstate in self._pi_coverage
         ]
 
-        k_r = sum(redundancy) / 2**self.k
+        k_r = math.fsum(redundancy) / 2**self.k
 
         if norm:
             # Normalizes
@@ -367,7 +368,7 @@ class BooleanNode(object):
         summand = []
         for fAlpha, fTheta in self._ts_coverage.items():
             summand.append(aggOp(list(map(kernel, fTheta))))
-        return np.mean(summand)
+        return math.fsum(summand) / len(summand)
 
     def input_symmetry(self, aggOp="mean", kernel="numDots", sameSymbol=False):
         """compute the input symmetry (k_s) of the boolean node, with variations via the specified functions.
@@ -398,7 +399,7 @@ class BooleanNode(object):
             (float)
         """
         self._check_compute_canalization_variables(ts_coverage=True)
-        summand = 0
+        summand = []
         # fTheta = a list of TS
         for fTheta in self._ts_coverage.values():
             inner = 0
@@ -406,8 +407,8 @@ class BooleanNode(object):
                 inner += sum(
                     len(i) for i in ts[1]
                 )  # assumes that indicies will ever only be in at most 1 group
-            summand += inner / len(fTheta)
-        return summand / 2**self.k
+            summand.append(inner / len(fTheta))
+        return math.fsum(summand) / 2**self.k
 
     def distinct_symmetry(self):
         """Compute the distinct permutation symmetry of the node LUT.
@@ -468,14 +469,17 @@ class BooleanNode(object):
         return df
 
     def schemata_look_up_table(
-        self, type="pi", pi_symbol="#", ts_symbol_list=["\u030A", "\u032F"]
+        self,
+        type="pi",
+        pi_symbol="#",
+        ts_symbol_list=["\u030A", "\u032F", "\u0303", "\u0330", "\u0306", "\u032E"],
     ):
         """Returns the simplified schemata Look Up Table (LUT)
 
         Args:
             type (string) : The type of schemata to return, either Prime Implicants ``pi`` or Two-Symbol ``ts``. Defaults to 'pi'.
             pi_symbol (str) : The Prime Implicant don't care symbol. Default is ``#``.
-            ts_symbol_list (list) : A list containing Two Symbol permutable symbols. Default is ``["\u030A", "\u032F"]``.
+            ts_symbol_list (list) : A list containing Two Symbol permutable symbols, one per permutation group of a schema (combining marks: ring above, inverted breve below, tilde, tilde below, breve, breve below). A ``ValueError`` is raised if a schema has more groups than symbols.
 
         Returns:
             (pandas.DataFrame or Latex): the schemata LUT
@@ -499,7 +503,7 @@ class BooleanNode(object):
             pi1s = self._prime_implicants.get("1", [])
 
             for output, pi in zip([0, 1], [pi0s, pi1s]):
-                for schemata in pi:
+                for schemata in sorted(pi):
                     r.append((schemata, output))
 
         # Two Symbol LUT
@@ -510,6 +514,11 @@ class BooleanNode(object):
 
             for output, ts in zip([0, 1], [ts0s, ts1s]):
                 for i, (schemata, permutables, samesymbols) in enumerate(ts):
+                    if max(len(permutables), len(samesymbols)) > len(ts_symbol_list):
+                        raise ValueError(
+                            "Schema %s has %d permutation groups but ts_symbol_list has only %d symbols; pass a longer ts_symbol_list."
+                            % (schemata, max(len(permutables), len(samesymbols)), len(ts_symbol_list))
+                        )
                     string = ""
                     if len(permutables):
                         string += "("
@@ -816,7 +825,7 @@ class BooleanNode(object):
         if "prime_implicants" in kwargs:
             if self._prime_implicants is None:
                 self._prime_implicants = dict()
-                for output in set(self.outputs):
+                for output in sorted(set(self.outputs)):
                     output_binstates = outputs_to_binstates_of_given_type(
                         self.outputs, output=output, k=self.k
                     )
