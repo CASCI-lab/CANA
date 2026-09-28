@@ -30,8 +30,11 @@ Installation:
     pip install git+https://github.com/CASCI-lab/CANA
 ```
 
-Please note that CANA uses Cython. For it to compile you may need to install the following:
-```pip install Cython```
+### Windows
+
+CANA includes compiled C extensions. On Windows, installing CANA requires a C/C++ compiler. If you do not already have one installed, install the **Microsoft C++ Build Tools** with the **Desktop development with C++** workload selected.
+
+See the [Cython documentation](https://cython.readthedocs.io/en/latest/src/userguide/faq.html#building-cython-code-on-windows) for additional information about compiling Python extensions on Windows.
 
 Docs:
 -------
