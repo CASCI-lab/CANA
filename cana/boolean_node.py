@@ -578,11 +578,13 @@ class BooleanNode(object):
         return "".join(compress(binstate, self.mask))
 
     def activities(self):
-        """compute the activities of each incoming edge of the node
+        """compute the activities of each incoming edge of the node, directly from the LUT.
+        See :func:`cana.sensitivity.activities`.
+
         Returns:
             (list of floats)
         """
-        return self.edge_effectiveness(bound="upper")
+        return sensitivity.activities(self.outputs, self.k)
 
     def sensitivity(self, norm=False):
         """compute the average sensitivity of the node: the mean, over all input states,

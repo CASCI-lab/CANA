@@ -505,6 +505,40 @@ def test_sensitivity_matches_original_implementation():
             s, s0 = n.sensitivity(norm=norm), sensitivity.sensitivity_old(n, norm=norm)
             assert s == s0, f"sensitivity(norm={norm}) for k={n.k} outputs={''.join(n.outputs)}: {s!r} != sensitivity_old {s0!r}"
         assert abs(n.sensitivity(norm=True) - n.c_sensitivity(1)) < 1e-12
+
+
+#
+# Test activities (direct computation)
+#
+
+def test_activities_hand_values():
+    """activities: per input, the fraction of input states where flipping it changes the output"""
+    cases = [
+        (list("00"), [0.0]),                     # constant
+        (list("01"), [1.0]),                     # identity
+        (list("0011"), [1.0, 0.0]),              # copy of input 1; input 2 is fictitious
+        (list("0110"), [1.0, 1.0]),              # XOR: every flip changes the output
+        (list("0001"), [0.5, 0.5]),              # AND: input i matters only when the other is 1
+        (list("00010111"), [0.5, 0.5, 0.5]),     # majority k=3: input i matters when the others disagree
+        (list("00011111"), [0.75, 0.25, 0.25]),  # x1 OR (x2 AND x3)
+    ]
+    for outputs, true_a in cases:
+        n = BooleanNode.from_output_list(outputs)
+        a = n.activities()
+        assert a == true_a, f"activities for {''.join(outputs)}: returned {a}, true value is {true_a}"
+        assert sensitivity.activities(outputs, n.k) == true_a
+
+def test_activities_matches_original_implementation():
+    """the direct activities must be bit-exactly equal to activities_old, the upper edge effectiveness used up to CANA 1.0.2"""
+    import random
+    nodes = [AND(), OR(), XOR(), COPYx1(), CONTRADICTION(), RULE90(), RULE110()]
+    rng = random.Random(20260928)
+    for k in range(1, 8):
+        for _ in range(50 if k <= 5 else 15):
+            nodes.append(BooleanNode.from_output_list([rng.randint(0, 1) for _ in range(2**k)]))
+    for n in nodes:
+        a, a0 = n.activities(), sensitivity.activities_old(n)
+        assert a == a0, f"activities for k={n.k} outputs={''.join(n.outputs)}: {a!r} != activities_old {a0!r}"
 # Test from_output_list
 #
 
