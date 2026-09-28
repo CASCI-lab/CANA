@@ -11,39 +11,19 @@ formulations for reference and testing.
 
 
 def sensitivity(outputs, k, norm=False):
-    """Average sensitivity of a Boolean function: the mean, over all input states,
-    of the number of single-input flips that change the output.
-
-    Up to CANA 1.0.2 :func:`cana.boolean_node.BooleanNode.sensitivity` computed this as
-    ``sum(node.activities())``, which goes through the prime-implicant coverage; that
-    formulation is kept as :func:`sensitivity_old`. This function computes it directly
-    from the LUT with :math:`k 2^k` lookups and needs no canalization variables. The two
-    are bit-exactly equal: the count is divided by a power of two, so the result is an
-    exactly representable float either way. This is asserted in
-    ``tests/test_boolean_node.py`` (``test_sensitivity_matches_original_implementation``).
+    """Average sensitivity: the mean, over all input states, of the number of
+    single-input flips that change the output, i.e. the sum of the :func:`activities`.
+    Bit-exactly equal to :func:`sensitivity_old`.
 
     Args:
-        outputs (list) : The LUT outputs, one per input state, indexed by the integer
-            value of the state with input 1 as the most significant bit (CANA's default).
+        outputs (list) : The LUT outputs, indexed with input 1 as the most significant bit.
         k (int) : The number of inputs to the node.
         norm (bool) : Normalize by the number of inputs ``k``.
 
     Returns:
         (float)
-
-    See also:
-        :func:`sensitivity_old`,
-        :func:`cana.boolean_node.BooleanNode.sensitivity`,
-        :func:`cana.boolean_node.BooleanNode.activities`,
-        :func:`cana.boolean_node.BooleanNode.c_sensitivity`.
     """
-    changes = 0
-    for state in range(2**k):
-        out = outputs[state]
-        for bit in range(k):
-            if outputs[state ^ (1 << bit)] != out:
-                changes += 1
-    x = changes / 2**k
+    x = sum(activities(outputs, k))
     if norm:
         return x / k
     return x
