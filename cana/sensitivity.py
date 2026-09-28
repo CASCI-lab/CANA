@@ -9,6 +9,8 @@ formulations for reference and testing.
 
 """
 
+import math
+
 
 def sensitivity(outputs, k, norm=False):
     """Average sensitivity: the mean, over all input states, of the number of
@@ -23,7 +25,7 @@ def sensitivity(outputs, k, norm=False):
     Returns:
         (float)
     """
-    x = sum(activities(outputs, k))
+    x = math.fsum(activities(outputs, k))
     if norm:
         return x / k
     return x
@@ -40,13 +42,15 @@ def activities(outputs, k):
     Returns:
         (list) : The activity of each input.
     """
+    n_states = 1 << k
+    flip_masks = [1 << (k - 1 - i) for i in range(k)]
     changes = [0] * k
-    for state in range(2**k):
+    for state in range(n_states):
         out = outputs[state]
-        for i in range(k):
-            if outputs[state ^ (1 << (k - 1 - i))] != out:
+        for i, mask in enumerate(flip_masks):
+            if outputs[state ^ mask] != out:
                 changes[i] += 1
-    return [c / 2**k for c in changes]
+    return [c / n_states for c in changes]
 
 
 def sensitivity_old(node, norm=False):

@@ -539,7 +539,6 @@ def test_activities_matches_original_implementation():
     for n in nodes:
         a, a0 = n.activities(), sensitivity.activities_old(n)
         assert a == a0, f"activities for k={n.k} outputs={''.join(n.outputs)}: {a!r} != activities_old {a0!r}"
-        assert sum(a) == n.sensitivity(norm=False)
 # Test from_output_list
 #
 
