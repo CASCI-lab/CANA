@@ -47,6 +47,11 @@ dependencies = [
 test = [
     "pytest",
 ]
+docs = [
+    "sphinx",
+    "sphinxcontrib-bibtex",
+    "sphinx-rtd-theme",
+]
 
 [project.urls]
 repository = "https://github.com/CASCI-lab/CANA"
