@@ -32,9 +32,9 @@ import numpy as np
 import cana.bns as bns
 from cana.boolean_node import BooleanNode
 from cana.control import fvs, mds, sc
+import cana.control.pinning as pin
 from cana.cutils import (
     binstate_compare,
-    binstate_pinned_to_binstate,
     binstate_to_constantbinstate,
     binstate_to_statenum,
     constantbinstate_to_statenum,
@@ -1050,6 +1050,25 @@ class BooleanNetwork:
 
         return attractor_controllers_found
 
+    def pinning_control_driver_nodes(self):
+        """Find minimum-size driver sets that achieve pinning control."""
+        self._check_compute_variables(attractors=True)
+
+        constant_nodeids = set(self.get_constants().keys())
+
+        return pin.pinning_control_driver_nodes(
+            attractors=self._attractors,
+            stg=self._stg,
+            network_name=self.name,
+            Nnodes=self.Nnodes,
+            nodes=self.nodes,
+            keep_constants=self.keep_constants,
+            constant_nodeids=constant_nodeids,
+            num2bin=self.num2bin,
+            bin2num=self.bin2num,
+            logic=self.logic,
+        )
+
     def controlled_state_transition_graph(self, driver_nodes=[]):
         """Returns the Controlled State-Transition-Graph (CSTG).
         In practice, it copies the original STG, flips driver nodes (variables), and updates the CSTG.
@@ -1094,21 +1113,11 @@ class BooleanNetwork:
 
         return cstg
 
-    def pinning_controlled_state_transition_graph(self, driver_nodes=[]):
-        """Returns a dictionary of Controlled State-Transition-Graph (CSTG)
-        under the assumptions of pinning controllability.
+    def pinning_controlled_state_transition_graph(self, driver_nodes=None):
+        """Returns a dictionary of Controlled State-Transition-Graph (CSTG)"""
+        if driver_nodes is None:
+            driver_nodes = []
 
-        In practice, it copies the original STG, flips driver nodes (variables), and updates the CSTG.
-
-        Args:
-            driver_nodes (list) : The list of driver nodes.
-
-        Returns:
-            (networkx.DiGraph) : The Pinning Controlled State-Transition-Graph.
-
-        See also:
-            :func:`controlled_state_transition_graph`, :func:`attractor_driver_nodes`, :func:`controlled_attractor_graph`.
-        """
         self._check_compute_variables(attractors=True)
 
         if self.keep_constants:
@@ -1120,87 +1129,27 @@ class BooleanNetwork:
                         )
                     )
 
-        uncontrolled_system_size = self.Nnodes - len(driver_nodes)
-
-        pcstg_dict = {}
-        for att in self._attractors:
-            dn_attractor_transitions = [
-                tuple(
-                    "".join([self.num2bin(s)[dn] for dn in driver_nodes])
-                    for s in att_edge
-                )
-                for att_edge in self._stg.subgraph(att).edges()
-            ]
-
-            pcstg_states = [
-                self.bin2num(
-                    binstate_pinned_to_binstate(
-                        statenum_to_binstate(statenum, base=uncontrolled_system_size),
-                        attsource,
-                        pinned_var=driver_nodes,
-                    )
-                )
-                for statenum in range(2**uncontrolled_system_size)
-                for attsource, attsink in dn_attractor_transitions
-            ]
-
-            pcstg = nx.DiGraph(name="STG: " + self.name)
-            pcstg.name = (
-                "PC-"
-                + pcstg.name
-                + " ("
-                + ",".join(map(str, [self.nodes[dv].name for dv in driver_nodes]))
-                + ")"
-            )
-
-            pcstg.add_nodes_from((ps, {"label": ps}) for ps in pcstg_states)
-
-            for attsource, attsink in dn_attractor_transitions:
-                for statenum in range(2**uncontrolled_system_size):
-                    initial = binstate_pinned_to_binstate(
-                        statenum_to_binstate(statenum, base=uncontrolled_system_size),
-                        attsource,
-                        pinned_var=driver_nodes,
-                    )
-                    pcstg.add_edge(
-                        self.bin2num(initial),
-                        self.bin2num(
-                            self.pinned_step(
-                                initial,
-                                pinned_binstate=attsink,
-                                pinned_var=driver_nodes,
-                            )
-                        ),
-                    )
-
-            pcstg_dict[tuple(att)] = pcstg
-
-        return pcstg_dict
+        return pin.pinning_controlled_state_transition_graph(
+            attractors=self._attractors,
+            stg=self._stg,
+            network_name=self.name,
+            driver_nodes=driver_nodes,
+            Nnodes=self.Nnodes,
+            nodes=self.nodes,
+            num2bin=self.num2bin,
+            bin2num=self.bin2num,
+            logic=self.logic,
+        )
 
     def pinned_step(self, initial, pinned_binstate, pinned_var):
-        """Steps the boolean network 1 step from the given initial input condition when the driver variables are pinned
-        to their controlled states.
-
-        Args:
-            initial (string) : the initial state.
-            n (int) : the number of steps.
-
-        Returns:
-            (string) : The stepped binary state.
-        """
-        # for every node:
-        #   node input = breaks down initial by node input
-        #   asks node to step with the input
-        #   append output to list
-        # joins the results from each node output
-        assert len(initial) == self.Nnodes
-        return "".join(
-            [
-                str(node.step("".join(initial[j] for j in self.logic[i]["in"])))
-                if not (i in pinned_var)
-                else initial[i]
-                for i, node in enumerate(self.nodes, start=0)
-            ]
+        """Advance the network one Boolean step under pinning control."""
+        return pin.pinned_step(
+            initial=initial,
+            pinned_binstate=pinned_binstate,
+            pinned_var=pinned_var,
+            Nnodes=self.Nnodes,
+            logic=self.logic,
+            nodes=self.nodes,
         )
 
     def controlled_attractor_graph(self, driver_nodes=[]):
@@ -1326,52 +1275,16 @@ class BooleanNetwork:
         return att_reachable_from
 
     def fraction_pinned_attractors(self, pcstg_dict):
-        """Returns the Number of Accessible Attractors
-
-        Args:
-            pcstg_dict (dict of networkx.DiGraph) : The dictionary of Pinned Controlled State-Transition-Graphs.
-
-        Returns:
-            (int) : Number of Accessible Attractors
-        """
-        reached_attractors = []
-        for att, pcstg in pcstg_dict.items():
-            pinned_att = list(nx.attracting_components(pcstg))
-            print(set(att), pinned_att)
-            reached_attractors.append(set(att) in pinned_att)
-        return sum(reached_attractors) / float(len(pcstg_dict))
+        """Returns the Number of Accessible Attractors"""
+        return pin.fraction_pinned_attractors(pcstg_dict)
 
     def fraction_pinned_configurations(self, pcstg_dict):
-        """Returns the Fraction of successfully Pinned Configurations
-
-        Args:
-            pcstg_dict (dict of networkx.DiGraph) : The dictionary of Pinned Controlled State-Transition-Graphs.
-
-        Returns:
-            (list) : the Fraction of successfully Pinned Configurations to each attractor
-        """
-        pinned_configurations = []
-        for att, pcstg in pcstg_dict.items():
-            att_reached = False
-            for wcc in nx.weakly_connected_components(pcstg):
-                if set(att) in list(nx.attracting_components(pcstg.subgraph(wcc))):
-                    pinned_configurations.append(len(wcc) / len(pcstg))
-                    att_reached = True
-            if not att_reached:
-                pinned_configurations.append(0)
-
-        return pinned_configurations
+        """Returns the Fraction of successfully Pinned Configurations"""
+        return pin.fraction_pinned_configurations(pcstg_dict)
 
     def mean_fraction_pinned_configurations(self, pcstg_dict):
-        """Returns the mean Fraction of successfully Pinned Configurations
-
-        Args:
-            pcstg_dict (dict of networkx.DiGraph) : The dictionary of Pinned Controlled State-Transition-Graphs.
-
-        Returns:
-            (int) : the mean Fraction of successfully Pinned Configurations
-        """
-        return sum(self.fraction_pinned_configurations(pcstg_dict)) / len(pcstg_dict)
+        """Returns the mean Fraction of successfully Pinned Configurations"""
+        return pin.mean_fraction_pinned_configurations(pcstg_dict)
 
     def _dfs_reachable(self, G, source):
         """Produce nodes in a depth-first-search pre-ordering starting from source."""

@@ -1,0 +1,373 @@
+import itertools
+from math import ceil, log2
+
+import networkx as nx
+
+from cana.cutils import binstate_pinned_to_binstate, statenum_to_binstate
+
+
+def _signatures_distinguish_attractors(candidate_nodes, bin_attractors):
+    """Necessary-condition pre-filter for pinning controllability.
+
+    Returns ``True`` iff no two attractors have the same signature on
+    the candidate nodes. A node contributes its fixed value if it is
+    constant within the attractor, or ``"*"`` if it changes.
+
+    Args:
+        candidate_nodes (list of int): node indices to check.
+        bin_attractors (list of list of str): attractors as lists of
+            binary state strings.
+
+    Returns:
+        bool: ``True`` if all attractors have distinct signatures.
+    """
+    if len(candidate_nodes) == 0:
+        return False
+
+    signatures = set()
+
+    for attr in bin_attractors:
+        sig = tuple(
+            state_values.pop()
+            if len(state_values := {state[node] for state in attr}) == 1
+            else "*"
+            for node in candidate_nodes
+        )
+
+        if sig in signatures:
+            return False
+        signatures.add(sig)
+
+    return True
+
+
+def pinning_control_driver_nodes(
+        attractors,
+        stg,
+        network_name,
+        Nnodes,
+        nodes,
+        keep_constants,
+        constant_nodeids,
+        num2bin,
+        bin2num,
+        logic,
+):
+    """Find minimum-size driver sets that achieve pinning control.
+
+    A driver set ``D`` achieves *pinning control* if for every
+    attractor ``A`` of this Boolean network, pinning the nodes in
+    ``D`` to ``A``'s projection drives every initial configuration
+    to ``A``. Operationally, this requires the pinning-controlled
+    STG (``pcstg``) for each attractor to have exactly one
+    attracting strongly-connected component, and that SCC must
+    equal the target attractor's state set.
+
+    The search starts at the information-theoretic lower bound
+    ``ceil(log2(N_attractors))`` (you need that many bits to
+    distinguish the attractors at all) and increments until at
+    least one valid driver set is found. All minimum-size valid
+    sets are returned. A two-stage filter is used:
+
+    1. *Necessary-condition pre-filter*
+        (:func:`_signatures_distinguish_attractors`): cheap
+        combinatorial check that the candidate's signatures
+        distinguish all attractors. Skips the expensive pcstg build
+        for obviously-invalid candidates.
+    2. *Sufficiency check*: build pcstg per attractor; require
+        ``attracting_components(pcstg) == [set(att)]`` (a single
+        attracting SCC, equal to the target). The weaker
+        ``WCC == 1`` check used in earlier revisions only verifies
+        that the pcstg is connected — it does not verify that the
+        pcstg's unique attractor equals the intended target. For a
+        deterministic pcstg (fixed-point pinning) the pcstg always
+        has exactly one attracting SCC per WCC, but that SCC may
+        be some other state if the pin pattern happens to drive
+        the unpinned dynamics to a different attractor. The
+        Thaliana network exposed this in 2026; see test
+        ``test_thaliana_size5_false_positive_rejected_by_strict_check``.
+
+    This is the discrete/Boolean analog of FVS-based open-loop
+    control proved for ODE systems in Mochizuki & Fiedler 2013
+    ("Dynamics and Control at Feedback Vertex Sets II", JTB §7);
+    the Boolean version is supported by stable-motif theory
+    (Zañudo & Albert). FVS provides an upper bound on the driver-
+    set size; the search here may find smaller sets when the
+    discrete dynamics permit, since the FVS theorem requires a
+    guarantee for *all* nonlinearities while a specific Boolean
+    network may admit a smaller set.
+
+    Returns:
+        list of tuple: minimum-size driver sets (as tuples of node
+        indices) that achieve pinning control. For a single-
+        attractor network, returns ``[()]`` (the empty driver set).
+        If no set up to size ``Nnodes - 1`` works (degenerate
+        networks), returns ``[tuple(range(Nnodes))]`` as the
+        trivial fallback.
+
+    See also:
+        :func:`pinning_controlled_state_transition_graph`,
+        :func:`fraction_pinned_configurations`,
+        :func:`feedback_vertex_set_driver_nodes`,
+        :func:`_signatures_distinguish_attractors`.
+    """
+    if len(attractors) == 1:
+        return [()]
+    
+    lower_bound = ceil(log2(len(attractors)))
+    nodeids = list(range(Nnodes))
+    # Exclude constant nodes: they cannot distinguish attractors
+    # and waste combinatorial search effort. If you need to treat
+    # a constant node as a controllable driver (e.g. toggling a
+    # stimulus), modify the model to make it non-constant before
+    # calling this function.
+    if keep_constants:
+        nodeids = [nodeid for nodeid in nodeids if nodeid not in constant_nodeids]
+    bin_attractors = [
+        [num2bin(state) for state in attr] for attr in attractors
+    ]
+    result = []
+    max_pin = len(nodeids)
+    if lower_bound > max_pin:
+        return [tuple(range(Nnodes))]
+    for n_pin in range(lower_bound, max_pin + 1):
+        if result:
+            break
+        for pvs in itertools.combinations(nodeids, n_pin):
+            if not _signatures_distinguish_attractors(
+                list(pvs), bin_attractors
+            ):
+                continue
+            controlled = True
+            pcstg_dict = pinning_controlled_state_transition_graph(
+                attractors=attractors,
+                stg=stg,
+                network_name=network_name,
+                driver_nodes=list(pvs),
+                Nnodes=Nnodes,
+                nodes=nodes,
+                num2bin=num2bin,
+                bin2num=bin2num,
+                logic=logic,
+            )
+            for att, pcstg in pcstg_dict.items():
+                # Strict check: pcstg must have exactly one
+                # attracting SCC, and that SCC must equal the
+                # target attractor's state set. Pure
+                # set/integer comparison — no floating point.
+                attracting = list(nx.attracting_components(pcstg))
+                if len(attracting) != 1 or attracting[0] != set(att):
+                    controlled = False
+                    break
+            if controlled:
+                result.append(pvs)
+    if not result:
+        return [tuple(range(Nnodes))]
+    return result
+
+
+def pinning_controlled_state_transition_graph(
+        attractors,
+        stg,
+        network_name,
+        driver_nodes,
+        Nnodes,
+        nodes,
+        num2bin,
+        bin2num,
+        logic,
+):
+    """Returns a dictionary of Controlled State-Transition-Graph (CSTG)
+    under the assumptions of pinning controllability.
+
+    In practice, it copies the original STG, flips driver nodes (variables), and updates the CSTG.
+
+    Args:
+        driver_nodes (list) : The list of driver nodes.
+
+    Returns:
+        (networkx.DiGraph) : The Pinning Controlled State-Transition-Graph.
+
+    See also:
+        :func:`controlled_state_transition_graph`, :func:`attractor_driver_nodes`, :func:`controlled_attractor_graph`.
+    """
+    uncontrolled_system_size = Nnodes - len(driver_nodes)
+
+    pcstg_dict = {}
+    for att in attractors:
+        # For each STG edge ``(s_src, s_dst)`` *inside* the attractor,
+        # ``src_pin`` and ``dst_pin`` are the projections of those
+        # states onto the pinned variables. For a fixed-point
+        # attractor the self-loop gives ``src_pin == dst_pin``; for a
+        # length-L cycle the L tuples have ``dst_pin`` rotated one
+        # cycle-step ahead of ``src_pin``. (These are the same loop
+        # variables previously named ``attsource`` and ``attsink``;
+        # renamed because the old names suggested *attractor states*
+        # when they actually hold the *pin-bit projections* of those
+        # states.)
+        dn_attractor_transitions = [
+            tuple(
+                "".join([num2bin(s)[dn] for dn in driver_nodes])
+                for s in att_edge
+            )
+            for att_edge in stg.subgraph(att).edges()
+        ]
+
+        pcstg_states = [
+            bin2num(
+                binstate_pinned_to_binstate(
+                    statenum_to_binstate(statenum, base=uncontrolled_system_size),
+                    src_pin,
+                    pinned_var=driver_nodes,
+                )
+            )
+            for statenum in range(2**uncontrolled_system_size)
+            for src_pin, _dst_pin in dn_attractor_transitions
+        ]
+
+        pcstg = nx.DiGraph(name="STG: " + network_name)
+        pcstg.name = (
+            "PC-"
+            + pcstg.name
+            + " ("
+            + ",".join(map(str, [nodes[dv].name for dv in driver_nodes]))
+            + ")"
+        )
+
+        pcstg.add_nodes_from((ps, {"label": ps}) for ps in pcstg_states)
+
+        for src_pin, dst_pin in dn_attractor_transitions:
+            for statenum in range(2**uncontrolled_system_size):
+                initial = binstate_pinned_to_binstate(
+                    statenum_to_binstate(statenum, base=uncontrolled_system_size),
+                    src_pin,
+                    pinned_var=driver_nodes,
+                )
+                # ``pinned_step`` advances the unpinned variables
+                # using ``initial`` (which has ``src_pin`` at the
+                # pinned positions) and writes ``dst_pin`` at the
+                # pinned positions of the output. For fixed-point
+                # attractors ``src_pin == dst_pin`` so the pinned
+                # positions are unchanged; for cycles where the pin
+                # flips, this is what connects positions of the
+                # pcstg around the cycle.
+                pcstg.add_edge(
+                    bin2num(initial),
+                    bin2num(
+                        pinned_step(
+                            initial=initial,
+                            pinned_binstate=dst_pin,
+                            pinned_var=driver_nodes,
+                            Nnodes=Nnodes,
+                            logic=logic,
+                            nodes=nodes,
+                        )
+                    ),
+                )
+
+        pcstg_dict[tuple(att)] = pcstg
+
+    return pcstg_dict
+
+
+def pinned_step(
+        initial,
+        pinned_binstate,
+        pinned_var,
+        Nnodes,
+        logic,
+        nodes
+):
+    """Advance the network one Boolean step under pinning control.
+    
+    Pinned variables are read as inputs to the node update
+    functions from ``initial`` (so the unpinned variables see the
+    *source* pin pattern when computing their next values), and
+    written as ``pinned_binstate`` in the output (the *destination*
+    pin pattern). For fixed-point pinning ``pinned_binstate`` is
+    the same pattern at every step; for limit-cycle pinning it
+    rotates one cycle position ahead of the source pin.
+
+    Args:
+        initial (str) : the source binary state of length ``Nnodes``.
+        pinned_binstate (str) : destination values for the pinned
+            positions; must satisfy
+            ``len(pinned_binstate) == len(pinned_var)``.
+        pinned_var (list of int) : indices of the pinned variables.
+
+    Returns:
+        (str) : the next binary state, with pinned positions equal
+            to ``pinned_binstate`` and unpinned positions equal to
+            one Boolean step from ``initial`` (using the values in
+            ``initial`` — including the source pin — as inputs).
+
+    See also:
+        :func:`pinning_controlled_state_transition_graph`.
+    """
+    if len(initial) != Nnodes:
+        raise ValueError(
+            "initial state length must equal Nnodes: "
+            "expected %d, got %d" % (Nnodes, len(initial))
+        )
+    if len(pinned_binstate) != len(pinned_var):
+        raise ValueError(
+            "pinned_binstate length must match pinned_var: "
+            "expected %d, got %d" % (len(pinned_var), len(pinned_binstate))
+        )
+    # Build a quick lookup so the comprehension is O(Nnodes)
+    # rather than O(Nnodes * |pinned_var|).
+    pin_map = dict(zip(pinned_var, pinned_binstate))
+    return "".join(
+        pin_map[i]
+        if i in pin_map
+        else str(node.step("".join(initial[j] for j in logic[i]["in"])))
+        for i, node in enumerate(nodes, start=0)
+    )
+
+
+def fraction_pinned_attractors(pcstg_dict):
+    """Returns the Number of Accessible Attractors
+
+    Args:
+        pcstg_dict (dict of networkx.DiGraph) : The dictionary of Pinned Controlled State-Transition-Graphs.
+
+    Returns:
+        (int) : Number of Accessible Attractors
+    """
+    reached_attractors = []
+    for att, pcstg in pcstg_dict.items():
+        pinned_att = list(nx.attracting_components(pcstg))
+        reached_attractors.append(set(att) in pinned_att)
+    return sum(reached_attractors) / float(len(pcstg_dict))
+
+def fraction_pinned_configurations(pcstg_dict):
+    """Returns the Fraction of successfully Pinned Configurations
+
+    Args:
+        pcstg_dict (dict of networkx.DiGraph) : The dictionary of Pinned Controlled State-Transition-Graphs.
+
+    Returns:
+        (list) : the Fraction of successfully Pinned Configurations to each attractor
+    """
+    pinned_configurations = []
+    for att, pcstg in pcstg_dict.items():
+        att_reached = False
+        for wcc in nx.weakly_connected_components(pcstg):
+            if set(att) in list(nx.attracting_components(pcstg.subgraph(wcc))):
+                pinned_configurations.append(len(wcc) / len(pcstg))
+                att_reached = True
+        if not att_reached:
+            pinned_configurations.append(0)
+
+    return pinned_configurations
+
+def mean_fraction_pinned_configurations(pcstg_dict):
+    """Returns the mean Fraction of successfully Pinned Configurations
+
+    Args:
+        pcstg_dict (dict of networkx.DiGraph) : The dictionary of Pinned Controlled State-Transition-Graphs.
+
+    Returns:
+        (int) : the mean Fraction of successfully Pinned Configurations
+    """
+    return sum(fraction_pinned_configurations(pcstg_dict)) / len(pcstg_dict)
