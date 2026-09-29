@@ -24,7 +24,7 @@ _path = os.path.dirname(os.path.realpath(__file__))
 def BT474_ErbB_S():
     """Boolean network model of the control of HCC1954 Breast Cell Line Short-term ErbB Network model
 
-    The network is defined in :cite:`der Heyde:2014`.
+    The network is defined in :cite:`derHeyde:2014`.
 
     Returns:
         (BooleanNetwork)

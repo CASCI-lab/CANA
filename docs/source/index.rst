@@ -6,6 +6,10 @@ This package implements a series of methods used to study control, canalization 
 
 If you are using this package, please consider citing the following papers:
 
+	:cite:`CANA:2025` "A.M. Marcus, J.C. Rozum, H. Sizek, L.M. Rocha [2025]. "`CANA v1.0.0: efficient quantification of canalization in automata networks`__". *Bioinformatics*, **btaf461**. doi: 10.1093/bioinformatics/btaf461."
+
+	__ https://doi.org/10.1093/bioinformatics/btaf461
+
 	:cite:`Gates:2021` "A.J. Gates, R.B. Correia, X. Wang, & L.M. Rocha [2021]. "`The effective graph reveals redundancy, canalization, and control pathways in biochemical regulation and signaling`__". *Proceedings of the National Academy of Sciences (PNAS)*, **118** (12). doi: 10.1073/pnas.2022598118"
 
 	__ https://doi.org/10.1073/pnas.2022598118

@@ -20,14 +20,14 @@ def network_motif(name=None):
     Args:
         name (string): The name of the motif.
             Possible values are : ``FeedForward``, ``Fan``, ``FeedForwardSelf1``,
-                ``FeedForwardSelf2``, ``FeedForwardSelf3``, ``FeedForwardSelf123``,
-                ``BiFan``, ``CoRegulated``, ``CoRegulating``, ``BiParallel``,
-                ``TriParallel``, ``Dominating4``, ``Dominating4Undir``, ``3Loop``,
-                ``4Loop``, ``3LoopSelf123``, ``FourLoop``, ``FourCoLoop``,
-                ``DirectedTwoLoop``, ``BiParallelLoop``, ``5Chain``, ``3Chain``,
-                ``KeffStudy3``, ``KeffStudy4``, ``CoRegulatedSelf``, ``KeffLine4``,
-                ``KeffLineLoop4``, ``3Full``, ``6Pyramid``, ``4Split``, ``5BiParallel``,
-                ``6BiParallelDilation``, ``6BiParallelDilationLoop``, ``5combine``, ``4tree``.
+            ``FeedForwardSelf2``, ``FeedForwardSelf3``, ``FeedForwardSelf123``,
+            ``BiFan``, ``CoRegulated``, ``CoRegulating``, ``BiParallel``,
+            ``TriParallel``, ``Dominating4``, ``Dominating4Undir``, ``3Loop``,
+            ``4Loop``, ``3LoopSelf123``, ``FourLoop``, ``FourCoLoop``,
+            ``DirectedTwoLoop``, ``BiParallelLoop``, ``5Chain``, ``3Chain``,
+            ``KeffStudy3``, ``KeffStudy4``, ``CoRegulatedSelf``, ``KeffLine4``,
+            ``KeffLineLoop4``, ``3Full``, ``6Pyramid``, ``4Split``, ``5BiParallel``,
+            ``6BiParallelDilation``, ``6BiParallelDilationLoop``, ``5combine``, ``4tree``.
 
     Returns:
         (networkx.DiGraph) : The directed graph motif.
