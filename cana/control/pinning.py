@@ -69,11 +69,15 @@ def _signatures_distinguish_attractors(candidate_nodes, bin_attractors):
 
 def pinning_control_driver_nodes(
         attractors,
+        stg,
+        network_name,
         Nnodes,
+        nodes,
         keep_constants,
         constant_nodeids,
         num2bin,
-        pinning_controlled_state_transition_graph
+        bin2num,
+        logic,
 ):
     """Find minimum-size driver sets that achieve pinning control.
 
@@ -162,7 +166,15 @@ def pinning_control_driver_nodes(
                 continue
             controlled = True
             pcstg_dict = pinning_controlled_state_transition_graph(
-                list(pvs)
+                attractors=attractors,
+                stg=stg,
+                network_name=network_name,
+                driver_nodes=list(pvs),
+                Nnodes=Nnodes,
+                nodes=nodes,
+                num2bin=num2bin,
+                bin2num=bin2num,
+                logic=logic,
             )
             for att, pcstg in pcstg_dict.items():
                 # Strict check: pcstg must have exactly one
@@ -189,7 +201,7 @@ def pinning_controlled_state_transition_graph(
         nodes,
         num2bin,
         bin2num,
-        pinned_step,
+        logic,
 ):
     """Returns a dictionary of Controlled State-Transition-Graph (CSTG)
     under the assumptions of pinning controllability.
@@ -269,9 +281,12 @@ def pinning_controlled_state_transition_graph(
                     bin2num(initial),
                     bin2num(
                         pinned_step(
-                            initial,
+                            initial=initial,
                             pinned_binstate=dst_pin,
                             pinned_var=driver_nodes,
+                            Nnodes=Nnodes,
+                            logic=logic,
+                            nodes=nodes,
                         )
                     ),
                 )

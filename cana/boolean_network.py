@@ -1058,11 +1058,15 @@ class BooleanNetwork:
 
         return pin.pinning_control_driver_nodes(
             attractors=self._attractors,
+            stg=self._stg,
+            network_name=self.name,
             Nnodes=self.Nnodes,
+            nodes=self.nodes,
             keep_constants=self.keep_constants,
             constant_nodeids=constant_nodeids,
             num2bin=self.num2bin,
-            pinning_controlled_state_transition_graph=self.pinning_controlled_state_transition_graph,
+            bin2num=self.bin2num,
+            logic=self.logic,
         )
 
     def controlled_state_transition_graph(self, driver_nodes=[]):
@@ -1134,7 +1138,7 @@ class BooleanNetwork:
             nodes=self.nodes,
             num2bin=self.num2bin,
             bin2num=self.bin2num,
-            pinned_step=self.pinned_step,
+            logic=self.logic,
         )
 
     def pinned_step(self, initial, pinned_binstate, pinned_var):
