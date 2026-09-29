@@ -6,7 +6,9 @@
 from cana.datasets.bools import CONTRADICTION, AND, OR, XOR, COPYx1, RULE90, RULE110
 from cana.utils import *
 from cana.boolean_node import BooleanNode
+import cana.sensitivity as sensitivity
 import numpy as np
+import pytest
 
 
 #
@@ -468,3 +470,95 @@ def test_input_symmetry_SBF():
     # assert (k_s == true_k_s), f"Input symmetry simp: SBF (mean, sameSymbol): returned {k_s}, true value is {true_k_s}"
     # k_s, true_k_s = n.input_symmetry(aggOp="max", kernel="numDots", sameSymbol=True), 4.0
     # assert (k_s == true_k_s), f"Input symmetry: SBF (max, sameSymbol): returned {k_s}, true value is {true_k_s}"
+
+
+#
+# Test sensitivity (direct computation)
+#
+
+def test_sensitivity_hand_values():
+    """sensitivity: mean number of single-input flips that change the output"""
+    cases = [
+        (list("00"), 0.0),          # constant
+        (list("01"), 1.0),          # identity
+        (list("0000"), 0.0),        # constant, k=2
+        (list("0110"), 2.0),        # XOR: every flip changes the output
+        (list("0001"), 1.0),        # AND: 00,01,10 have one sensitive input, 11 has two
+        (list("00010111"), 1.5),    # majority k=3: 000 and 111 have none, the rest have two
+    ]
+    for outputs, true_s in cases:
+        n = BooleanNode.from_output_list(outputs)
+        s = n.sensitivity(norm=False)
+        assert s == true_s, f"sensitivity for {''.join(outputs)}: returned {s}, true value is {true_s}"
+        assert sensitivity.sensitivity(outputs, n.k) == true_s
+
+def test_sensitivity_matches_original_implementation():
+    """the direct sensitivity must be bit-exactly equal to sensitivity_old, the sum-of-activities implementation used up to CANA 1.0.2"""
+    import random
+    nodes = [AND(), OR(), XOR(), COPYx1(), CONTRADICTION(), RULE90(), RULE110()]
+    rng = random.Random(20260921)
+    for k in range(1, 8):
+        for _ in range(50 if k <= 5 else 15):
+            nodes.append(BooleanNode.from_output_list([rng.randint(0, 1) for _ in range(2**k)]))
+    for n in nodes:
+        for norm in (False, True):
+            s, s0 = n.sensitivity(norm=norm), sensitivity.sensitivity_old(n, norm=norm)
+            assert s == s0, f"sensitivity(norm={norm}) for k={n.k} outputs={''.join(n.outputs)}: {s!r} != sensitivity_old {s0!r}"
+        assert abs(n.sensitivity(norm=True) - n.c_sensitivity(1)) < 1e-12
+
+
+#
+# Test activities (direct computation)
+#
+
+def test_activities_hand_values():
+    """activities: per input, the fraction of input states where flipping it changes the output"""
+    cases = [
+        (list("00"), [0.0]),                     # constant
+        (list("01"), [1.0]),                     # identity
+        (list("0011"), [1.0, 0.0]),              # copy of input 1; input 2 is fictitious
+        (list("0110"), [1.0, 1.0]),              # XOR: every flip changes the output
+        (list("0001"), [0.5, 0.5]),              # AND: input i matters only when the other is 1
+        (list("00010111"), [0.5, 0.5, 0.5]),     # majority k=3: input i matters when the others disagree
+        (list("00011111"), [0.75, 0.25, 0.25]),  # x1 OR (x2 AND x3)
+    ]
+    for outputs, true_a in cases:
+        n = BooleanNode.from_output_list(outputs)
+        a = n.activities()
+        assert a == true_a, f"activities for {''.join(outputs)}: returned {a}, true value is {true_a}"
+        assert sensitivity.activities(outputs, n.k) == true_a
+
+def test_activities_matches_original_implementation():
+    """the direct activities must be bit-exactly equal to activities_old, the upper edge effectiveness used up to CANA 1.0.2"""
+    import random
+    nodes = [AND(), OR(), XOR(), COPYx1(), CONTRADICTION(), RULE90(), RULE110()]
+    rng = random.Random(20260928)
+    for k in range(1, 8):
+        for _ in range(50 if k <= 5 else 15):
+            nodes.append(BooleanNode.from_output_list([rng.randint(0, 1) for _ in range(2**k)]))
+    for n in nodes:
+        a, a0 = n.activities(), sensitivity.activities_old(n)
+        assert a == a0, f"activities for k={n.k} outputs={''.join(n.outputs)}: {a!r} != activities_old {a0!r}"
+# Test from_output_list
+#
+
+def test_from_output_list_rejects_non_power_of_two():
+    """from_output_list must not silently truncate k on a malformed list"""
+    for bad in ([], [0, 1, 1], [0] * 6, [1] * 129):
+        with pytest.raises(ValueError):
+            BooleanNode.from_output_list(bad)
+
+def test_from_output_list_returns_subclass():
+    """from_output_list must instantiate the class it is called on"""
+    class MyNode(BooleanNode):
+        pass
+
+    n = MyNode.from_output_list([0, 1, 1, 0], name="xor")
+    assert type(n) is MyNode
+    assert (n.k, n.name, n.outputs) == (2, "xor", list("0110"))
+    assert n.input_redundancy(norm=False) == XOR().input_redundancy(norm=False)
+
+def test_input_symmetry_mean_on_fresh_node():
+    """input_symmetry_mean must compute its own coverage instead of requiring input_symmetry() to run first"""
+    n = BooleanNode(outputs=list("0111" + "0"*12), k=4)
+    assert n.input_symmetry_mean() == 1.6875

@@ -15,24 +15,26 @@ If you use `cana` in your research, please cite us and check out our related pap
 Installation:
 -------------
 
-** Latest stable release **
-
-- from PYPI
+**Latest stable release**
 ```
     pip install cana
 ```
 
-** Latest development release on GitHub **
+**Manuscript-specific version**
+```
+    pip install cana=1.0.0
+```
 
-Pull and install the code directly from the github [project page](https://github.com/casci-lab/CANA).
-
+**Latest development release on GitHub**
 ```
     pip install git+https://github.com/CASCI-lab/CANA
 ```
 
-Please note that CANA uses Cython. For it to compile you may need to install the following:
+### Windows
 
-- `pip install Cython`
+CANA includes compiled C extensions. On Windows, installing CANA requires a C/C++ compiler. If you do not already have one installed, install the **Microsoft C++ Build Tools** with the **Desktop development with C++** workload selected.
+
+See the [Cython documentation](https://cython.readthedocs.io/en/latest/src/userguide/faq.html#building-cython-code-on-windows) for additional information about compiling Python extensions on Windows.
 
 Docs:
 -------
@@ -68,12 +70,14 @@ with the help of many others. Thanks to everyone who has improved ``CANA`` by co
 - [Rion Brattig Correia](http://alexandergates.net/), github: [rionbr](https://github.com/rionbr)
 - [Alexander Gates](https://alexandergates.net/), github: [ajgates42](https://github.com/ajgates42)
 
-
 **Contributors**
 
-Optionally, add your desired name and include a few relevant links. The order
-is an attempt at historical ordering.
-
+- Srikanth Iyer, github: [srikanth-iyer](https://github.com/srikanth-iyer)
+- Kyu Hyong Park, github: [kyuhyongpark](https://github.com/kyuhyongpark)
+- Yoshiaki Fujita, github: [yoshiakifujita](https://github.com/yoshiakifujita)
+- Jordan C. Rozum, github: [jcrozum](https://github.com/jcrozum)
+- Felipe Xavier Costa, github: [fxcosta-phd](https://github.com/fxcosta-phd)
+- Austin Marcus, github: [austin-marcus](https://github.com/austin-marcus)
 - [Xuan Wang](https://www.wangxuan.name), github: [xuan-w](https://github.com/xuan-w)
 - Thomas Parmer, github: [tjparmer](https://github.com/tjparmer)
 - Etienne Nzabarushimana
@@ -94,25 +98,25 @@ If you have provided support to ``CANA`` and a support acknowledgment does not a
 - [CAPES Foundation](https://www.gov.br/capes/pt-br), Ministry of Education of Brazil, Brasília, Brazil; Rion B. Correia.
 
 
-Development
------------
-Pull requests are welcome :) Please get in touch with one us beforehand: `rionbr(at)gmail(dot)com` or `ajgates42(at)gmail(dot)com`.
-
-** TODOs**
-
-- Parallelize control methods;
-- Parallelize canalization methods;
-- Generating ensembles of dynamics from structural motifs;
-- Expand on easy-to-replicate tutorials;
-
-Tests
------
-
-Run nosetests -v to perform tests and diagnoses on functions.
-
-
 Changelog
 ---------
+
+Master
+- `BooleanNode.activities` now computed directly from the LUT in `cana.sensitivity`; previous formulation kept as `activities_old`, values unchanged
+- Schemata order and k_r/k_s values are now identical across processes (prime implicants sorted, sums use `math.fsum`); last digits of some k_r/k_s means change accordingly
+- Fixed `schemata_look_up_table(type='ts')` failing on schemata with more than two permutation groups
+- `BooleanNode.sensitivity` now computed directly from the LUT in the new `cana.sensitivity` module; previous formulation kept as `sensitivity_old`, values unchanged
+- Fixed `from_output_list`: rejects non-power-of-two output lists, returns subclass instances
+- Fixed undefined name in Cython `__pi_covers`
+- Fixed `input_symmetry_mean` failing on a fresh node
+- Added calculation of distinct and raw symmetry
+- Added visualization routines to drawing (effective graph and conditional effective graph)
+
+v1.0.1
+- Add Python 3.13 support (schematodes 1.0.1, PyO3 0.22)
+
+v1.0.0
+- A.M. Marcus, J.C. Rozum, H. Sizek, L.M. Rocha [2025]. "[CANA v1.0.0: efficient quantification of canalization in automata networks](https://doi.org/10.1093/bioinformatics/btaf461)". *Bioinformatics*. btaf461. doi: 10.1093/bioinformatics/btaf461
 
 v0.1
 - Canalization methods ported to Cython

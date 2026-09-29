@@ -138,12 +138,12 @@ def __pi_covers(implicant, binstate):
     """Determines if a binarystate is covered by a specific implicant.
     Args:
         implicant (string): the implicant.
-        minterm (string): the minterm.
+        binstate (string): the binary state.
     Returns:
         x (bool): True if covered else False.
 
     """
-    return all(i == WILDCARD_SYMBOL or m == i for i, m in zip(implicant, input))
+    return all(i == WILDCARD_SYMBOL or m == i for i, m in zip(implicant, binstate))
 
 
 def expand_wildcard_schemata(schemata):
@@ -189,7 +189,7 @@ def return_pi_coverage(prime_implicants):
     """
 
     pi_coverage = dict()
-    for pi in prime_implicants:
+    for pi in sorted(prime_implicants):
         for binstate in expand_wildcard_schemata(pi):
             if binstate not in pi_coverage:
                 pi_coverage[binstate] = set()

@@ -14,6 +14,7 @@ Main class for Boolean node objects.
 #   MIT license.
 from __future__ import division
 
+import math
 from itertools import combinations, compress, product
 from statistics import mean
 
@@ -23,6 +24,8 @@ import pandas as pd
 
 import cana.canalization.boolean_canalization as BCanalization
 import cana.canalization.cboolean_canalization as cBCanalization
+import cana.symmetry as symmetry
+import cana.sensitivity as sensitivity
 from cana.cutils import (
     binstate_to_statenum,
     flip_bit,
@@ -109,27 +112,35 @@ class BooleanNode(object):
         )
 
     @classmethod
-    def from_output_list(self, outputs=list(), *args, **kwargs):
+    def from_output_list(cls, outputs=list(), *args, **kwargs):
         """Instanciate a Boolean Node from a output transition list.
 
         Args:
-            outputs (list) : The transition outputs of the node.
+            outputs (list) : The transition outputs of the node. Its length must be a power of two, :math:`2^k`.
 
         Returns:
-            (BooleanNode) : the instanciated object.
+            (BooleanNode) : the instanciated object. Subclasses receive an instance of the subclass.
+
+        Raises:
+            ValueError : if the length of ``outputs`` is not a power of two.
 
         Example:
             >>> BooleanNode.from_output_list(outputs=[0,0,0,1], name="AND")
         """
+        n = len(outputs)
+        if n == 0 or n & (n - 1):
+            raise ValueError(
+                "The length of `outputs` must be a power of two (2**k); got {:d}.".format(n)
+            )
+        k = n.bit_length() - 1
         id = kwargs.pop("id") if "id" in kwargs else 0
         name = kwargs.pop("name") if "name" in kwargs else "x"
-        k = int(np.log2(len(outputs)))
         inputs = (
             kwargs.pop("inputs") if "inputs" in kwargs else [(x + 1) for x in range(k)]
         )
         state = kwargs.pop("state") if "state" in kwargs else False
 
-        return BooleanNode(
+        return cls(
             id=id,
             name=name,
             k=k,
@@ -215,7 +226,7 @@ class BooleanNode(object):
             for binstate in self._pi_coverage
         ]
 
-        k_r = sum(redundancy) / 2**self.k
+        k_r = math.fsum(redundancy) / 2**self.k
 
         if norm:
             # Normalizes
@@ -357,7 +368,7 @@ class BooleanNode(object):
         summand = []
         for fAlpha, fTheta in self._ts_coverage.items():
             summand.append(aggOp(list(map(kernel, fTheta))))
-        return np.mean(summand)
+        return math.fsum(summand) / len(summand)
 
     def input_symmetry(self, aggOp="mean", kernel="numDots", sameSymbol=False):
         """compute the input symmetry (k_s) of the boolean node, with variations via the specified functions.
@@ -387,7 +398,8 @@ class BooleanNode(object):
         Returns:
             (float)
         """
-        summand = 0
+        self._check_compute_canalization_variables(ts_coverage=True)
+        summand = []
         # fTheta = a list of TS
         for fTheta in self._ts_coverage.values():
             inner = 0
@@ -395,8 +407,38 @@ class BooleanNode(object):
                 inner += sum(
                     len(i) for i in ts[1]
                 )  # assumes that indicies will ever only be in at most 1 group
-            summand += inner / len(fTheta)
-        return summand / 2**self.k
+            summand.append(inner / len(fTheta))
+        return math.fsum(summand) / 2**self.k
+
+    def distinct_symmetry(self):
+        """Compute the distinct permutation symmetry of the node LUT.
+
+        For each LUT entry, this computes the fraction of distinct input
+        permutations that preserve the same output, excluding the identity
+        permutation from both numerator and denominator.
+
+        Returns:
+            (float)
+
+        See also:
+            :func:`cana.symmetry.distinct_symmetry`
+        """
+        return symmetry.distinct_symmetry(self.outputs, self.k)
+
+    def raw_symmetry(self):
+        """Compute the raw symmetry of the node LUT.
+
+        LUT rows are grouped by input Hamming weight. For each row, this
+        computes the fraction of rows in the same weight group that have the
+        same output, then averages across all LUT rows.
+
+        Returns:
+            (float)
+
+        See also:
+            :func:`cana.symmetry.raw_symmetry`
+        """
+        return symmetry.raw_symmetry(self.outputs, self.k)
 
     def look_up_table(self):
         """Returns the Look Up Table (LUT)
@@ -427,14 +469,17 @@ class BooleanNode(object):
         return df
 
     def schemata_look_up_table(
-        self, type="pi", pi_symbol="#", ts_symbol_list=["\u030A", "\u032F"]
+        self,
+        type="pi",
+        pi_symbol="#",
+        ts_symbol_list=["\u030A", "\u032F", "\u0303", "\u0330", "\u0306", "\u032E"],
     ):
         """Returns the simplified schemata Look Up Table (LUT)
 
         Args:
             type (string) : The type of schemata to return, either Prime Implicants ``pi`` or Two-Symbol ``ts``. Defaults to 'pi'.
             pi_symbol (str) : The Prime Implicant don't care symbol. Default is ``#``.
-            ts_symbol_list (list) : A list containing Two Symbol permutable symbols. Default is ``["\u030A", "\u032F"]``.
+            ts_symbol_list (list) : A list containing Two Symbol permutable symbols, one per permutation group of a schema (combining marks: ring above, inverted breve below, tilde, tilde below, breve, breve below). A ``ValueError`` is raised if a schema has more groups than symbols.
 
         Returns:
             (pandas.DataFrame or Latex): the schemata LUT
@@ -458,7 +503,7 @@ class BooleanNode(object):
             pi1s = self._prime_implicants.get("1", [])
 
             for output, pi in zip([0, 1], [pi0s, pi1s]):
-                for schemata in pi:
+                for schemata in sorted(pi):
                     r.append((schemata, output))
 
         # Two Symbol LUT
@@ -469,6 +514,11 @@ class BooleanNode(object):
 
             for output, ts in zip([0, 1], [ts0s, ts1s]):
                 for i, (schemata, permutables, samesymbols) in enumerate(ts):
+                    if max(len(permutables), len(samesymbols)) > len(ts_symbol_list):
+                        raise ValueError(
+                            "Schema %s has %d permutation groups but ts_symbol_list has only %d symbols; pass a longer ts_symbol_list."
+                            % (schemata, max(len(permutables), len(samesymbols)), len(ts_symbol_list))
+                        )
                     string = ""
                     if len(permutables):
                         string += "("
@@ -528,24 +578,32 @@ class BooleanNode(object):
         return "".join(compress(binstate, self.mask))
 
     def activities(self):
-        """compute the activities of each incoming edge of the node
+        """compute the activities of each incoming edge of the node, directly from the LUT.
+        See :func:`cana.sensitivity.activities`.
+
         Returns:
             (list of floats)
         """
-        return self.edge_effectiveness(bound="upper")
+        return sensitivity.activities(self.outputs, self.k)
 
     def sensitivity(self, norm=False):
-        """compute the sensitivity of the node. Does so by summing the activities of the edges
+        """compute the average sensitivity of the node: the mean, over all input states,
+        of the number of single-input flips that change the output.
+
+        Delegates to :func:`cana.sensitivity.sensitivity`, which computes it directly from
+        the look-up table. Up to CANA 1.0.2 this was ``sum(self.activities())``, kept as
+        :func:`cana.sensitivity.sensitivity_old`; the two are bit-exactly equal, as
+        asserted in ``tests/test_boolean_node.py``
+        (``test_sensitivity_matches_original_implementation``).
+
         Args:
             norm (bool) : whether or not to normalize by the number of inputs (k)
         Returns:
             (float)
+        See Also:
+            :func:`cana.sensitivity.sensitivity`, :func:`activities`, :func:`c_sensitivity`.
         """
-        x = sum(self.activities())
-        if norm:
-            return x / self.k
-        else:
-            return x
+        return sensitivity.sensitivity(self.outputs, self.k, norm=norm)
 
     def canalizing_map(self, output=None):
         """Computes the node Canalizing Map (CM).
@@ -769,7 +827,7 @@ class BooleanNode(object):
         if "prime_implicants" in kwargs:
             if self._prime_implicants is None:
                 self._prime_implicants = dict()
-                for output in set(self.outputs):
+                for output in sorted(set(self.outputs)):
                     output_binstates = outputs_to_binstates_of_given_type(
                         self.outputs, output=output, k=self.k
                     )
