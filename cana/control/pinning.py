@@ -75,7 +75,64 @@ def pinning_control_driver_nodes(
         num2bin,
         pinning_controlled_state_transition_graph
 ):
+    """Find minimum-size driver sets that achieve pinning control.
 
+    A driver set ``D`` achieves *pinning control* if for every
+    attractor ``A`` of this Boolean network, pinning the nodes in
+    ``D`` to ``A``'s projection drives every initial configuration
+    to ``A``. Operationally, this requires the pinning-controlled
+    STG (``pcstg``) for each attractor to have exactly one
+    attracting strongly-connected component, and that SCC must
+    equal the target attractor's state set.
+
+    The search starts at the information-theoretic lower bound
+    ``ceil(log2(N_attractors))`` (you need that many bits to
+    distinguish the attractors at all) and increments until at
+    least one valid driver set is found. All minimum-size valid
+    sets are returned. A two-stage filter is used:
+
+    1. *Necessary-condition pre-filter*
+        (:func:`_signatures_distinguish_attractors`): cheap
+        combinatorial check that the candidate's signatures
+        distinguish all attractors. Skips the expensive pcstg build
+        for obviously-invalid candidates.
+    2. *Sufficiency check*: build pcstg per attractor; require
+        ``attracting_components(pcstg) == [set(att)]`` (a single
+        attracting SCC, equal to the target). The weaker
+        ``WCC == 1`` check used in earlier revisions only verifies
+        that the pcstg is connected — it does not verify that the
+        pcstg's unique attractor equals the intended target. For a
+        deterministic pcstg (fixed-point pinning) the pcstg always
+        has exactly one attracting SCC per WCC, but that SCC may
+        be some other state if the pin pattern happens to drive
+        the unpinned dynamics to a different attractor. The
+        Thaliana network exposed this in 2026; see test
+        ``test_thaliana_size5_false_positive_rejected_by_strict_check``.
+
+    This is the discrete/Boolean analog of FVS-based open-loop
+    control proved for ODE systems in Mochizuki & Fiedler 2013
+    ("Dynamics and Control at Feedback Vertex Sets II", JTB §7);
+    the Boolean version is supported by stable-motif theory
+    (Zañudo & Albert). FVS provides an upper bound on the driver-
+    set size; the search here may find smaller sets when the
+    discrete dynamics permit, since the FVS theorem requires a
+    guarantee for *all* nonlinearities while a specific Boolean
+    network may admit a smaller set.
+
+    Returns:
+        list of tuple: minimum-size driver sets (as tuples of node
+        indices) that achieve pinning control. For a single-
+        attractor network, returns ``[()]`` (the empty driver set).
+        If no set up to size ``Nnodes - 1`` works (degenerate
+        networks), returns ``[tuple(range(Nnodes))]`` as the
+        trivial fallback.
+
+    See also:
+        :func:`pinning_controlled_state_transition_graph`,
+        :func:`fraction_pinned_configurations`,
+        :func:`feedback_vertex_set_driver_nodes`,
+        :func:`_signatures_distinguish_attractors`.
+    """
     if len(attractors) == 1:
         return [()]
     
@@ -134,7 +191,20 @@ def pinning_controlled_state_transition_graph(
         bin2num,
         pinned_step,
 ):
+    """Returns a dictionary of Controlled State-Transition-Graph (CSTG)
+    under the assumptions of pinning controllability.
 
+    In practice, it copies the original STG, flips driver nodes (variables), and updates the CSTG.
+
+    Args:
+        driver_nodes (list) : The list of driver nodes.
+
+    Returns:
+        (networkx.DiGraph) : The Pinning Controlled State-Transition-Graph.
+
+    See also:
+        :func:`controlled_state_transition_graph`, :func:`attractor_driver_nodes`, :func:`controlled_attractor_graph`.
+    """
     uncontrolled_system_size = Nnodes - len(driver_nodes)
 
     pcstg_dict = {}
@@ -219,7 +289,32 @@ def pinned_step(
         logic,
         nodes
 ):
-    """Advance the network one Boolean step under pinning control."""
+    """Advance the network one Boolean step under pinning control.
+    
+    Pinned variables are read as inputs to the node update
+    functions from ``initial`` (so the unpinned variables see the
+    *source* pin pattern when computing their next values), and
+    written as ``pinned_binstate`` in the output (the *destination*
+    pin pattern). For fixed-point pinning ``pinned_binstate`` is
+    the same pattern at every step; for limit-cycle pinning it
+    rotates one cycle position ahead of the source pin.
+
+    Args:
+        initial (str) : the source binary state of length ``Nnodes``.
+        pinned_binstate (str) : destination values for the pinned
+            positions; must satisfy
+            ``len(pinned_binstate) == len(pinned_var)``.
+        pinned_var (list of int) : indices of the pinned variables.
+
+    Returns:
+        (str) : the next binary state, with pinned positions equal
+            to ``pinned_binstate`` and unpinned positions equal to
+            one Boolean step from ``initial`` (using the values in
+            ``initial`` — including the source pin — as inputs).
+
+    See also:
+        :func:`pinning_controlled_state_transition_graph`.
+    """
     if len(initial) != Nnodes:
         raise ValueError(
             "initial state length must equal Nnodes: "
