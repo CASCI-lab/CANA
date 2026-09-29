@@ -385,7 +385,7 @@ def test_thaliana_size5_false_positive_rejected_by_strict_check():
 def test_signatures_distinguish_attractors_handles_fixed_point():
     """Two fixed points with distinct signatures on the candidate
     nodes pass the necessary-condition test."""
-    from cana.boolean_network import _signatures_distinguish_attractors
+    from cana.control.pinning import _signatures_distinguish_attractors
 
     # bin_attractors[i] is a list of binary state strings for attractor i.
     fp1 = ["000"]
@@ -399,7 +399,7 @@ def test_signatures_distinguish_attractors_handles_fixed_point():
 def test_signatures_distinguish_attractors_collision_fixed_point():
     """Two fixed points sharing a signature on the candidate nodes
     cannot be distinguished by pinning."""
-    from cana.boolean_network import _signatures_distinguish_attractors
+    from cana.control.pinning import _signatures_distinguish_attractors
 
     # Both attractors agree on bit 1 (B=0).
     fp1 = ["000"]
@@ -416,7 +416,7 @@ def test_signatures_distinguish_attractors_cycle_pin_constant():
     constant=0 throughout. On candidate ``[C]`` both attractors have
     signature ``("0",)`` — collision.
     """
-    from cana.boolean_network import _signatures_distinguish_attractors
+    from cana.control.pinning import _signatures_distinguish_attractors
 
     fp = ["000"]
     cycle_pin_constant = ["010", "100"]
@@ -432,7 +432,7 @@ def test_signatures_distinguish_attractors_cycle_pin_flips():
     one state and A=1 in the other. On candidate ``[A]`` the cycle's
     per-state signature ``("0",)`` collides with the fixed point's.
     """
-    from cana.boolean_network import _signatures_distinguish_attractors
+    from cana.control.pinning import _signatures_distinguish_attractors
 
     fp = ["010"]
     cycle_pin_flips = ["010", "100"]
