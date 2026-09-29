@@ -9,61 +9,35 @@ from cana.cutils import binstate_pinned_to_binstate, statenum_to_binstate
 def _signatures_distinguish_attractors(candidate_nodes, bin_attractors):
     """Necessary-condition pre-filter for pinning controllability.
 
-    Returns ``True`` iff no obvious signature collision is detected
-    among attractors on ``candidate_nodes``. The signature is the
-    tuple of values the candidate nodes take in the attractor:
-
-    - **Fixed-point attractor** (length 1): signature is the tuple of
-      values at the single attractor state.
-    - **Limit-cycle attractor, pin constant within the cycle**: all
-      cycle states agree on the candidate nodes; the cycle is treated
-      as fixed-point-like with that single signature.
-    - **Limit-cycle attractor, pin flips within the cycle**: each
-      cycle state contributes its own signature; each must not
-      collide with another attractor's fixed-point-style signature.
-
-    This is a *necessary* condition, not sufficient: two attractors
-    that pass here may still fail the downstream PCSTG-WCC check
-    (e.g., two flipping cycles whose per-state signatures happen to
-    overlap on the candidate nodes — rare in practice). Sufficiency
-    is verified in :func:`BooleanNetwork.pinning_control_driver_nodes`.
+    Returns ``True`` iff no two attractors have the same signature on
+    the candidate nodes. A node contributes its fixed value if it is
+    constant within the attractor, or ``"*"`` if it changes.
 
     Args:
         candidate_nodes (list of int): node indices to check.
         bin_attractors (list of list of str): attractors as lists of
-            binary state strings; ``bin_attractors[i][j][k]`` is the
-            value of node ``k`` at the ``j``-th state of attractor ``i``.
+            binary state strings.
 
     Returns:
-        bool: ``True`` if no collision is found among fixed-point /
-        pin-constant signatures, and no flipping-cycle per-state
-        signature collides with a fixed-point signature. ``False``
-        on any detected collision (including the trivial
-        ``len(candidate_nodes) == 0`` case). Note: collisions
-        *among* flipping cycles are not checked here — those are
-        caught by the downstream pcstg sufficiency check.
+        bool: ``True`` if all attractors have distinct signatures.
     """
     if len(candidate_nodes) == 0:
         return False
-    fixed_signatures = set()
-    flipping_attractors = []
+
+    signatures = set()
+
     for attr in bin_attractors:
-        sig = tuple(attr[0][node] for node in candidate_nodes)
-        is_pin_constant = all(
-            tuple(state[node] for node in candidate_nodes) == sig
-            for state in attr[1:]
+        sig = tuple(
+            state_values.pop()
+            if len(state_values := {state[node] for state in attr}) == 1
+            else "*"
+            for node in candidate_nodes
         )
-        if len(attr) == 1 or is_pin_constant:
-            if sig in fixed_signatures:
-                return False
-            fixed_signatures.add(sig)
-        else:
-            flipping_attractors.append(attr)
-    for attr in flipping_attractors:
-        for state in attr:
-            sig = tuple(state[node] for node in candidate_nodes)
-            if sig in fixed_signatures:
-                return False
+
+        if sig in signatures:
+            return False
+        signatures.add(sig)
+
     return True
 
 

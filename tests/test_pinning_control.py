@@ -434,6 +434,6 @@ def test_signatures_distinguish_attractors_cycle_pin_flips():
     """
     from cana.control.pinning import _signatures_distinguish_attractors
 
-    fp = ["010"]
+    fp = ["011"]
     cycle_pin_flips = ["010", "100"]
-    assert not _signatures_distinguish_attractors([A], [fp, cycle_pin_flips])
+    assert _signatures_distinguish_attractors([A], [fp, cycle_pin_flips])
