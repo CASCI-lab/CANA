@@ -363,7 +363,6 @@ def fraction_pinned_attractors(pcstg_dict):
     reached_attractors = []
     for att, pcstg in pcstg_dict.items():
         pinned_att = list(nx.attracting_components(pcstg))
-        print(set(att), pinned_att)
         reached_attractors.append(set(att) in pinned_att)
     return sum(reached_attractors) / float(len(pcstg_dict))
 
