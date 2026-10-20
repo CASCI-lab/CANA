@@ -582,114 +582,239 @@ def lut_from_canalizing_map(
 # ---------------------------------------------------------------------------
 # Hand-built CM helpers (useful for tests and notebooks)
 # ---------------------------------------------------------------------------
+#
+# Construction is label-driven on a plain ``nx.DiGraph``.  Bookkeeping lives
+# in ``G.graph``; callers never assign ``var_id``, ``tid``, or edge types.
 
 
-def make_input_node(
-    G: nx.DiGraph, var_id: int, value: int, label: Optional[str] = None
-) -> str:
-    """Add (or reuse) an input variable node on a CM graph.
+def _ensure_registry(G: nx.DiGraph) -> None:
+    """Initialize CM construction bookkeeping on ``G.graph`` if needed."""
+    g = G.graph
+    g.setdefault("input_labels", [])
+    g.setdefault("input_ids", {})
+    g.setdefault("output_label", None)
+    g.setdefault("output_id", None)
+    g.setdefault("next_var_id", 0)
+    g.setdefault("next_tid", 0)
+    g.setdefault("next_fus", 0)
+
+
+def _alloc_var_id(G: nx.DiGraph) -> int:
+    """Allocate the next shared variable id (inputs and output)."""
+    _ensure_registry(G)
+    vid = int(G.graph["next_var_id"])
+    G.graph["next_var_id"] = vid + 1
+    return vid
+
+
+def _input_id_for(G: nx.DiGraph, label: str) -> int:
+    """Return the numeric id for an input label, allocating if new."""
+    _ensure_registry(G)
+    ids = G.graph["input_ids"]
+    if label not in ids:
+        vid = _alloc_var_id(G)
+        ids[label] = vid
+        G.graph["input_labels"].append(label)
+    return int(ids[label])
+
+
+def input_ids_in_order(G: nx.DiGraph) -> List[int]:
+    """Return input variable ids in first-seen label order.
+
+    Suitable as ``input_order`` for :func:`lut_from_canalizing_map`.
+    """
+    _ensure_registry(G)
+    ids = G.graph["input_ids"]
+    return [int(ids[lab]) for lab in G.graph["input_labels"]]
+
+
+def _validate_bit(value: int, name: str = "value") -> int:
+    """Coerce and validate a 0/1 polarity."""
+    v = int(value)
+    if v not in (0, 1):
+        raise ValueError("{} must be 0 or 1, got {!r}".format(name, value))
+    return v
+
+
+def _node_kind(G: nx.DiGraph, node_id: Any) -> str:
+    """Return a construction kind: ``input``, ``output``, ``threshold``, ``fusion``."""
+    if node_id not in G:
+        raise ValueError("Unknown node {!r}".format(node_id))
+    data = G.nodes[node_id]
+    ntype = data.get("type")
+    if ntype == "variable":
+        mode = data.get("mode")
+        if mode == "input":
+            return "input"
+        if mode == "output":
+            return "output"
+        raise ValueError(
+            "Variable node {!r} has unknown mode {!r}".format(node_id, mode)
+        )
+    if ntype in ("threshold", "fusion"):
+        return ntype
+    raise ValueError(
+        "Unsupported node type {!r} on {!r}".format(ntype, node_id)
+    )
+
+
+_CONNECT_EDGE_TYPES = {
+    ("input", "threshold"): "literal",
+    ("input", "fusion"): "fusing",
+    ("fusion", "threshold"): "fused",
+    ("threshold", "output"): "out",
+    ("threshold", "threshold"): "feed",
+}
+
+
+def connect(G: nx.DiGraph, src: Any, dst: Any) -> None:
+    """Add an edge, inferring ``type`` from endpoint node kinds.
+
+    Does not mutate threshold attributes (no ``out`` stamping).
+
+    Parameters
+    ----------
+    G : networkx.DiGraph
+        CM graph.
+    src, dst : hashable
+        Existing node ids.
+
+    Raises
+    ------
+    ValueError
+        If the ``(src_kind, dst_kind)`` pair is not allowed.
+    """
+    sk = _node_kind(G, src)
+    dk = _node_kind(G, dst)
+    etype = _CONNECT_EDGE_TYPES.get((sk, dk))
+    if etype is None:
+        raise ValueError(
+            "Cannot connect {} ({}) → {} ({})".format(src, sk, dst, dk)
+        )
+    G.add_edge(src, dst, type=etype)
+
+
+def make_input_node(G: nx.DiGraph, label: str, value: int) -> str:
+    """Add an input variable node; ``label`` determines the shared ``var_id``.
 
     Parameters
     ----------
     G : networkx.DiGraph
         Graph to mutate.
-    var_id : int
-        Numeric input identifier used in the node name.
+    label : str
+        Input name.  New labels get a fresh id; existing labels reuse theirs.
     value : int
-        Polarity of this variable node (``0`` or ``1``).
-    label : str, optional
-        Display label.  Defaults to ``str(var_id)``.
+        Polarity (``0`` or ``1``).
 
     Returns
     -------
     str
-        Node name ``var-{var_id}-out-{value}``.
+        Node name ``var-{id}-out-{value}``.
+
+    Raises
+    ------
+    ValueError
+        If this ``(label, value)`` pair already exists, or ``value`` is not 0/1.
     """
+    value = _validate_bit(value)
+    var_id = _input_id_for(G, label)
     name = "var-{nid:d}-out-{out:d}".format(nid=var_id, out=value)
-    if name not in G:
-        G.add_node(
-            name,
-            label=label if label is not None else str(var_id),
-            type="variable",
-            mode="input",
-            value=value,
-            group=0,
+    if name in G:
+        raise ValueError(
+            "Input {!r} with value {} already exists as {!r}".format(
+                label, value, name
+            )
         )
+    G.add_node(
+        name,
+        label=label,
+        type="variable",
+        mode="input",
+        value=value,
+        group=0,
+    )
     return name
 
 
-def make_output_node(
-    G: nx.DiGraph, node_id: int, value: int, label: str = "x"
-) -> str:
-    """Add (or reuse) an output variable node on a CM graph.
+def make_output_node(G: nx.DiGraph, label: str, value: int) -> str:
+    """Add an output variable node for the CM's single function label.
 
     Parameters
     ----------
     G : networkx.DiGraph
         Graph to mutate.
-    node_id : int
-        Numeric id of the function/node whose output this is.
+    label : str
+        Function / output name.  Both polarities share one allocated id.
     value : int
         Output polarity (``0`` or ``1``).
-    label : str, optional
-        Display label.  Default is ``'x'``.
 
     Returns
     -------
     str
-        Node name ``var-{node_id}-out-{value}``.
+        Node name ``var-{output_id}-out-{value}``.
+
+    Raises
+    ------
+    ValueError
+        If a different output label is already registered, if this polarity
+        already exists, or if ``value`` is not 0/1.
     """
-    name = "var-{nid:d}-out-{out:d}".format(nid=node_id, out=value)
-    if name not in G:
-        G.add_node(
-            name,
-            label=label,
-            type="variable",
-            mode="output",
-            value=value,
-            constant=False,
-            group=node_id,
+    value = _validate_bit(value)
+    _ensure_registry(G)
+    existing = G.graph["output_label"]
+    if existing is None:
+        G.graph["output_label"] = label
+        G.graph["output_id"] = _alloc_var_id(G)
+    elif existing != label:
+        raise ValueError(
+            "Graph already has output label {!r}; cannot add {!r}".format(
+                existing, label
+            )
         )
+    node_id = int(G.graph["output_id"])
+    name = "var-{nid:d}-out-{out:d}".format(nid=node_id, out=value)
+    if name in G:
+        raise ValueError(
+            "Output {!r} with value {} already exists as {!r}".format(
+                label, value, name
+            )
+        )
+    G.add_node(
+        name,
+        label=label,
+        type="variable",
+        mode="output",
+        value=value,
+        constant=False,
+        group=node_id,
+    )
     return name
 
 
 def make_threshold(
     G: nx.DiGraph,
-    tid: int,
-    node_id: int,
-    out: int,
     tau: int,
     role: str = ROLE_SCHEMA,
 ) -> str:
-    """Add a threshold (t-unit) node on a CM graph.
+    """Add a threshold (t-unit) node; ``tid`` is assigned automatically.
+
+    Thresholds do **not** store an ``out`` polarity — claims come only from
+    edges into output variables, so build order does not matter.
 
     Parameters
     ----------
     G : networkx.DiGraph
         Graph to mutate.
-    tid : int
-        Threshold index (unique per CM among t-units).
-    node_id : int
-        Owning function/node id (used in naming / ``group``).
-    out : int
-        Output polarity this t-unit is associated with (``0`` or ``1``).
-        Used in naming; nested units may share the parent schema's polarity.
     tau : int
         Firing threshold.
     role : str, optional
         Canalization-layer annotation (does not affect evaluation).  One of
-        :data:`THRESHOLD_ROLES`:
-
-        - ``'schema'`` — two-symbol schema (typically feeds an output)
-        - ``'symmetry'`` — permutation-symmetry aggregate
-        - ``'polarity0'`` / ``'polarity1'`` — polarity fibres within a symmetry
-
-        Default is ``'schema'``.
+        :data:`THRESHOLD_ROLES`.  Default is ``'schema'``.
 
     Returns
     -------
     str
-        Node name ``thr-{tid}-var-{node_id}-out-{out}``.
+        Node name ``thr-{tid}``.
 
     Raises
     ------
@@ -702,45 +827,44 @@ def make_threshold(
                 role, sorted(THRESHOLD_ROLES)
             )
         )
-    name = "thr-{tid:d}-var-{nid:d}-out-{out:d}".format(
-        tid=tid, nid=node_id, out=out
-    )
+    _ensure_registry(G)
+    tid = int(G.graph["next_tid"])
+    G.graph["next_tid"] = tid + 1
+    out_id = G.graph["output_id"]
+    group = int(out_id) if out_id is not None else 0
+    name = "thr-{tid:d}".format(tid=tid)
     G.add_node(
         name,
-        label=str(tau),
+        label=str(int(tau)),
         type="threshold",
-        tau=tau,
+        tau=int(tau),
         role=role,
-        group=node_id,
+        group=group,
     )
     return name
 
 
-def make_fusion(
-    G: nx.DiGraph, fus: int, tid: int, node_id: int, out: int
-) -> str:
-    """Add a fusion junction node on a CM graph.
+def make_fusion(G: nx.DiGraph) -> str:
+    """Add a fusion junction node; index is assigned automatically.
+
+    Fusion is legacy OR sugar (equivalent to a ``tau=1`` threshold over
+    inputs).  Prefer nested thresholds for new maps.
 
     Parameters
     ----------
     G : networkx.DiGraph
         Graph to mutate.
-    fus : int
-        Fusion index within the t-unit.
-    tid : int
-        Parent threshold index.
-    node_id : int
-        Owning function/node id.
-    out : int
-        Naming polarity tag (matches CANA CM naming).
 
     Returns
     -------
     str
-        Node name ``fus-{fus}-thr-{tid}-var-{node_id}-out-{out}``.
+        Node name ``fus-{index}``.
     """
-    name = "fus-{fus:d}-thr-{thr:d}-var-{nid:d}-out-{out:d}".format(
-        fus=fus, thr=tid, nid=node_id, out=out
-    )
-    G.add_node(name, type="fusion", group=node_id)
+    _ensure_registry(G)
+    fus = int(G.graph["next_fus"])
+    G.graph["next_fus"] = fus + 1
+    out_id = G.graph["output_id"]
+    group = int(out_id) if out_id is not None else 0
+    name = "fus-{fus:d}".format(fus=fus)
+    G.add_node(name, type="fusion", group=group)
     return name

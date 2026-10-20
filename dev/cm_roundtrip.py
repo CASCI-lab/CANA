@@ -30,6 +30,8 @@ from cm_lut import (
     ROLE_POLARITY1,
     ROLE_SCHEMA,
     ROLE_SYMMETRY,
+    connect,
+    input_ids_in_order,
     lut_from_canalizing_map,
     make_fusion,
     make_input_node,
@@ -147,50 +149,37 @@ assert exact is False, "Expected CTNNB1 roundtrip to fail while canalizing_map i
 # interpreter itself is sound when the graph is right.
 
 # %%
-# OR of two inputs: same structure as hand_and but swapped polarities
-# out=0: both literals at 0, tau=2
-# out=1: fusion OR of both at 1, tau=1
+# Label-driven helpers: ids / tids / edge types are assigned automatically.
 
 G = nx.DiGraph(name="real_CTNNB1")
-# inputs 0=WNT4, 1=RSPO1; node id 99 = fragment output
-out0 = make_output_node(G, node_id=99, value=0, label="CTNNB1")
-out1 = make_output_node(G, node_id=99, value=1, label="CTNNB1")
+out0 = make_output_node(G, "CTNNB1", 0)
+out1 = make_output_node(G, "CTNNB1", 1)
 
-thr0 = make_threshold(G, tid=0, node_id=99, out=0, tau=1)
-thr1 = make_threshold(G, tid=1, node_id=99, out=0, tau=2)
-thr2 = make_threshold(G, tid=2, node_id=99, out=0, tau=2)
-G.add_edge(thr0, out0, type="out")
-G.add_edge(thr1, out0, type="out")
-G.add_edge(thr2, out0, type="out")
-s1 = make_input_node(G, var_id=0, value=1, label="SRY")
-w0 = make_input_node(G, var_id=1, value=0, label="WNT4")
-r0 = make_input_node(G, var_id=2, value=0, label="RSPO1")
-a1 = make_input_node(G, var_id=3, value=1, label="AMH")
-so1 = make_input_node(G, var_id=4, value=1, label="SOX9")
-G.add_edge(s1, thr0, type="literal")
-G.add_edge(w0, thr1, type="literal")
-G.add_edge(r0, thr1, type="literal")
-G.add_edge(a1, thr2, type="literal")
-G.add_edge(so1, thr2, type="literal")
+thr0 = make_threshold(G, tau=1)
+thr1 = make_threshold(G, tau=2)
+thr2 = make_threshold(G, tau=2)
+connect(G, thr0, out0)
+connect(G, thr1, out0)
+connect(G, thr2, out0)
+connect(G, make_input_node(G, "SRY", 1), thr0)
+connect(G, make_input_node(G, "WNT4", 0), thr1)
+connect(G, make_input_node(G, "RSPO1", 0), thr1)
+connect(G, make_input_node(G, "AMH", 1), thr2)
+connect(G, make_input_node(G, "SOX9", 1), thr2)
 
-thr3 = make_threshold(G, tid=3, node_id=99, out=1, tau=3)
-G.add_edge(thr3, out1, type="out")
-fus0 = make_fusion(G, fus=0, tid=3, node_id=99, out=1)
-fus1 = make_fusion(G, fus=1, tid=3, node_id=99, out=1)
-G.add_edge(fus0, thr3, type="fused")
-G.add_edge(fus1, thr3, type="fused")
-s0 = make_input_node(G, var_id=0, value=0, label="SRY")
-w1 = make_input_node(G, var_id=1, value=1, label="WNT4")
-r1 = make_input_node(G, var_id=2, value=1, label="RSPO1")
-a0 = make_input_node(G, var_id=3, value=0, label="AMH")
-so0 = make_input_node(G, var_id=4, value=0, label="SOX9")
-G.add_edge(s0, thr3, type="literal")
-G.add_edge(w1, fus0, type="fusing")
-G.add_edge(r1, fus0, type="fusing")
-G.add_edge(a0, fus1, type="fusing")
-G.add_edge(so0, fus1, type="fusing")
+thr3 = make_threshold(G, tau=3)
+connect(G, thr3, out1)
+fus0 = make_fusion(G)
+fus1 = make_fusion(G)
+connect(G, fus0, thr3)
+connect(G, fus1, thr3)
+connect(G, make_input_node(G, "SRY", 0), thr3)
+connect(G, make_input_node(G, "WNT4", 1), fus0)
+connect(G, make_input_node(G, "RSPO1", 1), fus0)
+connect(G, make_input_node(G, "AMH", 0), fus1)
+connect(G, make_input_node(G, "SOX9", 0), fus1)
 
-hand_result = lut_from_canalizing_map(G, input_order=[0, 1, 2, 3, 4])
+hand_result = lut_from_canalizing_map(G, input_order=input_ids_in_order(G))
 summarize_roundtrip("Hand-correct CTNNB1", "00001110111011100000000000000000", hand_result)
 assert hand_result.outputs == [int(bit) for bit in "00001110111011100000000000000000"]
 assert not hand_result.has_conflict and not hand_result.is_incomplete
@@ -198,72 +187,45 @@ assert not hand_result.has_conflict and not hand_result.is_incomplete
 # %% [markdown]
 # ## Case 4 — Canonical nested-threshold CM
 #
-# Same CTNNB1 function, but schemata / symmetries / polarity groups are
-# nested threshold nodes (annotated via ``role``).  Edge labels are optional;
-# evaluation uses topology only.
+# Same CTNNB1 function with nested schema / symmetry / polarity thresholds.
+# Build order is free; thresholds do not store an ``out`` attribute.
 
 # %%
 G = nx.DiGraph(name="canonical_CTNNB1")
-out0 = make_output_node(G, node_id=99, value=0, label="CTNNB1")
-out1 = make_output_node(G, node_id=99, value=1, label="CTNNB1")
+out0 = make_output_node(G, "CTNNB1", 0)
+out1 = make_output_node(G, "CTNNB1", 1)
 
 # out=0: three independent two-symbol schemata
-out0_two0 = make_threshold(
-    G, tid=0, node_id=99, out=0, tau=1, role=ROLE_SCHEMA
-)
-out0_two1 = make_threshold(
-    G, tid=1, node_id=99, out=0, tau=2, role=ROLE_SCHEMA
-)
-out0_two2 = make_threshold(
-    G, tid=2, node_id=99, out=0, tau=2, role=ROLE_SCHEMA
-)
-G.add_edge(out0_two0, out0)
-G.add_edge(out0_two1, out0)
-G.add_edge(out0_two2, out0)
-s1 = make_input_node(G, var_id=0, value=1, label="SRY")
-w0 = make_input_node(G, var_id=1, value=0, label="WNT4")
-r0 = make_input_node(G, var_id=2, value=0, label="RSPO1")
-a1 = make_input_node(G, var_id=3, value=1, label="AMH")
-so1 = make_input_node(G, var_id=4, value=1, label="SOX9")
-G.add_edge(s1, out0_two0)
-G.add_edge(w0, out0_two1)
-G.add_edge(r0, out0_two1)
-G.add_edge(a1, out0_two2)
-G.add_edge(so1, out0_two2)
+out0_two0 = make_threshold(G, tau=1, role=ROLE_SCHEMA)
+out0_two1 = make_threshold(G, tau=2, role=ROLE_SCHEMA)
+out0_two2 = make_threshold(G, tau=2, role=ROLE_SCHEMA)
+connect(G, out0_two0, out0)
+connect(G, out0_two1, out0)
+connect(G, out0_two2, out0)
+connect(G, make_input_node(G, "SRY", 1), out0_two0)
+connect(G, make_input_node(G, "WNT4", 0), out0_two1)
+connect(G, make_input_node(G, "RSPO1", 0), out0_two1)
+connect(G, make_input_node(G, "AMH", 1), out0_two2)
+connect(G, make_input_node(G, "SOX9", 1), out0_two2)
 
-# out=1: one schema over SRY literal + two symmetry fibres
-out1_two0 = make_threshold(
-    G, tid=3, node_id=99, out=1, tau=3, role=ROLE_SCHEMA
-)
-G.add_edge(out1_two0, out1)
-out1_two0_sym0 = make_threshold(
-    G, tid=4, node_id=99, out=1, tau=1, role=ROLE_SYMMETRY
-)
-out1_two0_sym1 = make_threshold(
-    G, tid=5, node_id=99, out=1, tau=1, role=ROLE_SYMMETRY
-)
-G.add_edge(out1_two0_sym0, out1_two0)
-G.add_edge(out1_two0_sym1, out1_two0)
-out1_two0_sym0_g1 = make_threshold(
-    G, tid=6, node_id=99, out=1, tau=1, role=ROLE_POLARITY1
-)
-out1_two0_sym1_g0 = make_threshold(
-    G, tid=7, node_id=99, out=1, tau=1, role=ROLE_POLARITY0
-)
-G.add_edge(out1_two0_sym0_g1, out1_two0_sym0)
-G.add_edge(out1_two0_sym1_g0, out1_two0_sym1)
-s0 = make_input_node(G, var_id=0, value=0, label="SRY")
-w1 = make_input_node(G, var_id=1, value=1, label="WNT4")
-r1 = make_input_node(G, var_id=2, value=1, label="RSPO1")
-a0 = make_input_node(G, var_id=3, value=0, label="AMH")
-so0 = make_input_node(G, var_id=4, value=0, label="SOX9")
-G.add_edge(s0, out1_two0)
-G.add_edge(w1, out1_two0_sym0_g1)
-G.add_edge(r1, out1_two0_sym0_g1)
-G.add_edge(a0, out1_two0_sym1_g0)
-G.add_edge(so0, out1_two0_sym1_g0)
+# out=1: schema over SRY literal + two symmetry fibres (leaf-first ok)
+out1_two0 = make_threshold(G, tau=3, role=ROLE_SCHEMA)
+connect(G, out1_two0, out1)
+out1_two0_sym0 = make_threshold(G, tau=1, role=ROLE_SYMMETRY)
+out1_two0_sym1 = make_threshold(G, tau=1, role=ROLE_SYMMETRY)
+connect(G, out1_two0_sym0, out1_two0)
+connect(G, out1_two0_sym1, out1_two0)
+out1_two0_sym0_g1 = make_threshold(G, tau=1, role=ROLE_POLARITY1)
+out1_two0_sym1_g0 = make_threshold(G, tau=1, role=ROLE_POLARITY0)
+connect(G, out1_two0_sym0_g1, out1_two0_sym0)
+connect(G, out1_two0_sym1_g0, out1_two0_sym1)
+connect(G, make_input_node(G, "SRY", 0), out1_two0)
+connect(G, make_input_node(G, "WNT4", 1), out1_two0_sym0_g1)
+connect(G, make_input_node(G, "RSPO1", 1), out1_two0_sym0_g1)
+connect(G, make_input_node(G, "AMH", 0), out1_two0_sym1_g0)
+connect(G, make_input_node(G, "SOX9", 0), out1_two0_sym1_g0)
 
-canon_result = lut_from_canalizing_map(G, input_order=[0, 1, 2, 3, 4])
+canon_result = lut_from_canalizing_map(G, input_order=input_ids_in_order(G))
 summarize_roundtrip("Canonical CTNNB1", "00001110111011100000000000000000", canon_result)
 assert canon_result.outputs == [int(bit) for bit in "00001110111011100000000000000000"]
 assert not canon_result.has_conflict and not canon_result.is_incomplete
@@ -271,11 +233,9 @@ assert not canon_result.has_conflict and not canon_result.is_incomplete
 # %% [markdown]
 # ## Takeaway
 #
-# * `lut_from_canalizing_map` evaluates nodes modularly from topology:
-#   threshold score = # active predecessors, fire iff score >= tau;
-#   fusion / nested tau=1 layers act as OR; outputs claim when any
-#   predecessor is active.  Edge types are ignored.
-# * Threshold ``role`` annotates schema / symmetry / group0 / group1 layers.
-# * Conflict / incompleteness are reported per input state.
+# * Construction helpers are label-driven: ``connect`` infers edge types;
+#   ``tid`` / input ids are automatic; thresholds do not store ``out``.
+# * `lut_from_canalizing_map` evaluates nodes modularly from topology.
+# * Threshold ``role`` annotates schema / symmetry / polarity0 / polarity1.
 # * Roundtrip still fails for CTNNB1 via the **forward** `canalizing_map`
 #   builder; hand-built fusion and nested-threshold CMs both reconstruct.
