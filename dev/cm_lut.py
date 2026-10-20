@@ -2,47 +2,45 @@
 """
 Reconstruct a look-up table (LUT) from a Canalizing Map (CM) graph.
 
-This module interprets a CM strictly as a ``networkx.DiGraph`` with the
-node/edge types produced by ``BooleanNode.canalizing_map``.  It does not
-call canalization / two-symbol code.
+This module interprets a CM as a ``networkx.DiGraph`` of typed nodes.
+Evaluation is **modular and topology-based**: each node activates from its
+predecessors according to its node kind.  Edge ``type`` attributes (if
+present) are ignored for scoring — they may still be used for drawing or
+legacy CANA compatibility.
 
 Notes
 -----
-A CM encodes each schema as a McCulloch–Pitts-style *t-unit*.
+A CM encodes schemata as McCulloch–Pitts-style *threshold* units, optionally
+nested to express two-symbol / permutation structure.
 
 **Node kinds**
 
-- ``variable`` + ``mode=input`` : an input at a fixed polarity (``value`` 0/1).
-- ``variable`` + ``mode=output`` : the claimed output polarity.
-- ``threshold`` : the t-unit itself; attribute ``tau`` is the firing threshold.
-- ``fusion`` : active iff **any** of its fusing parents is active (OR).
+- ``variable`` + ``mode=input`` : active iff the assignment matches ``value``.
+- ``variable`` + ``mode=output`` : claims its polarity if any predecessor is
+  active.
+- ``threshold`` : active iff ``(# active predecessors) >= tau``.
+  Optional annotation ``role`` (see :data:`THRESHOLD_ROLES`) describes the
+  canalization layer; it does not change evaluation.
+- ``fusion`` : active iff **any** predecessor is active (logical OR).
+  Equivalent to a threshold with ``tau=1``; kept for legacy / drawing.
 
-**Edge kinds**
-
-- ``literal`` : input-var → t-unit; contributes 1 when that input equals its
-  ``value``.
-- ``fusing`` : input-var → fusion.
-- ``fused`` : fusion → t-unit; contributes 1 when the fusion is active.
-- ``out`` : t-unit → output-var; if the t-unit fires, claim that output.
-
-**Firing rule**
+**Firing / claim rule**
 
 .. code-block:: text
 
-    score = (# active literal parents) + (# active fusion parents)
-    fire  <=>  score >= tau
+    score(thr) = # active predecessors
+    fire       <=>  score >= tau
+    claim(out) <=>  any predecessor of the output variable is active
 
-**Per input assignment**, collect claimed outputs from all firing t-units:
+**Per input assignment**, collect claimed output polarities:
 
 - ``{0}`` or ``{1}`` → that LUT entry.
 - ``{0, 1}`` → **conflict** at that row.
 - ``{}`` → **uncovered** (incomplete).
 
 Inputs that never appear in the CM are free variables over the full ``2^k``
-table (they do not affect any t-unit).  Input order is taken from
-``input_order`` if given, otherwise from sorted input ids discovered in the
-graph (preferring numeric ids parsed from node names ``var-{id}-out-{val}``,
-falling back to labels).
+table.  Input order is taken from ``input_order`` if given, otherwise from
+sorted input ids discovered in the graph.
 """
 from __future__ import annotations
 
@@ -55,6 +53,27 @@ import networkx as nx
 
 # Node name pattern used by BooleanNode.canalizing_map
 _VAR_NODE_RE = re.compile(r"^var-(\d+)-out-([01])$")
+
+# ---------------------------------------------------------------------------
+# Threshold role annotations (documentation / drawing only)
+# ---------------------------------------------------------------------------
+
+ROLE_SCHEMA = "schema"
+"""Two-symbol schema unit (typically a root that feeds an output)."""
+
+ROLE_SYMMETRY = "symmetry"
+"""Permutation-symmetry aggregate over one or more polarity groups."""
+
+ROLE_POLARITY0 = "polarity0"
+"""0-polarity fibre within a permutation symmetry."""
+
+ROLE_POLARITY1 = "polarity1"
+"""1-polarity fibre within a permutation symmetry."""
+
+THRESHOLD_ROLES = frozenset(
+    {ROLE_SCHEMA, ROLE_SYMMETRY, ROLE_POLARITY0, ROLE_POLARITY1}
+)
+"""Allowed values for :func:`make_threshold`'s ``role`` argument."""
 
 
 @dataclass
@@ -265,13 +284,99 @@ def _assignment_activates_var(
     return int(assignment[key]) == value
 
 
+def node_active(
+    cm: nx.DiGraph,
+    node_id: Any,
+    assignment: Dict[Union[int, str], int],
+    memo: Optional[Dict[Any, Optional[bool]]] = None,
+) -> bool:
+    """Return whether a CM node is active under an assignment.
+
+    Activation is defined by node kind and predecessors only (edge types are
+    ignored):
+
+    - input variable: assignment matches ``value``
+    - output variable: any predecessor is active
+    - fusion: any predecessor is active
+    - threshold: number of active predecessors ``>= tau``
+
+    Parameters
+    ----------
+    cm : networkx.DiGraph
+        Canalizing map graph.
+    node_id : hashable
+        Node to evaluate.
+    assignment : dict
+        Mapping from input key to ``0`` or ``1``.
+    memo : dict, optional
+        Per-assignment cache.  Values are ``True``/``False`` when resolved,
+        or ``None`` while a node is on the recursion stack (cycle guard).
+
+    Returns
+    -------
+    bool
+        ``True`` if the node is active.
+
+    Raises
+    ------
+    ValueError
+        If evaluating ``node_id`` encounters a directed cycle, or if
+        ``node_id`` has an unknown ``type``.
+    """
+    if memo is None:
+        memo = {}
+    if node_id in memo:
+        cached = memo[node_id]
+        if cached is None:
+            raise ValueError(
+                "Cycle detected while evaluating CM node {!r}".format(node_id)
+            )
+        return cached
+
+    memo[node_id] = None  # in-progress marker
+    data = cm.nodes[node_id]
+    ntype = data.get("type")
+
+    if ntype == "variable":
+        mode = data.get("mode")
+        if mode == "input":
+            result = _assignment_activates_var(cm, node_id, assignment)
+        elif mode == "output":
+            result = any(
+                node_active(cm, pred, assignment, memo)
+                for pred in cm.predecessors(node_id)
+            )
+        else:
+            raise ValueError(
+                "Variable node {!r} has unknown mode {!r}".format(node_id, mode)
+            )
+    elif ntype == "fusion":
+        result = any(
+            node_active(cm, pred, assignment, memo)
+            for pred in cm.predecessors(node_id)
+        )
+    elif ntype == "threshold":
+        score = sum(
+            1
+            for pred in cm.predecessors(node_id)
+            if node_active(cm, pred, assignment, memo)
+        )
+        result = score >= int(data["tau"])
+    else:
+        raise ValueError(
+            "Unknown CM node type {!r} on node {!r}".format(ntype, node_id)
+        )
+
+    memo[node_id] = result
+    return result
+
+
 def fusion_active(
     cm: nx.DiGraph, fusion_id: Any, assignment: Dict[Union[int, str], int]
 ) -> bool:
     """Return whether a fusion node is active under an assignment.
 
-    A fusion is active iff **any** of its fusing parent variables is active
-    (logical OR).
+    A fusion is active iff **any** of its predecessors is active (logical OR).
 
     Parameters
     ----------
@@ -285,24 +390,26 @@ def fusion_active(
     Returns
     -------
     bool
-        ``True`` if at least one fusing parent is active.
+        ``True`` if at least one predecessor is active.
+
+    Raises
+    ------
+    ValueError
+        If ``fusion_id`` is not a fusion node.
     """
-    for pred in cm.predecessors(fusion_id):
-        edge = cm.edges[pred, fusion_id]
-        if edge.get("type") != "fusing":
-            continue
-        if _assignment_activates_var(cm, pred, assignment):
-            return True
-    return False
+    data = cm.nodes[fusion_id]
+    if data.get("type") != "fusion":
+        raise ValueError("Node {!r} is not a fusion".format(fusion_id))
+    return node_active(cm, fusion_id, assignment)
 
 
 def tunit_score(
     cm: nx.DiGraph, thr_id: Any, assignment: Dict[Union[int, str], int]
 ) -> int:
-    """Compute the score of a t-unit under an assignment.
+    """Compute the score of a threshold unit under an assignment.
 
-    The score is the number of active literal parents plus the number of
-    active fusion parents.
+    The score is the number of active predecessors (inputs, fusions, or nested
+    thresholds).
 
     Parameters
     ----------
@@ -317,24 +424,27 @@ def tunit_score(
     -------
     int
         Non-negative contribution count.
+
+    Raises
+    ------
+    ValueError
+        If ``thr_id`` is not a threshold node.
     """
-    score = 0
-    for pred in cm.predecessors(thr_id):
-        edge = cm.edges[pred, thr_id]
-        etype = edge.get("type")
-        if etype == "literal":
-            if _assignment_activates_var(cm, pred, assignment):
-                score += 1
-        elif etype == "fused":
-            if fusion_active(cm, pred, assignment):
-                score += 1
-    return score
+    data = cm.nodes[thr_id]
+    if data.get("type") != "threshold":
+        raise ValueError("Node {!r} is not a threshold t-unit".format(thr_id))
+    memo: Dict[Any, Optional[bool]] = {}
+    return sum(
+        1
+        for pred in cm.predecessors(thr_id)
+        if node_active(cm, pred, assignment, memo)
+    )
 
 
 def tunit_fires(
     cm: nx.DiGraph, thr_id: Any, assignment: Dict[Union[int, str], int]
 ) -> bool:
-    """Return whether a t-unit fires under an assignment.
+    """Return whether a threshold unit fires under an assignment.
 
     Fires when ``tunit_score(cm, thr_id, assignment) >= tau``.
 
@@ -360,14 +470,16 @@ def tunit_fires(
     data = cm.nodes[thr_id]
     if data.get("type") != "threshold":
         raise ValueError("Node {!r} is not a threshold t-unit".format(thr_id))
-    tau = int(data["tau"])
-    return tunit_score(cm, thr_id, assignment) >= tau
+    return node_active(cm, thr_id, assignment)
 
 
 def claimed_outputs(
     cm: nx.DiGraph, assignment: Dict[Union[int, str], int]
 ) -> Set[int]:
-    """Return output polarities claimed by firing t-units.
+    """Return output polarities claimed under an assignment.
+
+    An output variable claims its polarity when any of its predecessors is
+    active (typically a firing schema-level threshold).
 
     Parameters
     ----------
@@ -379,21 +491,18 @@ def claimed_outputs(
     Returns
     -------
     set of int
-        Subset of ``{0, 1}`` claimed via ``out`` edges from firing t-units.
-        Empty if nothing fires; both values if there is a conflict.
+        Subset of ``{0, 1}``.  Empty if nothing claims; both values if there
+        is a conflict.
     """
     claimed: Set[int] = set()
-    for thr_id, d in iter_nodes_of_type(cm, "threshold"):
-        if not tunit_fires(cm, thr_id, assignment):
+    memo: Dict[Any, Optional[bool]] = {}
+    for node_id, data in iter_nodes_of_type(cm, "variable"):
+        if data.get("mode") != "output":
             continue
-        for succ in cm.successors(thr_id):
-            edge = cm.edges[thr_id, succ]
-            if edge.get("type") != "out":
-                continue
-            out_data = cm.nodes[succ]
-            if out_data.get("type") != "variable":
-                continue
-            claimed.add(int(out_data["value"]))
+        for pred in cm.predecessors(node_id):
+            if node_active(cm, pred, assignment, memo):
+                claimed.add(int(data["value"]))
+                break
     return claimed
 
 
@@ -406,8 +515,8 @@ def lut_from_canalizing_map(
     Parameters
     ----------
     cm : networkx.DiGraph
-        Canalizing map as a directed graph with the standard CM node/edge
-        types.
+        Canalizing map as a directed graph of typed nodes.  Evaluation uses
+        topology and node kinds only (see module docstring).
     input_order : sequence of int or str, optional
         Explicit input order (MSB first).  If omitted, inputs are discovered
         from the graph and sorted via :func:`discover_input_keys`.
@@ -545,7 +654,12 @@ def make_output_node(
 
 
 def make_threshold(
-    G: nx.DiGraph, tid: int, node_id: int, out: int, tau: int
+    G: nx.DiGraph,
+    tid: int,
+    node_id: int,
+    out: int,
+    tau: int,
+    role: str = ROLE_SCHEMA,
 ) -> str:
     """Add a threshold (t-unit) node on a CM graph.
 
@@ -558,19 +672,47 @@ def make_threshold(
     node_id : int
         Owning function/node id (used in naming / ``group``).
     out : int
-        Output polarity this t-unit claims (``0`` or ``1``).
+        Output polarity this t-unit is associated with (``0`` or ``1``).
+        Used in naming; nested units may share the parent schema's polarity.
     tau : int
         Firing threshold.
+    role : str, optional
+        Canalization-layer annotation (does not affect evaluation).  One of
+        :data:`THRESHOLD_ROLES`:
+
+        - ``'schema'`` — two-symbol schema (typically feeds an output)
+        - ``'symmetry'`` — permutation-symmetry aggregate
+        - ``'polarity0'`` / ``'polarity1'`` — polarity fibres within a symmetry
+
+        Default is ``'schema'``.
 
     Returns
     -------
     str
         Node name ``thr-{tid}-var-{node_id}-out-{out}``.
+
+    Raises
+    ------
+    ValueError
+        If ``role`` is not in :data:`THRESHOLD_ROLES`.
     """
+    if role not in THRESHOLD_ROLES:
+        raise ValueError(
+            "Unknown threshold role {!r}; expected one of {}".format(
+                role, sorted(THRESHOLD_ROLES)
+            )
+        )
     name = "thr-{tid:d}-var-{nid:d}-out-{out:d}".format(
         tid=tid, nid=node_id, out=out
     )
-    G.add_node(name, label=str(tau), type="threshold", tau=tau, group=node_id)
+    G.add_node(
+        name,
+        label=str(tau),
+        type="threshold",
+        tau=tau,
+        role=role,
+        group=node_id,
+    )
     return name
 
 

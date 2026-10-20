@@ -7,7 +7,7 @@
 # 3. Reconstruct a LUT from that CM via `cm_lut.lut_from_canalizing_map`.
 # 4. Compare original vs reconstructed LUTs.
 #
-# The reverse step interprets t-units strictly from the CM graph
+# The reverse step evaluates the CM modularly from node kinds + topology
 # (see `cm_lut` module docstring).  It does **not** assume the forward
 # `canalizing_map` builder is correct — and for CTNNB1 it is not.
 
@@ -26,6 +26,10 @@ from cana.boolean_network import BooleanNetwork
 from cana.boolean_node import BooleanNode
 
 from cm_lut import (
+    ROLE_POLARITY0,
+    ROLE_POLARITY1,
+    ROLE_SCHEMA,
+    ROLE_SYMMETRY,
     lut_from_canalizing_map,
     make_fusion,
     make_input_node,
@@ -169,10 +173,10 @@ G.add_edge(r0, thr1, type="literal")
 G.add_edge(a1, thr2, type="literal")
 G.add_edge(so1, thr2, type="literal")
 
-thr3 = make_threshold(G, tid=1, node_id=99, out=1, tau=3)
+thr3 = make_threshold(G, tid=3, node_id=99, out=1, tau=3)
 G.add_edge(thr3, out1, type="out")
-fus0 = make_fusion(G, fus=0, tid=1, node_id=99, out=1)
-fus1 = make_fusion(G, fus=1, tid=1, node_id=99, out=1)
+fus0 = make_fusion(G, fus=0, tid=3, node_id=99, out=1)
+fus1 = make_fusion(G, fus=1, tid=3, node_id=99, out=1)
 G.add_edge(fus0, thr3, type="fused")
 G.add_edge(fus1, thr3, type="fused")
 s0 = make_input_node(G, var_id=0, value=0, label="SRY")
@@ -192,11 +196,86 @@ assert hand_result.outputs == [int(bit) for bit in "0000111011101110000000000000
 assert not hand_result.has_conflict and not hand_result.is_incomplete
 
 # %% [markdown]
+# ## Case 4 — Canonical nested-threshold CM
+#
+# Same CTNNB1 function, but schemata / symmetries / polarity groups are
+# nested threshold nodes (annotated via ``role``).  Edge labels are optional;
+# evaluation uses topology only.
+
+# %%
+G = nx.DiGraph(name="canonical_CTNNB1")
+out0 = make_output_node(G, node_id=99, value=0, label="CTNNB1")
+out1 = make_output_node(G, node_id=99, value=1, label="CTNNB1")
+
+# out=0: three independent two-symbol schemata
+out0_two0 = make_threshold(
+    G, tid=0, node_id=99, out=0, tau=1, role=ROLE_SCHEMA
+)
+out0_two1 = make_threshold(
+    G, tid=1, node_id=99, out=0, tau=2, role=ROLE_SCHEMA
+)
+out0_two2 = make_threshold(
+    G, tid=2, node_id=99, out=0, tau=2, role=ROLE_SCHEMA
+)
+G.add_edge(out0_two0, out0)
+G.add_edge(out0_two1, out0)
+G.add_edge(out0_two2, out0)
+s1 = make_input_node(G, var_id=0, value=1, label="SRY")
+w0 = make_input_node(G, var_id=1, value=0, label="WNT4")
+r0 = make_input_node(G, var_id=2, value=0, label="RSPO1")
+a1 = make_input_node(G, var_id=3, value=1, label="AMH")
+so1 = make_input_node(G, var_id=4, value=1, label="SOX9")
+G.add_edge(s1, out0_two0)
+G.add_edge(w0, out0_two1)
+G.add_edge(r0, out0_two1)
+G.add_edge(a1, out0_two2)
+G.add_edge(so1, out0_two2)
+
+# out=1: one schema over SRY literal + two symmetry fibres
+out1_two0 = make_threshold(
+    G, tid=3, node_id=99, out=1, tau=3, role=ROLE_SCHEMA
+)
+G.add_edge(out1_two0, out1)
+out1_two0_sym0 = make_threshold(
+    G, tid=4, node_id=99, out=1, tau=1, role=ROLE_SYMMETRY
+)
+out1_two0_sym1 = make_threshold(
+    G, tid=5, node_id=99, out=1, tau=1, role=ROLE_SYMMETRY
+)
+G.add_edge(out1_two0_sym0, out1_two0)
+G.add_edge(out1_two0_sym1, out1_two0)
+out1_two0_sym0_g1 = make_threshold(
+    G, tid=6, node_id=99, out=1, tau=1, role=ROLE_POLARITY1
+)
+out1_two0_sym1_g0 = make_threshold(
+    G, tid=7, node_id=99, out=1, tau=1, role=ROLE_POLARITY0
+)
+G.add_edge(out1_two0_sym0_g1, out1_two0_sym0)
+G.add_edge(out1_two0_sym1_g0, out1_two0_sym1)
+s0 = make_input_node(G, var_id=0, value=0, label="SRY")
+w1 = make_input_node(G, var_id=1, value=1, label="WNT4")
+r1 = make_input_node(G, var_id=2, value=1, label="RSPO1")
+a0 = make_input_node(G, var_id=3, value=0, label="AMH")
+so0 = make_input_node(G, var_id=4, value=0, label="SOX9")
+G.add_edge(s0, out1_two0)
+G.add_edge(w1, out1_two0_sym0_g1)
+G.add_edge(r1, out1_two0_sym0_g1)
+G.add_edge(a0, out1_two0_sym1_g0)
+G.add_edge(so0, out1_two0_sym1_g0)
+
+canon_result = lut_from_canalizing_map(G, input_order=[0, 1, 2, 3, 4])
+summarize_roundtrip("Canonical CTNNB1", "00001110111011100000000000000000", canon_result)
+assert canon_result.outputs == [int(bit) for bit in "00001110111011100000000000000000"]
+assert not canon_result.has_conflict and not canon_result.is_incomplete
+
+# %% [markdown]
 # ## Takeaway
 #
-# * `lut_from_canalizing_map` evaluates each t-unit as
-#   `score = active_literals + active_fusions`, `fire <=> score >= tau`,
-#   with fusions as OR of their fusing parents.
+# * `lut_from_canalizing_map` evaluates nodes modularly from topology:
+#   threshold score = # active predecessors, fire iff score >= tau;
+#   fusion / nested tau=1 layers act as OR; outputs claim when any
+#   predecessor is active.  Edge types are ignored.
+# * Threshold ``role`` annotates schema / symmetry / group0 / group1 layers.
 # * Conflict / incompleteness are reported per input state.
-# * Roundtrip fails for CTNNB1 today because the **forward** CM is wrong,
-#   not because the reverse interpreter cannot read a well-formed CM.
+# * Roundtrip still fails for CTNNB1 via the **forward** `canalizing_map`
+#   builder; hand-built fusion and nested-threshold CMs both reconstruct.

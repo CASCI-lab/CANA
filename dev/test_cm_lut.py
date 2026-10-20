@@ -20,6 +20,10 @@ if _DEV_DIR not in sys.path:
     sys.path.insert(0, _DEV_DIR)
 
 from cm_lut import (  # noqa: E402
+    ROLE_POLARITY0,
+    ROLE_POLARITY1,
+    ROLE_SCHEMA,
+    ROLE_SYMMETRY,
     claimed_outputs,
     fusion_active,
     lut_from_canalizing_map,
@@ -27,6 +31,7 @@ from cm_lut import (  # noqa: E402
     make_input_node,
     make_output_node,
     make_threshold,
+    node_active,
     tunit_fires,
     tunit_score,
 )
@@ -124,6 +129,44 @@ def hand_tau0_cm() -> nx.DiGraph:
     out1 = make_output_node(G, node_id=3, value=1, label="const1")
     thr = make_threshold(G, tid=0, node_id=3, out=1, tau=0)
     G.add_edge(thr, out1, type="out")
+    return G
+
+
+def hand_or_nested_cm() -> nx.DiGraph:
+    """OR via nested thresholds (no fusion, no edge types).
+
+    out=0: both A=0 and B=0 into schema tau=2
+    out=1: polarity1 {A=1, B=1} into symmetry tau=1 into schema tau=1
+    """
+    G = nx.DiGraph(name="OR-nested")
+    out0 = make_output_node(G, node_id=5, value=0, label="OR")
+    out1 = make_output_node(G, node_id=5, value=1, label="OR")
+
+    thr0 = make_threshold(
+        G, tid=0, node_id=5, out=0, tau=2, role=ROLE_SCHEMA
+    )
+    a0 = make_input_node(G, var_id=0, value=0, label="A")
+    b0 = make_input_node(G, var_id=1, value=0, label="B")
+    G.add_edge(a0, thr0)
+    G.add_edge(b0, thr0)
+    G.add_edge(thr0, out0)
+
+    thr1 = make_threshold(
+        G, tid=1, node_id=5, out=1, tau=1, role=ROLE_SCHEMA
+    )
+    sym = make_threshold(
+        G, tid=2, node_id=5, out=1, tau=1, role=ROLE_SYMMETRY
+    )
+    grp = make_threshold(
+        G, tid=3, node_id=5, out=1, tau=1, role=ROLE_POLARITY1
+    )
+    a1 = make_input_node(G, var_id=0, value=1, label="A")
+    b1 = make_input_node(G, var_id=1, value=1, label="B")
+    G.add_edge(a1, grp)
+    G.add_edge(b1, grp)
+    G.add_edge(grp, sym)
+    G.add_edge(sym, thr1)
+    G.add_edge(thr1, out1)
     return G
 
 
@@ -229,3 +272,54 @@ class TestLutFromCM:
         G = hand_and_out1_cm()
         result = lut_from_canalizing_map(G, input_order=[0, 1])
         assert result.lut_string() == "???1"
+
+    def test_nested_or_complete(self):
+        G = hand_or_nested_cm()
+        result = lut_from_canalizing_map(G, input_order=[0, 1])
+        assert result.outputs == [0, 1, 1, 1]
+        assert result.is_incomplete is False
+        assert result.has_conflict is False
+
+    def test_ignores_edge_types(self):
+        """Same AND-out1 wiring but with nonsense / missing edge types."""
+        G = nx.DiGraph(name="AND-no-edge-types")
+        out1 = make_output_node(G, node_id=2, value=1, label="AND")
+        thr = make_threshold(G, tid=0, node_id=2, out=1, tau=2)
+        a1 = make_input_node(G, var_id=0, value=1, label="A")
+        b1 = make_input_node(G, var_id=1, value=1, label="B")
+        G.add_edge(a1, thr, type="whatever")
+        G.add_edge(b1, thr)  # no type
+        G.add_edge(thr, out1, type="2sym")
+        result = lut_from_canalizing_map(G, input_order=[0, 1])
+        assert result.outputs == [None, None, None, 1]
+        assert node_active(G, thr, {0: 1, 1: 1}) is True
+        assert node_active(G, thr, {0: 1, 1: 0}) is False
+
+
+class TestThresholdRole:
+    def test_default_role_is_schema(self):
+        G = nx.DiGraph()
+        thr = make_threshold(G, tid=0, node_id=1, out=1, tau=1)
+        assert G.nodes[thr]["role"] == ROLE_SCHEMA
+
+    def test_roles_stored(self):
+        G = nx.DiGraph()
+        t0 = make_threshold(G, tid=0, node_id=1, out=1, tau=1, role=ROLE_SCHEMA)
+        t1 = make_threshold(
+            G, tid=1, node_id=1, out=1, tau=1, role=ROLE_SYMMETRY
+        )
+        t2 = make_threshold(
+            G, tid=2, node_id=1, out=1, tau=1, role=ROLE_POLARITY0
+        )
+        t3 = make_threshold(
+            G, tid=3, node_id=1, out=1, tau=1, role=ROLE_POLARITY1
+        )
+        assert G.nodes[t0]["role"] == "schema"
+        assert G.nodes[t1]["role"] == "symmetry"
+        assert G.nodes[t2]["role"] == "polarity0"
+        assert G.nodes[t3]["role"] == "polarity1"
+
+    def test_invalid_role_raises(self):
+        G = nx.DiGraph()
+        with pytest.raises(ValueError, match="Unknown threshold role"):
+            make_threshold(G, tid=0, node_id=1, out=1, tau=1, role="fibre")
