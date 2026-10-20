@@ -26,6 +26,7 @@ from cm_lut import (  # noqa: E402
     ROLE_SYMMETRY,
     claimed_outputs,
     connect,
+    discover_input_keys,
     fusion_active,
     input_ids_in_order,
     lut_from_canalizing_map,
@@ -42,6 +43,30 @@ from cm_lut import (  # noqa: E402
 # ---------------------------------------------------------------------------
 # Hand-built CM factories
 # ---------------------------------------------------------------------------
+
+
+def hand_cana_style_self_copy_cm() -> nx.DiGraph:
+    """Identity ``f(x)=x`` with CANA shared ``var-{id}-out-{v}`` nodes.
+
+    The same nodes are current-state literals and next-state outputs, so the
+    graph has directed cycles (as produced by ``BooleanNode.canalizing_map``
+    for autoregulated functions).
+    """
+    G = nx.DiGraph(name="self-copy")
+    for val in (0, 1):
+        vname = "var-0-out-{:d}".format(val)
+        tname = "thr-{:d}".format(val)
+        G.add_node(
+            vname,
+            type="variable",
+            mode="output",
+            value=val,
+            label="X",
+        )
+        G.add_node(tname, type="threshold", tau=1)
+        G.add_edge(vname, tname, type="literal")
+        G.add_edge(tname, vname, type="out")
+    return G
 
 
 def hand_and_out1_cm() -> nx.DiGraph:
@@ -382,6 +407,22 @@ class TestLutFromCM:
         assert result.outputs == [None, None, None, 1]
         assert node_active(G, thr, {a: 1, b: 1}) is True
         assert node_active(G, thr, {a: 1, b: 0}) is False
+
+    def test_cana_style_self_loop_copy(self):
+        """Autoregulation cycles: assignment breaks var↔thr recursion."""
+        G = hand_cana_style_self_copy_cm()
+        assert discover_input_keys(G) == [0]
+        result = lut_from_canalizing_map(G, input_order=[0])
+        assert result.outputs == [0, 1]
+        assert result.is_incomplete is False
+        assert result.has_conflict is False
+        assert claimed_outputs(G, {0: 0}) == {0}
+        assert claimed_outputs(G, {0: 1}) == {1}
+        # Literal role uses assignment even though mode=output
+        assert node_active(G, "var-0-out-0", {0: 0}) is True
+        assert node_active(G, "var-0-out-0", {0: 1}) is False
+        assert node_active(G, "thr-0", {0: 0}) is True
+        assert node_active(G, "thr-1", {0: 0}) is False
 
 
 class TestThresholdRole:

@@ -16,8 +16,14 @@ nested to express two-symbol / permutation structure.
 **Node kinds**
 
 - ``variable`` + ``mode=input`` : active iff the assignment matches ``value``.
-- ``variable`` + ``mode=output`` : claims its polarity if any predecessor is
-  active.
+- ``variable`` + ``mode=output`` : normally active iff any predecessor is
+  active (used when asking whether the node itself is on).  **Autoregulation
+  exception:** CANA's ``canalizing_map`` reuses the same
+  ``var-{id}-out-{v}`` node as both the current-state literal and the
+  next-state output, which creates a directed cycle.  When that variable's
+  key appears in the assignment, evaluation treats the node as an **input
+  literal** (assignment match) so thresholds can fire; output **claims**
+  are still decided by :func:`claimed_outputs` via threshold predecessors.
 - ``threshold`` : active iff ``(# active predecessors) >= tau``.
   Optional annotation ``role`` (see :data:`THRESHOLD_ROLES`) describes the
   canalization layer; it does not change evaluation.
@@ -216,12 +222,32 @@ def iter_nodes_of_type(cm: nx.DiGraph, node_type: str) -> Iterable[Tuple[Any, di
             yield n, d
 
 
+def _variable_assignment_key(cm: nx.DiGraph, var_node: Any) -> Union[int, str]:
+    """Return the assignment dict key for a variable CM node."""
+    parsed = _parse_var_node(var_node)
+    if parsed is not None:
+        return parsed[0]
+    return cm.nodes[var_node].get("label", var_node)
+
+
+def _variable_is_literal(cm: nx.DiGraph, var_node: Any) -> bool:
+    """True if *var_node* feeds a threshold or fusion (used as a literal)."""
+    return any(
+        cm.nodes[succ].get("type") in ("threshold", "fusion")
+        for succ in cm.successors(var_node)
+    )
+
+
 def discover_input_keys(cm: nx.DiGraph) -> List[Union[int, str]]:
     """Discover input identifiers present in the CM.
 
     Prefers numeric ids parsed from node names ``var-{id}-out-{val}``,
     otherwise uses the node ``label`` (or the node id).  Returned sorted for
     a stable LUT order.
+
+    Includes ``mode=input`` variables and ``mode=output`` variables that
+    feed a threshold/fusion (CANA autoregulation reuses output node ids as
+    self-literals).
 
     Parameters
     ----------
@@ -235,15 +261,11 @@ def discover_input_keys(cm: nx.DiGraph) -> List[Union[int, str]]:
     """
     keys: Set[Union[int, str]] = set()
     for n, d in cm.nodes(data=True):
-        if d.get("type") != "variable" or d.get("mode") != "input":
+        if d.get("type") != "variable":
             continue
-        parsed = _parse_var_node(n)
-        if parsed is not None:
-            keys.add(parsed[0])
-        elif "label" in d:
-            keys.add(d["label"])
-        else:
-            keys.add(n)
+        mode = d.get("mode")
+        if mode == "input" or (mode == "output" and _variable_is_literal(cm, n)):
+            keys.add(_variable_assignment_key(cm, n))
 
     def _sort_key(x):
         if isinstance(x, int):
@@ -274,11 +296,7 @@ def _assignment_activates_var(
     """
     d = cm.nodes[var_node]
     value = int(d["value"])
-    parsed = _parse_var_node(var_node)
-    if parsed is not None:
-        key: Union[int, str] = parsed[0]
-    else:
-        key = d.get("label", var_node)
+    key = _variable_assignment_key(cm, var_node)
     if key not in assignment:
         return False
     return int(assignment[key]) == value
@@ -296,7 +314,9 @@ def node_active(
     ignored):
 
     - input variable: assignment matches ``value``
-    - output variable: any predecessor is active
+    - output variable: if the variable key is in ``assignment`` (self-loop /
+      shared CANA id used as a literal), assignment matches ``value``;
+      otherwise any predecessor is active
     - fusion: any predecessor is active
     - threshold: number of active predecessors ``>= tau``
 
@@ -310,7 +330,8 @@ def node_active(
         Mapping from input key to ``0`` or ``1``.
     memo : dict, optional
         Per-assignment cache.  Values are ``True``/``False`` when resolved,
-        or ``None`` while a node is on the recursion stack (cycle guard).
+        or ``None`` while a node is on the recursion stack (cycle guard for
+        non-variable combinational cycles).
 
     Returns
     -------
@@ -320,8 +341,8 @@ def node_active(
     Raises
     ------
     ValueError
-        If evaluating ``node_id`` encounters a directed cycle, or if
-        ``node_id`` has an unknown ``type``.
+        If evaluating ``node_id`` encounters a directed cycle among
+        threshold/fusion nodes, or if ``node_id`` has an unknown ``type``.
     """
     if memo is None:
         memo = {}
@@ -342,10 +363,16 @@ def node_active(
         if mode == "input":
             result = _assignment_activates_var(cm, node_id, assignment)
         elif mode == "output":
-            result = any(
-                node_active(cm, pred, assignment, memo)
-                for pred in cm.predecessors(node_id)
-            )
+            key = _variable_assignment_key(cm, node_id)
+            # Autoregulation: same node is current-state literal + next-state
+            # output.  Prefer assignment so thr←var←thr cycles terminate.
+            if key in assignment:
+                result = _assignment_activates_var(cm, node_id, assignment)
+            else:
+                result = any(
+                    node_active(cm, pred, assignment, memo)
+                    for pred in cm.predecessors(node_id)
+                )
         else:
             raise ValueError(
                 "Variable node {!r} has unknown mode {!r}".format(node_id, mode)
