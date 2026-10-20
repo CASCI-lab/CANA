@@ -147,31 +147,49 @@ assert exact is False, "Expected CTNNB1 roundtrip to fail while canalizing_map i
 # out=0: both literals at 0, tau=2
 # out=1: fusion OR of both at 1, tau=1
 
-G = nx.DiGraph(name="WNT4_or_RSPO1")
+G = nx.DiGraph(name="real_CTNNB1")
 # inputs 0=WNT4, 1=RSPO1; node id 99 = fragment output
-out0 = make_output_node(G, node_id=99, value=0, label="OR_frag")
-out1 = make_output_node(G, node_id=99, value=1, label="OR_frag")
+out0 = make_output_node(G, node_id=99, value=0, label="CTNNB1")
+out1 = make_output_node(G, node_id=99, value=1, label="CTNNB1")
 
-thr0 = make_threshold(G, tid=0, node_id=99, out=0, tau=2)
-w0 = make_input_node(G, var_id=0, value=0, label="WNT4")
-r0 = make_input_node(G, var_id=1, value=0, label="RSPO1")
-G.add_edge(w0, thr0, type="literal")
-G.add_edge(r0, thr0, type="literal")
+thr0 = make_threshold(G, tid=0, node_id=99, out=0, tau=1)
+thr1 = make_threshold(G, tid=1, node_id=99, out=0, tau=2)
+thr2 = make_threshold(G, tid=2, node_id=99, out=0, tau=2)
 G.add_edge(thr0, out0, type="out")
+G.add_edge(thr1, out0, type="out")
+G.add_edge(thr2, out0, type="out")
+s1 = make_input_node(G, var_id=0, value=1, label="SRY")
+w0 = make_input_node(G, var_id=1, value=0, label="WNT4")
+r0 = make_input_node(G, var_id=2, value=0, label="RSPO1")
+a1 = make_input_node(G, var_id=3, value=1, label="AMH")
+so1 = make_input_node(G, var_id=4, value=1, label="SOX9")
+G.add_edge(s1, thr0, type="literal")
+G.add_edge(w0, thr1, type="literal")
+G.add_edge(r0, thr1, type="literal")
+G.add_edge(a1, thr2, type="literal")
+G.add_edge(so1, thr2, type="literal")
 
-thr1 = make_threshold(G, tid=1, node_id=99, out=1, tau=1)
-fus1 = make_fusion(G, fus=0, tid=1, node_id=99, out=1)
-w1 = make_input_node(G, var_id=0, value=1, label="WNT4")
-r1 = make_input_node(G, var_id=1, value=1, label="RSPO1")
-G.add_edge(w1, fus1, type="fusing")
-G.add_edge(r1, fus1, type="fusing")
-G.add_edge(fus1, thr1, type="fused")
-G.add_edge(thr1, out1, type="out")
+thr3 = make_threshold(G, tid=1, node_id=99, out=1, tau=3)
+G.add_edge(thr3, out1, type="out")
+fus0 = make_fusion(G, fus=0, tid=1, node_id=99, out=1)
+fus1 = make_fusion(G, fus=1, tid=1, node_id=99, out=1)
+G.add_edge(fus0, thr3, type="fused")
+G.add_edge(fus1, thr3, type="fused")
+s0 = make_input_node(G, var_id=0, value=0, label="SRY")
+w1 = make_input_node(G, var_id=1, value=1, label="WNT4")
+r1 = make_input_node(G, var_id=2, value=1, label="RSPO1")
+a0 = make_input_node(G, var_id=3, value=0, label="AMH")
+so0 = make_input_node(G, var_id=4, value=0, label="SOX9")
+G.add_edge(s0, thr3, type="literal")
+G.add_edge(w1, fus0, type="fusing")
+G.add_edge(r1, fus0, type="fusing")
+G.add_edge(a0, fus1, type="fusing")
+G.add_edge(so0, fus1, type="fusing")
 
-frag_result = lut_from_canalizing_map(G, input_order=[0, 1])
-summarize_roundtrip("Hand-correct (WNT4 OR RSPO1) fragment", [0, 1, 1, 1], frag_result)
-assert frag_result.outputs == [0, 1, 1, 1]
-assert not frag_result.has_conflict and not frag_result.is_incomplete
+hand_result = lut_from_canalizing_map(G, input_order=[0, 1, 2, 3, 4])
+summarize_roundtrip("Hand-correct CTNNB1", "00001110111011100000000000000000", hand_result)
+assert hand_result.outputs == [int(bit) for bit in "00001110111011100000000000000000"]
+assert not hand_result.has_conflict and not hand_result.is_incomplete
 
 # %% [markdown]
 # ## Takeaway
