@@ -658,27 +658,20 @@ class BooleanNode(object):
 
             for ts, ps, ss in tspsss:
                 lits = []
-                group0 = []
-                group1 = []
-                # group2 = []
                 # Tau is the threshold, counted as the sum of (0's and 1's literals; 0's in permutation group; 1's in permutation group)
                 nlit, ngrp0, ngrp1 = 0, 0, 0
 
                 for j in range(self.k):
                     # Is this input in any permutation group?
-                    input = ts[j]
                     if not any([j in group for group in ps]):
                         if ts[j] in ["0", "1"]:
                             nlit += 1
-                            source = j
-                            lits.append(source)
+                            lits.append(j)
                     else:
                         if ts[j] == "0":
                             ngrp0 += 1
-                            group0.append(j)
                         elif ts[j] == "1":
                             ngrp1 += 1
-                            group1.append(j)
 
                 tau = nlit + ngrp0 + ngrp1
 
@@ -728,68 +721,52 @@ class BooleanNode(object):
                         )
                     G.add_edge(iname, tname, **{"type": "literal"})
 
-                # Group0
-                for fusion in range(ngrp0):
-                    fname = "fus-{fus:d}-thr-{thr:d}-var-{nid:d}-out-{out:d}".format(
-                        fus=fusion, thr=tid, nid=self.id, out=0
-                    )
-                    G.add_node(fname, **{"type": "fusion", "group": self.id})
-                    for input in ps[0]:
-                        iname = "var-{nid:d}-out-{out:d}".format(
-                            nid=self.inputs[input], out=0
-                        )
-                        if iname not in G.nodes():
-                            # Can we get the name of ther nodes? Are we attached to a network?
-                            if self.network is not None:
-                                ilabel = self.network.get_node_name(self.inputs[input])[
-                                    0
-                                ]
-                            else:
-                                ilabel = str(self.inputs[input])
-                            G.add_node(
-                                iname,
-                                **{
-                                    "label": ilabel,
-                                    "type": "variable",
-                                    "mode": "input",
-                                    "value": 0,
-                                    "group": self.id,
-                                }
+                # One fusion fibre per polarity count in each permutation group
+                fus_id = 0
+                for g_idx, group in enumerate(ps):
+                    n0 = sum(1 for j in group if ts[j] == "0")
+                    n1 = sum(1 for j in group if ts[j] == "1")
+                    for polarity, nfus in ((0, n0), (1, n1)):
+                        for _ in range(nfus):
+                            fname = (
+                                "fus-{fus:d}-grp-{g:d}-thr-{thr:d}"
+                                "-var-{nid:d}-out-{out:d}"
+                            ).format(
+                                fus=fus_id,
+                                g=g_idx,
+                                thr=tid,
+                                nid=self.id,
+                                out=polarity,
                             )
-                        G.add_edge(iname, fname, **{"type": "fusing"})
-                    G.add_edge(fname, tname, **{"type": "fused"})
-
-                # Group1
-                for fusion in range(ngrp1):
-                    fname = "fus-{fus:d}-thr-{thr:d}-var-{nid:d}-out-{out:d}".format(
-                        fus=fusion, thr=tid, nid=self.id, out=1
-                    )
-                    G.add_node(fname, **{"type": "fusion", "group": self.id})
-                    for input in ps[0]:
-                        iname = "var-{var:d}-out-{out:d}".format(
-                            var=self.inputs[input], out=1
-                        )
-                        if iname not in G.nodes():
-                            # Can we get the name of ther nodes? Are we attached to a network?
-                            if self.network is not None:
-                                ilabel = self.network.get_node_name(self.inputs[input])[
-                                    0
-                                ]
-                            else:
-                                ilabel = str(self.inputs[input])
-                            iout = ts[input]
+                            fus_id += 1
                             G.add_node(
-                                iname,
-                                **{
-                                    "label": ilabel,
-                                    "type": "variable",
-                                    "mode": "input",
-                                    "value": 1,
-                                    "group": self.id,
-                                }
+                                fname, **{"type": "fusion", "group": self.id}
                             )
-                        G.add_edge(iname, fname, **{"type": "fusing"})
-                    G.add_edge(fname, tname, **{"type": "fused"})
+                            for j in group:
+                                iname = "var-{nid:d}-out-{out:d}".format(
+                                    nid=self.inputs[j], out=polarity
+                                )
+                                if iname not in G.nodes():
+                                    if self.network is not None:
+                                        ilabel = self.network.get_node_name(
+                                            self.inputs[j]
+                                        )[0]
+                                    else:
+                                        ilabel = str(self.inputs[j])
+                                    G.add_node(
+                                        iname,
+                                        **{
+                                            "label": ilabel,
+                                            "type": "variable",
+                                            "mode": "input",
+                                            "value": polarity,
+                                            "group": self.id,
+                                        }
+                                    )
+                                G.add_edge(
+                                    iname, fname, **{"type": "fusing"}
+                                )
+                            G.add_edge(fname, tname, **{"type": "fused"})
 
                 tid += 1
 
