@@ -1677,7 +1677,9 @@ class BooleanNetwork:
     #
     # Dynamics Canalization Map (DCM)
     #
-    def dynamics_canalization_map(self, output=None, simplify=True):
+    def dynamics_canalization_map(
+        self, output=None, simplify=True, builder="legacy", remove_isolates=True
+    ):
         """Computes the Dynamics Canalization Map (DCM).
         In practice, it asks each node to compute their Canalization Map and then puts them together, simplifying it if possible.
 
@@ -1686,6 +1688,13 @@ class BooleanNetwork:
             simplify (bool) : If ``True``, collapse redundant ``tau=1`` threshold
                 buffers via :func:`cana.canalization.canalizing_map.simplify_canalizing_map`
                 (does not remove ``tau=0`` constant schemata).
+            builder (str or callable) : Per-node CM construction method. Default is
+                ``'legacy'``. See :func:`cana.canalization.canalizing_map.build_canalizing_map`
+                and :data:`cana.canalization.canalizing_map.CM_BUILDERS`.
+            remove_isolates (bool) : If ``True`` (default), drop isolated nodes after
+                compose. Isolate cleanup is orthogonal to ``simplify``: unused
+                opposite-polarity variable stubs from other nodes' CMs are typically
+                noise for drawing/analysis. Pass ``False`` for a raw composed graph.
 
         Returns:
             DCM (networkx.DiGraph) : a directed graph representation of the DCM.
@@ -1693,20 +1702,20 @@ class BooleanNetwork:
         See Also:
             :func:`boolean_node.canalizing_map` for the CM and :func:`drawing.draw_dynamics_canalizing_map_graphviz` for plotting.
             :func:`cana.canalization.canalizing_map.simplify_canalizing_map` for the simplify rules.
+            :data:`cana.canalization.canalizing_map.CM_BUILDERS` for named builders.
         """
         CMs = []
         for node in self.nodes:
             if self.keep_constants or not node.constant:
-                CMs.append(node.canalizing_map(output))
+                CMs.append(node.canalizing_map(output, builder=builder))
         # https://networkx.github.io/documentation/stable/reference/algorithms/generated/networkx.algorithms.operators.all.compose_all.html
         DCM = nx.compose_all(CMs)
         DCM.name = "DCM: %s" % (self.name)
 
         if simplify:
-            simplify_canalizing_map(DCM, copy=False, remove_isolates=True)
-        else:
-            isolates = list(nx.isolates(DCM))
-            DCM.remove_nodes_from(isolates)
+            simplify_canalizing_map(DCM, copy=False, remove_isolates=remove_isolates)
+        elif remove_isolates:
+            DCM.remove_nodes_from(list(nx.isolates(DCM)))
 
         return DCM
 

@@ -3,7 +3,8 @@
 Tests for schemata → canalizing map construction and CM → LUT roundtrips.
 
 Covers the legacy and canonical forward builders
-(``BooleanNode.canalizing_map`` / ``build_canalizing_map_*``).
+(``BooleanNode.canalizing_map`` / ``build_canalizing_map_*``)
+and ``BooleanNetwork.dynamics_canalization_map`` builder forwarding.
 """
 from __future__ import annotations
 
@@ -329,6 +330,101 @@ def _assert_exact_roundtrip_simplified(
     assert not result.has_conflict
     assert not result.is_incomplete
     assert result.outputs == [int(x) for x in node.outputs]
+
+
+def _graphs_equal_ignore_name(a: nx.DiGraph, b: nx.DiGraph) -> bool:
+    """Like ``_graphs_equal`` but ignore DiGraph ``.name`` / graph attrs."""
+    if set(a.nodes) != set(b.nodes) or set(a.edges) != set(b.edges):
+        return False
+    for n in a.nodes:
+        if dict(a.nodes[n]) != dict(b.nodes[n]):
+            return False
+    for u, v in a.edges:
+        if dict(a.edges[u, v]) != dict(b.edges[u, v]):
+            return False
+    return True
+
+
+TINY_DCM_BNET = "\n".join(
+    [
+        "A *= B",
+        "B *= A and C",
+        "C *= A or B",
+    ]
+)
+
+
+class TestDynamicsCanalizationMap:
+    """Network DCM compose forwards builder; isolate cleanup is orthogonal."""
+
+    @pytest.mark.parametrize("builder", ["legacy", "canonical"])
+    def test_matches_manual_compose(self, builder):
+        N = BooleanNetwork.from_string_boolean(TINY_DCM_BNET)
+        via_net = N.dynamics_canalization_map(
+            simplify=False, builder=builder, remove_isolates=True
+        )
+        cms = [
+            n.canalizing_map(builder=builder)
+            for n in N.nodes
+            if N.keep_constants or not n.constant
+        ]
+        manual = nx.compose_all(cms)
+        manual.remove_nodes_from(list(nx.isolates(manual)))
+        assert _graphs_equal_ignore_name(via_net, manual)
+
+    def test_legacy_default_smoke(self):
+        N = BooleanNetwork.from_string_boolean(TINY_DCM_BNET)
+        dcm = N.dynamics_canalization_map(simplify=True)
+        assert dcm.number_of_nodes() > 0
+        assert dcm.name.startswith("DCM:")
+
+    def test_remove_isolates_false_matches_raw_compose(self):
+        N = BooleanNetwork.from_string_boolean(TINY_DCM_BNET)
+        via_net = N.dynamics_canalization_map(
+            simplify=False, builder="canonical", remove_isolates=False
+        )
+        cms = [
+            n.canalizing_map(builder="canonical")
+            for n in N.nodes
+            if N.keep_constants or not n.constant
+        ]
+        manual = nx.compose_all(cms)
+        assert _graphs_equal_ignore_name(via_net, manual)
+
+    def test_remove_isolates_false_keeps_injected_isolate(self):
+        """Else-branch strip is skipped when ``remove_isolates=False``."""
+        N = BooleanNetwork.from_string_boolean(TINY_DCM_BNET)
+        orphan = "orphan_isolate_test"
+        orig = N.nodes[0].canalizing_map
+
+        def with_orphan(output=None, builder="legacy"):
+            g = orig(output=output, builder=builder)
+            g.add_node(orphan, type="variable", mode="input", value=0)
+            return g
+
+        N.nodes[0].canalizing_map = with_orphan
+        kept = N.dynamics_canalization_map(
+            simplify=False, builder="legacy", remove_isolates=False
+        )
+        stripped = N.dynamics_canalization_map(
+            simplify=False, builder="legacy", remove_isolates=True
+        )
+        assert orphan in kept
+        assert orphan not in stripped
+
+    def test_remove_isolates_forwarded_to_simplify(self, monkeypatch):
+        seen = {}
+
+        def fake_simplify(cm, *, copy=True, remove_isolates=True):
+            seen["remove_isolates"] = remove_isolates
+            return cm
+
+        monkeypatch.setattr(
+            "cana.boolean_network.simplify_canalizing_map", fake_simplify
+        )
+        N = BooleanNetwork.from_string_boolean(TINY_DCM_BNET)
+        N.dynamics_canalization_map(simplify=True, remove_isolates=False)
+        assert seen["remove_isolates"] is False
 
 
 class TestSimplifyCanalizingMap:

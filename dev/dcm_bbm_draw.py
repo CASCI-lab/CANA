@@ -7,8 +7,8 @@
 # write ``.gv`` / ``.png`` under ``dev/logs/dcm_bbm_figures/<id>__<name>/``,
 # and a ``README.md`` with per-variant node/edge counts and type/role breakdowns.
 #
-# Edit ``MODEL_ID`` at the top to switch models.  Uses library
-# ``simplify_canalizing_map`` (same as ``BooleanNetwork.dynamics_canalization_map``).
+# Edit ``MODEL_ID`` at the top to switch models.  Builds DCMs via
+# ``BooleanNetwork.dynamics_canalization_map(builder=..., simplify=...)``.
 
 # %%
 from __future__ import annotations
@@ -30,7 +30,6 @@ for _p in (_DEV_DIR, _PKG_ROOT):
         sys.path.insert(0, str(_p))
 
 from cana.boolean_network import BooleanNetwork
-from cana.canalization.canalizing_map import simplify_canalizing_map
 
 from bbm_cm_roundtrip import resolve_model_dir  # noqa: E402
 
@@ -63,7 +62,7 @@ _DOT_STATIC_URL = (
 )
 
 # %% [markdown]
-# ## Helpers — load, compose DCM, draw, stats
+# ## Helpers — load, draw, stats
 
 
 # %%
@@ -99,28 +98,6 @@ def load_bbm_network(models_root: Path, model_id: str) -> Tuple[BooleanNetwork, 
         name=net_name,
     )
     return network, model_dir
-
-
-def compose_dcm(
-    network: BooleanNetwork,
-    builder: str,
-    simplify: bool = False,
-) -> nx.DiGraph:
-    """Compose per-node CMs into a DCM; optionally apply library simplify."""
-    cms = [
-        n.canalizing_map(builder=builder)
-        for n in network.nodes
-        if network.keep_constants or not n.constant
-    ]
-    if not cms:
-        raise RuntimeError(f"No canalizing maps to compose for {network.name!r}")
-    dcm = nx.compose_all(cms)
-    dcm.name = f"DCM:{network.name}:{builder}:simplify={simplify}"
-    if simplify:
-        simplify_canalizing_map(dcm, copy=False, remove_isolates=True)
-    else:
-        dcm.remove_nodes_from(list(nx.isolates(dcm)))
-    return dcm
 
 
 def variant_key(builder: str, simplify: bool) -> str:
@@ -425,7 +402,9 @@ for builder in BUILDERS:
     for simplify in SIMPLIFY_MODES:
         key = variant_key(builder, simplify)
         print(f"building {key} …")
-        dcms[key] = compose_dcm(N, builder=builder, simplify=simplify)
+        dcm = N.dynamics_canalization_map(builder=builder, simplify=simplify)
+        dcm.name = f"DCM:{N.name}:{builder}:simplify={simplify}"
+        dcms[key] = dcm
 
 print()
 all_stats: Dict[str, Dict[str, object]] = {}
