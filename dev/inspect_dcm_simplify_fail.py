@@ -50,11 +50,11 @@ LOG_PATH = RUN_DIR / f"{RUN_DIR.name}.log"
 
 # Which (builder, simplify) section of the log to harvest FAIL lines from.
 # Fails only occur for simplify=True in this run.
-BUILDER = "canonical"  # "legacy" | "canonical"
+BUILDER = "legacy"  # "legacy" | "canonical"
 SIMPLIFY = True
 
 # None → first FAIL in that section. Or a name like "k2_id6_0110".
-FAIL_PICK: Optional[str] = "k2_id6_0110"
+FAIL_PICK: Optional[str] = "k1_id0_00"
 
 FIG_DIR = RUN_DIR / "inspect_cm_before_after"
 _TOOLS_DIR = _DEV_DIR / ".tools"
