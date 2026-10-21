@@ -2,8 +2,8 @@
 """
 Tests for schemata → canalizing map construction and CM → LUT roundtrips.
 
-Covers the legacy forward builder (``BooleanNode.canalizing_map`` /
-``build_canalizing_map_legacy``) rather than hand-built CM graphs.
+Covers the legacy and canonical forward builders
+(``BooleanNode.canalizing_map`` / ``build_canalizing_map_*``).
 """
 from __future__ import annotations
 
@@ -14,9 +14,16 @@ from cana.boolean_network import BooleanNetwork
 from cana.boolean_node import BooleanNode
 from cana.canalization.canalizing_map import (
     build_canalizing_map,
+    build_canalizing_map_canonical,
     build_canalizing_map_legacy,
 )
-from cana.canalization.cm_lut import lut_from_canalizing_map
+from cana.canalization.cm_lut import (
+    ROLE_POLARITY0,
+    ROLE_POLARITY1,
+    ROLE_SCHEMA,
+    ROLE_SYMMETRY,
+    lut_from_canalizing_map,
+)
 
 
 def _graphs_equal(a: nx.DiGraph, b: nx.DiGraph) -> bool:
@@ -34,12 +41,20 @@ def _graphs_equal(a: nx.DiGraph, b: nx.DiGraph) -> bool:
     return True
 
 
-def _assert_exact_roundtrip(node: BooleanNode) -> None:
-    cm = node.canalizing_map()
+def _assert_exact_roundtrip(node: BooleanNode, builder: str = "legacy") -> None:
+    cm = node.canalizing_map(builder=builder)
     result = lut_from_canalizing_map(cm, input_order=node.inputs)
     assert not result.has_conflict
     assert not result.is_incomplete
     assert result.outputs == [int(x) for x in node.outputs]
+
+
+def _threshold_roles(cm: nx.DiGraph):
+    return {
+        d.get("role")
+        for _, d in cm.nodes(data=True)
+        if d.get("type") == "threshold"
+    }
 
 
 class TestParity:
@@ -135,3 +150,171 @@ class TestCTNNB1Roundtrip:
             id=5,
         )
         _assert_exact_roundtrip(node)
+
+
+# ---------------------------------------------------------------------------
+# Canonical builder
+# ---------------------------------------------------------------------------
+
+F_BNET = (
+    "F*= X and not Y and ((not A and B and C) or (A and not B and C) "
+    "or (A and B and not C))\n"
+    "X*=X\n"
+    "Y*=Y\n"
+    "A*=A\n"
+    "B*=B\n"
+    "C*=C\n"
+)
+F_LUT = "00000000000000000001011000000000"
+
+
+class TestCanonicalParity:
+    """BooleanNode wrapper matches build_canalizing_map_canonical."""
+
+    @pytest.mark.parametrize(
+        "outputs,name,inputs,nid",
+        [
+            ([0, 0, 0, 1], "AND", [0, 1], 2),
+            ([0, 1, 1, 1], "OR", [10, 11], 5),
+        ],
+    )
+    def test_node_matches_canonical_builder(self, outputs, name, inputs, nid):
+        node = BooleanNode.from_output_list(
+            outputs, name=name, inputs=inputs, id=nid
+        )
+        node._check_compute_canalization_variables(two_symbols=True)
+        input_labels = {i: str(i) for i in node.inputs}
+
+        via_node = node.canalizing_map(builder="canonical")
+        via_fn = build_canalizing_map_canonical(
+            node._two_symbols,
+            node_id=node.id,
+            inputs=node.inputs,
+            name=node.name,
+            constant=node.constant,
+            input_labels=input_labels,
+            k=node.k,
+        )
+        via_dispatch = build_canalizing_map(
+            node._two_symbols,
+            node_id=node.id,
+            inputs=node.inputs,
+            name=node.name,
+            constant=node.constant,
+            input_labels=input_labels,
+            k=node.k,
+            builder="canonical",
+        )
+        assert _graphs_equal(via_node, via_fn)
+        assert _graphs_equal(via_node, via_dispatch)
+
+
+class TestCanonicalRoundtrip:
+    @pytest.mark.parametrize(
+        "outputs,name,inputs,nid",
+        [
+            ([0, 0, 0, 1], "AND", [0, 1], 2),
+            ([0, 1, 1, 1], "OR", [10, 11], 5),
+        ],
+    )
+    def test_and_or(self, outputs, name, inputs, nid):
+        node = BooleanNode.from_output_list(
+            outputs, name=name, inputs=inputs, id=nid
+        )
+        _assert_exact_roundtrip(node, builder="canonical")
+
+    @pytest.mark.parametrize("lut", K3_REGRESSION_LUTS)
+    def test_k3_regression(self, lut):
+        outputs = [int(b) for b in lut]
+        node = BooleanNode.from_output_list(
+            outputs, name="k3_{}".format(lut), inputs=[0, 1, 2], id=0
+        )
+        _assert_exact_roundtrip(node, builder="canonical")
+
+    def test_ctnnb1(self):
+        N = BooleanNetwork.from_string_boolean(CTNNB1_BNET)
+        ct = next(n for n in N.nodes if n.name == "CTNNB1")
+        _assert_exact_roundtrip(ct, builder="canonical")
+
+    def test_f_xy_abc(self):
+        N = BooleanNetwork.from_string_boolean(F_BNET)
+        fn = next(n for n in N.nodes if n.name == "F")
+        assert "".join(str(x) for x in fn.outputs) == F_LUT
+        _assert_exact_roundtrip(fn, builder="canonical")
+
+
+class TestCanonicalStructure:
+    """No fusion; nested roles and schema tau match the hand examples."""
+
+    def test_ctnnb1_out1_structure(self):
+        N = BooleanNetwork.from_string_boolean(CTNNB1_BNET)
+        ct = next(n for n in N.nodes if n.name == "CTNNB1")
+        cm = ct.canalizing_map(builder="canonical")
+
+        assert not any(d.get("type") == "fusion" for _, d in cm.nodes(data=True))
+        roles = _threshold_roles(cm)
+        assert ROLE_SCHEMA in roles
+        assert ROLE_SYMMETRY in roles
+        assert ROLE_POLARITY0 in roles
+        assert ROLE_POLARITY1 in roles
+
+        # out=1 schema: 1 fixed (SRY) + 2 permutation groups → tau=3
+        out1 = "var-{nid:d}-out-1".format(nid=ct.id)
+        schema_preds = [
+            u
+            for u, v, d in cm.in_edges(out1, data=True)
+            if cm.nodes[u].get("role") == ROLE_SCHEMA
+        ]
+        assert len(schema_preds) == 1
+        assert cm.nodes[schema_preds[0]]["tau"] == 3
+
+        symmetries = [
+            u
+            for u, v in cm.in_edges(schema_preds[0])
+            if cm.nodes[u].get("role") == ROLE_SYMMETRY
+        ]
+        assert len(symmetries) == 2
+        for sym in symmetries:
+            assert cm.nodes[sym]["tau"] == 1
+            pols = list(cm.predecessors(sym))
+            assert len(pols) == 1
+            assert cm.nodes[pols[0]]["role"] in (ROLE_POLARITY0, ROLE_POLARITY1)
+            assert cm.nodes[pols[0]]["tau"] == 1
+
+    def test_f_out1_structure(self):
+        N = BooleanNetwork.from_string_boolean(F_BNET)
+        fn = next(n for n in N.nodes if n.name == "F")
+        cm = fn.canalizing_map(builder="canonical")
+
+        assert not any(d.get("type") == "fusion" for _, d in cm.nodes(data=True))
+        roles = _threshold_roles(cm)
+        assert ROLE_SCHEMA in roles
+        assert ROLE_SYMMETRY in roles
+        assert ROLE_POLARITY0 in roles
+        assert ROLE_POLARITY1 in roles
+
+        # out=1 schema: 2 fixed (X,Y) + 1 permutation group → tau=3
+        out1 = "var-{nid:d}-out-1".format(nid=fn.id)
+        schema_preds = [
+            u
+            for u, v in cm.in_edges(out1)
+            if cm.nodes[u].get("role") == ROLE_SCHEMA
+        ]
+        assert len(schema_preds) == 1
+        assert cm.nodes[schema_preds[0]]["tau"] == 3
+
+        symmetries = [
+            u
+            for u in cm.predecessors(schema_preds[0])
+            if cm.nodes[u].get("role") == ROLE_SYMMETRY
+        ]
+        assert len(symmetries) == 1
+        assert cm.nodes[symmetries[0]]["tau"] == 2
+
+        pol_by_role = {
+            cm.nodes[u]["role"]: cm.nodes[u]["tau"]
+            for u in cm.predecessors(symmetries[0])
+            if cm.nodes[u].get("type") == "threshold"
+        }
+        assert pol_by_role[ROLE_POLARITY0] == 1
+        assert pol_by_role[ROLE_POLARITY1] == 2

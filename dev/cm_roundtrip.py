@@ -3,11 +3,13 @@
 #
 # Walkthrough:
 # 1. Build a Boolean node from a LUT or boolean rules.
-# 2. Convert to a Canalizing Map (CM) via the legacy builder
-#    (`BooleanNode.canalizing_map` / `build_canalizing_map_legacy`).
+# 2. Convert to a Canalizing Map (CM) via the **canonical** builder
+#    (`BooleanNode.canalizing_map(builder="canonical")` /
+#    `build_canalizing_map_canonical`), and also via the legacy builder.
 # 3. Reconstruct a LUT from that CM via `cm_lut.lut_from_canalizing_map`.
 # 4. Compare original vs reconstructed LUTs.
-# 5. Also build hand / nested-threshold CMs and (attempt to) draw all three.
+# 5. Also keep hand-built fusion and hand-built nested-threshold CMs, and
+#    draw all of them.
 #
 # The reverse step evaluates the CM modularly from node kinds + topology
 # (see `cana.canalization.cm_lut` module docstring).
@@ -23,7 +25,10 @@ from pathlib import Path
 import networkx as nx
 from cana.boolean_network import BooleanNetwork
 from cana.boolean_node import BooleanNode
-from cana.canalization.canalizing_map import build_canalizing_map_legacy
+from cana.canalization.canalizing_map import (
+    build_canalizing_map_canonical,
+    build_canalizing_map_legacy,
+)
 from cana.canalization.cm_lut import (
     ROLE_POLARITY0,
     ROLE_POLARITY1,
@@ -71,23 +76,22 @@ TRUE_CTNNB1 = "00001110111011100000000000000000"
 # %% [markdown]
 # ## Case 1 — AND / OR from LUT
 #
-# Simple canalizing functions.  The current forward CM builder usually gets
-# these right, so the roundtrip can succeed.
+# Simple canalizing functions.  Both forward builders round-trip these.
 
 # %%
 and_node = BooleanNode.from_output_list(
     [0, 0, 0, 1], name="AND", inputs=[0, 1], id=2
 )
-and_cm = and_node.canalizing_map(builder="legacy")
+and_cm = and_node.canalizing_map(builder="canonical")
 and_result = lut_from_canalizing_map(and_cm, input_order=and_node.inputs)
-summarize_roundtrip("AND", and_node.outputs, and_result)
+summarize_roundtrip("AND (canonical)", and_node.outputs, and_result)
 
 or_node = BooleanNode.from_output_list(
     [0, 1, 1, 1], name="OR", inputs=[10, 11], id=5
 )
-or_cm = or_node.canalizing_map(builder="legacy")
+or_cm = or_node.canalizing_map(builder="canonical")
 or_result = lut_from_canalizing_map(or_cm, input_order=or_node.inputs)
-summarize_roundtrip("OR", or_node.outputs, or_result)
+summarize_roundtrip("OR (canonical)", or_node.outputs, or_result)
 
 # %% [markdown]
 # ## Case 2 — CTNNB1 via legacy canalizing map builder
@@ -123,6 +127,8 @@ print("Two-symbol schemata (out=1):")
 for row in ct._two_symbols[1]:
     print(" ", row)
 
+_input_labels = {i: N.nodes[i].name for i in ct.inputs}
+
 # Explicit legacy builder (same graph as ct.canalizing_map(builder="legacy")).
 legacy_CTNNB1 = build_canalizing_map_legacy(
     ct._two_symbols,
@@ -130,7 +136,7 @@ legacy_CTNNB1 = build_canalizing_map_legacy(
     inputs=ct.inputs,
     name=ct.name,
     constant=ct.constant,
-    input_labels={i: N.nodes[i].name for i in ct.inputs},
+    input_labels=_input_labels,
     k=ct.k,
 )
 legacy_result = lut_from_canalizing_map(legacy_CTNNB1, input_order=ct.inputs)
@@ -138,11 +144,34 @@ exact = summarize_roundtrip("legacy_CTNNB1", ct.outputs, legacy_result)
 assert exact, "Expected legacy CTNNB1 roundtrip to succeed"
 
 # %% [markdown]
-# ## Case 3 — Hand-correct CM (`hand_CTNNB1`)
+# ## Case 2b — CTNNB1 via canonical canalizing map builder
+#
+# Nested schema / symmetry / polarity thresholds; no fusion nodes.
+# Same as ``ct.canalizing_map(builder="canonical")``.
+
+# %%
+canonical_CTNNB1 = build_canalizing_map_canonical(
+    ct._two_symbols,
+    node_id=ct.id,
+    inputs=ct.inputs,
+    name=ct.name,
+    constant=ct.constant,
+    input_labels=_input_labels,
+    k=ct.k,
+)
+canonical_result = lut_from_canalizing_map(
+    canonical_CTNNB1, input_order=ct.inputs
+)
+exact = summarize_roundtrip("canonical_CTNNB1", ct.outputs, canonical_result)
+assert exact, "Expected canonical CTNNB1 roundtrip to succeed"
+
+# %% [markdown]
+# ## Case 3 — Hand-built fusion CM (`hand_CTNNB1`)
 #
 # A correct CM for the full CTNNB1 function using fusion junctions for the
-# OR-like fibres.  Reverse reconstruction recovers the LUT exactly — showing
-# the interpreter itself is sound when the graph is right.
+# OR-like fibres (legacy-style hand map).  Reverse reconstruction recovers
+# the LUT exactly — showing the interpreter itself is sound when the graph
+# is right.
 
 # %%
 # Label-driven helpers: ids / tids / edge types are assigned automatically.
@@ -183,55 +212,105 @@ assert hand_result.outputs == [int(bit) for bit in TRUE_CTNNB1]
 assert not hand_result.has_conflict and not hand_result.is_incomplete
 
 # %% [markdown]
-# ## Case 4 — Canonical nested-threshold CM (`canonical_CTNNB1`)
+# ## Case 4 — Hand-built nested-threshold CM (`hand_canonical_CTNNB1`)
 #
-# Same CTNNB1 function with nested schema / symmetry / polarity thresholds.
-# Build order is free; thresholds do not store an ``out`` attribute.
+# Same CTNNB1 function with nested schema / symmetry / polarity thresholds
+# (manual reference for the canonical builder).  Build order is free;
+# thresholds do not store an ``out`` attribute.
 
 # %%
-canonical_CTNNB1 = nx.DiGraph(name="canonical_CTNNB1")
-out0 = make_output_node(canonical_CTNNB1, "CTNNB1", 0)
-out1 = make_output_node(canonical_CTNNB1, "CTNNB1", 1)
+hand_canonical_CTNNB1 = nx.DiGraph(name="hand_canonical_CTNNB1")
+out0 = make_output_node(hand_canonical_CTNNB1, "CTNNB1", 0)
+out1 = make_output_node(hand_canonical_CTNNB1, "CTNNB1", 1)
 
 # out=0: three independent two-symbol schemata
-out0_two0 = make_threshold(canonical_CTNNB1, tau=1, role=ROLE_SCHEMA)
-out0_two1 = make_threshold(canonical_CTNNB1, tau=2, role=ROLE_SCHEMA)
-out0_two2 = make_threshold(canonical_CTNNB1, tau=2, role=ROLE_SCHEMA)
-connect(canonical_CTNNB1, out0_two0, out0)
-connect(canonical_CTNNB1, out0_two1, out0)
-connect(canonical_CTNNB1, out0_two2, out0)
-connect(canonical_CTNNB1, make_input_node(canonical_CTNNB1, "SRY", 1), out0_two0)
-connect(canonical_CTNNB1, make_input_node(canonical_CTNNB1, "WNT4", 0), out0_two1)
-connect(canonical_CTNNB1, make_input_node(canonical_CTNNB1, "RSPO1", 0), out0_two1)
-connect(canonical_CTNNB1, make_input_node(canonical_CTNNB1, "AMH", 1), out0_two2)
-connect(canonical_CTNNB1, make_input_node(canonical_CTNNB1, "SOX9", 1), out0_two2)
+out0_two0 = make_threshold(hand_canonical_CTNNB1, tau=1, role=ROLE_SCHEMA)
+out0_two1 = make_threshold(hand_canonical_CTNNB1, tau=2, role=ROLE_SCHEMA)
+out0_two2 = make_threshold(hand_canonical_CTNNB1, tau=2, role=ROLE_SCHEMA)
+connect(hand_canonical_CTNNB1, out0_two0, out0)
+connect(hand_canonical_CTNNB1, out0_two1, out0)
+connect(hand_canonical_CTNNB1, out0_two2, out0)
+connect(
+    hand_canonical_CTNNB1,
+    make_input_node(hand_canonical_CTNNB1, "SRY", 1),
+    out0_two0,
+)
+connect(
+    hand_canonical_CTNNB1,
+    make_input_node(hand_canonical_CTNNB1, "WNT4", 0),
+    out0_two1,
+)
+connect(
+    hand_canonical_CTNNB1,
+    make_input_node(hand_canonical_CTNNB1, "RSPO1", 0),
+    out0_two1,
+)
+connect(
+    hand_canonical_CTNNB1,
+    make_input_node(hand_canonical_CTNNB1, "AMH", 1),
+    out0_two2,
+)
+connect(
+    hand_canonical_CTNNB1,
+    make_input_node(hand_canonical_CTNNB1, "SOX9", 1),
+    out0_two2,
+)
 
 # out=1: schema over SRY literal + two symmetry fibres (leaf-first ok)
-out1_two0 = make_threshold(canonical_CTNNB1, tau=3, role=ROLE_SCHEMA)
-connect(canonical_CTNNB1, out1_two0, out1)
-out1_two0_sym0 = make_threshold(canonical_CTNNB1, tau=1, role=ROLE_SYMMETRY)
-out1_two0_sym1 = make_threshold(canonical_CTNNB1, tau=1, role=ROLE_SYMMETRY)
-connect(canonical_CTNNB1, out1_two0_sym0, out1_two0)
-connect(canonical_CTNNB1, out1_two0_sym1, out1_two0)
-out1_two0_sym0_g1 = make_threshold(canonical_CTNNB1, tau=1, role=ROLE_POLARITY1)
-out1_two0_sym1_g0 = make_threshold(canonical_CTNNB1, tau=1, role=ROLE_POLARITY0)
-connect(canonical_CTNNB1, out1_two0_sym0_g1, out1_two0_sym0)
-connect(canonical_CTNNB1, out1_two0_sym1_g0, out1_two0_sym1)
-connect(canonical_CTNNB1, make_input_node(canonical_CTNNB1, "SRY", 0), out1_two0)
-connect(canonical_CTNNB1, make_input_node(canonical_CTNNB1, "WNT4", 1), out1_two0_sym0_g1)
-connect(canonical_CTNNB1, make_input_node(canonical_CTNNB1, "RSPO1", 1), out1_two0_sym0_g1)
-connect(canonical_CTNNB1, make_input_node(canonical_CTNNB1, "AMH", 0), out1_two0_sym1_g0)
-connect(canonical_CTNNB1, make_input_node(canonical_CTNNB1, "SOX9", 0), out1_two0_sym1_g0)
-
-canon_result = lut_from_canalizing_map(
-    canonical_CTNNB1, input_order=input_ids_in_order(canonical_CTNNB1)
+out1_two0 = make_threshold(hand_canonical_CTNNB1, tau=3, role=ROLE_SCHEMA)
+connect(hand_canonical_CTNNB1, out1_two0, out1)
+out1_two0_sym0 = make_threshold(
+    hand_canonical_CTNNB1, tau=1, role=ROLE_SYMMETRY
 )
-summarize_roundtrip("canonical_CTNNB1", TRUE_CTNNB1, canon_result)
-assert canon_result.outputs == [int(bit) for bit in TRUE_CTNNB1]
-assert not canon_result.has_conflict and not canon_result.is_incomplete
+out1_two0_sym1 = make_threshold(
+    hand_canonical_CTNNB1, tau=1, role=ROLE_SYMMETRY
+)
+connect(hand_canonical_CTNNB1, out1_two0_sym0, out1_two0)
+connect(hand_canonical_CTNNB1, out1_two0_sym1, out1_two0)
+out1_two0_sym0_g1 = make_threshold(
+    hand_canonical_CTNNB1, tau=1, role=ROLE_POLARITY1
+)
+out1_two0_sym1_g0 = make_threshold(
+    hand_canonical_CTNNB1, tau=1, role=ROLE_POLARITY0
+)
+connect(hand_canonical_CTNNB1, out1_two0_sym0_g1, out1_two0_sym0)
+connect(hand_canonical_CTNNB1, out1_two0_sym1_g0, out1_two0_sym1)
+connect(
+    hand_canonical_CTNNB1,
+    make_input_node(hand_canonical_CTNNB1, "SRY", 0),
+    out1_two0,
+)
+connect(
+    hand_canonical_CTNNB1,
+    make_input_node(hand_canonical_CTNNB1, "WNT4", 1),
+    out1_two0_sym0_g1,
+)
+connect(
+    hand_canonical_CTNNB1,
+    make_input_node(hand_canonical_CTNNB1, "RSPO1", 1),
+    out1_two0_sym0_g1,
+)
+connect(
+    hand_canonical_CTNNB1,
+    make_input_node(hand_canonical_CTNNB1, "AMH", 0),
+    out1_two0_sym1_g0,
+)
+connect(
+    hand_canonical_CTNNB1,
+    make_input_node(hand_canonical_CTNNB1, "SOX9", 0),
+    out1_two0_sym1_g0,
+)
+
+hand_canon_result = lut_from_canalizing_map(
+    hand_canonical_CTNNB1,
+    input_order=input_ids_in_order(hand_canonical_CTNNB1),
+)
+summarize_roundtrip("hand_canonical_CTNNB1", TRUE_CTNNB1, hand_canon_result)
+assert hand_canon_result.outputs == [int(bit) for bit in TRUE_CTNNB1]
+assert not hand_canon_result.has_conflict and not hand_canon_result.is_incomplete
 
 # %% [markdown]
-# ## Visualize the three CTNNB1 CMs
+# ## Visualize the CTNNB1 CMs
 #
 # Uses ``cana.drawing.canalizing_map.draw_canalizing_map_graphviz``.
 # Writes ``.gv`` and ``.png`` under ``dev/logs/cm_roundtrip_figures/``.
@@ -250,8 +329,9 @@ _DOT_STATIC_URL = (
 
 CM_GRAPHS = {
     "legacy_CTNNB1": legacy_CTNNB1,
-    "hand_CTNNB1": hand_CTNNB1,
     "canonical_CTNNB1": canonical_CTNNB1,
+    "hand_CTNNB1": hand_CTNNB1,
+    "hand_canonical_CTNNB1": hand_canonical_CTNNB1,
 }
 
 
@@ -365,8 +445,9 @@ print(f"figures dir → {FIG_DIR}")
 #   ``tid`` / input ids are automatic; thresholds do not store ``out``.
 # * `lut_from_canalizing_map` evaluates nodes modularly from topology.
 # * Threshold ``role`` annotates schema / symmetry / polarity0 / polarity1.
-# * Forward legacy ``canalizing_map``, ``hand_CTNNB1``, and nested-threshold
-#   ``canonical_CTNNB1`` all reconstruct CTNNB1.
+# * Forward ``legacy`` and ``canonical`` builders, hand-fusion
+#   ``hand_CTNNB1``, and hand nested-threshold ``hand_canonical_CTNNB1``
+#   all reconstruct CTNNB1.
 # * Drawing writes ``.gv`` + ``.png`` (portable ``dot_static`` + SVG→PNG
 #   when system Graphviz is unavailable).  Threshold diamonds are colored
 #   by ``role`` when present.

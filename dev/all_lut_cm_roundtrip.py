@@ -2,13 +2,16 @@
 # All-LUT Canalizing Map ↔ LUT roundtrip
 #
 # Enumerate Boolean look-up tables for every `k <= MAX_K` (default 5), build a
-# canalizing map via `BooleanNode.canalizing_map`, reconstruct the LUT with
-# `cana.canalization.cm_lut.lut_from_canalizing_map`, and report fail fractions by `k`.
+# canalizing map via `BooleanNode.canalizing_map` for each builder in
+# `BUILDERS` (legacy and canonical), reconstruct the LUT with
+# `cana.canalization.cm_lut.lut_from_canalizing_map`, and report fail
+# fractions by `(builder, k)`.
 #
 # * **Exhaustive** when `2^(2^k) <= SAMPLE_N` (default 2048 → full enum for
 #   `k <= 3`).
 # * **Sample** exactly `SAMPLE_N` uniform random LUTs whenever the full space
-#   is larger (e.g. `k = 4` → 65536, `k = 5` → `2^32`).
+#   is larger (e.g. `k = 4` → 65536, `k = 5` → `2^32`).  The same sampled
+#   ids are reused for every builder.
 #
 # Set `SMOKE = True` to cap at `SMOKE_MAX_K` (default).  Logs go under
 # `dev/logs/`; later cells parse the log, print stats, and write figures.
@@ -53,6 +56,8 @@ MAX_K = 5
 # Exhaustive if 2^(2^k) <= SAMPLE_N; otherwise always sample SAMPLE_N LUTs.
 SAMPLE_N = 2048
 SAMPLE_SEED = 0
+# CM builders to roundtrip (same sampled LUT ids for each).
+BUILDERS = ("legacy", "canonical")
 # Wall-clock limits per function step; skip on expiry. None / <=0 disables.
 # Default off: subprocess timeouts dominate cost when enumerating many LUTs.
 TIMEOUT_CM_S: Optional[float] = None
@@ -129,6 +134,7 @@ def make_node(k: int, func_id: int) -> BooleanNode:
 
 @dataclass
 class KBucketResult:
+    builder: str
     k: int
     mode: str  # exhaustive | sample
     n_total_space: int
@@ -164,6 +170,7 @@ def main() -> Path:
     log.info(f"effective_max_k={k_hi}")
     log.info(f"SAMPLE_N={SAMPLE_N}")
     log.info(f"SAMPLE_SEED={SAMPLE_SEED}")
+    log.info(f"BUILDERS={','.join(BUILDERS)}")
     log.info(f"TIMEOUT_CM_S={TIMEOUT_CM_S}")
     log.info(f"TIMEOUT_LUT_S={TIMEOUT_LUT_S}")
     log.info(f"PROGRESS_EVERY={PROGRESS_EVERY}")
@@ -177,87 +184,106 @@ def main() -> Path:
     total_cm_s = 0.0
     total_lut_s = 0.0
     failing_ks: List[str] = []
+    # Cache sampled ids per k so every builder sees the same LUTs.
+    func_ids_by_k: Dict[int, Tuple[str, List[int]]] = {}
 
-    for k in range(1, k_hi + 1):
-        space = n_boolean_functions(k)
-        enum_mode, func_ids = iter_func_ids(k, sample_n=SAMPLE_N, seed=SAMPLE_SEED)
-        br = KBucketResult(
-            k=k,
-            mode=enum_mode,
-            n_total_space=space,
-            n_planned=len(func_ids),
-        )
-        log.info(
-            f"=== k={k}  mode={enum_mode}  space={space}  "
-            f"planned={br.n_planned} ==="
-        )
-
-        t_k0 = time.perf_counter()
-        for i, func_id in enumerate(func_ids):
-            node = make_node(k, func_id)
-            nr = roundtrip_node(
-                node,
-                max_k=k_hi,
-                timeout_cm_s=TIMEOUT_CM_S,
-                timeout_lut_s=TIMEOUT_LUT_S,
+    for builder in BUILDERS:
+        log.info(f"######## builder={builder} ########")
+        log.info("")
+        for k in range(1, k_hi + 1):
+            if k not in func_ids_by_k:
+                func_ids_by_k[k] = iter_func_ids(
+                    k, sample_n=SAMPLE_N, seed=SAMPLE_SEED
+                )
+            enum_mode, func_ids = func_ids_by_k[k]
+            space = n_boolean_functions(k)
+            br = KBucketResult(
+                builder=builder,
+                k=k,
+                mode=enum_mode,
+                n_total_space=space,
+                n_planned=len(func_ids),
+            )
+            log.info(
+                f"=== builder={builder}  k={k}  mode={enum_mode}  "
+                f"space={space}  planned={br.n_planned} ==="
             )
 
-            if nr.skipped:
-                br.n_skip += 1
-                log.info(
-                    f"  SKIP  {nr.name}  k={nr.k}  ({nr.skip_reason})"
-                    f"{_timing_suffix(nr)}"
+            t_k0 = time.perf_counter()
+            for i, func_id in enumerate(func_ids):
+                node = make_node(k, func_id)
+                nr = roundtrip_node(
+                    node,
+                    max_k=k_hi,
+                    timeout_cm_s=TIMEOUT_CM_S,
+                    timeout_lut_s=TIMEOUT_LUT_S,
+                    builder=builder,
                 )
-            elif nr.error is not None:
-                br.n_error += 1
-                log.info(
-                    f"  ERROR {nr.name}  k={nr.k}  {nr.error}"
-                    f"{_timing_suffix(nr)}"
-                )
-            else:
-                br.n_eval += 1
-                n_fn_eval += 1
-                if nr.cm_s is not None:
-                    br.cm_total_s += nr.cm_s
-                    total_cm_s += nr.cm_s
-                if nr.lut_s is not None:
-                    br.lut_total_s += nr.lut_s
-                    total_lut_s += nr.lut_s
-                if not nr.exact:
-                    br.n_fail += 1
-                    n_fn_fail += 1
+
+                if nr.skipped:
+                    br.n_skip += 1
                     log.info(
-                        f"  FAIL  {nr.name}  k={nr.k}  reason={nr.fail_reason}"
+                        f"  SKIP  {nr.name}  k={nr.k}  ({nr.skip_reason})"
+                        f"{_timing_suffix(nr)}"
+                    )
+                elif nr.error is not None:
+                    br.n_error += 1
+                    log.info(
+                        f"  ERROR {nr.name}  k={nr.k}  {nr.error}"
                         f"{_timing_suffix(nr)}"
                     )
                 else:
-                    # Keep logs readable: OK lines only every PROGRESS_EVERY,
-                    # plus the first few in each bucket.
-                    if i < 3 or (i + 1) % PROGRESS_EVERY == 0 or i + 1 == len(func_ids):
+                    br.n_eval += 1
+                    n_fn_eval += 1
+                    if nr.cm_s is not None:
+                        br.cm_total_s += nr.cm_s
+                        total_cm_s += nr.cm_s
+                    if nr.lut_s is not None:
+                        br.lut_total_s += nr.lut_s
+                        total_lut_s += nr.lut_s
+                    if not nr.exact:
+                        br.n_fail += 1
+                        n_fn_fail += 1
                         log.info(
-                            f"  OK    {nr.name}  k={nr.k}{_timing_suffix(nr)}"
+                            f"  FAIL  {nr.name}  k={nr.k}  "
+                            f"reason={nr.fail_reason}"
+                            f"{_timing_suffix(nr)}"
                         )
+                    else:
+                        # Keep logs readable: OK lines only every PROGRESS_EVERY,
+                        # plus the first few in each bucket.
+                        if (
+                            i < 3
+                            or (i + 1) % PROGRESS_EVERY == 0
+                            or i + 1 == len(func_ids)
+                        ):
+                            log.info(
+                                f"  OK    {nr.name}  k={nr.k}"
+                                f"{_timing_suffix(nr)}"
+                            )
 
-            if PROGRESS_EVERY and (i + 1) % PROGRESS_EVERY == 0:
-                elapsed = time.perf_counter() - t_k0
-                log.info(
-                    f"  progress  {i + 1}/{br.n_planned}  "
-                    f"eval={br.n_eval}  fail={br.n_fail}  "
-                    f"skip={br.n_skip}  error={br.n_error}  "
-                    f"elapsed={_fmt_secs(elapsed)}"
+                if PROGRESS_EVERY and (i + 1) % PROGRESS_EVERY == 0:
+                    elapsed = time.perf_counter() - t_k0
+                    log.info(
+                        f"  progress  {i + 1}/{br.n_planned}  "
+                        f"eval={br.n_eval}  fail={br.n_fail}  "
+                        f"skip={br.n_skip}  error={br.n_error}  "
+                        f"elapsed={_fmt_secs(elapsed)}"
+                    )
+
+            k_fail = br.n_fail > 0
+            if k_fail:
+                failing_ks.append(
+                    f"builder={builder} k={k} fail={br.n_fail}/{br.n_eval}"
                 )
-
-        k_fail = br.n_fail > 0
-        if k_fail:
-            failing_ks.append(f"k={k} fail={br.n_fail}/{br.n_eval}")
-        log.info(
-            f"  k_summary  eval={br.n_eval}  fail={br.n_fail}  "
-            f"skip={br.n_skip}  error={br.n_error}  k_fail={k_fail}  "
-            f"cm_total={_fmt_secs(br.cm_total_s)}  "
-            f"lut_total={_fmt_secs(br.lut_total_s)}"
-        )
-        log.info("")
-        buckets.append(br)
+            log.info(
+                f"  k_summary  eval={br.n_eval}  fail={br.n_fail}  "
+                f"skip={br.n_skip}  error={br.n_error}  k_fail={k_fail}  "
+                f"cm_total={_fmt_secs(br.cm_total_s)}  "
+                f"lut_total={_fmt_secs(br.lut_total_s)}"
+            )
+            log.info("")
+            buckets.append(br)
 
     fn_frac = (n_fn_fail / n_fn_eval) if n_fn_eval else float("nan")
     n_k_eval = sum(1 for b in buckets if b.n_eval + b.n_error + b.n_skip > 0)
@@ -267,10 +293,20 @@ def main() -> Path:
     log.info("=" * 60)
     log.info("SUMMARY")
     log.info(f"mode={mode}")
+    log.info(f"BUILDERS={','.join(BUILDERS)}")
     log.info(f"function_fail_fraction = {n_fn_fail}/{n_fn_eval} = {fn_frac:.6f}")
     log.info(f"k_fail_fraction        = {n_k_fail}/{n_k_eval} = {k_frac:.6f}")
     log.info(f"cm_time_total          = {_fmt_secs(total_cm_s)}")
     log.info(f"lut_time_total         = {_fmt_secs(total_lut_s)}")
+    for builder in BUILDERS:
+        b_buckets = [b for b in buckets if b.builder == builder]
+        b_eval = sum(b.n_eval for b in b_buckets)
+        b_fail = sum(b.n_fail for b in b_buckets)
+        b_frac = (b_fail / b_eval) if b_eval else float("nan")
+        log.info(
+            f"builder={builder}  function_fail_fraction = "
+            f"{b_fail}/{b_eval} = {b_frac:.6f}"
+        )
     if failing_ks:
         log.info("failing_k:")
         for item in failing_ks:
@@ -303,8 +339,10 @@ if __name__ == "__main__":
 
 # %%
 _RE_HEADER = re.compile(r"^([A-Za-z0-9_]+)=(.*)$")
+# New logs include builder=; older logs omit it (treated as legacy).
 _RE_K = re.compile(
-    r"^=== k=(?P<k>\d+)  mode=(?P<mode>\S+)  space=(?P<space>\d+)  "
+    r"^=== (?:builder=(?P<builder>\S+)  )?k=(?P<k>\d+)  "
+    r"mode=(?P<mode>\S+)  space=(?P<space>\d+)  "
     r"planned=(?P<planned>\d+) ===$"
 )
 _RE_NODE_HEAD = re.compile(
@@ -319,6 +357,9 @@ _RE_K_SUMMARY = re.compile(
 _RE_FINAL = re.compile(
     r"^(function_fail_fraction|k_fail_fraction|cm_time_total|lut_time_total)"
     r"\s*=\s*(.+)$"
+)
+_RE_BUILDER_FRAC = re.compile(
+    r"^builder=(?P<builder>\S+)\s+function_fail_fraction\s*=\s*(.+)$"
 )
 
 
@@ -401,6 +442,10 @@ def parse_log(
         for raw in fh:
             line = raw.rstrip("\n")
 
+            if line.startswith("######## builder="):
+                in_header = False
+                continue
+
             if line == "SUMMARY" or (line.startswith("=" * 10) and "SUMMARY" not in line):
                 in_header = False
                 continue
@@ -417,6 +462,7 @@ def parse_log(
                 if cur is not None and "k_fail" not in cur:
                     buckets.append(cur)
                 cur = {
+                    "builder": m_k.group("builder") or "legacy",
                     "k": int(m_k.group("k")),
                     "mode": m_k.group("mode"),
                     "space": int(m_k.group("space")),
@@ -446,7 +492,15 @@ def parse_log(
 
             node = parse_node_line(line)
             if node is not None and cur is not None:
+                node["builder"] = cur.get("builder", "legacy")
                 nodes.append(node)
+                continue
+
+            m_b = _RE_BUILDER_FRAC.match(line)
+            if m_b:
+                final[f"builder_{m_b.group('builder')}_fail_fraction"] = (
+                    m_b.group(2).strip()
+                )
                 continue
 
             m = _RE_FINAL.match(line)
@@ -491,10 +545,11 @@ def summarize_log(path: Path) -> Tuple[Dict[str, str], pd.DataFrame, pd.DataFram
 
     if not df_k.empty and "eval" in df_k.columns:
         print()
-        print("=== Per-k summaries ===")
+        print("=== Per-(builder, k) summaries ===")
         cols = [
             c
             for c in [
+                "builder",
                 "k",
                 "mode",
                 "space",
@@ -518,14 +573,31 @@ def summarize_log(path: Path) -> Tuple[Dict[str, str], pd.DataFrame, pd.DataFram
             f"  eval={ev}  fail={fa}  fail_fraction={fa}/{ev} = "
             f"{fa / ev if ev else float('nan'):.6f}"
         )
+        if "builder" in df_k.columns:
+            print()
+            print("=== Per-builder aggregate ===")
+            for builder, sub in df_k.groupby("builder", sort=True):
+                bev = int(sub["eval"].sum())
+                bfa = int(sub["fail"].sum())
+                print(
+                    f"  {builder}: eval={bev}  fail={bfa}  "
+                    f"fail_fraction={bfa}/{bev} = "
+                    f"{bfa / bev if bev else float('nan'):.6f}"
+                )
 
     print()
     print("=== FAIL reasons (logged) ===")
-    print(
-        df_nodes.loc[df_nodes["status"] == "FAIL", "fail_reason"]
-        .value_counts(dropna=False)
-        .to_string()
-    )
+    fail_rows = df_nodes.loc[df_nodes["status"] == "FAIL"]
+    if fail_rows.empty:
+        print("(none)")
+    elif "builder" in fail_rows.columns:
+        print(
+            fail_rows.groupby(["builder", "fail_reason"], dropna=False)
+            .size()
+            .to_string()
+        )
+    else:
+        print(fail_rows["fail_reason"].value_counts(dropna=False).to_string())
     return header, df_nodes, df_k, final
 
 
@@ -560,6 +632,18 @@ def save_fig(name: str) -> Path:
     return path
 
 
+_BUILDER_COLORS = {
+    "legacy": "#264653",
+    "canonical": "#2a9d8f",
+}
+
+
+def _builders_in(df: pd.DataFrame) -> List[str]:
+    if "builder" not in df.columns or df["builder"].isna().all():
+        return ["legacy"]
+    return sorted(df["builder"].dropna().unique().tolist())
+
+
 if not df_k.empty and "eval" in df_k.columns:
     FIG_DIR.mkdir(parents=True, exist_ok=True)
     print(f"figures → {FIG_DIR}")
@@ -574,48 +658,78 @@ if not df_k.empty and "eval" in df_k.columns:
         }
     )
 
-    # 1) Per-k fail rate (from k_summary — authoritative)
+    builders = _builders_in(df_k)
+    ks_all = sorted(df_k["k"].astype(int).unique().tolist())
+    n_b = max(len(builders), 1)
+    width = 0.8 / n_b
+
+    # 1) Per-(builder, k) fail rate (from k_summary — authoritative)
     fig, ax = plt.subplots()
     sub = df_k[df_k["eval"] > 0].copy()
-    if len(sub):
-        rate = sub["fail"] / sub["eval"]
-        ax.bar(sub["k"], rate, color="#e76f51", alpha=0.85)
-        for _, row in sub.iterrows():
+    max_rate = 0.05
+    for bi, builder in enumerate(builders):
+        if "builder" in sub.columns:
+            bsub = sub[sub["builder"] == builder]
+        else:
+            bsub = sub
+        if bsub.empty:
+            continue
+        rate = bsub["fail"] / bsub["eval"]
+        if len(rate):
+            max_rate = max(max_rate, float(rate.max()))
+        offsets = bsub["k"].astype(float) + (bi - (n_b - 1) / 2) * width
+        color = _BUILDER_COLORS.get(builder, f"C{bi}")
+        ax.bar(
+            offsets, rate, width=width * 0.9, label=builder, color=color, alpha=0.85
+        )
+        for x, row in zip(offsets, bsub.itertuples()):
+            r = row.fail / row.eval
             ax.text(
-                row["k"],
-                row["fail"] / row["eval"],
-                f"{int(row['fail'])}/{int(row['eval'])}",
+                x,
+                r,
+                f"{int(row.fail)}/{int(row.eval)}",
                 ha="center",
                 va="bottom",
-                fontsize=8,
+                fontsize=7,
             )
-        ax.set_ylim(0, max(0.05, float(rate.max()) * 1.25))
+    ax.set_xticks(ks_all)
+    ax.set_ylim(0, max_rate * 1.25)
     ax.set_xlabel("k (inputs)")
     ax.set_ylabel("fail rate")
-    ax.set_title("FAIL rate vs k (from k_summary)")
+    ax.set_title("FAIL rate vs k by builder (from k_summary)")
+    if n_b > 1:
+        ax.legend(frameon=False)
     save_fig("01_fail_rate_vs_k")
 
-    # 2) OK / fail / skip / error stacked counts (eval = OK + FAIL)
-    fig, ax = plt.subplots()
-    ks = df_k["k"].astype(int)
-    bottoms = np.zeros(len(df_k))
-    ok_counts = (df_k["eval"] - df_k["fail"]).clip(lower=0)
-    series = [
-        ("OK", ok_counts, "#2a9d8f"),
-        ("FAIL", df_k["fail"], "#e76f51"),
-        ("SKIP", df_k["skip"], "#e9c46a"),
-        ("ERROR", df_k["error"], "#264653"),
-    ]
-    for label, vals, color in series:
-        ax.bar(ks, vals, bottom=bottoms, label=label, color=color)
-        bottoms = bottoms + vals.to_numpy(dtype=float)
-    ax.set_xlabel("k")
-    ax.set_ylabel("functions")
-    ax.set_title("Outcomes per k (k_summary)")
-    ax.legend(frameon=False)
+    # 2) OK / fail / skip / error stacked counts — one panel per builder
+    fig, axes = plt.subplots(1, n_b, figsize=(5 * n_b, 4), squeeze=False)
+    for ax, builder in zip(axes[0], builders):
+        if "builder" in df_k.columns:
+            bdf = df_k[df_k["builder"] == builder]
+        else:
+            bdf = df_k
+        if bdf.empty:
+            ax.set_title(f"{builder} (no data)")
+            continue
+        ks = bdf["k"].astype(int)
+        bottoms = np.zeros(len(bdf))
+        ok_counts = (bdf["eval"] - bdf["fail"]).clip(lower=0)
+        series = [
+            ("OK", ok_counts, "#2a9d8f"),
+            ("FAIL", bdf["fail"], "#e76f51"),
+            ("SKIP", bdf["skip"], "#e9c46a"),
+            ("ERROR", bdf["error"], "#264653"),
+        ]
+        for label, vals, color in series:
+            ax.bar(ks, vals, bottom=bottoms, label=label, color=color)
+            bottoms = bottoms + vals.to_numpy(dtype=float)
+        ax.set_xlabel("k")
+        ax.set_ylabel("functions")
+        ax.set_title(f"Outcomes per k ({builder})")
+        ax.legend(frameon=False)
     save_fig("02_outcomes_per_k")
 
-    # 3) Timing totals vs k
+    # 3) Timing totals vs k by builder
     fig, axes = plt.subplots(1, 2, figsize=(10, 4))
     for ax, col, title in (
         (axes[0], "cm_total_s", "CM time total"),
@@ -624,16 +738,47 @@ if not df_k.empty and "eval" in df_k.columns:
         if col not in df_k.columns or df_k[col].isna().all():
             ax.set_title(f"{title} (no data)")
             continue
-        ax.bar(df_k["k"], df_k[col].fillna(0.0), color="#264653", alpha=0.85)
+        for bi, builder in enumerate(builders):
+            if "builder" in df_k.columns:
+                bdf = df_k[df_k["builder"] == builder]
+            else:
+                bdf = df_k
+            if bdf.empty:
+                continue
+            offsets = bdf["k"].astype(float) + (bi - (n_b - 1) / 2) * width
+            color = _BUILDER_COLORS.get(builder, f"C{bi}")
+            ax.bar(
+                offsets,
+                bdf[col].fillna(0.0),
+                width=width * 0.9,
+                label=builder,
+                color=color,
+                alpha=0.85,
+            )
+        ax.set_xticks(ks_all)
         ax.set_xlabel("k")
         ax.set_ylabel("seconds")
         ax.set_title(f"{title} vs k")
+        if n_b > 1:
+            ax.legend(frameon=False)
     save_fig("03_timing_totals_vs_k")
 
-    # 4) Mode / coverage: planned vs space
+    # 4) Mode / coverage: planned vs space (independent of builder; use first)
     fig, ax = plt.subplots()
-    ax.bar(df_k["k"] - 0.15, df_k["planned"], width=0.3, label="planned", color="#2a9d8f")
-    ax.bar(df_k["k"] + 0.15, df_k["space"], width=0.3, label="space 2^(2^k)", color="#e9c46a")
+    if "builder" in df_k.columns:
+        cov = df_k[df_k["builder"] == builders[0]]
+    else:
+        cov = df_k
+    ax.bar(
+        cov["k"] - 0.15, cov["planned"], width=0.3, label="planned", color="#2a9d8f"
+    )
+    ax.bar(
+        cov["k"] + 0.15,
+        cov["space"],
+        width=0.3,
+        label="space 2^(2^k)",
+        color="#e9c46a",
+    )
     ax.set_yscale("log")
     ax.set_xlabel("k")
     ax.set_ylabel("count (log)")
@@ -641,14 +786,25 @@ if not df_k.empty and "eval" in df_k.columns:
     ax.legend(frameon=False)
     save_fig("04_coverage")
 
-    # 5) Logged FAIL reasons (if any FAIL lines)
+    # 5) Logged FAIL reasons (if any FAIL lines), faceted by builder when present
     if not df_nodes.empty and (df_nodes["status"] == "FAIL").any():
-        fig, ax = plt.subplots()
-        vc = df_nodes.loc[df_nodes["status"] == "FAIL", "fail_reason"].value_counts()
-        ax.bar(vc.index.astype(str), vc.values, color="#e76f51")
-        ax.set_ylabel("logged FAIL lines")
-        ax.set_title("FAIL reasons")
-        ax.tick_params(axis="x", rotation=20)
+        fails = df_nodes[df_nodes["status"] == "FAIL"]
+        if "builder" in fails.columns and fails["builder"].nunique() > 1:
+            fb = sorted(fails["builder"].unique().tolist())
+            fig, axes = plt.subplots(1, len(fb), figsize=(5 * len(fb), 4), squeeze=False)
+            for ax, builder in zip(axes[0], fb):
+                vc = fails.loc[fails["builder"] == builder, "fail_reason"].value_counts()
+                ax.bar(vc.index.astype(str), vc.values, color="#e76f51")
+                ax.set_ylabel("logged FAIL lines")
+                ax.set_title(f"FAIL reasons ({builder})")
+                ax.tick_params(axis="x", rotation=20)
+        else:
+            fig, ax = plt.subplots()
+            vc = fails["fail_reason"].value_counts()
+            ax.bar(vc.index.astype(str), vc.values, color="#e76f51")
+            ax.set_ylabel("logged FAIL lines")
+            ax.set_title("FAIL reasons")
+            ax.tick_params(axis="x", rotation=20)
         save_fig("05_fail_reasons")
 else:
     print("Skip figures — no k_summary data (run main() first).")
@@ -660,7 +816,11 @@ else:
 # %%
 if not df_nodes.empty:
     fails = df_nodes[df_nodes["status"] == "FAIL"][
-        [c for c in ["k", "node", "fail_reason", "cm_s", "lut_s"] if c in df_nodes.columns]
+        [
+            c
+            for c in ["builder", "k", "node", "fail_reason", "cm_s", "lut_s"]
+            if c in df_nodes.columns
+        ]
     ]
     print(f"FAIL rows ({len(fails)}; showing up to 40):")
     print(fails.head(40).to_string(index=False))

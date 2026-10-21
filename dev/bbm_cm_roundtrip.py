@@ -243,7 +243,7 @@ def _cm_worker(
 ) -> None:
     """Child process: build CM (Cython QM must be killable via terminate)."""
     try:
-        name, nid, inputs, outputs = payload
+        name, nid, inputs, outputs, builder = payload
         node = BooleanNode(
             id=nid,
             name=name,
@@ -252,7 +252,7 @@ def _cm_worker(
             outputs=list(outputs),
             network=None,
         )
-        cm = node.canalizing_map()
+        cm = node.canalizing_map(builder=builder)
         conn.send(("ok", cm))
     except Exception as exc:  # noqa: BLE001
         conn.send(("err", f"{type(exc).__name__}: {exc}"))
@@ -320,6 +320,7 @@ def roundtrip_node(
     max_k: int,
     timeout_cm_s: Optional[float] = None,
     timeout_lut_s: Optional[float] = None,
+    builder: str = "legacy",
 ) -> NodeRoundtrip:
     out = NodeRoundtrip(name=node.name, k=int(node.k))
     if out.k > max_k:
@@ -332,11 +333,17 @@ def roundtrip_node(
             if timeout_cm_s is not None and timeout_cm_s > 0:
                 cm = _run_in_process(
                     _cm_worker,
-                    (node.name, node.id, list(node.inputs), list(node.outputs)),
+                    (
+                        node.name,
+                        node.id,
+                        list(node.inputs),
+                        list(node.outputs),
+                        builder,
+                    ),
                     timeout_cm_s,
                 )
             else:
-                cm = node.canalizing_map()
+                cm = node.canalizing_map(builder=builder)
         except StepTimeout:
             out.cm_s = time.perf_counter() - t0
             out.skipped = True

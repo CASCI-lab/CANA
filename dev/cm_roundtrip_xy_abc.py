@@ -3,11 +3,12 @@
 #
 # Walkthrough:
 # 1. Build a Boolean node from the rule below.
-# 2. Convert to a Canalizing Map (CM) via the legacy builder
-#    (`BooleanNode.canalizing_map` / `build_canalizing_map_legacy`).
+# 2. Convert to a Canalizing Map (CM) via the **canonical** builder
+#    (`BooleanNode.canalizing_map(builder="canonical")` /
+#    `build_canalizing_map_canonical`), and also via the legacy builder.
 # 3. Reconstruct a LUT from that CM via `cm_lut.lut_from_canalizing_map`.
 # 4. Compare original vs reconstructed LUTs.
-# 5. Also build hand / nested-threshold CMs and draw all three.
+# 5. Also keep the hand-built nested-threshold CM and draw all of them.
 #
 # Rule
 # ----
@@ -31,7 +32,10 @@ from pathlib import Path
 import networkx as nx
 from cana.boolean_network import BooleanNetwork
 from cana.boolean_node import BooleanNode
-from cana.canalization.canalizing_map import build_canalizing_map_legacy
+from cana.canalization.canalizing_map import (
+    build_canalizing_map_canonical,
+    build_canalizing_map_legacy,
+)
 from cana.canalization.cm_lut import (
     ROLE_POLARITY0,
     ROLE_POLARITY1,
@@ -40,7 +44,6 @@ from cana.canalization.cm_lut import (
     connect,
     input_ids_in_order,
     lut_from_canalizing_map,
-    make_fusion,
     make_input_node,
     make_output_node,
     make_threshold,
@@ -79,23 +82,22 @@ TRUE_F = "00000000000000000001011000000000"
 # %% [markdown]
 # ## Case 1 — AND / OR from LUT
 #
-# Simple canalizing functions.  The current forward CM builder usually gets
-# these right, so the roundtrip can succeed.
+# Simple canalizing functions.  Both forward builders round-trip these.
 
 # %%
 and_node = BooleanNode.from_output_list(
     [0, 0, 0, 1], name="AND", inputs=[0, 1], id=2
 )
-and_cm = and_node.canalizing_map(builder="legacy")
+and_cm = and_node.canalizing_map(builder="canonical")
 and_result = lut_from_canalizing_map(and_cm, input_order=and_node.inputs)
-summarize_roundtrip("AND", and_node.outputs, and_result)
+summarize_roundtrip("AND (canonical)", and_node.outputs, and_result)
 
 or_node = BooleanNode.from_output_list(
     [0, 1, 1, 1], name="OR", inputs=[10, 11], id=5
 )
-or_cm = or_node.canalizing_map(builder="legacy")
+or_cm = or_node.canalizing_map(builder="canonical")
 or_result = lut_from_canalizing_map(or_cm, input_order=or_node.inputs)
-summarize_roundtrip("OR", or_node.outputs, or_result)
+summarize_roundtrip("OR (canonical)", or_node.outputs, or_result)
 
 # %% [markdown]
 # ## Case 2 — ``F`` via legacy canalizing map builder
@@ -129,13 +131,15 @@ print("Two-symbol schemata (out=1):")
 for row in fn._two_symbols[1]:
     print(" ", row)
 
+_input_labels = {i: N.nodes[i].name for i in fn.inputs}
+
 legacy_F = build_canalizing_map_legacy(
     fn._two_symbols,
     node_id=fn.id,
     inputs=fn.inputs,
     name=fn.name,
     constant=fn.constant,
-    input_labels={i: N.nodes[i].name for i in fn.inputs},
+    input_labels=_input_labels,
     k=fn.k,
 )
 legacy_result = lut_from_canalizing_map(legacy_F, input_order=fn.inputs)
@@ -143,76 +147,105 @@ exact = summarize_roundtrip("legacy_F", fn.outputs, legacy_result)
 assert exact, "Expected legacy F roundtrip to succeed"
 
 # %% [markdown]
-# ## Case 4 — Canonical nested-threshold CM (`canonical_F`)
+# ## Case 3 — ``F`` via canonical canalizing map builder
 #
-# Same function with nested schema / symmetry / polarity thresholds on out=1.
-# Out=0 keeps flat schemata (including ``τ=2`` for ≥2 zeros among ABC).
+# Nested schema / symmetry / polarity thresholds; no fusion nodes.
+# Same as ``fn.canalizing_map(builder="canonical")``.
 
 # %%
-canonical_F = nx.DiGraph(name="canonical_F")
-out0 = make_output_node(canonical_F, "F", 0)
-out1 = make_output_node(canonical_F, "F", 1)
-
-x0 = make_input_node(canonical_F, "X", 0)
-x1 = make_input_node(canonical_F, "X", 1)
-y0 = make_input_node(canonical_F, "Y", 0)
-y1 = make_input_node(canonical_F, "Y", 1)
-a0 = make_input_node(canonical_F, "A", 0)
-a1 = make_input_node(canonical_F, "A", 1)
-b0 = make_input_node(canonical_F, "B", 0)
-b1 = make_input_node(canonical_F, "B", 1)
-c0 = make_input_node(canonical_F, "C", 0)
-c1 = make_input_node(canonical_F, "C", 1)
-
-# out=0: four schemata
-out0_x = make_threshold(canonical_F, tau=1, role=ROLE_SCHEMA)
-out0_y = make_threshold(canonical_F, tau=1, role=ROLE_SCHEMA)
-out0_ge2zero = make_threshold(canonical_F, tau=1, role=ROLE_SCHEMA)
-out0_all1 = make_threshold(canonical_F, tau=3, role=ROLE_SCHEMA)
-connect(canonical_F, out0_x, out0)
-connect(canonical_F, out0_y, out0)
-connect(canonical_F, out0_ge2zero, out0)
-connect(canonical_F, out0_all1, out0)
-out0_ge2zero_sym = make_threshold(canonical_F, tau=1, role=ROLE_SYMMETRY)
-connect(canonical_F, out0_ge2zero_sym, out0_ge2zero)
-out0_ge2zero_sym_pol0 = make_threshold(canonical_F, tau=2, role=ROLE_POLARITY0)
-connect(canonical_F, out0_ge2zero_sym_pol0, out0_ge2zero_sym)
-connect(canonical_F, x0, out0_x)
-connect(canonical_F, y1, out0_y)
-connect(canonical_F, a0, out0_ge2zero_sym_pol0)
-connect(canonical_F, b0, out0_ge2zero_sym_pol0)
-connect(canonical_F, c0, out0_ge2zero_sym_pol0)
-connect(canonical_F, a1, out0_all1)
-connect(canonical_F, b1, out0_all1)
-connect(canonical_F, c1, out0_all1)
-
-# out=1: schema over X=1, Y=0 + polarity0 (τ=1) + polarity1 (τ=2) fibres
-out1_schema = make_threshold(canonical_F, tau=3, role=ROLE_SCHEMA)
-connect(canonical_F, out1_schema, out1)
-out1_schema_sym = make_threshold(canonical_F, tau=2, role=ROLE_SYMMETRY)
-connect(canonical_F, out1_schema_sym, out1_schema)
-out1_schema_sym_pol0 = make_threshold(canonical_F, tau=1, role=ROLE_POLARITY0)
-out1_schema_sym_pol1 = make_threshold(canonical_F, tau=2, role=ROLE_POLARITY1)
-connect(canonical_F, out1_schema_sym_pol0, out1_schema_sym)
-connect(canonical_F, out1_schema_sym_pol1, out1_schema_sym)
-connect(canonical_F, x1, out1_schema)
-connect(canonical_F, y0, out1_schema)
-connect(canonical_F, a0, out1_schema_sym_pol0)
-connect(canonical_F, b0, out1_schema_sym_pol0)
-connect(canonical_F, c0, out1_schema_sym_pol0)
-connect(canonical_F, a1, out1_schema_sym_pol1)
-connect(canonical_F, b1, out1_schema_sym_pol1)
-connect(canonical_F, c1, out1_schema_sym_pol1)
-
-canon_result = lut_from_canalizing_map(
-    canonical_F, input_order=input_ids_in_order(canonical_F)
+canonical_F = build_canalizing_map_canonical(
+    fn._two_symbols,
+    node_id=fn.id,
+    inputs=fn.inputs,
+    name=fn.name,
+    constant=fn.constant,
+    input_labels=_input_labels,
+    k=fn.k,
 )
-summarize_roundtrip("canonical_F", TRUE_F, canon_result)
-assert canon_result.outputs == [int(bit) for bit in TRUE_F]
-assert not canon_result.has_conflict and not canon_result.is_incomplete
+canonical_result = lut_from_canalizing_map(canonical_F, input_order=fn.inputs)
+exact = summarize_roundtrip("canonical_F", fn.outputs, canonical_result)
+assert exact, "Expected canonical F roundtrip to succeed"
 
 # %% [markdown]
-# ## Visualize the three ``F`` CMs
+# ## Case 4 — Hand-built nested-threshold CM (`hand_canonical_F`)
+#
+# Same function with nested schema / symmetry / polarity thresholds on out=1
+# (manual reference for the canonical builder).  Out=0 keeps flat schemata
+# (including ``τ=2`` for ≥2 zeros among ABC).
+
+# %%
+hand_canonical_F = nx.DiGraph(name="hand_canonical_F")
+out0 = make_output_node(hand_canonical_F, "F", 0)
+out1 = make_output_node(hand_canonical_F, "F", 1)
+
+x0 = make_input_node(hand_canonical_F, "X", 0)
+x1 = make_input_node(hand_canonical_F, "X", 1)
+y0 = make_input_node(hand_canonical_F, "Y", 0)
+y1 = make_input_node(hand_canonical_F, "Y", 1)
+a0 = make_input_node(hand_canonical_F, "A", 0)
+a1 = make_input_node(hand_canonical_F, "A", 1)
+b0 = make_input_node(hand_canonical_F, "B", 0)
+b1 = make_input_node(hand_canonical_F, "B", 1)
+c0 = make_input_node(hand_canonical_F, "C", 0)
+c1 = make_input_node(hand_canonical_F, "C", 1)
+
+# out=0: four schemata
+out0_x = make_threshold(hand_canonical_F, tau=1, role=ROLE_SCHEMA)
+out0_y = make_threshold(hand_canonical_F, tau=1, role=ROLE_SCHEMA)
+out0_ge2zero = make_threshold(hand_canonical_F, tau=1, role=ROLE_SCHEMA)
+out0_all1 = make_threshold(hand_canonical_F, tau=3, role=ROLE_SCHEMA)
+connect(hand_canonical_F, out0_x, out0)
+connect(hand_canonical_F, out0_y, out0)
+connect(hand_canonical_F, out0_ge2zero, out0)
+connect(hand_canonical_F, out0_all1, out0)
+out0_ge2zero_sym = make_threshold(
+    hand_canonical_F, tau=1, role=ROLE_SYMMETRY
+)
+connect(hand_canonical_F, out0_ge2zero_sym, out0_ge2zero)
+out0_ge2zero_sym_pol0 = make_threshold(
+    hand_canonical_F, tau=2, role=ROLE_POLARITY0
+)
+connect(hand_canonical_F, out0_ge2zero_sym_pol0, out0_ge2zero_sym)
+connect(hand_canonical_F, x0, out0_x)
+connect(hand_canonical_F, y1, out0_y)
+connect(hand_canonical_F, a0, out0_ge2zero_sym_pol0)
+connect(hand_canonical_F, b0, out0_ge2zero_sym_pol0)
+connect(hand_canonical_F, c0, out0_ge2zero_sym_pol0)
+connect(hand_canonical_F, a1, out0_all1)
+connect(hand_canonical_F, b1, out0_all1)
+connect(hand_canonical_F, c1, out0_all1)
+
+# out=1: schema over X=1, Y=0 + polarity0 (τ=1) + polarity1 (τ=2) fibres
+out1_schema = make_threshold(hand_canonical_F, tau=3, role=ROLE_SCHEMA)
+connect(hand_canonical_F, out1_schema, out1)
+out1_schema_sym = make_threshold(hand_canonical_F, tau=2, role=ROLE_SYMMETRY)
+connect(hand_canonical_F, out1_schema_sym, out1_schema)
+out1_schema_sym_pol0 = make_threshold(
+    hand_canonical_F, tau=1, role=ROLE_POLARITY0
+)
+out1_schema_sym_pol1 = make_threshold(
+    hand_canonical_F, tau=2, role=ROLE_POLARITY1
+)
+connect(hand_canonical_F, out1_schema_sym_pol0, out1_schema_sym)
+connect(hand_canonical_F, out1_schema_sym_pol1, out1_schema_sym)
+connect(hand_canonical_F, x1, out1_schema)
+connect(hand_canonical_F, y0, out1_schema)
+connect(hand_canonical_F, a0, out1_schema_sym_pol0)
+connect(hand_canonical_F, b0, out1_schema_sym_pol0)
+connect(hand_canonical_F, c0, out1_schema_sym_pol0)
+connect(hand_canonical_F, a1, out1_schema_sym_pol1)
+connect(hand_canonical_F, b1, out1_schema_sym_pol1)
+connect(hand_canonical_F, c1, out1_schema_sym_pol1)
+
+hand_canon_result = lut_from_canalizing_map(
+    hand_canonical_F, input_order=input_ids_in_order(hand_canonical_F)
+)
+summarize_roundtrip("hand_canonical_F", TRUE_F, hand_canon_result)
+assert hand_canon_result.outputs == [int(bit) for bit in TRUE_F]
+assert not hand_canon_result.has_conflict and not hand_canon_result.is_incomplete
+
+# %% [markdown]
+# ## Visualize the ``F`` CMs
 #
 # Uses ``cana.drawing.canalizing_map.draw_canalizing_map_graphviz``.
 # Writes ``.gv`` and ``.png`` under ``dev/logs/cm_roundtrip_xy_abc_figures/``.
@@ -230,6 +263,7 @@ _DOT_STATIC_URL = (
 CM_GRAPHS = {
     "legacy_F": legacy_F,
     "canonical_F": canonical_F,
+    "hand_canonical_F": hand_canonical_F,
 }
 
 
@@ -339,8 +373,8 @@ print(f"figures dir → {FIG_DIR}")
 # %% [markdown]
 # ## Takeaway
 #
-# * ``F = X ∧ ¬Y ∧ (A+B+C = 2)`` round-trips via legacy, hand-fusion, and
-#   nested-threshold CMs.
+# * ``F = X ∧ ¬Y ∧ (A+B+C = 2)`` round-trips via legacy and canonical
+#   builders, and via hand nested-threshold ``hand_canonical_F``.
 # * Out=0 schemata: ``X=0``, ``Y=1``, ``≥2`` zeros among ABC, ``A=B=C=1``.
 # * Out=1: ``X=1``, ``Y=0``, plus ``≥1`` zero and ``≥2`` ones among ABC.
 # * Drawing writes ``.gv`` + ``.png`` under ``cm_roundtrip_xy_abc_figures/``.

@@ -7,13 +7,22 @@ literals (and permutation-symmetric groups of them) force a Boolean node's
 output.  Schemata come from two-symbol canalization; each schema becomes a
 threshold unit that claims one output polarity when enough of its inputs fire.
 
-Graph vocabulary (legacy CANA naming, kept for drawing / LUT round-trips)
--------------------------------------------------------------------------
+Graph vocabulary
+----------------
 - ``variable`` nodes ``var-{id}-out-{0|1}`` — an input or output at a fixed
   polarity.
 - ``threshold`` nodes — fire when at least ``tau`` predecessors are active.
-- ``fusion`` nodes — OR of predecessors (used when a symmetry fibre needs
-  only one matching literal).
+  Optional ``role`` annotates the canalization layer (``schema``,
+  ``symmetry``, ``polarity0``, ``polarity1``); evaluation ignores it.
+- ``fusion`` nodes — OR of predecessors (legacy builder only, when a
+  symmetry fibre needs only one matching literal).
+
+Builders
+--------
+- ``legacy`` (:func:`build_canalizing_map_legacy`) — fibres attach directly
+  to the schema threshold; count-1 fibres use fusion nodes.
+- ``canonical`` (:func:`build_canalizing_map_canonical`) — nested
+  schema → symmetry → polarity thresholds and **no** fusion nodes.
 
 Callers may select a builder by name via :data:`CM_BUILDERS` or pass a
 callable with the same signature as :func:`build_canalizing_map_legacy`.
@@ -24,9 +33,16 @@ from typing import Callable, Dict, List, Mapping, Optional, Sequence, Tuple, Uni
 
 import networkx as nx
 
+from cana.canalization.cm_lut import (
+    ROLE_POLARITY0,
+    ROLE_POLARITY1,
+    ROLE_SCHEMA,
+    ROLE_SYMMETRY,
+)
+
 # One two-symbol schema: (schema_string, permutation_groups, same_symbol_groups).
 # ``same_symbol_groups`` is part of the canalization payload but unused by the
-# legacy CM wiring below.
+# CM wiring below.
 SchemaEntry = Tuple[str, Sequence[Sequence[int]], Sequence]
 # ``(schemata_for_output_0, schemata_for_output_1)``
 TwoSymbols = Tuple[Sequence[SchemaEntry], Sequence[SchemaEntry]]
@@ -79,6 +95,21 @@ def _fibre_threshold_id(
         out=output,
     )
 
+
+def _symmetry_threshold_id(
+    threshold_index: int,
+    group_index: int,
+    node_id: int,
+    output: int,
+) -> str:
+    return (
+        "thr-{tid:d}-grp-{g:d}-sym-var-{nid:d}-out-{out:d}"
+    ).format(
+        tid=threshold_index,
+        g=group_index,
+        nid=node_id,
+        out=output,
+    )
 
 # ---------------------------------------------------------------------------
 # Graph mutators
@@ -236,6 +267,114 @@ def _wire_schema_unit(
         graph.add_edge(fibre_name, threshold_name, type="fused")
 
 
+def _wire_schema_unit_canonical(
+    graph: nx.DiGraph,
+    *,
+    schema: str,
+    permutation_groups: Sequence[Sequence[int]],
+    output: int,
+    threshold_index: int,
+    node_id: int,
+    inputs: Sequence[int],
+    input_labels: Mapping[int, str],
+    k: int,
+) -> None:
+    """Add one schema as nested schema → symmetry → polarity thresholds.
+
+    No fusion nodes.  Fixed literals feed the schema threshold directly.
+    Each permutation group becomes one ``ROLE_SYMMETRY`` unit; each nonempty
+    polarity fibre under that group becomes a ``ROLE_POLARITY0`` /
+    ``ROLE_POLARITY1`` unit with ``tau`` equal to the fibre count.
+    """
+    fixed_positions = _positions_outside_permutations(
+        schema, permutation_groups, k
+    )
+    fibres = _polarity_fibres(schema, permutation_groups)
+    # Group fibres by permutation-group index (preserve group order).
+    fibres_by_group: Dict[int, List[PolarityFibre]] = {}
+    for fibre in fibres:
+        group_index = fibre[0]
+        fibres_by_group.setdefault(group_index, []).append(fibre)
+
+    active_groups = [
+        (group_index, permutation_groups[group_index])
+        for group_index, _group in enumerate(permutation_groups)
+        if group_index in fibres_by_group
+    ]
+    schema_tau = len(fixed_positions) + len(active_groups)
+
+    threshold_name = _schema_threshold_id(threshold_index, node_id, output)
+    graph.add_node(
+        threshold_name,
+        label="{:d}".format(schema_tau),
+        type="threshold",
+        tau=schema_tau,
+        role=ROLE_SCHEMA,
+        group=node_id,
+    )
+
+    output_name = _variable_node_id(node_id, output)
+    if not (graph.has_node(threshold_name) and graph.has_node(output_name)):
+        raise RuntimeError(
+            "Cannot wire schema threshold to missing output variable node."
+        )
+    graph.add_edge(threshold_name, output_name, type="out")
+
+    for position in fixed_positions:
+        input_id = inputs[position]
+        polarity = int(schema[position])
+        literal_name = _ensure_input_literal(
+            graph,
+            input_id=input_id,
+            polarity=polarity,
+            label=input_labels.get(input_id, str(input_id)),
+            owner_node_id=node_id,
+        )
+        graph.add_edge(literal_name, threshold_name, type="literal")
+
+    for group_index, group in active_groups:
+        group_fibres = fibres_by_group[group_index]
+        symmetry_tau = len(group_fibres)
+        symmetry_name = _symmetry_threshold_id(
+            threshold_index, group_index, node_id, output
+        )
+        graph.add_node(
+            symmetry_name,
+            label="{:d}".format(symmetry_tau),
+            type="threshold",
+            tau=symmetry_tau,
+            role=ROLE_SYMMETRY,
+            group=node_id,
+        )
+        graph.add_edge(symmetry_name, threshold_name, type="fused")
+
+        for _g_idx, _group, polarity, count in group_fibres:
+            polarity_role = ROLE_POLARITY0 if polarity == 0 else ROLE_POLARITY1
+            polarity_name = _fibre_threshold_id(
+                threshold_index, group_index, polarity, node_id, output
+            )
+            graph.add_node(
+                polarity_name,
+                label="{:d}".format(count),
+                type="threshold",
+                tau=count,
+                role=polarity_role,
+                group=node_id,
+            )
+            graph.add_edge(polarity_name, symmetry_name, type="fused")
+
+            for position in group:
+                input_id = inputs[position]
+                literal_name = _ensure_input_literal(
+                    graph,
+                    input_id=input_id,
+                    polarity=polarity,
+                    label=input_labels.get(input_id, str(input_id)),
+                    owner_node_id=node_id,
+                )
+                graph.add_edge(literal_name, polarity_name, type="literal")
+
+
 # ---------------------------------------------------------------------------
 # Public builders
 # ---------------------------------------------------------------------------
@@ -318,10 +457,73 @@ def build_canalizing_map_legacy(
     return graph
 
 
+def build_canalizing_map_canonical(
+    two_symbols: TwoSymbols,
+    *,
+    node_id: int,
+    inputs: Sequence[int],
+    name: str,
+    constant: bool = False,
+    output: Optional[int] = None,
+    input_labels: Optional[Mapping[int, str]] = None,
+    k: Optional[int] = None,
+) -> nx.DiGraph:
+    """Build a CM graph with nested schema / symmetry / polarity thresholds.
+
+    Same parameters as :func:`build_canalizing_map_legacy`.  Unlike the
+    legacy builder, this never creates fusion nodes: every permutation
+    group becomes a ``ROLE_SYMMETRY`` threshold, and every nonempty
+    polarity fibre becomes a ``ROLE_POLARITY0`` / ``ROLE_POLARITY1``
+    threshold nested under that symmetry unit.
+
+    Schema ``tau`` is ``#fixed_literals + #active_permutation_groups``.
+    Symmetry ``tau`` is the number of polarity fibres in that group.
+    Polarity ``tau`` is the fibre count in the representative schema.
+    """
+    if k is None:
+        k = len(inputs)
+    labels = input_labels if input_labels is not None else {}
+
+    graph = nx.DiGraph(name="CM: %s" % name)
+
+    if output is None or output == 0:
+        _add_output_variable(
+            graph, node_id=node_id, name=name, polarity=0, constant=constant
+        )
+    if output is None or output == 1:
+        _add_output_variable(
+            graph, node_id=node_id, name=name, polarity=1, constant=constant
+        )
+
+    threshold_index = 0
+    for output_polarity, schemata in zip((0, 1), two_symbols):
+        if not schemata:
+            continue
+        if output is not None and output != output_polarity:
+            continue
+
+        for schema, permutation_groups, _same_symbol_groups in schemata:
+            _wire_schema_unit_canonical(
+                graph,
+                schema=schema,
+                permutation_groups=permutation_groups,
+                output=output_polarity,
+                threshold_index=threshold_index,
+                node_id=node_id,
+                inputs=inputs,
+                input_labels=labels,
+                k=k,
+            )
+            threshold_index += 1
+
+    return graph
+
+
 CM_BUILDERS: Dict[str, BuilderFn] = {
     "legacy": build_canalizing_map_legacy,
+    "canonical": build_canalizing_map_canonical,
 }
-"""Named CM builders.  Register future methods here (e.g. ``canonical``)."""
+"""Named CM builders (``legacy``, ``canonical``)."""
 
 
 def build_canalizing_map(
