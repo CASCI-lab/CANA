@@ -4,7 +4,8 @@
 # Load one Boolean model from the BBM corpus (default ``MODEL_ID = "023"``),
 # build the Dynamics Canalization Map for all four combinations of
 # ``legacy`` / ``canonical`` × ``simplify`` on/off, print compact graph stats,
-# and write ``.gv`` / ``.png`` under ``dev/logs/dcm_bbm_figures/<id>__<name>/``.
+# write ``.gv`` / ``.png`` under ``dev/logs/dcm_bbm_figures/<id>__<name>/``,
+# and a ``README.md`` with per-variant node/edge counts and type/role breakdowns.
 #
 # Edit ``MODEL_ID`` at the top to switch models.  Uses library
 # ``simplify_canalizing_map`` (same as ``BooleanNetwork.dynamics_canalization_map``).
@@ -126,11 +127,9 @@ def variant_key(builder: str, simplify: bool) -> str:
     return f"{builder}_{'simplify' if simplify else 'full'}"
 
 
-def summarize_dcm(name: str, dcm: nx.DiGraph) -> None:
-    """Print compact node / edge / tau stats for one DCM variant."""
-    type_counts = Counter(
-        d.get("type", "?") for _, d in dcm.nodes(data=True)
-    )
+def dcm_stats(dcm: nx.DiGraph) -> Dict[str, object]:
+    """Collect node / edge / type / tau / role counts for one DCM."""
+    type_counts = Counter(d.get("type", "?") for _, d in dcm.nodes(data=True))
     edge_type_counts = Counter(
         d.get("type", "?") for _, _, d in dcm.edges(data=True)
     )
@@ -144,14 +143,152 @@ def summarize_dcm(name: str, dcm: nx.DiGraph) -> None:
         for _, d in dcm.nodes(data=True)
         if d.get("type") == "threshold"
     )
+    return {
+        "nodes": dcm.number_of_nodes(),
+        "edges": dcm.number_of_edges(),
+        "node_types": dict(sorted(type_counts.items())),
+        "edge_types": dict(sorted(edge_type_counts.items())),
+        "thr_tau": dict(
+            sorted(tau_counts.items(), key=lambda x: (x[0] is None, x[0]))
+        ),
+        "thr_roles": dict(sorted(role_counts.items())),
+    }
+
+
+def summarize_dcm(name: str, dcm: nx.DiGraph) -> Dict[str, object]:
+    """Print compact stats for one DCM variant; return the same as ``dcm_stats``."""
+    stats = dcm_stats(dcm)
     print(f"=== {name} ===")
-    print(
-        f"  nodes={dcm.number_of_nodes()}  edges={dcm.number_of_edges()}"
+    print(f"  nodes={stats['nodes']}  edges={stats['edges']}")
+    print(f"  node types : {stats['node_types']}")
+    print(f"  edge types : {stats['edge_types']}")
+    print(f"  thr tau    : {stats['thr_tau']}")
+    print(f"  thr roles  : {stats['thr_roles']}")
+    return stats
+
+
+def _count_get(d: object, key: object, default: int = 0) -> int:
+    if isinstance(d, dict):
+        return int(d.get(key, default))
+    return default
+
+
+def _union_keys(*dicts: object, sort_key=None) -> List[object]:
+    keys: set = set()
+    for d in dicts:
+        if isinstance(d, dict):
+            keys.update(d.keys())
+    return sorted(keys, key=sort_key or (lambda x: (x is None, str(x))))
+
+
+def _md_table(headers: List[str], rows: List[List[object]]) -> List[str]:
+    """Build a GitHub-flavored markdown table."""
+    lines = [
+        "| " + " | ".join(str(h) for h in headers) + " |",
+        "| " + " | ".join("---" for _ in headers) + " |",
+    ]
+    for row in rows:
+        lines.append("| " + " | ".join(str(c) for c in row) + " |")
+    return lines
+
+
+def write_readme(
+    out_dir: Path,
+    *,
+    model_id: str,
+    network: BooleanNetwork,
+    model_dir: Path,
+    all_stats: Dict[str, Dict[str, object]],
+    drawn: List[Tuple[str, Optional[Path]]],
+) -> Path:
+    """Write ``README.md`` next to the figures with per-variant graph stats."""
+    n_const = sum(1 for n in network.nodes if n.constant)
+    drawn_map = {key: png for key, png in drawn}
+    variants = list(all_stats.keys())
+    headers = ["", *[f"`{v}`" for v in variants]]
+
+    size_rows: List[List[object]] = [
+        [
+            "figure",
+            *[
+                (
+                    f"`{drawn_map[v].name}`"
+                    if drawn_map.get(v) is not None
+                    else "(missing)"
+                )
+                for v in variants
+            ],
+        ],
+        ["nodes", *[all_stats[v]["nodes"] for v in variants]],
+        ["edges", *[all_stats[v]["edges"] for v in variants]],
+    ]
+
+    node_type_keys = _union_keys(*(all_stats[v]["node_types"] for v in variants))
+    node_type_rows = [
+        [
+            f"node type `{k}`",
+            *[_count_get(all_stats[v]["node_types"], k) for v in variants],
+        ]
+        for k in node_type_keys
+    ]
+
+    edge_type_keys = _union_keys(*(all_stats[v]["edge_types"] for v in variants))
+    edge_type_rows = [
+        [
+            f"edge type `{k}`",
+            *[_count_get(all_stats[v]["edge_types"], k) for v in variants],
+        ]
+        for k in edge_type_keys
+    ]
+
+    tau_keys = _union_keys(
+        *(all_stats[v]["thr_tau"] for v in variants),
+        sort_key=lambda x: (x is None, x),
     )
-    print(f"  node types : {dict(sorted(type_counts.items()))}")
-    print(f"  edge types : {dict(sorted(edge_type_counts.items()))}")
-    print(f"  thr tau    : {dict(sorted(tau_counts.items(), key=lambda x: (x[0] is None, x[0])))}")
-    print(f"  thr roles  : {dict(sorted(role_counts.items()))}")
+    tau_rows = [
+        [
+            f"threshold τ={k}",
+            *[_count_get(all_stats[v]["thr_tau"], k) for v in variants],
+        ]
+        for k in tau_keys
+    ]
+
+    role_keys = _union_keys(*(all_stats[v]["thr_roles"] for v in variants))
+    role_rows = [
+        [
+            f"threshold role `{k}`",
+            *[_count_get(all_stats[v]["thr_roles"], k) for v in variants],
+        ]
+        for k in role_keys
+    ]
+
+    lines: List[str] = [
+        f"# DCM figures — {network.name}",
+        "",
+        f"- **MODEL_ID**: `{model_id}`",
+        f"- **network nodes**: {len(network.nodes)} (constants={n_const})",
+        f"- **model dir**: `{model_dir}`",
+        "",
+        "Four Dynamics Canalization Map variants: "
+        "`legacy` / `canonical` × simplify on/off.",
+        "",
+        "Node types are `variable`, `threshold`, and (legacy only) `fusion`.",
+        "Canonical threshold units carry **roles** "
+        "(`schema`, `symmetry`, `polarity0`, `polarity1`); "
+        "legacy thresholds typically have no role and may use fusion nodes "
+        "instead of nested polarity/symmetry thresholds.",
+        "",
+        "## Comparison",
+        "",
+        *_md_table(
+            headers,
+            size_rows + node_type_rows + edge_type_rows + tau_rows + role_rows,
+        ),
+        "",
+    ]
+    readme_path = out_dir / "README.md"
+    readme_path.write_text("\n".join(lines) + "\n", encoding="utf-8")
+    return readme_path
 
 
 def _ensure_dot_executable() -> Optional[str]:
@@ -291,13 +428,14 @@ for builder in BUILDERS:
         dcms[key] = compose_dcm(N, builder=builder, simplify=simplify)
 
 print()
+all_stats: Dict[str, Dict[str, object]] = {}
 for key, dcm in dcms.items():
-    summarize_dcm(key, dcm)
+    all_stats[key] = summarize_dcm(key, dcm)
 
 # %% [markdown]
-# ## Draw all four variants
+# ## Draw all four variants + README
 #
-# Writes ``.gv`` + ``.png`` into ``model_fig_dir``.
+# Writes ``.gv`` + ``.png`` and a ``README.md`` into ``model_fig_dir``.
 
 
 # %%
@@ -306,8 +444,18 @@ for key, dcm in dcms.items():
     png = try_draw_cm(key, dcm, model_fig_dir)
     drawn.append((key, png))
 
+readme_path = write_readme(
+    model_fig_dir,
+    model_id=MODEL_ID,
+    network=N,
+    model_dir=model_dir,
+    all_stats=all_stats,
+    drawn=drawn,
+)
+
 print()
 print(f"figures → {model_fig_dir}")
 for key, png in drawn:
     status = png.name if png is not None else "(png missing)"
     print(f"  {key}: {status}")
+print(f"readme  → {readme_path}")
