@@ -2,21 +2,243 @@
 """
 Build Canalizing Map (CM) graphs from two-symbol schemata.
 
-The legacy builder reproduces the historical ``BooleanNode.canalizing_map``
-wiring.  Callers may select a builder by name via :data:`CM_BUILDERS` or pass
-a callable with the same signature as :func:`build_canalizing_map_legacy`.
+A canalizing map is a directed ``networkx.DiGraph`` that encodes how input
+literals (and permutation-symmetric groups of them) force a Boolean node's
+output.  Schemata come from two-symbol canalization; each schema becomes a
+threshold unit that claims one output polarity when enough of its inputs fire.
+
+Graph vocabulary (legacy CANA naming, kept for drawing / LUT round-trips)
+-------------------------------------------------------------------------
+- ``variable`` nodes ``var-{id}-out-{0|1}`` — an input or output at a fixed
+  polarity.
+- ``threshold`` nodes — fire when at least ``tau`` predecessors are active.
+- ``fusion`` nodes — OR of predecessors (used when a symmetry fibre needs
+  only one matching literal).
+
+Callers may select a builder by name via :data:`CM_BUILDERS` or pass a
+callable with the same signature as :func:`build_canalizing_map_legacy`.
 """
 from __future__ import annotations
 
-from typing import Callable, Dict, Mapping, Optional, Sequence, Tuple, Union
+from typing import Callable, Dict, List, Mapping, Optional, Sequence, Tuple, Union
 
 import networkx as nx
 
-# two_symbols entry: (schema_str, permutation_groups, same_symbol_groups)
-TwoSymbols = Tuple[Sequence, Sequence]
+# One two-symbol schema: (schema_string, permutation_groups, same_symbol_groups).
+# ``same_symbol_groups`` is part of the canalization payload but unused by the
+# legacy CM wiring below.
+SchemaEntry = Tuple[str, Sequence[Sequence[int]], Sequence]
+# ``(schemata_for_output_0, schemata_for_output_1)``
+TwoSymbols = Tuple[Sequence[SchemaEntry], Sequence[SchemaEntry]]
 
 BuilderFn = Callable[..., nx.DiGraph]
 
+# One polarity fibre inside a permutation group:
+# (group_index, member_positions, required_polarity, count_needed)
+PolarityFibre = Tuple[int, Sequence[int], int, int]
+
+
+# ---------------------------------------------------------------------------
+# Stable node-id helpers (string formats are part of the public CM contract)
+# ---------------------------------------------------------------------------
+
+def _variable_node_id(var_id: int, polarity: int) -> str:
+    return "var-{nid:d}-out-{out:d}".format(nid=var_id, out=polarity)
+
+
+def _schema_threshold_id(threshold_index: int, node_id: int, output: int) -> str:
+    return "thr-{tid:d}-var-{nid:d}-out-{out:d}".format(
+        tid=threshold_index, nid=node_id, out=output
+    )
+
+
+def _fusion_node_id(
+    group_index: int, threshold_index: int, node_id: int, polarity: int
+) -> str:
+    # Legacy quirk: the trailing ``out-`` field stores the fibre polarity,
+    # not the schema output polarity.
+    return (
+        "fus-0-grp-{g:d}-thr-{thr:d}-var-{nid:d}-out-{out:d}"
+    ).format(g=group_index, thr=threshold_index, nid=node_id, out=polarity)
+
+
+def _fibre_threshold_id(
+    threshold_index: int,
+    group_index: int,
+    polarity: int,
+    node_id: int,
+    output: int,
+) -> str:
+    return (
+        "thr-{tid:d}-grp-{g:d}-pol-{p:d}-var-{nid:d}-out-{out:d}"
+    ).format(
+        tid=threshold_index,
+        g=group_index,
+        p=polarity,
+        nid=node_id,
+        out=output,
+    )
+
+
+# ---------------------------------------------------------------------------
+# Graph mutators
+# ---------------------------------------------------------------------------
+
+def _add_output_variable(
+    graph: nx.DiGraph,
+    *,
+    node_id: int,
+    name: str,
+    polarity: int,
+    constant: bool,
+) -> None:
+    graph.add_node(
+        _variable_node_id(node_id, polarity),
+        label=name,
+        type="variable",
+        mode="output",
+        value=polarity,
+        constant=constant,
+        group=node_id,
+    )
+
+
+def _ensure_input_literal(
+    graph: nx.DiGraph,
+    *,
+    input_id: int,
+    polarity: int,
+    label: str,
+    owner_node_id: int,
+) -> str:
+    """Return the variable-node id for an input literal, creating it if needed."""
+    node_name = _variable_node_id(input_id, polarity)
+    if node_name not in graph:
+        graph.add_node(
+            node_name,
+            label=label,
+            type="variable",
+            mode="input",
+            value=polarity,
+            group=owner_node_id,
+        )
+    return node_name
+
+
+def _positions_outside_permutations(
+    schema: str,
+    permutation_groups: Sequence[Sequence[int]],
+    k: int,
+) -> List[int]:
+    """Input indices fixed to 0/1 and not covered by any permutation group."""
+    in_a_group = {j for group in permutation_groups for j in group}
+    return [
+        j
+        for j in range(k)
+        if j not in in_a_group and schema[j] in ("0", "1")
+    ]
+
+
+def _polarity_fibres(
+    schema: str,
+    permutation_groups: Sequence[Sequence[int]],
+) -> List[PolarityFibre]:
+    """Non-empty (group, polarity) fibres implied by a schema string."""
+    fibres: List[PolarityFibre] = []
+    for group_index, group in enumerate(permutation_groups):
+        for polarity in (0, 1):
+            count = sum(1 for j in group if schema[j] == str(polarity))
+            if count > 0:
+                fibres.append((group_index, group, polarity, count))
+    return fibres
+
+
+def _wire_schema_unit(
+    graph: nx.DiGraph,
+    *,
+    schema: str,
+    permutation_groups: Sequence[Sequence[int]],
+    output: int,
+    threshold_index: int,
+    node_id: int,
+    inputs: Sequence[int],
+    input_labels: Mapping[int, str],
+    k: int,
+) -> None:
+    """Add one schema's threshold unit and its literal / symmetry inputs."""
+    fixed_positions = _positions_outside_permutations(
+        schema, permutation_groups, k
+    )
+    fibres = _polarity_fibres(schema, permutation_groups)
+    tau = len(fixed_positions) + len(fibres)
+
+    threshold_name = _schema_threshold_id(threshold_index, node_id, output)
+    graph.add_node(
+        threshold_name,
+        label="{:d}".format(tau),
+        type="threshold",
+        tau=tau,
+        group=node_id,
+    )
+
+    output_name = _variable_node_id(node_id, output)
+    if not (graph.has_node(threshold_name) and graph.has_node(output_name)):
+        raise RuntimeError(
+            "Cannot wire schema threshold to missing output variable node."
+        )
+    graph.add_edge(threshold_name, output_name, type="out")
+
+    # Fixed (non-permutable) literals feed the schema threshold directly.
+    for position in fixed_positions:
+        input_id = inputs[position]
+        polarity = int(schema[position])
+        literal_name = _ensure_input_literal(
+            graph,
+            input_id=input_id,
+            polarity=polarity,
+            label=input_labels.get(input_id, str(input_id)),
+            owner_node_id=node_id,
+        )
+        graph.add_edge(literal_name, threshold_name, type="literal")
+
+    # Each polarity fibre is either a fusion (need 1) or a nested threshold.
+    for group_index, group, polarity, count in fibres:
+        if count == 1:
+            fibre_name = _fusion_node_id(
+                group_index, threshold_index, node_id, polarity
+            )
+            graph.add_node(fibre_name, type="fusion", group=node_id)
+            incoming_edge_type = "fusing"
+        else:
+            fibre_name = _fibre_threshold_id(
+                threshold_index, group_index, polarity, node_id, output
+            )
+            graph.add_node(
+                fibre_name,
+                label="{:d}".format(count),
+                type="threshold",
+                tau=count,
+                group=node_id,
+            )
+            incoming_edge_type = "literal"
+
+        for position in group:
+            input_id = inputs[position]
+            literal_name = _ensure_input_literal(
+                graph,
+                input_id=input_id,
+                polarity=polarity,
+                label=input_labels.get(input_id, str(input_id)),
+                owner_node_id=node_id,
+            )
+            graph.add_edge(literal_name, fibre_name, type=incoming_edge_type)
+
+        graph.add_edge(fibre_name, threshold_name, type="fused")
+
+
+# ---------------------------------------------------------------------------
+# Public builders
+# ---------------------------------------------------------------------------
 
 def build_canalizing_map_legacy(
     two_symbols: TwoSymbols,
@@ -34,8 +256,9 @@ def build_canalizing_map_legacy(
     Parameters
     ----------
     two_symbols : tuple
-        ``(ts0_list, ts1_list)`` as produced by two-symbol canalization.
-        Each entry is ``(schema_str, permutation_groups, same_symbol_groups)``.
+        ``(schemata_for_0, schemata_for_1)`` as produced by two-symbol
+        canalization.  Each schema entry is
+        ``(schema_str, permutation_groups, same_symbol_groups)``.
     node_id : int
         Variable id for output nodes ``var-{node_id}-out-{0|1}``.
     inputs : sequence of int
@@ -60,148 +283,39 @@ def build_canalizing_map_legacy(
         k = len(inputs)
     labels = input_labels if input_labels is not None else {}
 
-    G = nx.DiGraph(name="CM: %s" % name)
+    graph = nx.DiGraph(name="CM: %s" % name)
 
     if output is None or output == 0:
-        G.add_node(
-            "var-{nid:d}-out-0".format(nid=node_id),
-            **{
-                "label": name,
-                "type": "variable",
-                "mode": "output",
-                "value": 0,
-                "constant": constant,
-                "group": node_id,
-            }
+        _add_output_variable(
+            graph, node_id=node_id, name=name, polarity=0, constant=constant
         )
-
     if output is None or output == 1:
-        G.add_node(
-            "var-{nid:d}-out-1".format(nid=node_id),
-            **{
-                "label": name,
-                "type": "variable",
-                "mode": "output",
-                "value": 1,
-                "constant": constant,
-                "group": node_id,
-            }
+        _add_output_variable(
+            graph, node_id=node_id, name=name, polarity=1, constant=constant
         )
 
-    tid = 0
-    for out, tspsss in zip([0, 1], two_symbols):
-        if (not len(tspsss)) or ((output is not None) and (output != out)):
+    threshold_index = 0
+    for output_polarity, schemata in zip((0, 1), two_symbols):
+        if not schemata:
+            continue
+        if output is not None and output != output_polarity:
             continue
 
-        for ts, ps, ss in tspsss:
-            lits = []
-            for j in range(k):
-                if not any([j in group for group in ps]):
-                    if ts[j] in ["0", "1"]:
-                        lits.append(j)
-
-            fibre_specs = []
-            for g_idx, group in enumerate(ps):
-                for polarity in (0, 1):
-                    n = sum(1 for j in group if ts[j] == str(polarity))
-                    if n > 0:
-                        fibre_specs.append((g_idx, group, polarity, n))
-
-            tau = len(lits) + len(fibre_specs)
-
-            tname = "thr-{tid:d}-var-{nid:d}-out-{out:d}".format(
-                tid=tid, nid=node_id, out=out
+        for schema, permutation_groups, _same_symbol_groups in schemata:
+            _wire_schema_unit(
+                graph,
+                schema=schema,
+                permutation_groups=permutation_groups,
+                output=output_polarity,
+                threshold_index=threshold_index,
+                node_id=node_id,
+                inputs=inputs,
+                input_labels=labels,
+                k=k,
             )
-            label = "{:d}".format(tau)
-            G.add_node(
-                tname,
-                **{
-                    "label": label,
-                    "type": "threshold",
-                    "tau": tau,
-                    "group": node_id,
-                }
-            )
+            threshold_index += 1
 
-            xname = "var-{nid:d}-out-{out:d}".format(nid=node_id, out=out)
-            if G.has_node(tname) and G.has_node(xname):
-                G.add_edge(tname, xname, **{"type": "out"})
-            else:
-                raise BaseException("Adding edge to node that does not exist.")
-
-            for lit in lits:
-                in_id = inputs[lit]
-                iname = "var-{nid:d}-out-{out:d}".format(
-                    nid=in_id, out=int(ts[lit])
-                )
-                if iname not in G.nodes():
-                    ilabel = labels.get(in_id, str(in_id))
-                    iout = int(ts[lit])
-                    G.add_node(
-                        iname,
-                        **{
-                            "label": ilabel,
-                            "type": "variable",
-                            "mode": "input",
-                            "value": iout,
-                            "group": node_id,
-                        }
-                    )
-                G.add_edge(iname, tname, **{"type": "literal"})
-
-            for g_idx, group, polarity, n in fibre_specs:
-                if n == 1:
-                    fname = (
-                        "fus-0-grp-{g:d}-thr-{thr:d}"
-                        "-var-{nid:d}-out-{out:d}"
-                    ).format(g=g_idx, thr=tid, nid=node_id, out=polarity)
-                    G.add_node(fname, **{"type": "fusion", "group": node_id})
-                    in_edge_type = "fusing"
-                else:
-                    fname = (
-                        "thr-{tid:d}-grp-{g:d}-pol-{p:d}"
-                        "-var-{nid:d}-out-{out:d}"
-                    ).format(
-                        tid=tid,
-                        g=g_idx,
-                        p=polarity,
-                        nid=node_id,
-                        out=out,
-                    )
-                    G.add_node(
-                        fname,
-                        **{
-                            "label": "{:d}".format(n),
-                            "type": "threshold",
-                            "tau": n,
-                            "group": node_id,
-                        }
-                    )
-                    in_edge_type = "literal"
-
-                for j in group:
-                    in_id = inputs[j]
-                    iname = "var-{nid:d}-out-{out:d}".format(
-                        nid=in_id, out=polarity
-                    )
-                    if iname not in G.nodes():
-                        ilabel = labels.get(in_id, str(in_id))
-                        G.add_node(
-                            iname,
-                            **{
-                                "label": ilabel,
-                                "type": "variable",
-                                "mode": "input",
-                                "value": polarity,
-                                "group": node_id,
-                            }
-                        )
-                    G.add_edge(iname, fname, **{"type": in_edge_type})
-                G.add_edge(fname, tname, **{"type": "fused"})
-
-            tid += 1
-
-    return G
+    return graph
 
 
 CM_BUILDERS: Dict[str, BuilderFn] = {
@@ -248,7 +362,7 @@ def build_canalizing_map(
     """
     if isinstance(builder, str):
         try:
-            fn = CM_BUILDERS[builder]
+            build_fn = CM_BUILDERS[builder]
         except KeyError:
             raise KeyError(
                 "Unknown CM builder {!r}; known: {}".format(
@@ -256,13 +370,13 @@ def build_canalizing_map(
                 )
             )
     elif callable(builder):
-        fn = builder
+        build_fn = builder
     else:
         raise TypeError(
             "builder must be a str or callable, got {!r}".format(type(builder))
         )
 
-    return fn(
+    return build_fn(
         two_symbols,
         node_id=node_id,
         inputs=inputs,
