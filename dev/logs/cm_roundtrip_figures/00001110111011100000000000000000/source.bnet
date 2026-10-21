@@ -1,0 +1,6 @@
+CTNNB1*=(not SRY) and (WNT4 or RSPO1) and ((not AMH) or (not SOX9))
+SRY*=SRY
+WNT4*=WNT4
+RSPO1*=RSPO1
+AMH*=AMH
+SOX9*=SOX9

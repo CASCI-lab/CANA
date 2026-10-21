@@ -1,0 +1,6 @@
+F*= X and not Y and ((not A and B and C) or (A and not B and C) or (A and B and not C))
+X*=X
+Y*=Y
+A*=A
+B*=B
+C*=C
