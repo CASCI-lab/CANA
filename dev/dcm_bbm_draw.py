@@ -1,0 +1,313 @@
+# %% [markdown]
+# DCM visualization (any BBM model)
+#
+# Load one Boolean model from the BBM corpus (default ``MODEL_ID = "023"``),
+# build the Dynamics Canalization Map for all four combinations of
+# ``legacy`` / ``canonical`` × ``simplify`` on/off, print compact graph stats,
+# and write ``.gv`` / ``.png`` under ``dev/logs/dcm_bbm_figures/<id>__<name>/``.
+#
+# Edit ``MODEL_ID`` at the top to switch models.  Uses library
+# ``simplify_canalizing_map`` (same as ``BooleanNetwork.dynamics_canalization_map``).
+
+# %%
+from __future__ import annotations
+
+import os
+import shutil
+import subprocess
+import sys
+from collections import Counter
+from pathlib import Path
+from typing import Dict, List, Optional, Tuple
+
+import networkx as nx
+
+_DEV_DIR = Path(__file__).resolve().parent
+_PKG_ROOT = _DEV_DIR.parent  # .../CANA/CANA (contains the cana package)
+for _p in (_DEV_DIR, _PKG_ROOT):
+    if str(_p) not in sys.path:
+        sys.path.insert(0, str(_p))
+
+from cana.boolean_network import BooleanNetwork
+from cana.canalization.canalizing_map import simplify_canalizing_map
+
+from bbm_cm_roundtrip import resolve_model_dir  # noqa: E402
+
+try:
+    from cana.drawing.canalizing_map import draw_canalizing_map_graphviz
+except Exception as _draw_import_err:  # missing graphviz, or drawer import bug
+    draw_canalizing_map_graphviz = None
+    _DRAW_IMPORT_ERROR = _draw_import_err
+else:
+    _DRAW_IMPORT_ERROR = None
+
+# ---------------------------------------------------------------------------
+# Config — edit MODEL_ID to switch BBM models.
+# ---------------------------------------------------------------------------
+
+MODEL_ID = "023"  # any BBM summary ID, e.g. "001", "023", "100"
+BUILDERS = ("legacy", "canonical")
+SIMPLIFY_MODES = (False, True)
+
+# .../CANA/CANA/dev → parents[1] = workspace root (.../CANA) containing BBM/
+BBM_MODELS = _DEV_DIR.resolve().parents[1] / "BBM" / "models"
+
+FIG_DIR = _DEV_DIR / "logs" / "dcm_bbm_figures"
+FIG_DIR.mkdir(parents=True, exist_ok=True)
+
+_TOOLS_DIR = _DEV_DIR / ".tools"
+_DOT_STATIC = _TOOLS_DIR / "dot_static"
+_DOT_STATIC_URL = (
+    "https://raw.githubusercontent.com/restruct/dot-static/main/x64/dot_static"
+)
+
+# %% [markdown]
+# ## Helpers — load, compose DCM, draw, stats
+
+
+# %%
+def model_slug(model_dir: Path, model_id: str) -> str:
+    """Build ``{pad}__{SHORT_NAME}`` from a BBM folder name."""
+    pad = f"{int(model_id):03d}"
+    prefix = f"[id-{pad}]__"
+    name = model_dir.name
+    if name.startswith(prefix):
+        rest = name[len(prefix) :]
+        # Drop ``[var-…]__[in-…]__`` segments if present; keep trailing name.
+        parts = rest.split("__")
+        short = parts[-1] if parts else rest
+    else:
+        short = name
+    short = short.strip("[]") or "model"
+    return f"{pad}__{short}"
+
+
+def load_bbm_network(models_root: Path, model_id: str) -> Tuple[BooleanNetwork, Path]:
+    """Resolve BBM ``model.booleannet.txt`` and load as ``BooleanNetwork``."""
+    model_dir = resolve_model_dir(models_root, model_id)
+    bnet_path = model_dir / "model.booleannet.txt"
+    if not bnet_path.is_file():
+        raise FileNotFoundError(f"Missing {bnet_path}")
+    pad = f"{int(model_id):03d}"
+    # Prefer the trailing human name from the folder slug.
+    slug = model_slug(model_dir, model_id)
+    net_name = slug.split("__", 1)[-1]
+    network = BooleanNetwork.from_file(
+        str(bnet_path),
+        type="logical",
+        name=net_name,
+    )
+    return network, model_dir
+
+
+def compose_dcm(
+    network: BooleanNetwork,
+    builder: str,
+    simplify: bool = False,
+) -> nx.DiGraph:
+    """Compose per-node CMs into a DCM; optionally apply library simplify."""
+    cms = [
+        n.canalizing_map(builder=builder)
+        for n in network.nodes
+        if network.keep_constants or not n.constant
+    ]
+    if not cms:
+        raise RuntimeError(f"No canalizing maps to compose for {network.name!r}")
+    dcm = nx.compose_all(cms)
+    dcm.name = f"DCM:{network.name}:{builder}:simplify={simplify}"
+    if simplify:
+        simplify_canalizing_map(dcm, copy=False, remove_isolates=True)
+    else:
+        dcm.remove_nodes_from(list(nx.isolates(dcm)))
+    return dcm
+
+
+def variant_key(builder: str, simplify: bool) -> str:
+    return f"{builder}_{'simplify' if simplify else 'full'}"
+
+
+def summarize_dcm(name: str, dcm: nx.DiGraph) -> None:
+    """Print compact node / edge / tau stats for one DCM variant."""
+    type_counts = Counter(
+        d.get("type", "?") for _, d in dcm.nodes(data=True)
+    )
+    edge_type_counts = Counter(
+        d.get("type", "?") for _, _, d in dcm.edges(data=True)
+    )
+    tau_counts = Counter(
+        d.get("tau")
+        for _, d in dcm.nodes(data=True)
+        if d.get("type") == "threshold"
+    )
+    role_counts = Counter(
+        d.get("role", "(none)")
+        for _, d in dcm.nodes(data=True)
+        if d.get("type") == "threshold"
+    )
+    print(f"=== {name} ===")
+    print(
+        f"  nodes={dcm.number_of_nodes()}  edges={dcm.number_of_edges()}"
+    )
+    print(f"  node types : {dict(sorted(type_counts.items()))}")
+    print(f"  edge types : {dict(sorted(edge_type_counts.items()))}")
+    print(f"  thr tau    : {dict(sorted(tau_counts.items(), key=lambda x: (x[0] is None, x[0])))}")
+    print(f"  thr roles  : {dict(sorted(role_counts.items()))}")
+
+
+def _ensure_dot_executable() -> Optional[str]:
+    """Return a path to a usable ``dot`` binary, downloading a portable one if needed."""
+    system_dot = shutil.which("dot")
+    if system_dot:
+        return system_dot
+    if _DOT_STATIC.is_file() and os.access(_DOT_STATIC, os.X_OK):
+        return str(_DOT_STATIC)
+    try:
+        import urllib.request
+
+        _TOOLS_DIR.mkdir(parents=True, exist_ok=True)
+        print(f"  downloading portable dot → {_DOT_STATIC}")
+        urllib.request.urlretrieve(_DOT_STATIC_URL, _DOT_STATIC)
+        _DOT_STATIC.chmod(0o755)
+        return str(_DOT_STATIC)
+    except Exception as exc:
+        print(f"  could not obtain dot binary: {exc}")
+        return None
+
+
+def _dot_supports_png(dot_bin: str) -> bool:
+    try:
+        proc = subprocess.run(
+            [dot_bin, "-Tpng"],
+            input=b"digraph { a -> b }\n",
+            capture_output=True,
+            timeout=10,
+        )
+        return proc.returncode == 0 and proc.stdout[:8] == b"\x89PNG\r\n\x1a\n"
+    except Exception:
+        return False
+
+
+def _render_png(dot_bin: str, gv_source: str, png_path: Path) -> None:
+    """Render GraphViz source to PNG (direct, or SVG→PNG via cairosvg)."""
+    if _dot_supports_png(dot_bin):
+        proc = subprocess.run(
+            [dot_bin, "-Tpng", "-o", str(png_path)],
+            input=gv_source.encode("utf-8"),
+            capture_output=True,
+            timeout=120,
+        )
+        if proc.returncode != 0:
+            raise RuntimeError(proc.stderr.decode("utf-8", errors="replace"))
+        return
+
+    svg_path = png_path.with_suffix(".svg")
+    proc = subprocess.run(
+        [dot_bin, "-Tsvg", "-o", str(svg_path)],
+        input=gv_source.encode("utf-8"),
+        capture_output=True,
+        timeout=120,
+    )
+    if proc.returncode != 0:
+        raise RuntimeError(proc.stderr.decode("utf-8", errors="replace"))
+    try:
+        from cairosvg import svg2png
+    except ImportError as exc:
+        raise RuntimeError(
+            "dot has no PNG support; install cairosvg for SVG→PNG "
+            "(pip install cairosvg)"
+        ) from exc
+    svg2png(url=str(svg_path), write_to=str(png_path))
+    svg_path.unlink(missing_ok=True)
+
+
+def try_draw_cm(name: str, graph: nx.DiGraph, out_dir: Path) -> Optional[Path]:
+    """Write ``{name}.gv`` and ``{name}.png`` under *out_dir*; return PNG path."""
+    print(
+        f"--- draw {name} ({graph.number_of_nodes()} nodes, "
+        f"{graph.number_of_edges()} edges) ---"
+    )
+    if draw_canalizing_map_graphviz is None:
+        print(f"  skipped (drawer unavailable: {_DRAW_IMPORT_ERROR})")
+        return None
+    try:
+        gv = draw_canalizing_map_graphviz(graph)
+    except Exception as exc:
+        print(
+            f"  draw_canalizing_map_graphviz failed: "
+            f"{type(exc).__name__}: {exc}"
+        )
+        return None
+
+    out_dir.mkdir(parents=True, exist_ok=True)
+    dot_path = out_dir / f"{name}.gv"
+    png_path = out_dir / f"{name}.png"
+    try:
+        dot_path.write_text(gv.source)
+        print(f"  wrote DOT → {dot_path}")
+    except Exception as exc:
+        print(f"  could not write DOT: {exc}")
+        return None
+
+    dot_bin = _ensure_dot_executable()
+    if dot_bin is None:
+        print("  PNG skipped (no dot binary)")
+        return None
+    try:
+        _render_png(dot_bin, gv.source, png_path)
+        print(f"  wrote PNG → {png_path}")
+        return png_path
+    except Exception as exc:
+        print(f"  PNG failed: {type(exc).__name__}: {exc}")
+        return None
+
+
+# %% [markdown]
+# ## Load model
+
+
+# %%
+N, model_dir = load_bbm_network(BBM_MODELS, MODEL_ID)
+slug = model_slug(model_dir, MODEL_ID)
+model_fig_dir = FIG_DIR / slug
+model_fig_dir.mkdir(parents=True, exist_ok=True)
+
+n_const = sum(1 for n in N.nodes if n.constant)
+print(f"MODEL_ID   : {MODEL_ID}")
+print(f"name       : {N.name}")
+print(f"model_dir  : {model_dir}")
+print(f"nodes      : {len(N.nodes)}  (constants={n_const})")
+print(f"fig dir    : {model_fig_dir}")
+
+# %% [markdown]
+# ## Build four DCMs + summary counts
+
+
+# %%
+dcms: Dict[str, nx.DiGraph] = {}
+for builder in BUILDERS:
+    for simplify in SIMPLIFY_MODES:
+        key = variant_key(builder, simplify)
+        print(f"building {key} …")
+        dcms[key] = compose_dcm(N, builder=builder, simplify=simplify)
+
+print()
+for key, dcm in dcms.items():
+    summarize_dcm(key, dcm)
+
+# %% [markdown]
+# ## Draw all four variants
+#
+# Writes ``.gv`` + ``.png`` into ``model_fig_dir``.
+
+
+# %%
+drawn: List[Tuple[str, Optional[Path]]] = []
+for key, dcm in dcms.items():
+    png = try_draw_cm(key, dcm, model_fig_dir)
+    drawn.append((key, png))
+
+print()
+print(f"figures → {model_fig_dir}")
+for key, png in drawn:
+    status = png.name if png is not None else "(png missing)"
+    print(f"  {key}: {status}")
