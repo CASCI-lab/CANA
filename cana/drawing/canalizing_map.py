@@ -17,9 +17,8 @@ try:
     import graphviz
 except ImportError as error:
     warnings.warn(
-        "'Graphviz' could not be loaded, you won't be able to plot graphs. Try installing it first. {error:s}".format(
-            error=error
-        )
+        "'Graphviz' could not be loaded, you won't be able to plot graphs. "
+        "Try installing it first. {error}".format(error=error)
     )
 
 

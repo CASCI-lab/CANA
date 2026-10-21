@@ -2,6 +2,7 @@
 experiments/
 *bulk_test_log.csv
 .vscode
+dev/.tools/
 
 # Byte-compiled / optimized / DLL files
 __pycache__/
