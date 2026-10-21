@@ -332,7 +332,7 @@ def _assert_exact_roundtrip_simplified(
 
 
 class TestSimplifyCanalizingMap:
-    """Safe DCM/CM simplify: keep tau=0; merge sole-pred tau=1 buffers only."""
+    """Safe DCM/CM simplify: keep tau=0; merge buffers; bypass schema tau=1 OR."""
 
     def test_constant_tau0_preserved(self):
         node = BooleanNode.from_output_list(
@@ -390,6 +390,84 @@ class TestSimplifyCanalizingMap:
         out = simplify_canalizing_map(G)
         assert out.has_node("pol")
         assert set(out.predecessors("pol")) == {"p0", "p1"}
+
+    def test_bypasses_variable_into_schema_tau1(self):
+        G = nx.DiGraph()
+        G.add_node("schema", type="threshold", tau=1, label="1", role=ROLE_SCHEMA)
+        G.add_node("p0", type="variable", mode="input", value=1)
+        G.add_node("out0", type="variable", mode="output", value=0)
+        G.add_edge("p0", "schema")
+        G.add_edge("schema", "out0", type="out")
+        out = simplify_canalizing_map(G)
+        assert "schema" not in out
+        assert set(out.predecessors("out0")) == {"p0"}
+        assert out.edges["p0", "out0"].get("type") == "out"
+
+    def test_bypasses_schema_tau1_when_claim_mode_is_input(self):
+        # DCM compose can leave shared var-* claim targets as mode=input.
+        G = nx.DiGraph()
+        G.add_node("schema", type="threshold", tau=1, label="1", role=ROLE_SCHEMA)
+        G.add_node("p0", type="variable", mode="input", value=0)
+        G.add_node("claim", type="variable", mode="input", value=0)
+        G.add_edge("p0", "schema")
+        G.add_edge("schema", "claim", type="out")
+        out = simplify_canalizing_map(G)
+        assert "schema" not in out
+        assert set(out.predecessors("claim")) == {"p0"}
+        assert out.edges["p0", "claim"].get("type") == "out"
+
+    def test_bypasses_multipred_schema_tau1(self):
+        G = nx.DiGraph()
+        G.add_node("schema", type="threshold", tau=1, label="1", role=ROLE_SCHEMA)
+        G.add_node("p0", type="variable", mode="input", value=0)
+        G.add_node("p1", type="variable", mode="input", value=1)
+        G.add_node("out1", type="variable", mode="output", value=1)
+        G.add_edge("p0", "schema")
+        G.add_edge("p1", "schema")
+        G.add_edge("schema", "out1", type="out")
+        out = simplify_canalizing_map(G)
+        assert "schema" not in out
+        assert set(out.predecessors("out1")) == {"p0", "p1"}
+
+    def test_bypasses_fusion_into_schema_tau1(self):
+        G = nx.DiGraph()
+        G.add_node("schema", type="threshold", tau=1, label="1", role=ROLE_SCHEMA)
+        G.add_node("fus", type="fusion")
+        G.add_node("p0", type="variable", mode="input", value=0)
+        G.add_node("p1", type="variable", mode="input", value=0)
+        G.add_node("out0", type="variable", mode="output", value=0)
+        G.add_edge("p0", "fus")
+        G.add_edge("p1", "fus")
+        G.add_edge("fus", "schema")
+        G.add_edge("schema", "out0", type="out")
+        out = simplify_canalizing_map(G)
+        assert "schema" not in out
+        assert set(out.predecessors("out0")) == {"fus"}
+        assert set(out.predecessors("fus")) == {"p0", "p1"}
+
+    def test_does_not_bypass_schema_tau2(self):
+        G = nx.DiGraph()
+        G.add_node("schema", type="threshold", tau=2, label="2", role=ROLE_SCHEMA)
+        G.add_node("p0", type="variable", mode="input", value=0)
+        G.add_node("out0", type="variable", mode="output", value=0)
+        G.add_edge("p0", "schema")
+        G.add_edge("schema", "out0", type="out")
+        out = simplify_canalizing_map(G)
+        assert out.has_node("schema")
+        assert set(out.predecessors("out0")) == {"schema"}
+
+    def test_does_not_bypass_nonschema_tau1(self):
+        G = nx.DiGraph()
+        G.add_node("pol", type="threshold", tau=1, label="1", role=ROLE_POLARITY0)
+        G.add_node("p0", type="variable", mode="input", value=0)
+        G.add_node("p1", type="variable", mode="input", value=1)
+        G.add_node("out0", type="variable", mode="output", value=0)
+        G.add_edge("p0", "pol")
+        G.add_edge("p1", "pol")
+        G.add_edge("pol", "out0", type="out")
+        out = simplify_canalizing_map(G)
+        assert out.has_node("pol")
+        assert set(out.predecessors("out0")) == {"pol"}
 
     @pytest.mark.parametrize(
         "outputs",

@@ -30,8 +30,9 @@ callable with the same signature as :func:`build_canalizing_map_legacy`.
 Simplification
 --------------
 :func:`simplify_canalizing_map` collapses redundant single-predecessor
-``tau=1`` threshold buffers (threshold → threshold only).  It does **not**
-remove ``tau=0`` constant schemata.
+``tau=1`` threshold buffers (threshold → threshold) and bypasses schema
+``tau=1`` OR units that claim variables via ``type=out`` edges.  It does
+**not** remove ``tau=0`` constant schemata.
 """
 from __future__ import annotations
 
@@ -600,6 +601,19 @@ def build_canalizing_map(
 # Simplification (DCM / CM)
 # ---------------------------------------------------------------------------
 
+def _is_schema_out_claim(graph: nx.DiGraph, schema_id, succ_id) -> bool:
+    """True if *succ_id* is a variable claimed by a schema ``type=out`` edge.
+
+    In a single-node CM the claim target is ``mode=output``.  In a DCM,
+    ``nx.compose`` may leave the shared ``var-*`` node as ``mode=input``
+    when it is also used as a literal elsewhere; the ``type=out`` edge is
+    the reliable claim marker.
+    """
+    if graph.nodes[succ_id].get("type") != "variable":
+        return False
+    return graph.edges[schema_id, succ_id].get("type") == "out"
+
+
 def simplify_canalizing_map(
     cm: nx.DiGraph, *, copy: bool = True, remove_isolates: bool = True
 ) -> nx.DiGraph:
@@ -613,11 +627,15 @@ def simplify_canalizing_map(
        ``B``, then merge ``A`` into ``B``: redirect ``A``'s predecessors to
        ``B``, set ``tau(B) = tau(A)``, and delete ``A``.  ``B`` keeps its
        own ``role`` (so a schema claimer stays a schema).
+    3. If schema threshold ``B`` has ``tau == 1`` and every successor is a
+       variable reached by a ``type=out`` edge, bypass ``B``: wire each
+       predecessor of ``B`` to each successor (OR-claim equivalence) and
+       delete ``B``.  Missing ``role`` is treated as schema (legacy
+       builders).  Non-schema ``tau=1`` units are not bypassed.
 
-    This is the semantics-preserving core of the legacy DCM ``simplify``
-    path for nested threshold chains.  It does **not** shortcut
-    ``variable → tau=1 → X`` edges and does **not** treat multi-predecessor
-    ``tau=1`` units (threshold-OR) as buffers.
+    Rule 2 is tried before rule 3 so a sole nested threshold can still be
+    absorbed into a schema claimer (raising ``tau``) instead of deleting the
+    schema.
 
     Parameters
     ----------
@@ -635,9 +653,11 @@ def simplify_canalizing_map(
     """
     G = cm.copy() if copy else cm
 
-    merged = True
-    while merged:
-        merged = False
+    changed = True
+    while changed:
+        changed = False
+
+        # Rule 2: sole-pred threshold → tau=1 threshold merge.
         for b, bdata in list(G.nodes(data=True)):
             if b not in G:
                 continue
@@ -673,7 +693,39 @@ def simplify_canalizing_map(
                 G.nodes[b]["label"] = "{:d}".format(tau_a)
 
             G.remove_node(a)
-            merged = True
+            changed = True
+            break
+
+        if changed:
+            continue
+
+        # Rule 3: schema tau=1 OR-bypass onto claimed variables (type=out).
+        for b, bdata in list(G.nodes(data=True)):
+            if b not in G:
+                continue
+            if bdata.get("type") != "threshold":
+                continue
+            if bdata.get("tau") != 1:
+                continue
+            if bdata.get("role", ROLE_SCHEMA) != ROLE_SCHEMA:
+                continue
+
+            succs = list(G.successors(b))
+            if not succs:
+                continue
+            if not all(_is_schema_out_claim(G, b, t) for t in succs):
+                continue
+
+            preds = list(G.predecessors(b))
+            for pred in preds:
+                for succ in succs:
+                    edge_data = dict(G.edges[b, succ])
+                    edge_data["mode"] = "schema_bypass"
+                    if not G.has_edge(pred, succ):
+                        G.add_edge(pred, succ, **edge_data)
+
+            G.remove_node(b)
+            changed = True
             break
 
     if remove_isolates:
