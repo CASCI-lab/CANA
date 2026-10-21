@@ -28,6 +28,7 @@ for _p in (_DEV_DIR, _PKG_ROOT):
         sys.path.insert(0, str(_p))
 
 from cana.boolean_node import BooleanNode
+from cana.canalization.canalizing_map import simplify_canalizing_map
 from cana.canalization.cm_lut import lut_from_canalizing_map
 from bbm_cm_roundtrip import is_exact_roundtrip  # noqa: E402
 
@@ -64,12 +65,10 @@ _DOT_STATIC_URL = (
 )
 
 # %% [markdown]
-# ## Helpers — LUT rebuild + stock DCM simplify
+# ## Helpers — LUT rebuild + DCM simplify
 #
-# Keep `apply_stock_dcm_simplify` in sync with
-# `all_lut_dcm_simplify_roundtrip.apply_stock_dcm_simplify` /
-# `BooleanNetwork.dynamics_canalization_map` (`simplify=True`).
-# Do **not** import that notebook module: its bottom cells run on import.
+# Uses :func:`cana.canalization.canalizing_map.simplify_canalizing_map`
+# (same as ``BooleanNetwork.dynamics_canalization_map``).
 
 
 # %%
@@ -93,41 +92,8 @@ def make_node(k: int, func_id: int) -> BooleanNode:
 
 
 def apply_stock_dcm_simplify(cm: nx.DiGraph) -> nx.DiGraph:
-    """Apply stock DCM simplify to a canalizing-map graph (copy)."""
-    G = cm.copy()
-    threshold_nodes = [
-        (n, d) for n, d in G.nodes(data=True) if d.get("type") == "threshold"
-    ]
-    for n, d in threshold_nodes:
-        if n not in G:
-            continue
-        if d.get("tau") == 0:
-            G.remove_node(n)
-            continue
-        if d.get("tau") == 1:
-            in_edges = list(G.in_edges(n))
-            out_edges = list(G.out_edges(n))
-            if not in_edges or not out_edges:
-                continue
-            in_nei = in_edges[0]
-            out_nei = out_edges[0]
-            if in_nei == out_nei[::-1]:
-                G.remove_node(n)
-                G.add_edge(
-                    in_nei[0],
-                    out_nei[1],
-                    **{"type": "simplified", "mode": "selfloop"},
-                )
-            elif not any(G.nodes[tn].get("type") == "fusion" for tn in in_nei):
-                G.remove_node(n)
-                G.add_edge(
-                    in_nei[0],
-                    out_nei[1],
-                    **{"type": "simplified", "mode": "direct"},
-                )
-    isolates = list(nx.isolates(G))
-    G.remove_nodes_from(isolates)
-    return G
+    """Apply DCM simplify to a canalizing-map graph (copy)."""
+    return simplify_canalizing_map(cm, copy=True, remove_isolates=True)
 
 
 # %% [markdown]

@@ -3,7 +3,7 @@
 #
 # Sibling of `all_lut_cm_roundtrip.py`.  Enumerate Boolean LUTs for every
 # `k <= MAX_K`, build a canalizing map for each builder in `BUILDERS`, optionally
-# apply the **stock** DCM `simplify` collapse (from
+# apply DCM `simplify` (`simplify_canalizing_map` / 
 # `BooleanNetwork.dynamics_canalization_map`), reconstruct the LUT, and report
 # fail fractions by `(builder, simplify, k)`.
 #
@@ -40,6 +40,7 @@ for _p in (_DEV_DIR, _PKG_ROOT):
         sys.path.insert(0, str(_p))
 
 from cana.boolean_node import BooleanNode
+from cana.canalization.canalizing_map import simplify_canalizing_map
 from cana.canalization.cm_lut import lut_from_canalizing_map
 
 from bbm_cm_roundtrip import (  # noqa: E402
@@ -142,46 +143,12 @@ def make_node(k: int, func_id: int) -> BooleanNode:
 
 
 def apply_stock_dcm_simplify(cm: nx.DiGraph) -> nx.DiGraph:
-    """Apply stock DCM simplify to a canalizing-map graph (copy).
+    """Apply DCM simplify to a canalizing-map graph (copy).
 
-    Mirrors ``BooleanNetwork.dynamics_canalization_map`` when ``simplify=True``
-    (``boolean_network.py`` ~L1701–1736).  Keep in sync with that method until
-    the collapse is extracted to a shared helper.
+    Delegates to :func:`~cana.canalization.canalizing_map.simplify_canalizing_map`
+    — the same helper used by ``BooleanNetwork.dynamics_canalization_map``.
     """
-    G = cm.copy()
-    threshold_nodes = [
-        (n, d) for n, d in G.nodes(data=True) if d.get("type") == "threshold"
-    ]
-    for n, d in threshold_nodes:
-        if n not in G:
-            continue
-        if d.get("tau") == 0:
-            G.remove_node(n)
-            continue
-        if d.get("tau") == 1:
-            in_edges = list(G.in_edges(n))
-            out_edges = list(G.out_edges(n))
-            if not in_edges or not out_edges:
-                continue
-            in_nei = in_edges[0]
-            out_nei = out_edges[0]
-            if in_nei == out_nei[::-1]:
-                G.remove_node(n)
-                G.add_edge(
-                    in_nei[0],
-                    out_nei[1],
-                    **{"type": "simplified", "mode": "selfloop"},
-                )
-            elif not any(G.nodes[tn].get("type") == "fusion" for tn in in_nei):
-                G.remove_node(n)
-                G.add_edge(
-                    in_nei[0],
-                    out_nei[1],
-                    **{"type": "simplified", "mode": "direct"},
-                )
-    isolates = list(nx.isolates(G))
-    G.remove_nodes_from(isolates)
-    return G
+    return simplify_canalizing_map(cm, copy=True, remove_isolates=True)
 
 
 def _cm_worker_payload(

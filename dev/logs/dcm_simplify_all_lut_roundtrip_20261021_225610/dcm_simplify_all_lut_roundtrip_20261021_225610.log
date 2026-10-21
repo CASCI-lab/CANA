@@ -1,0 +1,303 @@
+mode=full
+MAX_K=5
+effective_max_k=5
+SAMPLE_N=2048
+SAMPLE_SEED=0
+BUILDERS=legacy,canonical
+SIMPLIFY_MODES=False,True
+TIMEOUT_CM_S=None
+TIMEOUT_LUT_S=None
+PROGRESS_EVERY=256
+run_dir=/home/kyuhyongpark/CANA/CANA/dev/logs/dcm_simplify_all_lut_roundtrip_20261021_225610
+log_path=/home/kyuhyongpark/CANA/CANA/dev/logs/dcm_simplify_all_lut_roundtrip_20261021_225610/dcm_simplify_all_lut_roundtrip_20261021_225610.log
+timestamp=20261021_225610
+
+######## builder=legacy simplify=False ########
+
+=== builder=legacy  simplify=False  k=1  mode=exhaustive  space=4  planned=4 ===
+  OK    k1_id0_00  k=1  cm=919us  lut=78us
+  OK    k1_id1_10  k=1  cm=188us  lut=86us
+  OK    k1_id2_01  k=1  cm=179us  lut=94us
+  OK    k1_id3_11  k=1  cm=158us  lut=40us
+  k_summary  eval=4  fail=0  skip=0  error=0  k_fail=False  cm_total=1.44ms  lut_total=297us
+
+=== builder=legacy  simplify=False  k=2  mode=exhaustive  space=16  planned=16 ===
+  OK    k2_id0_0000  k=2  cm=225us  lut=79us
+  OK    k2_id1_1000  k=2  cm=549us  lut=455us
+  OK    k2_id2_0100  k=2  cm=333us  lut=192us
+  OK    k2_id15_1111  k=2  cm=84us  lut=43us
+  k_summary  eval=16  fail=0  skip=0  error=0  k_fail=False  cm_total=5.38ms  lut_total=2.87ms
+
+=== builder=legacy  simplify=False  k=3  mode=exhaustive  space=256  planned=256 ===
+  OK    k3_id0_00000000  k=3  cm=317us  lut=148us
+  OK    k3_id1_10000000  k=3  cm=514us  lut=452us
+  OK    k3_id2_01000000  k=3  cm=314us  lut=294us
+  OK    k3_id255_11111111  k=3  cm=144us  lut=126us
+  progress  256/256  eval=256  fail=0  skip=0  error=0  elapsed=224.86ms
+  k_summary  eval=256  fail=0  skip=0  error=0  k_fail=False  cm_total=96.90ms  lut_total=107.04ms
+
+=== builder=legacy  simplify=False  k=4  mode=sample  space=65536  planned=2048 ===
+  OK    k4_id27_1101100000000000  k=4  cm=789us  lut=669us
+  OK    k4_id37_1010010000000000  k=4  cm=542us  lut=830us
+  OK    k4_id64_0000001000000000  k=4  cm=529us  lut=1.23ms
+  OK    k4_id8360_0001010100000100  k=4  cm=364us  lut=1.07ms
+  progress  256/2048  eval=256  fail=0  skip=0  error=0  elapsed=509.64ms
+  OK    k4_id16208_0000101011111100  k=4  cm=317us  lut=521us
+  progress  512/2048  eval=512  fail=0  skip=0  error=0  elapsed=861.66ms
+  OK    k4_id24123_1101110001111010  k=4  cm=651us  lut=659us
+  progress  768/2048  eval=768  fail=0  skip=0  error=0  elapsed=1.262s
+  OK    k4_id32832_0000001000000001  k=4  cm=304us  lut=780us
+  progress  1024/2048  eval=1024  fail=0  skip=0  error=0  elapsed=1.633s
+  OK    k4_id41443_1100011110000101  k=4  cm=469us  lut=765us
+  progress  1280/2048  eval=1280  fail=0  skip=0  error=0  elapsed=2.060s
+  OK    k4_id49926_0110000011000011  k=4  cm=580us  lut=1.31ms
+  progress  1536/2048  eval=1536  fail=0  skip=0  error=0  elapsed=2.497s
+  OK    k4_id58483_1100111000100111  k=4  cm=516us  lut=744us
+  progress  1792/2048  eval=1792  fail=0  skip=0  error=0  elapsed=2.874s
+  OK    k4_id65525_1010111111111111  k=4  cm=302us  lut=522us
+  progress  2048/2048  eval=2048  fail=0  skip=0  error=0  elapsed=3.213s
+  k_summary  eval=2048  fail=0  skip=0  error=0  k_fail=False  cm_total=1.210s  lut_total=1.855s
+
+=== builder=legacy  simplify=False  k=5  mode=sample  space=4294967296  planned=2048 ===
+  OK    k5_id5841_10001011011010000000000000000000  k=5  cm=1.60ms  lut=2.05ms
+  OK    k5_id3950464_00000001111000100011110000000000  k=5  cm=1.70ms  lut=4.25ms
+  OK    k5_id4360884_00101101010100010100001000000000  k=5  cm=999us  lut=2.34ms
+  OK    k5_id477464023_11101011101000011010111000111000  k=5  cm=2.57ms  lut=5.71ms
+  progress  256/2048  eval=256  fail=0  skip=0  error=0  elapsed=1.642s
+  OK    k5_id1030583338_01010100001011101011011010111100  k=5  cm=1.04ms  lut=2.08ms
+  progress  512/2048  eval=512  fail=0  skip=0  error=0  elapsed=2.714s
+  OK    k5_id1588247718_01100101001111010101010101111010  k=5  cm=918us  lut=2.23ms
+  progress  768/2048  eval=768  fail=0  skip=0  error=0  elapsed=3.888s
+  OK    k5_id2108016039_11100101101000111010010110111110  k=5  cm=2.25ms  lut=2.60ms
+  progress  1024/2048  eval=1024  fail=0  skip=0  error=0  elapsed=4.908s
+  OK    k5_id2631457021_10111111000110110001101100111001  k=5  cm=1.06ms  lut=1.96ms
+  progress  1280/2048  eval=1280  fail=0  skip=0  error=0  elapsed=5.966s
+  OK    k5_id3225671250_01001010011010111100001000000011  k=5  cm=938us  lut=2.48ms
+  progress  1536/2048  eval=1536  fail=0  skip=0  error=0  elapsed=6.983s
+  OK    k5_id3803351364_00100010100100010100110101000111  k=5  cm=1.44ms  lut=2.49ms
+  progress  1792/2048  eval=1792  fail=0  skip=0  error=0  elapsed=8.105s
+  OK    k5_id4292229740_00110110010111000110101111111111  k=5  cm=1.23ms  lut=2.71ms
+  progress  2048/2048  eval=2048  fail=0  skip=0  error=0  elapsed=9.132s
+  k_summary  eval=2048  fail=0  skip=0  error=0  k_fail=False  cm_total=3.131s  lut_total=5.799s
+
+######## builder=legacy simplify=True ########
+
+=== builder=legacy  simplify=True  k=1  mode=exhaustive  space=4  planned=4 ===
+  OK    k1_id0_00  k=1  cm=2.57ms  lut=53us
+  OK    k1_id1_10  k=1  cm=345us  lut=68us
+  OK    k1_id2_01  k=1  cm=241us  lut=68us
+  OK    k1_id3_11  k=1  cm=221us  lut=54us
+  k_summary  eval=4  fail=0  skip=0  error=0  k_fail=False  cm_total=3.38ms  lut_total=244us
+
+=== builder=legacy  simplify=True  k=2  mode=exhaustive  space=16  planned=16 ===
+  OK    k2_id0_0000  k=2  cm=387us  lut=318us
+  OK    k2_id1_1000  k=2  cm=533us  lut=262us
+  OK    k2_id2_0100  k=2  cm=607us  lut=184us
+  OK    k2_id15_1111  k=2  cm=139us  lut=42us
+  k_summary  eval=16  fail=0  skip=0  error=0  k_fail=False  cm_total=6.72ms  lut_total=3.22ms
+
+=== builder=legacy  simplify=True  k=3  mode=exhaustive  space=256  planned=256 ===
+  OK    k3_id0_00000000  k=3  cm=294us  lut=112us
+  OK    k3_id1_10000000  k=3  cm=480us  lut=815us
+  OK    k3_id2_01000000  k=3  cm=1.65ms  lut=466us
+  OK    k3_id255_11111111  k=3  cm=253us  lut=89us
+  progress  256/256  eval=256  fail=0  skip=0  error=0  elapsed=184.84ms
+  k_summary  eval=256  fail=0  skip=0  error=0  k_fail=False  cm_total=97.73ms  lut_total=72.70ms
+
+=== builder=legacy  simplify=True  k=4  mode=sample  space=65536  planned=2048 ===
+  OK    k4_id27_1101100000000000  k=4  cm=846us  lut=670us
+  OK    k4_id37_1010010000000000  k=4  cm=1.01ms  lut=575us
+  OK    k4_id64_0000001000000000  k=4  cm=666us  lut=632us
+  OK    k4_id8360_0001010100000100  k=4  cm=492us  lut=617us
+  progress  256/2048  eval=256  fail=0  skip=0  error=0  elapsed=417.57ms
+  OK    k4_id16208_0000101011111100  k=4  cm=450us  lut=567us
+  progress  512/2048  eval=512  fail=0  skip=0  error=0  elapsed=763.20ms
+  OK    k4_id24123_1101110001111010  k=4  cm=645us  lut=928us
+  progress  768/2048  eval=768  fail=0  skip=0  error=0  elapsed=1.146s
+  OK    k4_id32832_0000001000000001  k=4  cm=503us  lut=732us
+  progress  1024/2048  eval=1024  fail=0  skip=0  error=0  elapsed=1.579s
+  OK    k4_id41443_1100011110000101  k=4  cm=1.01ms  lut=1.02ms
+  progress  1280/2048  eval=1280  fail=0  skip=0  error=0  elapsed=2.124s
+  OK    k4_id49926_0110000011000011  k=4  cm=748us  lut=1.45ms
+  progress  1536/2048  eval=1536  fail=0  skip=0  error=0  elapsed=2.498s
+  OK    k4_id58483_1100111000100111  k=4  cm=785us  lut=1.00ms
+  progress  1792/2048  eval=1792  fail=0  skip=0  error=0  elapsed=3.007s
+  OK    k4_id65525_1010111111111111  k=4  cm=320us  lut=436us
+  progress  2048/2048  eval=2048  fail=0  skip=0  error=0  elapsed=3.339s
+  k_summary  eval=2048  fail=0  skip=0  error=0  k_fail=False  cm_total=1.462s  lut_total=1.737s
+
+=== builder=legacy  simplify=True  k=5  mode=sample  space=4294967296  planned=2048 ===
+  OK    k5_id5841_10001011011010000000000000000000  k=5  cm=874us  lut=1.45ms
+  OK    k5_id3950464_00000001111000100011110000000000  k=5  cm=1.38ms  lut=1.85ms
+  OK    k5_id4360884_00101101010100010100001000000000  k=5  cm=2.60ms  lut=3.57ms
+  OK    k5_id477464023_11101011101000011010111000111000  k=5  cm=2.49ms  lut=3.76ms
+  progress  256/2048  eval=256  fail=0  skip=0  error=0  elapsed=1.012s
+  OK    k5_id1030583338_01010100001011101011011010111100  k=5  cm=1.24ms  lut=2.60ms
+  progress  512/2048  eval=512  fail=0  skip=0  error=0  elapsed=2.032s
+  OK    k5_id1588247718_01100101001111010101010101111010  k=5  cm=2.56ms  lut=11.52ms
+  progress  768/2048  eval=768  fail=0  skip=0  error=0  elapsed=3.157s
+  OK    k5_id2108016039_11100101101000111010010110111110  k=5  cm=2.83ms  lut=2.85ms
+  progress  1024/2048  eval=1024  fail=0  skip=0  error=0  elapsed=4.616s
+  OK    k5_id2631457021_10111111000110110001101100111001  k=5  cm=1.09ms  lut=1.60ms
+  progress  1280/2048  eval=1280  fail=0  skip=0  error=0  elapsed=5.685s
+  OK    k5_id3225671250_01001010011010111100001000000011  k=5  cm=1.37ms  lut=2.17ms
+  progress  1536/2048  eval=1536  fail=0  skip=0  error=0  elapsed=6.691s
+  OK    k5_id3803351364_00100010100100010100110101000111  k=5  cm=1.56ms  lut=1.80ms
+  progress  1792/2048  eval=1792  fail=0  skip=0  error=0  elapsed=7.741s
+  OK    k5_id4292229740_00110110010111000110101111111111  k=5  cm=1.60ms  lut=2.15ms
+  progress  2048/2048  eval=2048  fail=0  skip=0  error=0  elapsed=8.825s
+  k_summary  eval=2048  fail=0  skip=0  error=0  k_fail=False  cm_total=3.440s  lut_total=5.206s
+
+######## builder=canonical simplify=False ########
+
+=== builder=canonical  simplify=False  k=1  mode=exhaustive  space=4  planned=4 ===
+  OK    k1_id0_00  k=1  cm=128us  lut=35us
+  OK    k1_id1_10  k=1  cm=192us  lut=52us
+  OK    k1_id2_01  k=1  cm=206us  lut=49us
+  OK    k1_id3_11  k=1  cm=172us  lut=47us
+  k_summary  eval=4  fail=0  skip=0  error=0  k_fail=False  cm_total=698us  lut_total=183us
+
+=== builder=canonical  simplify=False  k=2  mode=exhaustive  space=16  planned=16 ===
+  OK    k2_id0_0000  k=2  cm=143us  lut=44us
+  OK    k2_id1_1000  k=2  cm=365us  lut=113us
+  OK    k2_id2_0100  k=2  cm=256us  lut=89us
+  OK    k2_id15_1111  k=2  cm=78us  lut=37us
+  k_summary  eval=16  fail=0  skip=0  error=0  k_fail=False  cm_total=3.59ms  lut_total=1.89ms
+
+=== builder=canonical  simplify=False  k=3  mode=exhaustive  space=256  planned=256 ===
+  OK    k3_id0_00000000  k=3  cm=405us  lut=341us
+  OK    k3_id1_10000000  k=3  cm=475us  lut=419us
+  OK    k3_id2_01000000  k=3  cm=495us  lut=301us
+  OK    k3_id255_11111111  k=3  cm=112us  lut=111us
+  progress  256/256  eval=256  fail=0  skip=0  error=0  elapsed=155.59ms
+  k_summary  eval=256  fail=0  skip=0  error=0  k_fail=False  cm_total=64.83ms  lut_total=76.20ms
+
+=== builder=canonical  simplify=False  k=4  mode=sample  space=65536  planned=2048 ===
+  OK    k4_id27_1101100000000000  k=4  cm=387us  lut=459us
+  OK    k4_id37_1010010000000000  k=4  cm=409us  lut=537us
+  OK    k4_id64_0000001000000000  k=4  cm=500us  lut=377us
+  OK    k4_id8360_0001010100000100  k=4  cm=377us  lut=529us
+  progress  256/2048  eval=256  fail=0  skip=0  error=0  elapsed=358.89ms
+  OK    k4_id16208_0000101011111100  k=4  cm=333us  lut=610us
+  progress  512/2048  eval=512  fail=0  skip=0  error=0  elapsed=718.85ms
+  OK    k4_id24123_1101110001111010  k=4  cm=436us  lut=776us
+  progress  768/2048  eval=768  fail=0  skip=0  error=0  elapsed=1.223s
+  OK    k4_id32832_0000001000000001  k=4  cm=328us  lut=713us
+  progress  1024/2048  eval=1024  fail=0  skip=0  error=0  elapsed=1.622s
+  OK    k4_id41443_1100011110000101  k=4  cm=1.09ms  lut=2.52ms
+  progress  1280/2048  eval=1280  fail=0  skip=0  error=0  elapsed=2.043s
+  OK    k4_id49926_0110000011000011  k=4  cm=381us  lut=974us
+  progress  1536/2048  eval=1536  fail=0  skip=0  error=0  elapsed=2.466s
+  OK    k4_id58483_1100111000100111  k=4  cm=592us  lut=968us
+  progress  1792/2048  eval=1792  fail=0  skip=0  error=0  elapsed=2.815s
+  OK    k4_id65525_1010111111111111  k=4  cm=282us  lut=499us
+  progress  2048/2048  eval=2048  fail=0  skip=0  error=0  elapsed=3.186s
+  k_summary  eval=2048  fail=0  skip=0  error=0  k_fail=False  cm_total=1.138s  lut_total=1.915s
+
+=== builder=canonical  simplify=False  k=5  mode=sample  space=4294967296  planned=2048 ===
+  OK    k5_id5841_10001011011010000000000000000000  k=5  cm=879us  lut=2.10ms
+  OK    k5_id3950464_00000001111000100011110000000000  k=5  cm=1.29ms  lut=2.57ms
+  OK    k5_id4360884_00101101010100010100001000000000  k=5  cm=1.38ms  lut=5.50ms
+  OK    k5_id477464023_11101011101000011010111000111000  k=5  cm=2.25ms  lut=3.84ms
+  progress  256/2048  eval=256  fail=0  skip=0  error=0  elapsed=1.112s
+  OK    k5_id1030583338_01010100001011101011011010111100  k=5  cm=1.48ms  lut=3.36ms
+  progress  512/2048  eval=512  fail=0  skip=0  error=0  elapsed=2.250s
+  OK    k5_id1588247718_01100101001111010101010101111010  k=5  cm=1.27ms  lut=3.63ms
+  progress  768/2048  eval=768  fail=0  skip=0  error=0  elapsed=3.368s
+  OK    k5_id2108016039_11100101101000111010010110111110  k=5  cm=2.35ms  lut=2.97ms
+  progress  1024/2048  eval=1024  fail=0  skip=0  error=0  elapsed=4.528s
+  OK    k5_id2631457021_10111111000110110001101100111001  k=5  cm=1.10ms  lut=2.52ms
+  progress  1280/2048  eval=1280  fail=0  skip=0  error=0  elapsed=5.699s
+  OK    k5_id3225671250_01001010011010111100001000000011  k=5  cm=1.45ms  lut=2.23ms
+  progress  1536/2048  eval=1536  fail=0  skip=0  error=0  elapsed=6.857s
+  OK    k5_id3803351364_00100010100100010100110101000111  k=5  cm=2.76ms  lut=3.83ms
+  progress  1792/2048  eval=1792  fail=0  skip=0  error=0  elapsed=8.019s
+  OK    k5_id4292229740_00110110010111000110101111111111  k=5  cm=959us  lut=2.48ms
+  progress  2048/2048  eval=2048  fail=0  skip=0  error=0  elapsed=9.223s
+  k_summary  eval=2048  fail=0  skip=0  error=0  k_fail=False  cm_total=3.004s  lut_total=6.035s
+
+######## builder=canonical simplify=True ########
+
+=== builder=canonical  simplify=True  k=1  mode=exhaustive  space=4  planned=4 ===
+  OK    k1_id0_00  k=1  cm=236us  lut=30us
+  OK    k1_id1_10  k=1  cm=235us  lut=50us
+  OK    k1_id2_01  k=1  cm=226us  lut=46us
+  OK    k1_id3_11  k=1  cm=163us  lut=42us
+  k_summary  eval=4  fail=0  skip=0  error=0  k_fail=False  cm_total=860us  lut_total=168us
+
+=== builder=canonical  simplify=True  k=2  mode=exhaustive  space=16  planned=16 ===
+  OK    k2_id0_0000  k=2  cm=176us  lut=42us
+  OK    k2_id1_1000  k=2  cm=383us  lut=110us
+  OK    k2_id2_0100  k=2  cm=276us  lut=128us
+  OK    k2_id15_1111  k=2  cm=135us  lut=38us
+  k_summary  eval=16  fail=0  skip=0  error=0  k_fail=False  cm_total=5.47ms  lut_total=2.33ms
+
+=== builder=canonical  simplify=True  k=3  mode=exhaustive  space=256  planned=256 ===
+  OK    k3_id0_00000000  k=3  cm=278us  lut=60us
+  OK    k3_id1_10000000  k=3  cm=444us  lut=195us
+  OK    k3_id2_01000000  k=3  cm=433us  lut=179us
+  OK    k3_id255_11111111  k=3  cm=127us  lut=57us
+  progress  256/256  eval=256  fail=0  skip=0  error=0  elapsed=178.40ms
+  k_summary  eval=256  fail=0  skip=0  error=0  k_fail=False  cm_total=98.81ms  lut_total=66.90ms
+
+=== builder=canonical  simplify=True  k=4  mode=sample  space=65536  planned=2048 ===
+  OK    k4_id27_1101100000000000  k=4  cm=719us  lut=430us
+  OK    k4_id37_1010010000000000  k=4  cm=593us  lut=389us
+  OK    k4_id64_0000001000000000  k=4  cm=525us  lut=304us
+  OK    k4_id8360_0001010100000100  k=4  cm=542us  lut=846us
+  progress  256/2048  eval=256  fail=0  skip=0  error=0  elapsed=368.75ms
+  OK    k4_id16208_0000101011111100  k=4  cm=492us  lut=749us
+  progress  512/2048  eval=512  fail=0  skip=0  error=0  elapsed=766.40ms
+  OK    k4_id24123_1101110001111010  k=4  cm=838us  lut=718us
+  progress  768/2048  eval=768  fail=0  skip=0  error=0  elapsed=1.161s
+  OK    k4_id32832_0000001000000001  k=4  cm=779us  lut=456us
+  progress  1024/2048  eval=1024  fail=0  skip=0  error=0  elapsed=1.605s
+  OK    k4_id41443_1100011110000101  k=4  cm=501us  lut=699us
+  progress  1280/2048  eval=1280  fail=0  skip=0  error=0  elapsed=2.053s
+  OK    k4_id49926_0110000011000011  k=4  cm=652us  lut=724us
+  progress  1536/2048  eval=1536  fail=0  skip=0  error=0  elapsed=2.511s
+  OK    k4_id58483_1100111000100111  k=4  cm=1.48ms  lut=911us
+  progress  1792/2048  eval=1792  fail=0  skip=0  error=0  elapsed=2.953s
+  OK    k4_id65525_1010111111111111  k=4  cm=377us  lut=313us
+  progress  2048/2048  eval=2048  fail=0  skip=0  error=0  elapsed=3.418s
+  k_summary  eval=2048  fail=0  skip=0  error=0  k_fail=False  cm_total=1.581s  lut_total=1.708s
+
+=== builder=canonical  simplify=True  k=5  mode=sample  space=4294967296  planned=2048 ===
+  OK    k5_id5841_10001011011010000000000000000000  k=5  cm=872us  lut=1.62ms
+  OK    k5_id3950464_00000001111000100011110000000000  k=5  cm=1.27ms  lut=1.99ms
+  OK    k5_id4360884_00101101010100010100001000000000  k=5  cm=2.14ms  lut=3.54ms
+  OK    k5_id477464023_11101011101000011010111000111000  k=5  cm=2.41ms  lut=3.55ms
+  progress  256/2048  eval=256  fail=0  skip=0  error=0  elapsed=1.149s
+  OK    k5_id1030583338_01010100001011101011011010111100  k=5  cm=1.58ms  lut=2.40ms
+  progress  512/2048  eval=512  fail=0  skip=0  error=0  elapsed=2.339s
+  OK    k5_id1588247718_01100101001111010101010101111010  k=5  cm=1.53ms  lut=2.17ms
+  progress  768/2048  eval=768  fail=0  skip=0  error=0  elapsed=3.644s
+  OK    k5_id2108016039_11100101101000111010010110111110  k=5  cm=2.61ms  lut=2.42ms
+  progress  1024/2048  eval=1024  fail=0  skip=0  error=0  elapsed=4.981s
+  OK    k5_id2631457021_10111111000110110001101100111001  k=5  cm=1.82ms  lut=2.47ms
+  progress  1280/2048  eval=1280  fail=0  skip=0  error=0  elapsed=6.124s
+  OK    k5_id3225671250_01001010011010111100001000000011  k=5  cm=1.85ms  lut=1.97ms
+  progress  1536/2048  eval=1536  fail=0  skip=0  error=0  elapsed=7.306s
+  OK    k5_id3803351364_00100010100100010100110101000111  k=5  cm=2.34ms  lut=2.62ms
+  progress  1792/2048  eval=1792  fail=0  skip=0  error=0  elapsed=8.479s
+  OK    k5_id4292229740_00110110010111000110101111111111  k=5  cm=1.96ms  lut=2.55ms
+  progress  2048/2048  eval=2048  fail=0  skip=0  error=0  elapsed=9.753s
+  k_summary  eval=2048  fail=0  skip=0  error=0  k_fail=False  cm_total=4.075s  lut_total=5.490s
+
+============================================================
+SUMMARY
+mode=full
+BUILDERS=legacy,canonical
+SIMPLIFY_MODES=False,True
+function_fail_fraction = 0/17488 = 0.000000
+k_fail_fraction        = 0/20 = 0.000000
+cm_time_total          = 19.426s
+lut_time_total         = 30.078s
+builder=legacy simplify=False  function_fail_fraction = 0/4372 = 0.000000
+builder=legacy simplify=True  function_fail_fraction = 0/4372 = 0.000000
+builder=canonical simplify=False  function_fail_fraction = 0/4372 = 0.000000
+builder=canonical simplify=True  function_fail_fraction = 0/4372 = 0.000000
+failing_k: (none)
+run_dir=/home/kyuhyongpark/CANA/CANA/dev/logs/dcm_simplify_all_lut_roundtrip_20261021_225610
+log written to /home/kyuhyongpark/CANA/CANA/dev/logs/dcm_simplify_all_lut_roundtrip_20261021_225610/dcm_simplify_all_lut_roundtrip_20261021_225610.log
+============================================================

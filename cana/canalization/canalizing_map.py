@@ -26,6 +26,12 @@ Builders
 
 Callers may select a builder by name via :data:`CM_BUILDERS` or pass a
 callable with the same signature as :func:`build_canalizing_map_legacy`.
+
+Simplification
+--------------
+:func:`simplify_canalizing_map` collapses redundant single-predecessor
+``tau=1`` threshold buffers (threshold → threshold only).  It does **not**
+remove ``tau=0`` constant schemata.
 """
 from __future__ import annotations
 
@@ -588,3 +594,90 @@ def build_canalizing_map(
         input_labels=input_labels,
         k=k,
     )
+
+
+# ---------------------------------------------------------------------------
+# Simplification (DCM / CM)
+# ---------------------------------------------------------------------------
+
+def simplify_canalizing_map(
+    cm: nx.DiGraph, *, copy: bool = True, remove_isolates: bool = True
+) -> nx.DiGraph:
+    """Collapse redundant ``tau=1`` threshold buffers in a CM / DCM graph.
+
+    Safe rewrite rules (applied to a fixed point):
+
+    1. **Never** remove or rewrite ``tau=0`` thresholds (constant schemata).
+    2. If threshold ``A`` feeds threshold ``B``, ``A`` is ``B``'s only
+       predecessor, ``B`` has ``tau == 1``, and ``A``'s only successor is
+       ``B``, then merge ``A`` into ``B``: redirect ``A``'s predecessors to
+       ``B``, set ``tau(B) = tau(A)``, and delete ``A``.
+
+    This is the semantics-preserving core of the legacy DCM ``simplify``
+    path for nested threshold chains.  It does **not** shortcut
+    ``variable → tau=1 → X`` edges and does **not** treat multi-predecessor
+    ``tau=1`` units (threshold-OR) as buffers.
+
+    Parameters
+    ----------
+    cm : networkx.DiGraph
+        Canalizing map or dynamics canalization map.
+    copy : bool, optional
+        If ``True`` (default), operate on a copy and leave *cm* unchanged.
+    remove_isolates : bool, optional
+        If ``True`` (default), drop isolated nodes after merging.
+
+    Returns
+    -------
+    networkx.DiGraph
+        Simplified graph (a copy unless ``copy=False``).
+    """
+    G = cm.copy() if copy else cm
+
+    merged = True
+    while merged:
+        merged = False
+        for b, bdata in list(G.nodes(data=True)):
+            if b not in G:
+                continue
+            if bdata.get("type") != "threshold":
+                continue
+            if bdata.get("tau") != 1:
+                continue
+
+            preds = list(G.predecessors(b))
+            if len(preds) != 1:
+                continue
+            a = preds[0]
+            if a not in G:
+                continue
+            adata = G.nodes[a]
+            if adata.get("type") != "threshold":
+                continue
+
+            succs = list(G.successors(a))
+            if succs != [b]:
+                continue
+
+            # Merge A into B: B becomes A's gate (same predecessors, same tau).
+            for pred in list(G.predecessors(a)):
+                edge_data = dict(G.edges[pred, a])
+                edge_data["mode"] = "threshold_merge"
+                if not G.has_edge(pred, b):
+                    G.add_edge(pred, b, **edge_data)
+
+            tau_a = adata.get("tau")
+            G.nodes[b]["tau"] = tau_a
+            if tau_a is not None:
+                G.nodes[b]["label"] = "{:d}".format(tau_a)
+            if "role" in adata:
+                G.nodes[b]["role"] = adata["role"]
+
+            G.remove_node(a)
+            merged = True
+            break
+
+    if remove_isolates:
+        G.remove_nodes_from(list(nx.isolates(G)))
+
+    return G

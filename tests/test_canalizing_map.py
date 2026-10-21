@@ -16,6 +16,7 @@ from cana.canalization.canalizing_map import (
     build_canalizing_map,
     build_canalizing_map_canonical,
     build_canalizing_map_legacy,
+    simplify_canalizing_map,
 )
 from cana.canalization.cm_lut import (
     ROLE_POLARITY0,
@@ -318,3 +319,90 @@ class TestCanonicalStructure:
         }
         assert pol_by_role[ROLE_POLARITY0] == 1
         assert pol_by_role[ROLE_POLARITY1] == 2
+
+
+def _assert_exact_roundtrip_simplified(
+    node: BooleanNode, builder: str = "legacy"
+) -> None:
+    cm = simplify_canalizing_map(node.canalizing_map(builder=builder))
+    result = lut_from_canalizing_map(cm, input_order=node.inputs)
+    assert not result.has_conflict
+    assert not result.is_incomplete
+    assert result.outputs == [int(x) for x in node.outputs]
+
+
+class TestSimplifyCanalizingMap:
+    """Safe DCM/CM simplify: keep tau=0; merge sole-pred tau=1 buffers only."""
+
+    def test_constant_tau0_preserved(self):
+        node = BooleanNode.from_output_list(
+            [0, 0, 0, 0], name="const0", inputs=[0, 1], id=0
+        )
+        for builder in ("legacy", "canonical"):
+            before = node.canalizing_map(builder=builder)
+            tau0 = [
+                n
+                for n, d in before.nodes(data=True)
+                if d.get("type") == "threshold" and d.get("tau") == 0
+            ]
+            assert len(tau0) == 1
+            after = simplify_canalizing_map(before)
+            assert after.has_node(tau0[0])
+            assert after.nodes[tau0[0]]["tau"] == 0
+            _assert_exact_roundtrip_simplified(node, builder=builder)
+
+    def test_xor_canonical_roundtrip(self):
+        # Previously broken by stock simplify (multi-pred tau=1 polarity collapse).
+        node = BooleanNode.from_output_list(
+            [0, 1, 1, 0], name="xor", inputs=[0, 1], id=6
+        )
+        _assert_exact_roundtrip_simplified(node, builder="canonical")
+        _assert_exact_roundtrip_simplified(node, builder="legacy")
+
+    def test_merges_sole_pred_tau1_buffer(self):
+        G = nx.DiGraph()
+        G.add_node("A", type="threshold", tau=2, label="2", role=ROLE_SYMMETRY)
+        G.add_node("B", type="threshold", tau=1, label="1", role=ROLE_SCHEMA)
+        G.add_node("p0", type="variable", mode="input", value=0)
+        G.add_node("p1", type="variable", mode="input", value=1)
+        G.add_edge("p0", "A")
+        G.add_edge("p1", "A")
+        G.add_edge("A", "B")
+        out = simplify_canalizing_map(G)
+        assert "A" not in out
+        assert out.has_node("B")
+        assert out.nodes["B"]["tau"] == 2
+        assert out.nodes["B"]["role"] == ROLE_SYMMETRY
+        assert set(out.predecessors("B")) == {"p0", "p1"}
+
+    def test_does_not_collapse_multipred_tau1(self):
+        G = nx.DiGraph()
+        G.add_node("pol", type="threshold", tau=1, label="1", role=ROLE_POLARITY0)
+        G.add_node("sym", type="threshold", tau=2, label="2", role=ROLE_SYMMETRY)
+        G.add_node("p0", type="variable", mode="input", value=0)
+        G.add_node("p1", type="variable", mode="input", value=1)
+        G.add_edge("p0", "pol")
+        G.add_edge("p1", "pol")
+        G.add_edge("pol", "sym")
+        G.add_node("other", type="threshold", tau=1, label="1")
+        G.add_edge("other", "sym")
+        out = simplify_canalizing_map(G)
+        assert out.has_node("pol")
+        assert set(out.predecessors("pol")) == {"p0", "p1"}
+
+    @pytest.mark.parametrize(
+        "outputs",
+        [
+            [0, 0, 0, 1],  # AND
+            [0, 1, 1, 1],  # OR
+            [0, 1, 1, 0],  # XOR
+            [0, 0, 0, 0],  # const 0
+            [1, 1, 1, 1],  # const 1
+        ],
+    )
+    @pytest.mark.parametrize("builder", ["legacy", "canonical"])
+    def test_roundtrip_common_k2(self, outputs, builder):
+        node = BooleanNode.from_output_list(
+            outputs, name="f", inputs=[0, 1], id=1
+        )
+        _assert_exact_roundtrip_simplified(node, builder=builder)
