@@ -690,7 +690,7 @@ _CONNECT_EDGE_TYPES = {
     ("input", "fusion"): "fusing",
     ("fusion", "threshold"): "fused",
     ("threshold", "output"): "out",
-    ("threshold", "threshold"): "feed",
+    ("threshold", "threshold"): "fused",
 }
 
 

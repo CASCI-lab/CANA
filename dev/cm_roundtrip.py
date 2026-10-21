@@ -235,8 +235,8 @@ assert not canon_result.has_conflict and not canon_result.is_incomplete
 #
 # Uses ``cana.drawing.canalizing_map.draw_canalizing_map_graphviz``.
 # Writes ``.gv`` and ``.png`` under ``dev/logs/cm_roundtrip_figures/``.
-# Nested ``feed`` edges are remapped for the legacy drawer.  If system
-# Graphviz is missing, falls back to a portable ``dot_static`` + SVG→PNG.
+# If system Graphviz is missing, falls back to a portable ``dot_static``
+# + SVG→PNG.
 
 # %%
 _DEV_DIR = Path(__file__).resolve().parent
@@ -253,20 +253,6 @@ CM_GRAPHS = {
     "hand_CTNNB1": hand_CTNNB1,
     "canonical_CTNNB1": canonical_CTNNB1,
 }
-
-
-def _graph_for_legacy_drawer(graph: nx.DiGraph) -> nx.DiGraph:
-    """Copy *graph*, remapping edge types the legacy drawer does not know.
-
-    Nested-threshold CMs use ``feed`` (threshold→threshold); the GraphViz
-    drawer only accepts out / literal / fusing / fused / simplified.  Treat
-    ``feed`` as ``literal`` for display only.
-    """
-    H = graph.copy()
-    for _s, _t, d in H.edges(data=True):
-        if d.get("type") == "feed":
-            d["type"] = "literal"
-    return H
 
 
 def _ensure_dot_executable() -> str | None:
@@ -342,7 +328,7 @@ def try_draw_cm(name: str, graph: nx.DiGraph, out_dir: Path) -> None:
         print(f"  skipped (drawer unavailable: {_DRAW_IMPORT_ERROR})")
         return
     try:
-        gv = draw_canalizing_map_graphviz(_graph_for_legacy_drawer(graph))
+        gv = draw_canalizing_map_graphviz(graph)
     except Exception as exc:
         print(f"  draw_canalizing_map_graphviz failed: {type(exc).__name__}: {exc}")
         return
@@ -382,4 +368,5 @@ print(f"figures dir → {FIG_DIR}")
 # * Forward legacy ``canalizing_map``, ``hand_CTNNB1``, and nested-threshold
 #   ``canonical_CTNNB1`` all reconstruct CTNNB1.
 # * Drawing writes ``.gv`` + ``.png`` (portable ``dot_static`` + SVG→PNG
-#   when system Graphviz is unavailable).
+#   when system Graphviz is unavailable).  Threshold diamonds are colored
+#   by ``role`` when present.

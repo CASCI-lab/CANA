@@ -475,12 +475,12 @@ class TestConstructionHelpers:
         assert G.edges[a1, thr]["type"] == "literal"
         assert G.edges[thr, out1]["type"] == "out"
 
-    def test_connect_threshold_to_threshold_is_feed(self):
+    def test_connect_threshold_to_threshold_is_fused(self):
         G = nx.DiGraph()
         t0 = make_threshold(G, tau=1)
         t1 = make_threshold(G, tau=1)
         connect(G, t0, t1)
-        assert G.edges[t0, t1]["type"] == "feed"
+        assert G.edges[t0, t1]["type"] == "fused"
 
     def test_connect_illegal_pair_raises(self):
         G = nx.DiGraph()
