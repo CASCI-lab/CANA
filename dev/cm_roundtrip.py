@@ -8,24 +8,15 @@
 # 4. Compare original vs reconstructed LUTs.
 #
 # The reverse step evaluates the CM modularly from node kinds + topology
-# (see `cm_lut` module docstring).  It does **not** assume the forward
-# `canalizing_map` builder is correct — and for CTNNB1 it is not.
+# (see `cana.canalization.cm_lut` module docstring).
 
 # %%
 from __future__ import annotations
 
-import os
-import sys
-
-_DEV_DIR = os.path.dirname(os.path.abspath(__file__))
-if _DEV_DIR not in sys.path:
-    sys.path.insert(0, _DEV_DIR)
-
 import networkx as nx
 from cana.boolean_network import BooleanNetwork
 from cana.boolean_node import BooleanNode
-
-from cm_lut import (
+from cana.canalization.cm_lut import (
     ROLE_POLARITY0,
     ROLE_POLARITY1,
     ROLE_SCHEMA,
@@ -87,9 +78,8 @@ summarize_roundtrip("OR", or_node.outputs, or_result)
 # CTNNB1 = (not SRY) and (WNT4 or RSPO1) and ((not AMH) or (not SOX9))
 # ```
 #
-# Even with a correct reverse interpreter, the reconstructed LUT will **not**
-# match the true function, because `BooleanNode.canalizing_map` mis-wires
-# multi-group permutation schemata (it always uses `ps[0]` for fusion fibres).
+# Multi-group permutation schemata round-trip with the fibre-aware legacy
+# ``canalizing_map`` builder.
 
 # %%
 CTNNB1_BNET = (
@@ -117,28 +107,8 @@ for row in ct._two_symbols[1]:
 
 ct_cm = ct.canalizing_map()
 ct_result = lut_from_canalizing_map(ct_cm, input_order=ct.inputs)
-exact = summarize_roundtrip("CTNNB1 (via buggy canalizing_map)", ct.outputs, ct_result)
-
-# Side-by-side diff of a few disagreeing states
-print("\nDisagreeing / problematic states (up to 12):")
-shown = 0
-for i, (true, got) in enumerate(zip([int(x) for x in ct.outputs], ct_result.outputs)):
-    state = format(i, "05b")
-    labels = {input_labels[j]: int(state[j]) for j in range(5)}
-    if state in ct_result.conflict_states:
-        tag = "CONFLICT"
-    elif got is None:
-        tag = "UNCOVERED"
-    elif got != true:
-        tag = f"MISMATCH true={true} got={got}"
-    else:
-        continue
-    print(f"  {state} {labels}  {tag}")
-    shown += 1
-    if shown >= 12:
-        break
-
-assert exact is False, "Expected CTNNB1 roundtrip to fail while canalizing_map is buggy"
+exact = summarize_roundtrip("CTNNB1 (via canalizing_map)", ct.outputs, ct_result)
+assert exact, "Expected CTNNB1 roundtrip to succeed"
 
 # %% [markdown]
 # ## Case 3 — Hand-correct mini-CM (fragment)
@@ -237,5 +207,5 @@ assert not canon_result.has_conflict and not canon_result.is_incomplete
 #   ``tid`` / input ids are automatic; thresholds do not store ``out``.
 # * `lut_from_canalizing_map` evaluates nodes modularly from topology.
 # * Threshold ``role`` annotates schema / symmetry / polarity0 / polarity1.
-# * Roundtrip still fails for CTNNB1 via the **forward** `canalizing_map`
-#   builder; hand-built fusion and nested-threshold CMs both reconstruct.
+# * Forward ``canalizing_map`` and hand-built fusion / nested-threshold CMs
+#   all reconstruct CTNNB1.

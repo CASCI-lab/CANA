@@ -3,7 +3,7 @@
 #
 # Load Boolean models from the BBM corpus, build a canalizing map for every
 # function via `BooleanNode.canalizing_map`, reconstruct the LUT with
-# `cm_lut.lut_from_canalizing_map`, and report:
+# `cana.canalization.cm_lut.lut_from_canalizing_map`, and report:
 #
 # * fraction of **functions** that fail the roundtrip
 # * fraction of **models** that fail (any evaluated function fails)
@@ -38,9 +38,8 @@ for _p in (_DEV_DIR, _PKG_ROOT):
         sys.path.insert(0, str(_p))
 
 from cana.boolean_node import BooleanNode
+from cana.canalization.cm_lut import lut_from_canalizing_map
 from cana.utils import output_transitions
-
-from cm_lut import lut_from_canalizing_map
 
 # ---------------------------------------------------------------------------
 # Config

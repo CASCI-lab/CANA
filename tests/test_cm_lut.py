@@ -1,25 +1,17 @@
 # -*- coding: utf-8 -*-
 """
-Firm tests for CM → LUT reconstruction (``cm_lut``).
+Firm tests for CM → LUT reconstruction (``cana.canalization.cm_lut``).
 
 All canalizing maps here are hand-built NetworkX graphs.  They do **not**
-depend on ``BooleanNode.canalizing_map``, which is known to be incorrect for
-non-trivial schemata.
+depend on ``BooleanNode.canalizing_map`` (forward-builder roundtrips live in
+``test_canalizing_map``).
 """
 from __future__ import annotations
-
-import os
-import sys
 
 import networkx as nx
 import pytest
 
-# Allow importing the sibling module when pytest is run from the repo root
-_DEV_DIR = os.path.dirname(os.path.abspath(__file__))
-if _DEV_DIR not in sys.path:
-    sys.path.insert(0, _DEV_DIR)
-
-from cm_lut import (  # noqa: E402
+from cana.canalization.cm_lut import (
     ROLE_POLARITY0,
     ROLE_POLARITY1,
     ROLE_SCHEMA,

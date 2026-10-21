@@ -3,7 +3,7 @@
 #
 # Enumerate Boolean look-up tables for every `k <= MAX_K` (default 5), build a
 # canalizing map via `BooleanNode.canalizing_map`, reconstruct the LUT with
-# `cm_lut.lut_from_canalizing_map`, and report fail fractions by `k`.
+# `cana.canalization.cm_lut.lut_from_canalizing_map`, and report fail fractions by `k`.
 #
 # * **Exhaustive** when `2^(2^k) <= SAMPLE_N` (default 2048 → full enum for
 #   `k <= 3`).

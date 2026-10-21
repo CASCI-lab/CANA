@@ -18,12 +18,12 @@ import math
 from itertools import combinations, compress, product
 from statistics import mean
 
-import networkx as nx
 import numpy as np
 import pandas as pd
 
 import cana.canalization.boolean_canalization as BCanalization
 import cana.canalization.cboolean_canalization as cBCanalization
+from cana.canalization.canalizing_map import build_canalizing_map
 import cana.symmetry as symmetry
 import cana.sensitivity as sensitivity
 from cana.cutils import (
@@ -605,11 +605,13 @@ class BooleanNode(object):
         """
         return sensitivity.sensitivity(self.outputs, self.k, norm=norm)
 
-    def canalizing_map(self, output=None):
+    def canalizing_map(self, output=None, builder="legacy"):
         """Computes the node Canalizing Map (CM).
 
         Args:
             output (int) : The output CM to return. Default is ``None``, retuning both [0,1].
+            builder (str or callable) : CM construction method. Default is ``'legacy'``.
+                See :func:`cana.canalization.canalizing_map.build_canalizing_map`.
 
         Returns:
             CM (networkx.DiGraph) : a directed graph representation of the CM.
@@ -619,168 +621,24 @@ class BooleanNode(object):
         """
         self._check_compute_canalization_variables(two_symbols=True)
 
-        ts0s, ts1s = self._two_symbols
+        input_labels = {}
+        for in_id in self.inputs:
+            if self.network is not None:
+                input_labels[in_id] = self.network.get_node_name(in_id)[0]
+            else:
+                input_labels[in_id] = str(in_id)
 
-        G = nx.DiGraph(name="CM: %s" % self.name)
-
-        # Outputs
-        if output is None or output == 0:
-            G.add_node(
-                "var-{nid:d}-out-0".format(nid=self.id),
-                **{
-                    "label": self.name,
-                    "type": "variable",
-                    "mode": "output",
-                    "value": 0,
-                    "constant": self.constant,
-                    "group": self.id,
-                }
-            )
-
-        if output is None or output == 1:
-            G.add_node(
-                "var-{nid:d}-out-1".format(nid=self.id),
-                **{
-                    "label": self.name,
-                    "type": "variable",
-                    "mode": "output",
-                    "value": 1,
-                    "constant": self.constant,
-                    "group": self.id,
-                }
-            )
-
-        tid = 0
-        for out, tspsss in zip([0, 1], self._two_symbols):
-            # Only return the requested output
-            if (not len(tspsss)) or ((output is not None) and (output != out)):
-                continue
-
-            for ts, ps, ss in tspsss:
-                lits = []
-                for j in range(self.k):
-                    # Is this input in any permutation group?
-                    if not any([j in group for group in ps]):
-                        if ts[j] in ["0", "1"]:
-                            lits.append(j)
-
-                # One fibre per (group, polarity) with n > 0
-                fibre_specs = []
-                for g_idx, group in enumerate(ps):
-                    for polarity in (0, 1):
-                        n = sum(1 for j in group if ts[j] == str(polarity))
-                        if n > 0:
-                            fibre_specs.append((g_idx, group, polarity, n))
-
-                # Schema tau: each literal + each polarity fibre contributes 1
-                tau = len(lits) + len(fibre_specs)
-
-                # Threshold Node
-                tname = "thr-{tid:d}-var-{nid:d}-out-{out:d}".format(
-                    tid=tid, nid=self.id, out=out
-                )
-                label = "{:d}".format(tau)
-                G.add_node(
-                    tname,
-                    **{
-                        "label": label,
-                        "type": "threshold",
-                        "tau": tau,
-                        "group": self.id,
-                    }
-                )
-
-                # Add Edges from Threshold node to output
-                xname = "var-{nid:d}-out-{out:d}".format(nid=self.id, out=out)
-                if G.has_node(tname) and G.has_node(xname):
-                    G.add_edge(tname, xname, **{"type": "out"})
-                else:
-                    raise BaseException("Adding edge to node that does not exist.")
-
-                # Literal Edges
-                for lit in lits:
-                    iname = "var-{nid:d}-out-{out:d}".format(
-                        nid=self.inputs[lit], out=int(ts[lit])
-                    )
-                    if iname not in G.nodes():
-                        # Can we get the name of ther nodes? Are we attached to a network?
-                        if self.network is not None:
-                            ilabel = self.network.get_node_name(self.inputs[lit])[0]
-                        else:
-                            ilabel = str(self.inputs[lit])
-                        iout = int(ts[lit])
-                        G.add_node(
-                            iname,
-                            **{
-                                "label": ilabel,
-                                "type": "variable",
-                                "mode": "input",
-                                "value": iout,
-                                "group": self.id,
-                            }
-                        )
-                    G.add_edge(iname, tname, **{"type": "literal"})
-
-                # Polarity fibres: fusion OR when n=1; nested thr tau=n when n>1
-                for g_idx, group, polarity, n in fibre_specs:
-                    if n == 1:
-                        fname = (
-                            "fus-0-grp-{g:d}-thr-{thr:d}"
-                            "-var-{nid:d}-out-{out:d}"
-                        ).format(
-                            g=g_idx, thr=tid, nid=self.id, out=polarity
-                        )
-                        G.add_node(fname, **{"type": "fusion", "group": self.id})
-                        in_edge_type = "fusing"
-                    else:
-                        fname = (
-                            "thr-{tid:d}-grp-{g:d}-pol-{p:d}"
-                            "-var-{nid:d}-out-{out:d}"
-                        ).format(
-                            tid=tid,
-                            g=g_idx,
-                            p=polarity,
-                            nid=self.id,
-                            out=out,
-                        )
-                        G.add_node(
-                            fname,
-                            **{
-                                "label": "{:d}".format(n),
-                                "type": "threshold",
-                                "tau": n,
-                                "group": self.id,
-                            }
-                        )
-                        in_edge_type = "literal"
-
-                    for j in group:
-                        iname = "var-{nid:d}-out-{out:d}".format(
-                            nid=self.inputs[j], out=polarity
-                        )
-                        if iname not in G.nodes():
-                            if self.network is not None:
-                                ilabel = self.network.get_node_name(
-                                    self.inputs[j]
-                                )[0]
-                            else:
-                                ilabel = str(self.inputs[j])
-                            G.add_node(
-                                iname,
-                                **{
-                                    "label": ilabel,
-                                    "type": "variable",
-                                    "mode": "input",
-                                    "value": polarity,
-                                    "group": self.id,
-                                }
-                            )
-                        G.add_edge(iname, fname, **{"type": in_edge_type})
-                    G.add_edge(fname, tname, **{"type": "fused"})
-
-                tid += 1
-
-        return G
+        return build_canalizing_map(
+            self._two_symbols,
+            node_id=self.id,
+            inputs=self.inputs,
+            name=self.name,
+            constant=self.constant,
+            output=output,
+            input_labels=input_labels,
+            k=self.k,
+            builder=builder,
+        )
 
     def pi_coverage(self):
         """Returns the :math:`F'` (Prime Implicants) binary state coverage.
