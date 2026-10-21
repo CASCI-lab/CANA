@@ -372,7 +372,8 @@ class TestSimplifyCanalizingMap:
         assert "A" not in out
         assert out.has_node("B")
         assert out.nodes["B"]["tau"] == 2
-        assert out.nodes["B"]["role"] == ROLE_SYMMETRY
+        # Surviving node keeps its own role (schema claimer stays schema).
+        assert out.nodes["B"]["role"] == ROLE_SCHEMA
         assert set(out.predecessors("B")) == {"p0", "p1"}
 
     def test_does_not_collapse_multipred_tau1(self):

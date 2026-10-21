@@ -611,7 +611,8 @@ def simplify_canalizing_map(
     2. If threshold ``A`` feeds threshold ``B``, ``A`` is ``B``'s only
        predecessor, ``B`` has ``tau == 1``, and ``A``'s only successor is
        ``B``, then merge ``A`` into ``B``: redirect ``A``'s predecessors to
-       ``B``, set ``tau(B) = tau(A)``, and delete ``A``.
+       ``B``, set ``tau(B) = tau(A)``, and delete ``A``.  ``B`` keeps its
+       own ``role`` (so a schema claimer stays a schema).
 
     This is the semantics-preserving core of the legacy DCM ``simplify``
     path for nested threshold chains.  It does **not** shortcut
@@ -659,7 +660,7 @@ def simplify_canalizing_map(
             if succs != [b]:
                 continue
 
-            # Merge A into B: B becomes A's gate (same predecessors, same tau).
+            # Merge A into B: B takes A's predecessors and tau; keep B's role.
             for pred in list(G.predecessors(a)):
                 edge_data = dict(G.edges[pred, a])
                 edge_data["mode"] = "threshold_merge"
@@ -670,8 +671,6 @@ def simplify_canalizing_map(
             G.nodes[b]["tau"] = tau_a
             if tau_a is not None:
                 G.nodes[b]["label"] = "{:d}".format(tau_a)
-            if "role" in adata:
-                G.nodes[b]["role"] = adata["role"]
 
             G.remove_node(a)
             merged = True
