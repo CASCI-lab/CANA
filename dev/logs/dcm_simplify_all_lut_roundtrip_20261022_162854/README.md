@@ -1,4 +1,4 @@
-# dcm_simplify_all_lut_roundtrip_20261021_234554
+# dcm_simplify_all_lut_roundtrip_20261022_162854
 
 All-LUT CM → stock DCM simplify (True/False) → LUT roundtrip for `legacy` and `canonical` builders (4 combinations).
 
@@ -6,7 +6,7 @@ All-LUT CM → stock DCM simplify (True/False) → LUT roundtrip for `legacy` an
 
 | Setting | Value |
 |---------|-------|
-| timestamp | `20261021_234554` |
+| timestamp | `20261022_162854` |
 | mode | `full` |
 | BUILDERS | `legacy,canonical` |
 | SIMPLIFY_MODES | `False,True` |
@@ -32,11 +32,11 @@ Per-(builder, simplify) totals:
 - **legacy / simplify=True:** 0 / 4372 = **0.00%**
 
 - **overall function fail rate:** `0/17488 = 0.000000`
-- **timing:** cm ≈ 21.399s, lut ≈ 32.333s
+- **timing:** cm ≈ 25.095s, lut ≈ 29.820s
 
 ## Artifacts
 
-- `dcm_simplify_all_lut_roundtrip_20261021_234554.log`
+- `dcm_simplify_all_lut_roundtrip_20261022_162854.log`
 - `01_fail_rate_vs_k.png`
 - `02_outcomes_per_k.png`
 - `03_timing_totals_vs_k.png`

@@ -455,7 +455,7 @@ class TestSimplifyCanalizingMap:
         _assert_exact_roundtrip_simplified(node, builder="canonical")
         _assert_exact_roundtrip_simplified(node, builder="legacy")
 
-    def test_merges_sole_pred_tau1_buffer(self):
+    def test_reduces_sole_pred_tau1_buffer(self):
         G = nx.DiGraph()
         G.add_node("A", type="threshold", tau=2, label="2", role=ROLE_SYMMETRY)
         G.add_node("B", type="threshold", tau=1, label="1", role=ROLE_SCHEMA)
@@ -526,6 +526,7 @@ class TestSimplifyCanalizingMap:
         assert set(out.predecessors("out1")) == {"p0", "p1"}
 
     def test_bypasses_fusion_into_schema_tau1(self):
+        # Schema OR-bypass then fusion OR→variable; both are compatible.
         G = nx.DiGraph()
         G.add_node("schema", type="threshold", tau=1, label="1", role=ROLE_SCHEMA)
         G.add_node("fus", type="fusion")
@@ -538,8 +539,8 @@ class TestSimplifyCanalizingMap:
         G.add_edge("schema", "out0", type="out")
         out = simplify_canalizing_map(G)
         assert "schema" not in out
-        assert set(out.predecessors("out0")) == {"fus"}
-        assert set(out.predecessors("fus")) == {"p0", "p1"}
+        assert "fus" not in out
+        assert set(out.predecessors("out0")) == {"p0", "p1"}
 
     def test_does_not_bypass_schema_tau2(self):
         G = nx.DiGraph()
@@ -552,7 +553,8 @@ class TestSimplifyCanalizingMap:
         assert out.has_node("schema")
         assert set(out.predecessors("out0")) == {"schema"}
 
-    def test_does_not_bypass_nonschema_tau1(self):
+    def test_bypasses_nonschema_tau1_or_into_variable(self):
+        # Compatible OR → variable reduction; schema role is not required.
         G = nx.DiGraph()
         G.add_node("pol", type="threshold", tau=1, label="1", role=ROLE_POLARITY0)
         G.add_node("p0", type="variable", mode="input", value=0)
@@ -562,8 +564,8 @@ class TestSimplifyCanalizingMap:
         G.add_edge("p1", "pol")
         G.add_edge("pol", "out0", type="out")
         out = simplify_canalizing_map(G)
-        assert out.has_node("pol")
-        assert set(out.predecessors("out0")) == {"pol"}
+        assert "pol" not in out
+        assert set(out.predecessors("out0")) == {"p0", "p1"}
 
     @pytest.mark.parametrize(
         "outputs",

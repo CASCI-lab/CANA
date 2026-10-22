@@ -48,7 +48,7 @@ from cana.cutils import (
 )
 
 # from cana.utils import *
-from cana.canalization.canalizing_map import simplify_canalizing_map
+from cana.canalization.cm_simplify import simplify_canalizing_map
 from cana.utils import entropy, flip_binstate_bit_set, output_transitions
 
 
@@ -1685,8 +1685,8 @@ class BooleanNetwork:
 
         Args:
             output (int) : The output DCM to return. Default is ``None``, retuning both [0,1].
-            simplify (bool) : If ``True``, collapse redundant ``tau=1`` threshold
-                buffers via :func:`cana.canalization.canalizing_map.simplify_canalizing_map`
+            simplify (bool) : If ``True``, apply threshold-unit reduction via
+                :func:`cana.canalization.cm_simplify.simplify_canalizing_map`
                 (does not remove ``tau=0`` constant schemata).
             builder (str or callable) : Per-node CM construction method. Default is
                 ``'legacy'``. See :func:`cana.canalization.canalizing_map.build_canalizing_map`
@@ -1701,7 +1701,7 @@ class BooleanNetwork:
 
         See Also:
             :func:`boolean_node.canalizing_map` for the CM and :func:`drawing.draw_dynamics_canalizing_map_graphviz` for plotting.
-            :func:`cana.canalization.canalizing_map.simplify_canalizing_map` for the simplify rules.
+            :func:`cana.canalization.cm_simplify.simplify_canalizing_map` for the simplify rules.
             :data:`cana.canalization.canalizing_map.CM_BUILDERS` for named builders.
         """
         CMs = []

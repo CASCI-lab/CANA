@@ -47,6 +47,12 @@ for _p in (_DEV_DIR, _PKG_ROOT):
 
 from cana.boolean_node import BooleanNode
 from cana.canalization.cm_lut import lut_from_canalizing_map
+from cana.canalization.cm_simplify import (
+    classify_unit,
+    is_threshold_like,
+    reduce_threshold_unit,
+    reduction_skip_reason,
+)
 
 from bbm_cm_roundtrip import (  # noqa: E402
     TeeLogger,
@@ -77,23 +83,6 @@ _RUN_STEM = (
 RUN_DIR = LOG_DIR / _RUN_STEM
 LOG_PATH = RUN_DIR / f"{_RUN_STEM}.log"
 FIG_DIR = RUN_DIR
-
-# Unit classes
-CLASS_LINEAR = "LINEAR"
-CLASS_AND = "AND"
-CLASS_OR = "OR"
-CLASS_OTHER = "OTHER"
-REDUCIBLE_CLASSES = frozenset({CLASS_LINEAR, CLASS_AND, CLASS_OR})
-
-_COMPAT: Dict[str, frozenset] = {
-    CLASS_LINEAR: frozenset(
-        {CLASS_AND, CLASS_OR, CLASS_LINEAR, CLASS_OTHER}
-    ),
-    CLASS_AND: frozenset({CLASS_AND, CLASS_LINEAR}),
-    CLASS_OR: frozenset({CLASS_OR, CLASS_LINEAR}),
-    # OTHER is never a reduction target; listed for completeness.
-    CLASS_OTHER: frozenset({CLASS_LINEAR}),
-}
 
 # %% [markdown]
 # ## Helpers — LUT enumeration
@@ -150,156 +139,10 @@ def effective_max_k(smoke: bool, max_k: int, smoke_max_k: int) -> int:
 
 
 # %% [markdown]
-# ## Classification + reduction
+# ## Classification + reduction (from ``cana.canalization.cm_simplify``)
 
 
 # %%
-_THRESHOLD_LIKE = frozenset({"threshold", "fusion"})
-
-
-def is_threshold_like(graph: nx.DiGraph, node_id) -> bool:
-    """True for ``threshold`` nodes and legacy ``fusion`` (τ≡1) units."""
-    return graph.nodes[node_id].get("type") in _THRESHOLD_LIKE
-
-
-def unit_tau(graph: nx.DiGraph, node_id) -> Optional[int]:
-    """Effective τ: fusion ≡ 1; threshold uses ``tau``; else None."""
-    data = graph.nodes[node_id]
-    ntype = data.get("type")
-    if ntype == "fusion":
-        return 1
-    if ntype == "threshold":
-        tau = data.get("tau")
-        return None if tau is None else int(tau)
-    return None
-
-
-def classify_unit(graph: nx.DiGraph, node_id) -> Optional[str]:
-    """Return LINEAR / AND / OR / OTHER, or None if not classifiable as a unit.
-
-    Variables are always OR (fixed τ; never bumped).
-    Fusion nodes are threshold-like with ``tau=1`` (LINEAR if ``n==1``, else OR).
-    """
-    if node_id not in graph:
-        return None
-    data = graph.nodes[node_id]
-    ntype = data.get("type")
-    if ntype == "variable":
-        return CLASS_OR
-    if ntype not in _THRESHOLD_LIKE:
-        return None
-    tau = unit_tau(graph, node_id)
-    if tau is None:
-        return None
-    n = graph.in_degree(node_id)
-    if tau == 1 and n == 1:
-        return CLASS_LINEAR
-    if tau == n:
-        return CLASS_AND
-    if tau == 1:
-        return CLASS_OR
-    return CLASS_OTHER
-
-
-def reduction_skip_reason(graph: nx.DiGraph, node_id) -> Optional[str]:
-    """Return a skip reason, or None if reduction may be attempted."""
-    if node_id not in graph:
-        return "missing"
-    if not is_threshold_like(graph, node_id):
-        return "not_threshold"
-    tau = unit_tau(graph, node_id)
-    if tau is None:
-        return "tau_none"
-    if tau == 0:
-        return "tau0"
-    n = int(graph.in_degree(node_id))
-    if n == 0:
-        return "n0"
-    succs = list(graph.successors(node_id))
-    if not succs:
-        return "no_successors"
-    cls = classify_unit(graph, node_id)
-    if cls is None:
-        return "unclassified"
-    if cls == CLASS_OTHER:
-        return "other"
-    if cls not in REDUCIBLE_CLASSES:
-        return "not_reducible"
-    for s in succs:
-        scls = classify_unit(graph, s)
-        if scls is None:
-            return "succ_unclassified"
-        allowed = _COMPAT.get(cls, frozenset())
-        if scls not in allowed:
-            return "incompatible"
-    return None
-
-
-def reduction_compatible(graph: nx.DiGraph, node_id) -> bool:
-    return reduction_skip_reason(graph, node_id) is None
-
-
-def _bump_successor_tau(graph: nx.DiGraph, succ_id, bump: int) -> None:
-    """Add *bump* to a threshold/fusion successor's τ (never variables).
-
-    Fusion with τ'≠1 is promoted to ``type=threshold`` so evaluation respects
-    the new threshold.
-    """
-    if bump == 0:
-        return
-    sdata = graph.nodes[succ_id]
-    ntype = sdata.get("type")
-    if ntype == "threshold":
-        tau = sdata.get("tau")
-        if tau is None:
-            return
-        new_tau = int(tau) + bump
-        graph.nodes[succ_id]["tau"] = new_tau
-        graph.nodes[succ_id]["label"] = "{:d}".format(new_tau)
-    elif ntype == "fusion":
-        new_tau = 1 + bump
-        graph.nodes[succ_id]["type"] = "threshold"
-        graph.nodes[succ_id]["tau"] = new_tau
-        graph.nodes[succ_id]["label"] = "{:d}".format(new_tau)
-
-
-def reduce_threshold_unit(
-    graph: nx.DiGraph, node_id, *, copy: bool = True
-) -> nx.DiGraph:
-    """Apply the uniform threshold-unit reduction to *node_id*.
-
-    Wire all predecessors to all successors, bump each threshold/fusion
-    successor by ``tau(T)-1``, delete ``T``.  Assumes
-    :func:`reduction_compatible` already passed.
-    """
-    G = graph.copy() if copy else graph
-    preds = list(G.predecessors(node_id))
-    succs = list(G.successors(node_id))
-    tau_t = unit_tau(G, node_id)
-    if tau_t is None:
-        raise ValueError(f"node {node_id!r} has no effective tau")
-    bump = int(tau_t) - 1
-
-    for pred in preds:
-        for succ in succs:
-            if G.has_edge(pred, succ):
-                continue
-            if G.has_edge(node_id, succ):
-                edge_data = dict(G.edges[node_id, succ])
-            elif G.has_edge(pred, node_id):
-                edge_data = dict(G.edges[pred, node_id])
-            else:
-                edge_data = {}
-            edge_data["mode"] = "threshold_reduce"
-            G.add_edge(pred, succ, **edge_data)
-
-    for succ in succs:
-        _bump_successor_tau(G, succ, bump)
-
-    G.remove_node(node_id)
-    return G
-
-
 def successor_has_threshold(graph: nx.DiGraph, node_id) -> bool:
     """True if any successor is threshold-like (threshold or fusion)."""
     return any(is_threshold_like(graph, s) for s in graph.successors(node_id))
@@ -548,8 +391,8 @@ def main() -> Path:
                 br.n_fn += 1
                 thr_ids = [
                     nid
-                    for nid, d in raw.nodes(data=True)
-                    if d.get("type") in _THRESHOLD_LIKE
+                    for nid in raw.nodes
+                    if is_threshold_like(raw, nid)
                 ]
                 for unit_id in thr_ids:
                     br.n_units += 1

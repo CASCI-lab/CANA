@@ -14,15 +14,15 @@ Canonical threshold units carry **roles** (`schema`, `symmetry`, `polarity0`, `p
 |  | `legacy_full` | `legacy_simplify` | `canonical_full` | `canonical_simplify` |
 | --- | --- | --- | --- | --- |
 | figure | `legacy_full.png` | `legacy_simplify.png` | `canonical_full.png` | `canonical_simplify.png` |
-| nodes | 66 | 53 | 77 | 48 |
-| edges | 129 | 116 | 140 | 111 |
-| node type `fusion` | 11 | 11 | 0 | 0 |
+| nodes | 66 | 48 | 77 | 48 |
+| edges | 129 | 111 | 140 | 111 |
+| node type `fusion` | 11 | 6 | 0 | 0 |
 | node type `threshold` | 35 | 22 | 57 | 28 |
 | node type `variable` | 20 | 20 | 20 | 20 |
-| edge type `fused` | 11 | 6 | 22 | 6 |
-| edge type `fusing` | 23 | 23 | 0 | 0 |
-| edge type `literal` | 60 | 52 | 83 | 65 |
-| edge type `out` | 35 | 35 | 35 | 40 |
+| edge type `fused` | 11 | 6 | 22 | 19 |
+| edge type `fusing` | 23 | 13 | 0 | 0 |
+| edge type `literal` | 60 | 52 | 83 | 52 |
+| edge type `out` | 35 | 40 | 35 | 40 |
 | threshold τ=1 | 13 | 0 | 35 | 6 |
 | threshold τ=2 | 13 | 13 | 13 | 13 |
 | threshold τ=3 | 4 | 4 | 4 | 4 |
