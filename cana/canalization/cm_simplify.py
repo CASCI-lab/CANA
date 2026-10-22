@@ -229,20 +229,48 @@ def _candidate_sort_key(distance: int, node_id) -> Tuple:
     return (-dist_key, str(node_id))
 
 
-def _collect_candidates(graph: nx.DiGraph) -> List[Tuple[object, int]]:
+def _edge_delta_after_reduce(graph: nx.DiGraph, node_id) -> int:
+    """Net edge-count change if *node_id* were reduced (preds→succs wiring).
+
+    Removing ``T`` drops ``|P| + |S|`` incident edges and adds one edge per
+    ``(pred, succ)`` pair that does not already exist. Positive means the
+    edge count would increase.
+    """
+    preds = list(graph.predecessors(node_id))
+    succs = list(graph.successors(node_id))
+    removed = len(preds) + len(succs)
+    added = sum(
+        1
+        for pred in preds
+        for succ in succs
+        if not graph.has_edge(pred, succ)
+    )
+    return added - removed
+
+
+def _collect_candidates(
+    graph: nx.DiGraph, *, skip_if_edges_increase: bool = False
+) -> List[Tuple[object, int]]:
     """Return ``(node_id, distance)`` for reduction-compatible units."""
     candidates: List[Tuple[object, int]] = []
     for n, data in graph.nodes(data=True):
         if data.get("type") not in _THRESHOLD_LIKE:
             continue
-        if reduction_compatible(graph, n):
-            candidates.append((n, _distance_to_out(graph, n)))
+        if not reduction_compatible(graph, n):
+            continue
+        if skip_if_edges_increase and _edge_delta_after_reduce(graph, n) > 0:
+            continue
+        candidates.append((n, _distance_to_out(graph, n)))
     return candidates
 
 
-def _pick_next_candidate(graph: nx.DiGraph):
+def _pick_next_candidate(
+    graph: nx.DiGraph, *, skip_if_edges_increase: bool = False
+):
     """Select the next unit to reduce: farthest from out, then min node id."""
-    candidates = _collect_candidates(graph)
+    candidates = _collect_candidates(
+        graph, skip_if_edges_increase=skip_if_edges_increase
+    )
     if not candidates:
         return None
     node_id, _dist = min(
@@ -251,9 +279,13 @@ def _pick_next_candidate(graph: nx.DiGraph):
     return node_id
 
 
-def _simplify_one_step(graph: nx.DiGraph):
+def _simplify_one_step(
+    graph: nx.DiGraph, *, skip_if_edges_increase: bool = False
+):
     """Apply one reduction in place. Return the removed node id, or None."""
-    node_id = _pick_next_candidate(graph)
+    node_id = _pick_next_candidate(
+        graph, skip_if_edges_increase=skip_if_edges_increase
+    )
     if node_id is None:
         return None
     reduce_threshold_unit(graph, node_id, copy=False)
@@ -266,7 +298,11 @@ def _simplify_one_step(graph: nx.DiGraph):
 
 
 def simplify_canalizing_map(
-    cm: nx.DiGraph, *, copy: bool = True, remove_isolates: bool = True
+    cm: nx.DiGraph,
+    *,
+    copy: bool = True,
+    remove_isolates: bool = True,
+    skip_if_edges_increase: bool = False,
 ) -> nx.DiGraph:
     """Simplify a CM / DCM by threshold-unit reduction (fixed point).
 
@@ -298,6 +334,10 @@ def simplify_canalizing_map(
         If ``True`` (default), operate on a copy and leave *cm* unchanged.
     remove_isolates : bool, optional
         If ``True`` (default), drop isolated nodes after rewriting.
+    skip_if_edges_increase : bool, optional
+        If ``True``, skip a reduction when wiring preds→succs would add more
+        edges than removing the unit deletes. Reductions that leave the edge
+        count unchanged are still applied. Default ``False``.
 
     Returns
     -------
@@ -306,7 +346,10 @@ def simplify_canalizing_map(
     """
     G = cm.copy() if copy else cm
 
-    while _simplify_one_step(G) is not None:
+    while (
+        _simplify_one_step(G, skip_if_edges_increase=skip_if_edges_increase)
+        is not None
+    ):
         pass
 
     if remove_isolates:

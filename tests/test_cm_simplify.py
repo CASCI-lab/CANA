@@ -18,6 +18,7 @@ from cana.canalization.cm_simplify import (
     CLASS_OR,
     CLASS_OTHER,
     _distance_to_out,
+    _edge_delta_after_reduce,
     _simplify_one_step,
     classify_unit,
     reduce_threshold_unit,
@@ -404,3 +405,60 @@ class TestSimplifyCanalizingMap:
         )
 
         assert reexported is simplify_canalizing_map
+
+    def test_skip_if_edges_increase_preserves_node(self):
+        # |P|=3, |S|=2 → add 6, remove 5 → delta +1; skip when option on.
+        G = nx.DiGraph()
+        G.add_node("T", type="threshold", tau=1, label="1")
+        G.add_node("B0", type="threshold", tau=1, label="1")
+        G.add_node("B1", type="threshold", tau=1, label="1")
+        for p in ("p0", "p1", "p2"):
+            G.add_node(p, type="variable", mode="input", value=0)
+            G.add_edge(p, "T")
+        G.add_edge("T", "B0")
+        G.add_edge("T", "B1")
+        assert classify_unit(G, "T") == CLASS_OR
+        assert reduction_compatible(G, "T")
+        assert _edge_delta_after_reduce(G, "T") == 1
+
+        kept = simplify_canalizing_map(G, skip_if_edges_increase=True)
+        assert kept.has_node("T")
+        assert set(kept.predecessors("T")) == {"p0", "p1", "p2"}
+
+        reduced = simplify_canalizing_map(G, skip_if_edges_increase=False)
+        assert "T" not in reduced
+        assert set(reduced.predecessors("B0")) == {"p0", "p1", "p2"}
+        assert set(reduced.predecessors("B1")) == {"p0", "p1", "p2"}
+
+    def test_skip_if_edges_increase_allows_nonincreasing(self):
+        # |P|=2, |S|=2 → add 4, remove 4 → delta 0; still reduce.
+        G = nx.DiGraph()
+        G.add_node("T", type="threshold", tau=1, label="1")
+        G.add_node("B0", type="threshold", tau=1, label="1")
+        G.add_node("B1", type="threshold", tau=1, label="1")
+        G.add_node("p0", type="variable", mode="input", value=0)
+        G.add_node("p1", type="variable", mode="input", value=1)
+        G.add_edge("p0", "T")
+        G.add_edge("p1", "T")
+        G.add_edge("T", "B0")
+        G.add_edge("T", "B1")
+        assert _edge_delta_after_reduce(G, "T") == 0
+        out = simplify_canalizing_map(G, skip_if_edges_increase=True)
+        assert "T" not in out
+        assert set(out.predecessors("B0")) == {"p0", "p1"}
+        assert set(out.predecessors("B1")) == {"p0", "p1"}
+
+    def test_edge_delta_accounts_for_existing_cross_edges(self):
+        # |P|=2, |S|=2 with one pred→succ already present: add 3, remove 4.
+        G = nx.DiGraph()
+        G.add_node("T", type="threshold", tau=1, label="1")
+        G.add_node("B0", type="threshold", tau=1, label="1")
+        G.add_node("B1", type="threshold", tau=1, label="1")
+        G.add_node("p0", type="variable", mode="input", value=0)
+        G.add_node("p1", type="variable", mode="input", value=1)
+        G.add_edge("p0", "T")
+        G.add_edge("p1", "T")
+        G.add_edge("T", "B0")
+        G.add_edge("T", "B1")
+        G.add_edge("p0", "B0")
+        assert _edge_delta_after_reduce(G, "T") == -1
