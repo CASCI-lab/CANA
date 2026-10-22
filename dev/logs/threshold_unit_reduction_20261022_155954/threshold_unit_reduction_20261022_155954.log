@@ -1,0 +1,137 @@
+mode=full
+MAX_K=5
+effective_max_k=5
+SAMPLE_N=2048
+SAMPLE_SEED=0
+BUILDERS=legacy,canonical
+PROGRESS_EVERY=256
+run_dir=/home/kyuhyongpark/CANA/CANA/dev/logs/threshold_unit_reduction_20261022_155954
+log_path=/home/kyuhyongpark/CANA/CANA/dev/logs/threshold_unit_reduction_20261022_155954/threshold_unit_reduction_20261022_155954.log
+timestamp=20261022_155954
+
+######## builder=legacy ########
+
+=== builder=legacy  k=1  mode=exhaustive  space=4  planned=4 ===
+  k_summary  fn=4  units=6  attempt=4  ok=4  fail=0  skip=2  error=0
+  skip_reasons  tau0=2
+  class_summary  class=AND  seen=2  attempt=0  ok=0  fail=0  skip=2  error=0
+  class_summary  class=LINEAR  seen=4  attempt=4  ok=4  fail=0  skip=0  error=0
+
+=== builder=legacy  k=2  mode=exhaustive  space=16  planned=16 ===
+  k_summary  fn=16  units=44  attempt=24  ok=24  fail=0  skip=20  error=0
+  skip_reasons  incompatible=18, tau0=2
+  class_summary  class=AND  seen=16  attempt=0  ok=0  fail=0  skip=16  error=0
+  class_summary  class=LINEAR  seen=20  attempt=20  ok=20  fail=0  skip=0  error=0
+  class_summary  class=OR  seen=8  attempt=4  ok=4  fail=0  skip=4  error=0
+
+=== builder=legacy  k=3  mode=exhaustive  space=256  planned=256 ===
+  progress  256/256  fn=256  units=1416  attempt=184  ok=184  fail=0  skip=1232  error=0  elapsed=155.73ms
+  k_summary  fn=256  units=1416  attempt=184  ok=184  fail=0  skip=1232  error=0
+  skip_reasons  incompatible=1214, other=16, tau0=2
+  class_summary  class=AND  seen=856  attempt=0  ok=0  fail=0  skip=856  error=0
+  class_summary  class=LINEAR  seen=156  attempt=156  ok=156  fail=0  skip=0  error=0
+  class_summary  class=OR  seen=388  attempt=28  ok=28  fail=0  skip=360  error=0
+  class_summary  class=OTHER  seen=16  attempt=0  ok=0  fail=0  skip=16  error=0
+
+=== builder=legacy  k=4  mode=sample  space=65536  planned=2048 ===
+  progress  256/2048  fn=256  units=2796  attempt=55  ok=55  fail=0  skip=2741  error=0  elapsed=209.18ms
+  progress  512/2048  fn=512  units=5930  attempt=69  ok=69  fail=0  skip=5861  error=0  elapsed=399.46ms
+  progress  768/2048  fn=768  units=9056  attempt=83  ok=83  fail=0  skip=8973  error=0  elapsed=687.01ms
+  progress  1024/2048  fn=1024  units=12551  attempt=101  ok=101  fail=0  skip=12450  error=0  elapsed=910.68ms
+  progress  1280/2048  fn=1280  units=16057  attempt=114  ok=114  fail=0  skip=15943  error=0  elapsed=1.214s
+  progress  1536/2048  fn=1536  units=19105  attempt=123  ok=123  fail=0  skip=18982  error=0  elapsed=1.407s
+  progress  1792/2048  fn=1792  units=22175  attempt=135  ok=135  fail=0  skip=22040  error=0  elapsed=1.604s
+  progress  2048/2048  fn=2048  units=24961  attempt=187  ok=187  fail=0  skip=24774  error=0  elapsed=1.834s
+  k_summary  fn=2048  units=24961  attempt=187  ok=187  fail=0  skip=24774  error=0
+  skip_reasons  incompatible=24250, other=524
+  class_summary  class=AND  seen=15628  attempt=0  ok=0  fail=0  skip=15628  error=0
+  class_summary  class=LINEAR  seen=175  attempt=175  ok=175  fail=0  skip=0  error=0
+  class_summary  class=OR  seen=8634  attempt=12  ok=12  fail=0  skip=8622  error=0
+  class_summary  class=OTHER  seen=524  attempt=0  ok=0  fail=0  skip=524  error=0
+
+=== builder=legacy  k=5  mode=sample  space=4294967296  planned=2048 ===
+  progress  256/2048  fn=256  units=6772  attempt=4  ok=4  fail=0  skip=6768  error=0  elapsed=466.23ms
+  progress  512/2048  fn=512  units=13790  attempt=4  ok=4  fail=0  skip=13786  error=0  elapsed=871.82ms
+  progress  768/2048  fn=768  units=21030  attempt=5  ok=5  fail=0  skip=21025  error=0  elapsed=1.288s
+  progress  1024/2048  fn=1024  units=28690  attempt=5  ok=5  fail=0  skip=28685  error=0  elapsed=1.766s
+  progress  1280/2048  fn=1280  units=36037  attempt=5  ok=5  fail=0  skip=36032  error=0  elapsed=2.249s
+  progress  1536/2048  fn=1536  units=43304  attempt=5  ok=5  fail=0  skip=43299  error=0  elapsed=2.673s
+  progress  1792/2048  fn=1792  units=50569  attempt=5  ok=5  fail=0  skip=50564  error=0  elapsed=3.113s
+  progress  2048/2048  fn=2048  units=57502  attempt=9  ok=9  fail=0  skip=57493  error=0  elapsed=3.635s
+  k_summary  fn=2048  units=57502  attempt=9  ok=9  fail=0  skip=57493  error=0
+  skip_reasons  incompatible=55731, other=1762
+  class_summary  class=AND  seen=32942  attempt=0  ok=0  fail=0  skip=32942  error=0
+  class_summary  class=LINEAR  seen=9  attempt=9  ok=9  fail=0  skip=0  error=0
+  class_summary  class=OR  seen=22789  attempt=0  ok=0  fail=0  skip=22789  error=0
+  class_summary  class=OTHER  seen=1762  attempt=0  ok=0  fail=0  skip=1762  error=0
+
+######## builder=canonical ########
+
+=== builder=canonical  k=1  mode=exhaustive  space=4  planned=4 ===
+  k_summary  fn=4  units=6  attempt=4  ok=4  fail=0  skip=2  error=0
+  skip_reasons  tau0=2
+  class_summary  class=AND  seen=2  attempt=0  ok=0  fail=0  skip=2  error=0
+  class_summary  class=LINEAR  seen=4  attempt=4  ok=4  fail=0  skip=0  error=0
+
+=== builder=canonical  k=2  mode=exhaustive  space=16  planned=16 ===
+  k_summary  fn=16  units=50  attempt=32  ok=32  fail=0  skip=18  error=0
+  skip_reasons  incompatible=16, tau0=2
+  class_summary  class=AND  seen=16  attempt=2  ok=2  fail=0  skip=14  error=0
+  class_summary  class=LINEAR  seen=26  attempt=26  ok=26  fail=0  skip=0  error=0
+  class_summary  class=OR  seen=8  attempt=4  ok=4  fail=0  skip=4  error=0
+
+=== builder=canonical  k=3  mode=exhaustive  space=256  planned=256 ===
+  progress  256/256  fn=256  units=1738  attempt=768  ok=768  fail=0  skip=970  error=0  elapsed=449.60ms
+  k_summary  fn=256  units=1738  attempt=768  ok=768  fail=0  skip=970  error=0
+  skip_reasons  incompatible=952, other=16, tau0=2
+  class_summary  class=AND  seen=880  attempt=82  ok=82  fail=0  skip=798  error=0
+  class_summary  class=LINEAR  seen=454  attempt=454  ok=454  fail=0  skip=0  error=0
+  class_summary  class=OR  seen=388  attempt=232  ok=232  fail=0  skip=156  error=0
+  class_summary  class=OTHER  seen=16  attempt=0  ok=0  fail=0  skip=16  error=0
+
+=== builder=canonical  k=4  mode=sample  space=65536  planned=2048 ===
+  progress  256/2048  fn=256  units=3619  attempt=1478  ok=1478  fail=0  skip=2141  error=0  elapsed=1.632s
+  progress  512/2048  fn=512  units=7660  attempt=3061  ok=3061  fail=0  skip=4599  error=0  elapsed=3.567s
+  progress  768/2048  fn=768  units=11665  attempt=4608  ok=4608  fail=0  skip=7057  error=0  elapsed=5.406s
+  progress  1024/2048  fn=1024  units=16239  attempt=6479  ok=6479  fail=0  skip=9760  error=0  elapsed=7.682s
+  progress  1280/2048  fn=1280  units=20864  attempt=8447  ok=8447  fail=0  skip=12417  error=0  elapsed=10.186s
+  progress  1536/2048  fn=1536  units=24798  attempt=10019  ok=10019  fail=0  skip=14779  error=0  elapsed=12.166s
+  progress  1792/2048  fn=1792  units=28730  attempt=11538  ok=11538  fail=0  skip=17192  error=0  elapsed=13.889s
+  progress  2048/2048  fn=2048  units=32290  attempt=12926  ok=12926  fail=0  skip=19364  error=0  elapsed=15.449s
+  k_summary  fn=2048  units=32290  attempt=12926  ok=12926  fail=0  skip=19364  error=0
+  skip_reasons  incompatible=18840, other=524
+  class_summary  class=AND  seen=17223  attempt=1829  ok=1829  fail=0  skip=15394  error=0
+  class_summary  class=LINEAR  seen=5909  attempt=5909  ok=5909  fail=0  skip=0  error=0
+  class_summary  class=OR  seen=8634  attempt=5188  ok=5188  fail=0  skip=3446  error=0
+  class_summary  class=OTHER  seen=524  attempt=0  ok=0  fail=0  skip=524  error=0
+
+=== builder=canonical  k=5  mode=sample  space=4294967296  planned=2048 ===
+  progress  256/2048  fn=256  units=9054  attempt=3856  ok=3856  fail=0  skip=5198  error=0  elapsed=12.810s
+  progress  512/2048  fn=512  units=18423  attempt=7823  ok=7823  fail=0  skip=10600  error=0  elapsed=26.383s
+  progress  768/2048  fn=768  units=28161  attempt=12069  ok=12069  fail=0  skip=16092  error=0  elapsed=40.986s
+  progress  1024/2048  fn=1024  units=38468  attempt=16518  ok=16518  fail=0  skip=21950  error=0  elapsed=57.021s
+  progress  1280/2048  fn=1280  units=48327  attempt=20773  ok=20773  fail=0  skip=27554  error=0  elapsed=72.647s
+  progress  1536/2048  fn=1536  units=58041  attempt=24950  ok=24950  fail=0  skip=33091  error=0  elapsed=91.656s
+  progress  1792/2048  fn=1792  units=67739  attempt=29002  ok=29002  fail=0  skip=38737  error=0  elapsed=111.687s
+  progress  2048/2048  fn=2048  units=77000  attempt=32903  ok=32903  fail=0  skip=44097  error=0  elapsed=129.501s
+  k_summary  fn=2048  units=77000  attempt=32903  ok=32903  fail=0  skip=44097  error=0
+  skip_reasons  incompatible=42335, other=1762
+  class_summary  class=AND  seen=37953  attempt=5053  ok=5053  fail=0  skip=32900  error=0
+  class_summary  class=LINEAR  seen=14496  attempt=14496  ok=14496  fail=0  skip=0  error=0
+  class_summary  class=OR  seen=22789  attempt=13354  ok=13354  fail=0  skip=9435  error=0
+  class_summary  class=OTHER  seen=1762  attempt=0  ok=0  fail=0  skip=1762  error=0
+
+============================================================
+SUMMARY
+mode=full
+BUILDERS=legacy,canonical
+unit_attempt_fail_fraction = 0/47041 = 0.000000
+unit_ok=47041
+unit_fail=0
+unit_skip=147972
+unit_error=0
+builder=legacy  attempt_fail_fraction = 0/408 = 0.000000  ok=408  skip=83521
+builder=canonical  attempt_fail_fraction = 0/46633 = 0.000000  ok=46633  skip=64451
+run_dir=/home/kyuhyongpark/CANA/CANA/dev/logs/threshold_unit_reduction_20261022_155954
+log written to /home/kyuhyongpark/CANA/CANA/dev/logs/threshold_unit_reduction_20261022_155954/threshold_unit_reduction_20261022_155954.log
+============================================================
