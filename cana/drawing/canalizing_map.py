@@ -17,9 +17,8 @@ try:
     import graphviz
 except ImportError as error:
     warnings.warn(
-        "'Graphviz' could not be loaded, you won't be able to plot graphs. Try installing it first. {error:s}".format(
-            error=error
-        )
+        "'Graphviz' could not be loaded, you won't be able to plot graphs. "
+        "Try installing it first. {error}".format(error=error)
     )
 
 
@@ -110,16 +109,36 @@ def draw_canalizing_map_graphviz(
                     color=mode_bordercolor,
                 )
 
-        # Threshold Nodes
+        # Threshold Nodes — color by optional ``role`` (legacy graphs omit it)
         elif d["type"] == "threshold":
+            # Defaults match historical CANA diamonds (no role / unknown role).
+            thr_fillcolor = "#dae8f4"
+            thr_fontcolor = "black"
+            thr_bordercolor = "#b5d1e9"
+            role = d.get("role")
+            if role == "polarity0":
+                # Match input literals set to 0 (off).
+                thr_fillcolor = off_node_fillcolor
+                thr_fontcolor = off_node_fontcolor
+                thr_bordercolor = input_node_bordercolor
+            elif role == "polarity1":
+                # Match input literals set to 1 (on).
+                thr_fillcolor = on_node_fillcolor
+                thr_fontcolor = on_node_fontcolor
+                thr_bordercolor = input_node_bordercolor
+            elif role == "schema":
+                # Match the output / ``out`` edge color.
+                thr_fillcolor = output_edge_color
+                thr_fontcolor = "white"
+                thr_bordercolor = output_edge_color
             G.node(
                 name=n,
                 label=d["label"],
                 shape="diamond",
                 style="filled,solid",
-                fillcolor="#dae8f4",
-                fontcolor="black",
-                color="#b5d1e9",
+                fillcolor=thr_fillcolor,
+                fontcolor=thr_fontcolor,
+                color=thr_bordercolor,
                 width=".4",
                 height=".4",
             )

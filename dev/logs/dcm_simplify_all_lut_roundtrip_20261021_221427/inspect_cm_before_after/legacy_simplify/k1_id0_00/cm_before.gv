@@ -1,0 +1,9 @@
+digraph {
+	graph [overlap=false]
+	node [color=gray fixedsize=true fontcolor=black fontname=helvetica fontsize=12 penwidth=3 shape=circle style=filled width=.4]
+	edge [arrowhead=dot arrowsize=1 color=gray]
+	"var-0-out-0" [label=k1_id0_00 color=red fillcolor=white fontcolor=black]
+	"var-0-out-1" [label=k1_id0_00 color=red fillcolor=black fontcolor=white]
+	"thr-0-var-0-out-0" [label=0 color="#b5d1e9" fillcolor="#dae8f4" fontcolor=black height=.4 shape=diamond style="filled,solid" width=.4]
+	"thr-0-var-0-out-0" -> "var-0-out-0" [arrowhead=normal color="#812020"]
+}

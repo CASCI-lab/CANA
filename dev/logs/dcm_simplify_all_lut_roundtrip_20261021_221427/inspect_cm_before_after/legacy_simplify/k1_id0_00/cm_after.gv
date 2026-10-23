@@ -1,0 +1,5 @@
+digraph {
+	graph [overlap=false]
+	node [color=gray fixedsize=true fontcolor=black fontname=helvetica fontsize=12 penwidth=3 shape=circle style=filled width=.4]
+	edge [arrowhead=dot arrowsize=1 color=gray]
+}
