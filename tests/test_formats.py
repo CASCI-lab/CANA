@@ -4,20 +4,22 @@ from pathlib import Path
 import pytest
 
 from cana.boolean_network import BooleanNetwork
-from cana.io.formats import (
+from cana.io import (
     convert,
-    equivalent_logic,
     export_string,
     infer_format,
-    logic_to_cnet,
-    name_keyed_luts,
+    lut_dict_to_cnet,
     parse_aeon,
     parse_bnet,
     parse_booleannet,
     parse_cnet,
     parse_sbml,
     parse_string,
-    rules_to_logic,
+)
+from cana.lut_dict import (
+    equivalent_lut_dicts,
+    expressions_to_lut_dict,
+    name_keyed_luts,
 )
 
 # Tiny network shared across formats:
@@ -43,12 +45,12 @@ $B: A & C
 """
 
 
-def _assert_tiny(logic_or_net):
-    luts = name_keyed_luts(logic_or_net)
+def _assert_tiny(lut_dict_or_net):
+    luts = name_keyed_luts(lut_dict_or_net)
     assert set(luts) == {"A", "B", "C"}
     assert luts["A"] == (("B",), (0, 1))
     assert luts["C"] == (("C",), (0, 1))
-    # B = A and C, inputs sorted (A, C): out [0,0,0,1]
+    # B = A and C, regulators sorted (A, C): lut [0,0,0,1]
     assert luts["B"] == (("A", "C"), (0, 0, 0, 1))
 
 
@@ -67,17 +69,17 @@ def test_parse_tiny_bnet_booleannet_aeon():
     _assert_tiny(parse_aeon(TINY_AEON))
 
 
-def test_rules_to_logic_adds_free_input_identity():
-    logic = rules_to_logic({"A": "B", "B": "A and C"})
-    _assert_tiny(logic)
+def test_expressions_to_lut_dict_adds_free_input_identity():
+    lut_dict = expressions_to_lut_dict({"A": "B", "B": "A and C"})
+    _assert_tiny(lut_dict)
 
 
 def test_export_reimport_roundtrip_each_format():
-    logic = parse_booleannet(TINY_BOOLEANNET)
+    lut_dict = parse_booleannet(TINY_BOOLEANNET)
     for fmt in ("booleannet", "bnet", "aeon", "sbml", "cnet"):
-        text = export_string(logic, fmt)
+        text = export_string(lut_dict, fmt)
         again = parse_string(text, fmt)
-        assert equivalent_logic(logic, again), fmt
+        assert equivalent_lut_dicts(lut_dict, again), fmt
 
 
 def test_any_to_any_convert():
@@ -87,19 +89,19 @@ def test_any_to_any_convert():
         "bnet": TINY_BNET,
         "aeon": TINY_AEON,
         "sbml": export_string(parse_booleannet(TINY_BOOLEANNET), "sbml"),
-        "cnet": logic_to_cnet(parse_booleannet(TINY_BOOLEANNET)),
+        "cnet": lut_dict_to_cnet(parse_booleannet(TINY_BOOLEANNET)),
     }
     ref = parse_booleannet(TINY_BOOLEANNET)
     for src in formats:
         for dst in formats:
             out = convert(sources[src], src, dst)
-            assert equivalent_logic(ref, parse_string(out, dst)), (src, dst)
+            assert equivalent_lut_dicts(ref, parse_string(out, dst)), (src, dst)
 
 
 def test_parse_cnet_direct():
-    logic = parse_booleannet(TINY_BOOLEANNET)
-    again = parse_cnet(logic_to_cnet(logic))
-    assert equivalent_logic(logic, again)
+    lut_dict = parse_booleannet(TINY_BOOLEANNET)
+    again = parse_cnet(lut_dict_to_cnet(lut_dict))
+    assert equivalent_lut_dicts(lut_dict, again)
 
 
 def test_boolean_network_from_string_and_equivalent_to():

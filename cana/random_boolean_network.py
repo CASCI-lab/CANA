@@ -48,12 +48,12 @@ def regular_boolean_network(
             graph=regular_graph, niter_remove=niter_remove
         )
 
-    # A dict that contains the network logic {<id>:{'name':<string>,'in':<list-input-node-id>,'out':<list-output-transitions>},..}
+    # A LutDict {<id>:{'name':<string>,'regulators':<list-input-node-id>,'lut':<list>},..}
     bn_dict = {
         node: {
             "name": str(node),
-            "in": sorted([n for n in regular_graph.predecessors(node)]),
-            "out": random_automata_table(
+            "regulators": sorted([n for n in regular_graph.predecessors(node)]),
+            "lut": random_automata_table(
                 regular_graph.in_degree(node), bias, bias_constraint
             ),
         }
@@ -81,12 +81,12 @@ def er_boolean_network(
     if remove_multiedges:
         er_graph = _remove_duplicate_edges(graph=er_graph, niter_remove=niter_remove)
 
-    # A dict that contains the network logic {<id>:{'name':<string>,'in':<list-input-node-id>,'out':<list-output-transitions>},..}
+    # A LutDict {<id>:{'name':<string>,'regulators':<list-input-node-id>,'lut':<list>},..}
     bn_dict = {
         node: {
             "name": str(node),
-            "in": sorted([n for n in er_graph.predecessors(node)]),
-            "out": random_automata_table(
+            "regulators": sorted([n for n in er_graph.predecessors(node)]),
+            "lut": random_automata_table(
                 er_graph.in_degree(node), bias, bias_constraint
             ),
         }
@@ -185,7 +185,7 @@ def from_string_boolean(self, string, keep_constants=True, **kwargs):
         :func:`from_string` :func:`from_dict`
     """
 
-    logic = defaultdict(dict)
+    lut_dict = defaultdict(dict)
 
     # parse lines to receive node names
     network_file = StringIO(string)
@@ -195,7 +195,7 @@ def from_string_boolean(self, string, keep_constants=True, **kwargs):
         if line[0] == "#":
             line = network_file.readline()
             continue
-        logic[i] = {"name": line.split("*")[0].strip(), "in": [], "out": []}
+        lut_dict[i] = {"name": line.split("*")[0].strip(), "regulators": [], "lut": []}
         line = network_file.readline()
         i += 1
 
@@ -211,22 +211,22 @@ def from_string_boolean(self, string, keep_constants=True, **kwargs):
         # RE checks for non-alphanumeric character before/after node name (node names are included in other node names)
         # Additional characters added to eval_line to avoid start/end of string complications
         input_names = [
-            logic[node]["name"]
-            for node in logic
-            if re.compile(r"\W" + logic[node]["name"] + r"\W").search(
+            lut_dict[node]["name"]
+            for node in lut_dict
+            if re.compile(r"\W" + lut_dict[node]["name"] + r"\W").search(
                 "*" + eval_line + "*"
             )
         ]
         input_nums = [
             node
             for input in input_names
-            for node in logic
-            if input == logic[node]["name"]
+            for node in lut_dict
+            if input == lut_dict[node]["name"]
         ]
-        logic[i]["in"] = input_nums
+        lut_dict[i]["regulators"] = input_nums
         # Determine output transitions
-        logic[i]["out"] = output_transitions(eval_line, input_names)
+        lut_dict[i]["lut"] = output_transitions(eval_line, input_names)
         line = network_file.readline()
         i += 1
 
-    return self.from_dict(logic, keep_constants=keep_constants, **kwargs)
+    return self.from_dict(lut_dict, keep_constants=keep_constants, **kwargs)

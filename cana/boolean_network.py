@@ -44,35 +44,35 @@ from cana.utils import entropy, flip_binstate_bit_set
 
 
 class BooleanNetwork:
-    """A Boolean network built from a per-node look-up table (``logic``) dict.
+    """A Boolean network built from a per-node look-up table (``lut_dict``).
 
-    The ``logic`` dict is the serializable hub for the network.  Every import
-    format is converted into ``logic``; every export format is produced from
-    it.  It is **not** an expression AST — it stores wiring plus the truth
-    table of each node's update function.
+    The ``lut_dict`` is the serializable hub for the network.  Every import
+    format is converted into a ``LutDict``; every export format is produced
+    from it.  It is **not** an expression AST — it stores wiring plus the
+    truth table of each node's update function.
 
     Schema
-        ``logic`` is a dense ``dict[int, dict]`` with keys ``0 .. Nnodes-1``.
+        ``lut_dict`` is a dense ``dict[int, dict]`` with keys ``0 .. Nnodes-1``.
         Each value has exactly three fields:
 
         - ``name`` (``str``): unique node name.
-        - ``in`` (``list[int]``): ordered input **node ids** (length ``k``).
-        - ``out`` (``list[int]``): LUT of length ``2**k`` with entries in
+        - ``regulators`` (``list[int]``): ordered input **node ids** (length ``k``).
+        - ``lut`` (``list[int]``): truth table of length ``2**k`` with entries in
           ``{0, 1}``.  Row ``s`` is the next value of the node when the input
-          state — interpreted in the ``in`` order with ``in[0]`` as the most
-          significant bit — equals ``s``.  This matches
-          :func:`~cana.utils.output_transitions` /
+          state — interpreted in the ``regulators`` order with
+          ``regulators[0]`` as the most significant bit — equals ``s``.  This
+          matches :func:`~cana.utils.output_transitions` /
           :func:`~cana.cutils.statenum_to_binstate`.
 
         Example (AND of ``A`` then ``B``, node ids 0 and 1)::
 
-            {0: {"name": "A", "in": [0], "out": [0, 1]},   # identity
-             1: {"name": "B", "in": [0, 1], "out": [0, 0, 0, 1]}}  # A AND B
+            {0: {"name": "A", "regulators": [0], "lut": [0, 1]},   # identity
+             1: {"name": "B", "regulators": [0, 1], "lut": [0, 0, 0, 1]}}  # A AND B
 
     Relation to :class:`~cana.boolean_node.BooleanNode`
-        On construction, each ``logic[i]`` becomes a ``BooleanNode`` with the
+        On construction, each ``lut_dict[i]`` becomes a ``BooleanNode`` with the
         same inputs and outputs (outputs stored as ``"0"``/``"1"`` strings).
-        ``logic`` remains the network-level LUT table; nodes are the runtime
+        ``lut_dict`` remains the network-level LUT table; nodes are the runtime
         objects used for canalization analysis.
     """
 
@@ -80,7 +80,7 @@ class BooleanNetwork:
         self,
         name="",
         Nnodes=0,
-        logic=None,
+        lut_dict=None,
         sg=None,
         stg=None,
         stg_r=None,
@@ -99,8 +99,8 @@ class BooleanNetwork:
 
         self.name = name  # Name of the Network
         self.Nnodes = Nnodes  # Number of Nodes
-        # See class docstring for the full ``logic`` schema.
-        self.logic = logic
+        # See class docstring for the full ``lut_dict`` schema.
+        self.lut_dict = lut_dict
         self._sg = sg  # Structure-Graph (SG)
         self._stg = stg  # State-Transition-Graph (STG)
         self._stg_r = stg_r  # State-Transition-Graph Reachability dict (STG-R)
@@ -122,17 +122,17 @@ class BooleanNetwork:
         self.verbose = verbose
 
         # Intanciate BooleanNodes
-        self.name2int = {logic[i]["name"]: i for i in range(Nnodes)}
+        self.name2int = {lut_dict[i]["name"]: i for i in range(Nnodes)}
         self.Nself_loops = sum(
-            [self.name2int[logic[i]["name"]] in logic[i]["in"] for i in range(Nnodes)]
+            [self.name2int[lut_dict[i]["name"]] in lut_dict[i]["regulators"] for i in range(Nnodes)]
         )
 
         self.nodes = list()
         for i in range(Nnodes):
-            name = logic[i]["name"]
-            k = len(logic[i]["in"])
-            inputs = [self.name2int[logic[j]["name"]] for j in logic[i]["in"]]
-            outputs = logic[i]["out"]
+            name = lut_dict[i]["name"]
+            k = len(lut_dict[i]["regulators"])
+            inputs = [self.name2int[lut_dict[j]["name"]] for j in lut_dict[i]["regulators"]]
+            outputs = lut_dict[i]["lut"]
             node = BooleanNode(
                 id=i, name=name, k=k, inputs=inputs, outputs=outputs, network=self
             )
@@ -169,6 +169,66 @@ class BooleanNetwork:
     #
     # I/O Methods
     #
+    # Hub constructor → string/file loaders → format wrappers → exporters →
+    # conversion / comparison.
+    #
+    @classmethod
+    def from_dict(self, lut_dict, keep_constants=True, **kwargs):
+        """Instantiate a BooleanNetwork from a ``LutDict``.
+
+        Args:
+            lut_dict (dict) : Dense map ``{0 .. N-1: {"name": str,
+                "regulators": [ids], "lut": [0/1]}}``.  See the
+                :class:`BooleanNetwork` class docstring for the full schema
+                and LUT indexing convention.
+            keep_constants (bool) : If True, nodes with empty ``regulators``
+                are recorded in ``constants``.
+
+        Returns:
+            (BooleanNetwork)
+
+        See also:
+            :func:`from_file` :func:`from_string`
+        """
+        Nnodes = len(lut_dict)
+        constants = {}
+        if "name" in kwargs:
+            name = kwargs["name"]
+        else:
+            name = ""
+        if keep_constants:
+            for i, node_lut in lut_dict.items():
+                # No inputs? It's a constant!
+                if len(node_lut["regulators"]) == 0:
+                    constants[i] = lut_dict[i]["lut"][0]
+
+        return BooleanNetwork(
+            name=name,
+            lut_dict=lut_dict,
+            Nnodes=Nnodes,
+            constants=constants,
+            keep_constants=keep_constants,
+        )
+
+    @classmethod
+    def from_string(self, string, type="booleannet", keep_constants=True, **kwargs):
+        """Load a network from a string of the given format.
+
+        Args:
+            string (string) : Model contents.
+            type (string) : Format name (``cnet``, ``booleannet``/``logical``,
+                ``bnet``, ``aeon``, ``sbml``).
+            keep_constants (bool) :
+
+        Returns:
+            (BooleanNetwork)
+        """
+        from cana.io import parse_string
+
+        return self.from_dict(
+            parse_string(string, type), keep_constants=keep_constants, **kwargs
+        )
+
     @classmethod
     def from_file(self, file, type=None, keep_constants=True, **kwargs):
         """
@@ -190,7 +250,7 @@ class BooleanNetwork:
         See also:
             :func:`to_file` :func:`from_string` :func:`from_dict`
         """
-        from cana.io.formats import infer_format, normalize_format, parse_string
+        from cana.io import infer_format, normalize_format, parse_string
 
         if type is not None:
             fmt = normalize_format(type)
@@ -208,61 +268,15 @@ class BooleanNetwork:
             parse_string(text, fmt), keep_constants=keep_constants, **kwargs
         )
 
-    def to_string(self, type="booleannet", **kwargs):
-        """Serialize this network to a format string via the ``logic`` hub.
-
-        Args:
-            type (string) : Target format (``booleannet``/``logical``, ``bnet``,
-                ``aeon``, ``sbml``, ``cnet``).
-            **kwargs : Forwarded to the exporter (e.g. ``adjust_no_input`` for cnet).
-
-        Returns:
-            (string) : The serialized network.
-        """
-        from cana.io.formats import export_string
-
-        return export_string(self.logic, type, **kwargs)
-
-    def to_file(self, file, type=None, **kwargs):
-        """Write this network to ``file``.
-
-        Args:
-            file (string) : Output path.
-            type (string, optional) : Format; inferred from the suffix if omitted.
-            **kwargs : Forwarded to the exporter (e.g. ``adjust_no_input`` for cnet).
-
-        Returns:
-            (string) : The written contents.
-        """
-        from cana.io.formats import infer_format, normalize_format
-
-        fmt = normalize_format(type) if type is not None else infer_format(file)
-        if fmt is None:
-            raise ValueError(
-                "Cannot infer format from {0!r}; pass type= explicitly.".format(file)
-            )
-        text = self.to_string(type=fmt, **kwargs)
-        with open(file, "w") as outfile:
-            outfile.write(text)
-        return text
-
     @classmethod
-    def from_string(self, string, type="booleannet", keep_constants=True, **kwargs):
-        """Load a network from a string of the given format.
+    def from_string_boolean(self, string, keep_constants=True, **kwargs):
+        """Instantiate from BooleanNet / logical update-rule text.
 
-        Args:
-            string (string) : Model contents.
-            type (string) : Format name (``cnet``, ``booleannet``/``logical``,
-                ``bnet``, ``aeon``, ``sbml``).
-            keep_constants (bool) :
-
-        Returns:
-            (BooleanNetwork)
+        See also:
+            :func:`from_string` :func:`from_dict`
         """
-        from cana.io.formats import parse_string
-
-        return self.from_dict(
-            parse_string(string, type), keep_constants=keep_constants, **kwargs
+        return self.from_string(
+            string, type="booleannet", keep_constants=keep_constants, **kwargs
         )
 
     @classmethod
@@ -286,28 +300,6 @@ class BooleanNetwork:
             string, type="sbml", keep_constants=keep_constants, **kwargs
         )
 
-    def equivalent_to(self, other):
-        """True if ``other`` has the same name-keyed LUTs as this network."""
-        from cana.io.formats import equivalent_logic
-
-        return equivalent_logic(self, other)
-
-    @classmethod
-    def convert_string(self, string, from_type, to_type, **kwargs):
-        """Convert a model string between formats via the ``logic`` hub.
-
-        Args:
-            string (string) : Source model text.
-            from_type, to_type (string) : Format names.
-            **kwargs : Forwarded to the destination exporter.
-
-        Returns:
-            (string) : Converted model text.
-        """
-        from cana.io.formats import convert
-
-        return convert(string, from_type, to_type, **kwargs)
-
     @classmethod
     def from_string_cnet(self, string, keep_constants=True, **kwargs):
         """Instantiate a Boolean Network from a ``.cnet`` string.
@@ -319,56 +311,46 @@ class BooleanNetwork:
             string, type="cnet", keep_constants=keep_constants, **kwargs
         )
 
-    @classmethod
-    def from_string_boolean(self, string, keep_constants=True, **kwargs):
-        """Instantiate from BooleanNet / logical update-rule text.
-
-        See also:
-            :func:`from_string` :func:`from_dict`
-        """
-        return self.from_string(
-            string, type="booleannet", keep_constants=keep_constants, **kwargs
-        )
-
-    @classmethod
-    def from_dict(self, logic, keep_constants=True, **kwargs):
-        """Instantiate a BooleanNetwork from a ``logic`` dictionary.
+    def to_string(self, type="booleannet", **kwargs):
+        """Serialize this network to a format string via the ``lut_dict`` hub.
 
         Args:
-            logic (dict) : Dense map ``{0 .. N-1: {"name": str, "in": [ids],
-                "out": [0/1 LUT]}}``.  See the :class:`BooleanNetwork` class
-                docstring for the full schema and LUT indexing convention.
-            keep_constants (bool) : If True, nodes with empty ``in`` are
-                recorded in ``constants``.
+            type (string) : Target format (``booleannet``/``logical``, ``bnet``,
+                ``aeon``, ``sbml``, ``cnet``).
+            **kwargs : Forwarded to the exporter (e.g. ``adjust_no_input`` for cnet).
 
         Returns:
-            (BooleanNetwork)
-
-        See also:
-            :func:`from_file` :func:`from_string`
+            (string) : The serialized network.
         """
-        Nnodes = len(logic)
-        constants = {}
-        if "name" in kwargs:
-            name = kwargs["name"]
-        else:
-            name = ""
-        if keep_constants:
-            for i, nodelogic in logic.items():
-                # No inputs? It's a constant!
-                if len(nodelogic["in"]) == 0:
-                    constants[i] = logic[i]["out"][0]
+        from cana.io import export_string
 
-        return BooleanNetwork(
-            name=name,
-            logic=logic,
-            Nnodes=Nnodes,
-            constants=constants,
-            keep_constants=keep_constants,
-        )
+        return export_string(self.lut_dict, type, **kwargs)
+
+    def to_file(self, file, type=None, **kwargs):
+        """Write this network to ``file``.
+
+        Args:
+            file (string) : Output path.
+            type (string, optional) : Format; inferred from the suffix if omitted.
+            **kwargs : Forwarded to the exporter (e.g. ``adjust_no_input`` for cnet).
+
+        Returns:
+            (string) : The written contents.
+        """
+        from cana.io import infer_format, normalize_format
+
+        fmt = normalize_format(type) if type is not None else infer_format(file)
+        if fmt is None:
+            raise ValueError(
+                "Cannot infer format from {0!r}; pass type= explicitly.".format(file)
+            )
+        text = self.to_string(type=fmt, **kwargs)
+        with open(file, "w") as outfile:
+            outfile.write(text)
+        return text
 
     def to_cnet(self, file=None, adjust_no_input=False):
-        """Outputs the network logic to ``.cnet`` format (BNS / BLIF-like).
+        """Outputs the network ``lut_dict`` to ``.cnet`` format (BNS / BLIF-like).
 
         Args:
             file (string, optional) : If given, write the string to this path.
@@ -380,9 +362,9 @@ class BooleanNetwork:
         Note:
             See `BNS <https://people.kth.se/~dubrova/bns.html>`_ for more information.
         """
-        from cana.io.formats import logic_to_cnet
+        from cana.io import lut_dict_to_cnet
 
-        bns_string = logic_to_cnet(self.logic, adjust_no_input=adjust_no_input)
+        bns_string = lut_dict_to_cnet(self.lut_dict, adjust_no_input=adjust_no_input)
         if file is None:
             return bns_string
         if isinstance(file, str):
@@ -392,6 +374,28 @@ class BooleanNetwork:
         raise AttributeError(
             "File format not supported. Please specify a string."
         )
+
+    @classmethod
+    def convert_string(self, string, from_type, to_type, **kwargs):
+        """Convert a model string between formats via the ``LutDict`` hub.
+
+        Args:
+            string (string) : Source model text.
+            from_type, to_type (string) : Format names.
+            **kwargs : Forwarded to the destination exporter.
+
+        Returns:
+            (string) : Converted model text.
+        """
+        from cana.io import convert
+
+        return convert(string, from_type, to_type, **kwargs)
+
+    def equivalent_to(self, other):
+        """True if ``other`` has the same name-keyed LUTs as this network."""
+        from cana.lut_dict import equivalent_lut_dicts
+
+        return equivalent_lut_dicts(self, other)
 
     #
     # Methods
@@ -412,7 +416,7 @@ class BooleanNetwork:
             (i, {"label": n.name}) for i, n in enumerate(self.nodes)
         )
         for target in range(self.Nnodes):
-            for source in self.logic[target]["in"]:
+            for source in self.lut_dict[target]["regulators"]:
                 self._sg.add_edge(source, target, **{"weight": 1.0})
 
         if remove_constants:
@@ -469,7 +473,7 @@ class BooleanNetwork:
         for target in range(self.Nnodes):
             input_signs = self.nodes[target].input_signs()
 
-            for idx, source in enumerate(self.logic[target]["in"]):
+            for idx, source in enumerate(self.lut_dict[target]["regulators"]):
                 signed_ig.add_edge(source, target, **{"weight": input_signs[idx]})
 
         return signed_ig
@@ -506,7 +510,7 @@ class BooleanNetwork:
             for i, node in enumerate(self.nodes, start=0):
                 e_is = node.edge_effectiveness(bound=bound)
 
-                for inputs, e_i in zip(self.logic[i]["in"], e_is):
+                for inputs, e_i in zip(self.lut_dict[i]["regulators"], e_is):
                     self._eg.add_edge(inputs, i, **{"weight": e_i})
 
         if threshold is not None:
@@ -553,7 +557,7 @@ class BooleanNetwork:
         conditioned_subgraph = set([])
 
         # make a copy of the logic dict so we can edit it
-        conditioned_logic = copy.deepcopy(self.logic)
+        conditioned_lut_dict = copy.deepcopy(self.lut_dict)
 
         # separate input conditioned nodes and nodes that get conditioned
         all_conditioned_nodes = dict(conditioned_nodes)
@@ -576,23 +580,23 @@ class BooleanNetwork:
             # we have to loop through all of the successors of the conditioned node and change their logic
             for n in successors:
                 # find the index of the conditioned node in the successor logic
-                conditioned_node_idx = conditioned_logic[n]["in"].index(
+                conditioned_node_idx = conditioned_lut_dict[n]["regulators"].index(
                     conditioned_node
                 )
 
-                conditioned_subgraph.update(conditioned_logic[n]["in"])
+                conditioned_subgraph.update(conditioned_lut_dict[n]["regulators"])
 
                 # the new successor inputs without the conditioned node
                 new_successor_inputs = (
-                    conditioned_logic[n]["in"][:conditioned_node_idx]
-                    + conditioned_logic[n]["in"][(conditioned_node_idx + 1) :]
+                    conditioned_lut_dict[n]["regulators"][:conditioned_node_idx]
+                    + conditioned_lut_dict[n]["regulators"][(conditioned_node_idx + 1) :]
                 )
                 newk = len(new_successor_inputs)
 
                 # now we create a conditioned LUT as the subset of the original for which the conditioned node is fixed to its value
                 if newk == 0:
                     new_successor_outputs = [
-                        conditioned_logic[n]["out"][
+                        conditioned_lut_dict[n]["lut"][
                             binstate_to_statenum(conditioned_value)
                         ]
                     ] * 2
@@ -606,7 +610,7 @@ class BooleanNetwork:
                             + binstate[conditioned_node_idx:]
                         )
                         new_successor_outputs.append(
-                            conditioned_logic[n]["out"][binstate_to_statenum(binstate)]
+                            conditioned_lut_dict[n]["lut"][binstate_to_statenum(binstate)]
                         )
 
                 # use the new logic to calcuate a new edge effectiveness
@@ -622,9 +626,9 @@ class BooleanNetwork:
                         "weight"
                     ] = new_edge_effectiveness[i]
 
-                # now update the conditioned_logic in case these nodes are further modified by additional conditioned variables
-                conditioned_logic[n]["in"] = new_successor_inputs
-                conditioned_logic[n]["out"] = new_successor_outputs
+                # now update the conditioned_lut_dict in case these nodes are further modified by additional conditioned variables
+                conditioned_lut_dict[n]["regulators"] = new_successor_inputs
+                conditioned_lut_dict[n]["lut"] = new_successor_outputs
 
                 # check if we just made a constant node
                 if (
@@ -729,7 +733,7 @@ class BooleanNetwork:
         # Add Edges
         for i, node in enumerate(self.nodes, start=0):
             a_is = node.activities()
-            for inputs, a_i in zip(self.logic[i]["in"], a_is):
+            for inputs, a_i in zip(self.lut_dict[i]["regulators"], a_is):
                 # If there is a threshold, only return those number above the threshold. Else, return all edges.
                 if ((threshold is None) and (a_i > 0)) or (
                     (threshold is not None) and (a_i > threshold)
@@ -904,7 +908,7 @@ class BooleanNetwork:
         """Sets or unsets a node as a constant.
 
         Args:
-            node (int) : The node ``id`` in the logic dict.
+            node (int) : The node ``id`` in the ``lut_dict``.
             constant (Boolean) : Whether to set or unset the node as a constant.
             state (str; optional) : The state value to which to set the node. Either '0' or '1'; default to current state value.
         """
@@ -1172,7 +1176,7 @@ class BooleanNetwork:
         assert len(initial) == self.Nnodes
         return "".join(
             [
-                str(node.step("".join(initial[j] for j in self.logic[i]["in"])))
+                str(node.step("".join(initial[j] for j in self.lut_dict[i]["regulators"])))
                 if not (i in pinned_var)
                 else initial[i]
                 for i, node in enumerate(self.nodes, start=0)
