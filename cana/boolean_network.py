@@ -240,8 +240,7 @@ class BooleanNetwork:
                 ``booleannet``, ``bnet``, ``aeon``, ``sbml``.  If omitted, the
                 format is inferred from the file suffix (``.cnet``,
                 ``.booleannet.txt``, ``.bnet``, ``.aeon``, ``.sbml``).  Ambiguous
-                ``.txt`` files still require an explicit ``type`` (Cell Collective
-                datasets are cnet).
+                ``.txt`` files still require an explicit ``type``.
             keep_constants (bool) : Whether to record constant nodes.
 
         Returns:
@@ -257,9 +256,11 @@ class BooleanNetwork:
         else:
             fmt = infer_format(file)
             if fmt is None:
-                # Backward compatible default for ambiguous ``.txt`` datasets
-                # (Cell Collective / packaged cnet models).
-                fmt = "cnet"
+                raise ValueError(
+                    "Cannot infer format from {0!r}; pass type= explicitly.".format(
+                        file
+                    )
+                )
 
         with open(file, "r") as infile:
             text = infile.read()

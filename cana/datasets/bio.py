@@ -30,7 +30,9 @@ def BT474_ErbB_S():
         (BooleanNetwork)
     """
     return BooleanNetwork.from_file(
-        _path + "/cell_collective/BT474 Breast Cell Line Short-term ErbB Network.txt", name="BT474 Breast Cell Line Short-term ErbB", keep_constants=True
+        _path + "/cell_collective/BT474 Breast Cell Line Short-term ErbB Network.cnet",
+        name="BT474 Breast Cell Line Short-term ErbB",
+        keep_constants=True,
     )
 
 
@@ -43,7 +45,7 @@ def THALIANA():
         (BooleanNetwork)
     """
     return BooleanNetwork.from_file(
-        _path + "/thaliana.txt", name="Arabidopsis thaliana", keep_constants=True
+        _path + "/thaliana.cnet", name="Arabidopsis thaliana", keep_constants=True
     )
 
 
@@ -63,13 +65,13 @@ def DROSOPHILA(cells=1):
     """
     if cells == 1:
         return BooleanNetwork.from_file(
-            _path + "/drosophila_single_cell.txt",
+            _path + "/drosophila_single_cell.cnet",
             name="Drosophila melanogaster (single cell)",
             keep_constants=True,
         )
     elif cells == 4:
         return BooleanNetwork.from_file(
-            _path + "/drosophila_parasegment.txt",
+            _path + "/drosophila_parasegment.cnet",
             name="Drosophila melanogaster (parasegment)",
             keep_constants=True,
         )
@@ -88,7 +90,7 @@ def BUDDING_YEAST():
         (BooleanNetwork)
     """
     return BooleanNetwork.from_file(
-        _path + "/yeast_cell_cycle.txt",
+        _path + "/yeast_cell_cycle.cnet",
         name="Budding Yeast Cell Cycle",
         keep_constants=True,
     )
@@ -103,7 +105,7 @@ def MARQUESPITA():
         (BooleanNetwork)
     """
     return BooleanNetwork.from_file(
-        _path + "/marques-pita_rocha.txt",
+        _path + "/marques-pita_rocha.cnet",
         name="Marques-Pita & Rocha",
         keep_constants=True,
     )
@@ -118,8 +120,7 @@ def LEUKEMIA():
         (BooleanNetwork)
     """
     return BooleanNetwork.from_file(
-        _path + "/leukemia.txt",
-        type="booleannet",
+        _path + "/leukemia.booleannet.txt",
         name="T-LGL Leukemia",
         keep_constants=True,
     )
@@ -134,8 +135,7 @@ def BREAST_CANCER():
         (BooleanNetwork)
     """
     return BooleanNetwork.from_file(
-        _path + "/breast_cancer.txt",
-        type="booleannet",
+        _path + "/breast_cancer.booleannet.txt",
         name="ER+ Breast Cancer",
         keep_constants=True,
     )
@@ -246,7 +246,9 @@ def load_cell_collective_model(name=None):
         )
     else:
         return BooleanNetwork.from_file(
-            _path + "/cell_collective/" + name + ".txt", name=name, keep_constants=True
+            _path + "/cell_collective/" + name + ".cnet",
+            name=name,
+            keep_constants=True,
         )
 
 

@@ -77,9 +77,10 @@ include = ["cana*"]
 
 [tool.setuptools.package-data]
 "cana.datasets" = [
-    "*.txt",
+    "*.cnet",
+    "*.booleannet.txt",
     "bns/*.cnet",
-    "cell_collective/*.txt",
+    "cell_collective/*.cnet",
 ]
 
 [tool.pytest.ini_options]
