@@ -12,19 +12,16 @@ Modules:
     booleannet, bnet, aeon, sbml, cnet: per-format parse / export
 
 The hub types and builders live in :mod:`cana.lut_dict`.
+
+Format parsers/exporters are loaded lazily so ``cana.io.expressions`` can be
+imported from :mod:`cana.lut_dict` without a circular import.
 """
 from __future__ import annotations
 
 from pathlib import Path
-from typing import Any, Mapping, Optional
+from typing import Any, Mapping, Optional, Union
 
-from cana.io.aeon import lut_dict_to_aeon, parse_aeon
-from cana.io.bnet import lut_dict_to_bnet, parse_bnet
-from cana.io.booleannet import lut_dict_to_booleannet, parse_booleannet
-from cana.io.cnet import lut_dict_to_cnet, parse_cnet
-from cana.io.expressions import lut_to_expression, normalize_operators
-from cana.io.sbml import lut_dict_to_sbml, parse_sbml
-from cana.lut_dict import PathLike
+PathLike = Union[str, Path]
 
 FORMAT_ALIASES = {
     "booleannet": "booleannet",
@@ -33,6 +30,39 @@ FORMAT_ALIASES = {
     "sbml": "sbml",
     "cnet": "cnet",
 }
+
+# Name → (submodule, attribute) for lazy public re-exports.
+_LAZY_EXPORTS = {
+    "lut_dict_to_aeon": ("cana.io.aeon", "lut_dict_to_aeon"),
+    "parse_aeon": ("cana.io.aeon", "parse_aeon"),
+    "lut_dict_to_bnet": ("cana.io.bnet", "lut_dict_to_bnet"),
+    "parse_bnet": ("cana.io.bnet", "parse_bnet"),
+    "lut_dict_to_booleannet": ("cana.io.booleannet", "lut_dict_to_booleannet"),
+    "parse_booleannet": ("cana.io.booleannet", "parse_booleannet"),
+    "lut_dict_to_cnet": ("cana.io.cnet", "lut_dict_to_cnet"),
+    "parse_cnet": ("cana.io.cnet", "parse_cnet"),
+    "lut_to_expression": ("cana.io.expressions", "lut_to_expression"),
+    "normalize_operators": ("cana.io.expressions", "normalize_operators"),
+    "lut_dict_to_sbml": ("cana.io.sbml", "lut_dict_to_sbml"),
+    "parse_sbml": ("cana.io.sbml", "parse_sbml"),
+}
+
+
+def __getattr__(name: str):
+    """Lazy-load format helpers so ``import cana.io.expressions`` stays cycle-free."""
+    target = _LAZY_EXPORTS.get(name)
+    if target is None:
+        raise AttributeError(f"module {__name__!r} has no attribute {name!r}")
+    mod_name, attr = target
+    import importlib
+
+    value = getattr(importlib.import_module(mod_name), attr)
+    globals()[name] = value
+    return value
+
+
+def __dir__():
+    return sorted(set(globals()) | set(_LAZY_EXPORTS) | set(__all__))
 
 
 def normalize_format(fmt: Optional[str]) -> Optional[str]:
@@ -69,14 +99,24 @@ def parse_string(text: str, fmt: str):
     """Parse ``text`` of the given format into a ``LutDict``."""
     fmt = normalize_format(fmt)
     if fmt == "booleannet":
+        from cana.io.booleannet import parse_booleannet
+
         return parse_booleannet(text)
     if fmt == "bnet":
+        from cana.io.bnet import parse_bnet
+
         return parse_bnet(text)
     if fmt == "aeon":
+        from cana.io.aeon import parse_aeon
+
         return parse_aeon(text)
     if fmt == "sbml":
+        from cana.io.sbml import parse_sbml
+
         return parse_sbml(text)
     if fmt == "cnet":
+        from cana.io.cnet import parse_cnet
+
         return parse_cnet(text)
     raise ValueError("parse_string does not handle format {0!r}".format(fmt))
 
@@ -93,14 +133,24 @@ def export_string(
     """
     fmt = normalize_format(fmt)
     if fmt == "booleannet":
+        from cana.io.booleannet import lut_dict_to_booleannet
+
         return lut_dict_to_booleannet(lut_dict)
     if fmt == "bnet":
+        from cana.io.bnet import lut_dict_to_bnet
+
         return lut_dict_to_bnet(lut_dict)
     if fmt == "aeon":
+        from cana.io.aeon import lut_dict_to_aeon
+
         return lut_dict_to_aeon(lut_dict)
     if fmt == "sbml":
+        from cana.io.sbml import lut_dict_to_sbml
+
         return lut_dict_to_sbml(lut_dict)
     if fmt == "cnet":
+        from cana.io.cnet import lut_dict_to_cnet
+
         return lut_dict_to_cnet(lut_dict, **kwargs)
     raise ValueError("export_string does not handle format {0!r}".format(fmt))
 
