@@ -125,7 +125,7 @@ def summarize_roundtrip(name, original_outputs, result):
 
 def node_from_bnet(bnet: str, target: str):
     """Parse a booleannet string and return ``(network, target_node)``."""
-    network = BooleanNetwork.from_string_boolean(bnet)
+    network = BooleanNetwork.from_string_booleannet(bnet)
     node = next(n for n in network.nodes if n.name == target)
     return network, node
 

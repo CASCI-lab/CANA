@@ -162,7 +162,7 @@ def _remove_duplicate_edges(graph, niter_remove=100):
     return graph
 
 
-def from_string_boolean(self, string, keep_constants=True, **kwargs):
+def from_string_booleannet(self, string, keep_constants=True, **kwargs):
     """
     Instanciates a Boolean Network from a Boolean update rules format.
 

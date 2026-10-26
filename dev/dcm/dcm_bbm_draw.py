@@ -94,7 +94,7 @@ def load_bbm_network(models_root: Path, model_id: str) -> Tuple[BooleanNetwork, 
     net_name = slug.split("__", 1)[-1]
     network = BooleanNetwork.from_file(
         str(bnet_path),
-        type="logical",
+        type="booleannet",
         name=net_name,
     )
     return network, model_dir

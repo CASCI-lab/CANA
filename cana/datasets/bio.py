@@ -119,7 +119,7 @@ def LEUKEMIA():
     """
     return BooleanNetwork.from_file(
         _path + "/leukemia.txt",
-        type="logical",
+        type="booleannet",
         name="T-LGL Leukemia",
         keep_constants=True,
     )
@@ -135,7 +135,7 @@ def BREAST_CANCER():
     """
     return BooleanNetwork.from_file(
         _path + "/breast_cancer.txt",
-        type="logical",
+        type="booleannet",
         name="ER+ Breast Cancer",
         keep_constants=True,
     )

@@ -25,14 +25,14 @@ def test_output_transitions():
     assert output_transitions('(A or B) and not C', ['A', 'B', 'C']) == [0, 0, 1, 0, 1, 0, 1, 0]
 
 
-def test_from_string_boolean():
-    """Test that BooleanNetwork.from_string_boolean parses logical rules."""
+def test_from_string_booleannet():
+    """Test that BooleanNetwork.from_string_booleannet parses update rules."""
     rules = "\n".join([
         "A *= B",
         "B *= A and C",
         "C *= A or B",
     ])
-    network = BooleanNetwork.from_string_boolean(rules, keep_constants=True)
+    network = BooleanNetwork.from_string_booleannet(rules, keep_constants=True)
     assert network.Nnodes == 3
     # A = copy of B: output transitions [0, 1]
     assert network.nodes[0].outputs == ['0', '1']
@@ -42,8 +42,8 @@ def test_from_string_boolean():
     assert network.nodes[2].outputs == ['0', '1', '1', '1']
 
 
-def test_load_logical_LEUKEMIA():
-    """Test loading a real model in 'logical' boolean-rule format."""
+def test_load_booleannet_LEUKEMIA():
+    """Test loading a real model in booleannet update-rule format."""
     network = LEUKEMIA()
     assert network.Nnodes == 60
     # Spot-check first rule: CTLA4* = TCR (identity)

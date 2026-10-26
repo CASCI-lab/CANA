@@ -138,7 +138,7 @@ class TestCTNNB1Roundtrip:
     """k=5 CTNNB1 example from ``dev/cm_roundtrip.py``."""
 
     def test_exact_roundtrip_via_bnet(self):
-        N = BooleanNetwork.from_string_boolean(CTNNB1_BNET)
+        N = BooleanNetwork.from_string_booleannet(CTNNB1_BNET)
         ct = next(n for n in N.nodes if n.name == "CTNNB1")
         assert "".join(str(x) for x in ct.outputs) == CTNNB1_LUT
         _assert_exact_roundtrip(ct)
@@ -234,12 +234,12 @@ class TestCanonicalRoundtrip:
         _assert_exact_roundtrip(node, builder="canonical")
 
     def test_ctnnb1(self):
-        N = BooleanNetwork.from_string_boolean(CTNNB1_BNET)
+        N = BooleanNetwork.from_string_booleannet(CTNNB1_BNET)
         ct = next(n for n in N.nodes if n.name == "CTNNB1")
         _assert_exact_roundtrip(ct, builder="canonical")
 
     def test_f_xy_abc(self):
-        N = BooleanNetwork.from_string_boolean(F_BNET)
+        N = BooleanNetwork.from_string_booleannet(F_BNET)
         fn = next(n for n in N.nodes if n.name == "F")
         assert "".join(str(x) for x in fn.outputs) == F_LUT
         _assert_exact_roundtrip(fn, builder="canonical")
@@ -249,7 +249,7 @@ class TestCanonicalStructure:
     """No fusion; nested roles and schema tau match the hand examples."""
 
     def test_ctnnb1_out1_structure(self):
-        N = BooleanNetwork.from_string_boolean(CTNNB1_BNET)
+        N = BooleanNetwork.from_string_booleannet(CTNNB1_BNET)
         ct = next(n for n in N.nodes if n.name == "CTNNB1")
         cm = ct.canalizing_map(builder="canonical")
 
@@ -284,7 +284,7 @@ class TestCanonicalStructure:
             assert cm.nodes[pols[0]]["tau"] == 1
 
     def test_f_out1_structure(self):
-        N = BooleanNetwork.from_string_boolean(F_BNET)
+        N = BooleanNetwork.from_string_booleannet(F_BNET)
         fn = next(n for n in N.nodes if n.name == "F")
         cm = fn.canalizing_map(builder="canonical")
 
@@ -359,7 +359,7 @@ class TestDynamicsCanalizationMap:
 
     @pytest.mark.parametrize("builder", ["legacy", "canonical"])
     def test_matches_manual_compose(self, builder):
-        N = BooleanNetwork.from_string_boolean(TINY_DCM_BNET)
+        N = BooleanNetwork.from_string_booleannet(TINY_DCM_BNET)
         via_net = N.dynamics_canalization_map(
             simplify=False, builder=builder, remove_isolates=True
         )
@@ -373,13 +373,13 @@ class TestDynamicsCanalizationMap:
         assert _graphs_equal_ignore_name(via_net, manual)
 
     def test_legacy_default_smoke(self):
-        N = BooleanNetwork.from_string_boolean(TINY_DCM_BNET)
+        N = BooleanNetwork.from_string_booleannet(TINY_DCM_BNET)
         dcm = N.dynamics_canalization_map(simplify=True)
         assert dcm.number_of_nodes() > 0
         assert dcm.name.startswith("DCM:")
 
     def test_remove_isolates_false_matches_raw_compose(self):
-        N = BooleanNetwork.from_string_boolean(TINY_DCM_BNET)
+        N = BooleanNetwork.from_string_booleannet(TINY_DCM_BNET)
         via_net = N.dynamics_canalization_map(
             simplify=False, builder="canonical", remove_isolates=False
         )
@@ -393,7 +393,7 @@ class TestDynamicsCanalizationMap:
 
     def test_remove_isolates_false_keeps_injected_isolate(self):
         """Else-branch strip is skipped when ``remove_isolates=False``."""
-        N = BooleanNetwork.from_string_boolean(TINY_DCM_BNET)
+        N = BooleanNetwork.from_string_booleannet(TINY_DCM_BNET)
         orphan = "orphan_isolate_test"
         orig = N.nodes[0].canalizing_map
 
@@ -422,7 +422,7 @@ class TestDynamicsCanalizationMap:
         monkeypatch.setattr(
             "cana.boolean_network.simplify_canalizing_map", fake_simplify
         )
-        N = BooleanNetwork.from_string_boolean(TINY_DCM_BNET)
+        N = BooleanNetwork.from_string_booleannet(TINY_DCM_BNET)
         N.dynamics_canalization_map(simplify=True, remove_isolates=False)
         assert seen["remove_isolates"] is False
 

@@ -216,7 +216,7 @@ class BooleanNetwork:
 
         Args:
             string (string) : Model contents.
-            type (string) : Format name (``cnet``, ``booleannet``/``logical``,
+            type (string) : Format name (``cnet``, ``booleannet``,
                 ``bnet``, ``aeon``, ``sbml``).
             keep_constants (bool) :
 
@@ -236,7 +236,7 @@ class BooleanNetwork:
 
         Args:
             file (string) : Path to a Boolean network file.
-            type (string, optional) : Format name.  One of ``cnet``, ``logical`` /
+            type (string, optional) : Format name.  One of ``cnet``,
                 ``booleannet``, ``bnet``, ``aeon``, ``sbml``.  If omitted, the
                 format is inferred from the file suffix (``.cnet``,
                 ``.booleannet.txt``, ``.bnet``, ``.aeon``, ``.sbml``).  Ambiguous
@@ -269,8 +269,8 @@ class BooleanNetwork:
         )
 
     @classmethod
-    def from_string_boolean(self, string, keep_constants=True, **kwargs):
-        """Instantiate from BooleanNet / logical update-rule text.
+    def from_string_booleannet(self, string, keep_constants=True, **kwargs):
+        """Instantiate from BooleanNet / ``*.booleannet.txt`` update-rule text.
 
         See also:
             :func:`from_string` :func:`from_dict`
@@ -315,7 +315,7 @@ class BooleanNetwork:
         """Serialize this network to a format string via the ``lut_dict`` hub.
 
         Args:
-            type (string) : Target format (``booleannet``/``logical``, ``bnet``,
+            type (string) : Target format (``booleannet``, ``bnet``,
                 ``aeon``, ``sbml``, ``cnet``).
             **kwargs : Forwarded to the exporter (e.g. ``adjust_no_input`` for cnet).
 

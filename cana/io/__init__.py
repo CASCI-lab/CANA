@@ -27,8 +27,6 @@ from cana.io.sbml import lut_dict_to_sbml, parse_sbml
 from cana.lut_dict import PathLike
 
 FORMAT_ALIASES = {
-    "logical": "booleannet",
-    "boolean": "booleannet",
     "booleannet": "booleannet",
     "bnet": "bnet",
     "aeon": "aeon",

@@ -114,7 +114,7 @@ def test_boolean_network_from_string_and_equivalent_to():
 
 
 def test_to_string_roundtrip():
-    N = BooleanNetwork.from_string(TINY_BOOLEANNET, type="logical")
+    N = BooleanNetwork.from_string(TINY_BOOLEANNET, type="booleannet")
     for fmt in ("booleannet", "bnet", "aeon", "sbml", "cnet"):
         text = N.to_string(type=fmt)
         N2 = BooleanNetwork.from_string(text, type=fmt)
@@ -133,12 +133,19 @@ def test_convert_string_via_cnet():
     assert N.equivalent_to(N3)
 
 
-def test_from_file_logical_alias_still_works(tmp_path):
+def test_from_file_booleannet_explicit_type(tmp_path):
     path = tmp_path / "tiny.txt"
     path.write_text(TINY_BOOLEANNET)
-    N = BooleanNetwork.from_file(str(path), type="logical")
+    N = BooleanNetwork.from_file(str(path), type="booleannet")
     assert N.Nnodes == 3
     assert N.equivalent_to(BooleanNetwork.from_string(TINY_BNET, type="bnet"))
+
+
+def test_ambiguous_format_aliases_rejected():
+    with pytest.raises(ValueError, match="Unknown format"):
+        parse_string(TINY_BOOLEANNET, "logical")
+    with pytest.raises(ValueError, match="Unknown format"):
+        parse_string(TINY_BOOLEANNET, "boolean")
 
 
 BBM_023 = (

@@ -167,7 +167,7 @@ def parse_booleannet_rules(text: str) -> List[Tuple[str, str]]:
 def load_model_nodes(path: Path, max_k: int) -> List[LoadedNode]:
     """Load a booleannet model, building LUTs only for nodes with ``k <= max_k``.
 
-    Mirrors CANA's ``from_string_boolean`` input detection, but skips
+    Mirrors CANA's ``from_string_booleannet`` input detection, but skips
     ``output_transitions`` (full ``2^k`` expansion) when ``k > max_k`` so
     high-indegree models (e.g. ERBB ``v_Shc`` ≈ 27) do not hang at load.
     """
