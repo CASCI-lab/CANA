@@ -53,7 +53,37 @@ from cana.utils import entropy, flip_binstate_bit_set, output_transitions
 
 
 class BooleanNetwork:
-    """ """
+    """A Boolean network built from a per-node look-up table (``logic``) dict.
+
+    The ``logic`` dict is the serializable hub for the network.  Every import
+    format is converted into ``logic``; every export format is produced from
+    it.  It is **not** an expression AST — it stores wiring plus the truth
+    table of each node's update function.
+
+    Schema
+        ``logic`` is a dense ``dict[int, dict]`` with keys ``0 .. Nnodes-1``.
+        Each value has exactly three fields:
+
+        - ``name`` (``str``): unique node name.
+        - ``in`` (``list[int]``): ordered input **node ids** (length ``k``).
+        - ``out`` (``list[int]``): LUT of length ``2**k`` with entries in
+          ``{0, 1}``.  Row ``s`` is the next value of the node when the input
+          state — interpreted in the ``in`` order with ``in[0]`` as the most
+          significant bit — equals ``s``.  This matches
+          :func:`~cana.utils.output_transitions` /
+          :func:`~cana.cutils.statenum_to_binstate`.
+
+        Example (AND of ``A`` then ``B``, node ids 0 and 1)::
+
+            {0: {"name": "A", "in": [0], "out": [0, 1]},   # identity
+             1: {"name": "B", "in": [0, 1], "out": [0, 0, 0, 1]}}  # A AND B
+
+    Relation to :class:`~cana.boolean_node.BooleanNode`
+        On construction, each ``logic[i]`` becomes a ``BooleanNode`` with the
+        same inputs and outputs (outputs stored as ``"0"``/``"1"`` strings).
+        ``logic`` remains the network-level LUT table; nodes are the runtime
+        objects used for canalization analysis.
+    """
 
     def __init__(
         self,
@@ -78,7 +108,8 @@ class BooleanNetwork:
 
         self.name = name  # Name of the Network
         self.Nnodes = Nnodes  # Number of Nodes
-        self.logic = logic  # A dict that contains the network logic {<id>:{'name':<string>,'in':<list-input-node-id>,'out':<list-output-transitions>},..}
+        # See class docstring for the full ``logic`` schema.
+        self.logic = logic
         self._sg = sg  # Structure-Graph (SG)
         self._stg = stg  # State-Transition-Graph (STG)
         self._stg_r = stg_r  # State-Transition-Graph Reachability dict (STG-R)
@@ -148,29 +179,177 @@ class BooleanNetwork:
     # I/O Methods
     #
     @classmethod
-    def from_file(self, file, type="cnet", keep_constants=True, **kwargs):
+    def from_file(self, file, type=None, keep_constants=True, **kwargs):
         """
         Load the Boolean Network from a file.
 
         Args:
-            file (string) : The name of a file containing the Boolean Network.
-            type (string) : The type of file, either 'cnet' (default) or 'logical' for Boolean logical rules.
+            file (string) : Path to a Boolean network file.
+            type (string, optional) : Format name.  One of ``cnet``, ``logical`` /
+                ``booleannet``, ``bnet``, ``aeon``, ``sbml``.  If omitted, the
+                format is inferred from the file suffix (``.cnet``,
+                ``.booleannet.txt``, ``.bnet``, ``.aeon``, ``.sbml``).  Ambiguous
+                ``.txt`` files still require an explicit ``type`` (Cell Collective
+                datasets are cnet).
+            keep_constants (bool) : Whether to record constant nodes.
 
         Returns:
             BooleanNetwork (object) : The boolean network object.
 
         See also:
-            :func:`from_string` :func:`from_dict`
+            :func:`to_file` :func:`from_string` :func:`from_dict`
         """
+        from cana.io.formats import infer_format, normalize_format, parse_string
+
+        if type is not None:
+            fmt = normalize_format(type)
+        else:
+            fmt = infer_format(file)
+            if fmt is None:
+                # Backward compatible default for ambiguous ``.txt`` datasets
+                # (Cell Collective / packaged cnet models).
+                fmt = "cnet"
+
         with open(file, "r") as infile:
-            if type == "cnet":
-                return self.from_string_cnet(
-                    infile.read(), keep_constants=keep_constants, **kwargs
-                )
-            elif type == "logical":
-                return self.from_string_boolean(
-                    infile.read(), keep_constants=keep_constants, **kwargs
-                )
+            text = infile.read()
+
+        if fmt == "cnet":
+            return self.from_string_cnet(
+                text, keep_constants=keep_constants, **kwargs
+            )
+        if fmt == "booleannet":
+            # Prefer the hub parser (free-input identity, operator normalize).
+            # Fall back path for callers that relied on from_string_boolean:
+            # parse_string handles the same BooleanNet syntax.
+            logic = parse_string(text, "booleannet")
+            return self.from_dict(logic, keep_constants=keep_constants, **kwargs)
+
+        logic = parse_string(text, fmt)
+        return self.from_dict(logic, keep_constants=keep_constants, **kwargs)
+
+    def to_string(self, type="booleannet"):
+        """Serialize this network to a format string via the ``logic`` hub.
+
+        Args:
+            type (string) : Target format (``booleannet``/``logical``, ``bnet``,
+                ``aeon``, ``sbml``, ``cnet``).
+
+        Returns:
+            (string) : The serialized network.
+        """
+        from cana.io.formats import export_string, normalize_format
+
+        fmt = normalize_format(type)
+        if fmt == "cnet":
+            return self.to_cnet()
+        return export_string(self.logic, fmt)
+
+    def to_file(self, file, type=None, **kwargs):
+        """Write this network to ``file``.
+
+        Args:
+            file (string) : Output path.
+            type (string, optional) : Format; inferred from the suffix if omitted.
+            **kwargs : Forwarded to :meth:`to_cnet` when exporting cnet
+                (e.g. ``adjust_no_input``).
+
+        Returns:
+            (string) : The written contents.
+        """
+        from cana.io.formats import infer_format, normalize_format
+
+        fmt = normalize_format(type) if type is not None else infer_format(file)
+        if fmt is None:
+            raise ValueError(
+                "Cannot infer format from {0!r}; pass type= explicitly.".format(file)
+            )
+        if fmt == "cnet":
+            text = self.to_cnet(**kwargs) if kwargs else self.to_cnet()
+        else:
+            text = self.to_string(type=fmt)
+        with open(file, "w") as outfile:
+            outfile.write(text)
+        return text
+
+    @classmethod
+    def from_string(self, string, type="booleannet", keep_constants=True, **kwargs):
+        """Load a network from a string of the given format.
+
+        Args:
+            string (string) : Model contents.
+            type (string) : Format name (``cnet``, ``booleannet``/``logical``,
+                ``bnet``, ``aeon``, ``sbml``).
+            keep_constants (bool) :
+
+        Returns:
+            (BooleanNetwork)
+        """
+        from cana.io.formats import normalize_format, parse_string
+
+        fmt = normalize_format(type)
+        if fmt == "cnet":
+            return self.from_string_cnet(
+                string, keep_constants=keep_constants, **kwargs
+            )
+        logic = parse_string(string, fmt)
+        return self.from_dict(logic, keep_constants=keep_constants, **kwargs)
+
+    @classmethod
+    def from_string_bnet(self, string, keep_constants=True, **kwargs):
+        """Instantiate from BoolNet / PyBoolNet ``targets,factors`` text."""
+        return self.from_string(
+            string, type="bnet", keep_constants=keep_constants, **kwargs
+        )
+
+    @classmethod
+    def from_string_aeon(self, string, keep_constants=True, **kwargs):
+        """Instantiate from AEON text (regulations + ``$var: expr``)."""
+        return self.from_string(
+            string, type="aeon", keep_constants=keep_constants, **kwargs
+        )
+
+    @classmethod
+    def from_string_sbml(self, string, keep_constants=True, **kwargs):
+        """Instantiate from SBML-qual XML text."""
+        return self.from_string(
+            string, type="sbml", keep_constants=keep_constants, **kwargs
+        )
+
+    def equivalent_to(self, other):
+        """True if ``other`` has the same name-keyed LUTs as this network."""
+        from cana.io.formats import equivalent_logic
+
+        return equivalent_logic(self, other)
+
+    @classmethod
+    def convert_string(self, string, from_type, to_type):
+        """Convert a model string between formats via the ``logic`` hub.
+
+        Args:
+            string (string) : Source model text.
+            from_type, to_type (string) : Format names.
+
+        Returns:
+            (string) : Converted model text.
+        """
+        from cana.io.formats import convert, normalize_format
+
+        src = normalize_format(from_type)
+        dst = normalize_format(to_type)
+
+        def cnet_parser(text):
+            return self.from_string_cnet(text).logic
+
+        def cnet_exporter(logic):
+            return self.from_dict(logic).to_cnet()
+
+        return convert(
+            string,
+            src,
+            dst,
+            cnet_parser=cnet_parser if src == "cnet" else None,
+            cnet_exporter=cnet_exporter if dst == "cnet" else None,
+        )
 
     @classmethod
     def from_string_cnet(self, string, keep_constants=True, **kwargs):
@@ -324,17 +503,20 @@ class BooleanNetwork:
 
     @classmethod
     def from_dict(self, logic, keep_constants=True, **kwargs):
-        """Instanciaets a BooleanNetwork from a logic dictionary.
+        """Instantiate a BooleanNetwork from a ``logic`` dictionary.
 
         Args:
-            logic (dict) : The logic dict.
-            keep_constants (bool) :
+            logic (dict) : Dense map ``{0 .. N-1: {"name": str, "in": [ids],
+                "out": [0/1 LUT]}}``.  See the :class:`BooleanNetwork` class
+                docstring for the full schema and LUT indexing convention.
+            keep_constants (bool) : If True, nodes with empty ``in`` are
+                recorded in ``constants``.
 
         Returns:
             (BooleanNetwork)
 
         See also:
-            :func:`from_file` :func:`from_dict`
+            :func:`from_file` :func:`from_string`
         """
         Nnodes = len(logic)
         constants = {}
@@ -381,6 +563,12 @@ class BooleanNetwork:
                     data["out"] = [0, 1]
 
         bns_string = ".v " + str(self.Nnodes) + "\n" + "\n"
+        # Emit node labels so round-trips preserve names (`.l <id> <name>`).
+        for i in range(self.Nnodes):
+            bns_string += (
+                ".l " + str(i + 1) + " " + str(logic[i]["name"]) + "\n"
+            )
+        bns_string += "\n"
         for i in range(self.Nnodes):
             k = len(logic[i]["in"])
             bns_string += (
