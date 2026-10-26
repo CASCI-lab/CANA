@@ -20,6 +20,7 @@ from io import StringIO
 
 import networkx as nx
 
+from cana.bit_lut import BitLut
 from cana.boolean_network import BooleanNetwork
 from cana.utils import output_transitions
 
@@ -101,20 +102,22 @@ def random_automata_table(indegree, bias, bias_constraint="soft"):
     TODO: description
     """
     if bias_constraint == "soft":
-        return [int(random.random() < bias) for b in range(2**indegree)]
+        output = [int(random.random() < bias) for b in range(2**indegree)]
 
     elif bias_constraint == "hard":
         n_ones = int(bias * (2**indegree))
         output = [0] * (2**indegree - n_ones) + [1] * n_ones
         random.shuffle(output)
-        return output
 
     elif bias_constraint == "soft_no_constant":
         output = [int(random.random() < bias) for b in range(2**indegree)]
         if sum(output) == 0:
             output[0] = 1
             random.shuffle(output)
-        return output
+    else:
+        raise ValueError("Unknown bias_constraint: {0!r}".format(bias_constraint))
+
+    return BitLut.from_sequence(output)
 
 
 def _remove_duplicate_edges(graph, niter_remove=100):
@@ -225,7 +228,9 @@ def from_string_booleannet(self, string, keep_constants=True, **kwargs):
         ]
         lut_dict[i]["regulators"] = input_nums
         # Determine output transitions
-        lut_dict[i]["lut"] = output_transitions(eval_line, input_names)
+        lut_dict[i]["lut"] = BitLut.from_sequence(
+            output_transitions(eval_line, input_names)
+        )
         line = network_file.readline()
         i += 1
 

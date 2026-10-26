@@ -5,6 +5,7 @@ from __future__ import annotations
 from typing import Any, Dict, Iterable, List, Mapping, Optional, Sequence, Tuple, TypedDict, Union
 from pathlib import Path
 
+from cana.bit_lut import BitLut
 from cana.cutils import binstate_to_statenum, statenum_to_binstate
 from cana.io.expressions import (
     expression_identifiers,
@@ -18,7 +19,7 @@ NodeLut = TypedDict(
     {
         "name": str,
         "regulators": List[int],
-        "lut": List[int],
+        "lut": BitLut,
     },
 )
 """One node's entry in a CANA ``LutDict``.
@@ -26,10 +27,10 @@ NodeLut = TypedDict(
 Keys:
     name: Unique node name.
     regulators: Ordered list of input **node ids** (length ``k``).
-    lut: Truth table of length ``2**k`` with entries in ``{0, 1}``.  Row ``s``
-        is the next value when the input state (in the ``regulators`` order,
-        MSB = ``regulators[0]``) equals ``s``, matching
-        :func:`~cana.utils.output_transitions`.
+    lut: Packed truth table (:class:`~cana.bit_lut.BitLut`) of length
+        ``2**k`` with entries in ``{0, 1}``.  Row ``s`` is the next value when
+        the input state (in the ``regulators`` order, MSB = ``regulators[0]``)
+        equals ``s``, matching :func:`~cana.utils.output_transitions`.
 """
 
 LutDict = Dict[int, NodeLut]
@@ -40,15 +41,17 @@ PathLike = Union[str, Path]
 
 def reorder_lut(
     lut: Sequence[Any], old_inputs: Sequence[str], new_inputs: Sequence[str]
-) -> List[int]:
+) -> BitLut:
     """Reorder a LUT from ``old_inputs`` bit order to ``new_inputs`` bit order."""
     if list(old_inputs) == list(new_inputs):
-        return [int(v) for v in lut]
+        if isinstance(lut, BitLut):
+            return lut
+        return BitLut.from_sequence(lut)
     k = len(old_inputs)
     if k != len(new_inputs) or set(old_inputs) != set(new_inputs):
         raise ValueError("old_inputs and new_inputs must be permutations")
     name_to_old = {n: i for i, n in enumerate(old_inputs)}
-    new_lut = [0] * (2**k)
+    new_lut = BitLut(k)
     for new_state in range(2**k):
         new_bits = statenum_to_binstate(new_state, k)
         old_bits = ["0"] * k
@@ -93,20 +96,28 @@ def expressions_to_lut_dict(
     for i, name in enumerate(ordered):
         expr = normalize_operators(completed[name], "python")
         if expr in ("True", "true", "1"):
-            lut_dict[i] = {"name": name, "regulators": [], "lut": [1]}
+            lut_dict[i] = {
+                "name": name,
+                "regulators": [],
+                "lut": BitLut.from_sequence([1]),
+            }
             continue
         if expr in ("False", "false", "0"):
-            lut_dict[i] = {"name": name, "regulators": [], "lut": [0]}
+            lut_dict[i] = {
+                "name": name,
+                "regulators": [],
+                "lut": BitLut.from_sequence([0]),
+            }
             continue
         input_names = regulator_names_in_expression(expr, ordered)
         if expr.strip() == name and name not in input_names:
             input_names = [name]
         regulator_ids = [name_to_id[n] for n in input_names]
-        lut = output_transitions(expr, input_names)
+        lut = BitLut.from_sequence(output_transitions(expr, input_names))
         lut_dict[i] = {
             "name": name,
             "regulators": regulator_ids,
-            "lut": [int(v) for v in lut],
+            "lut": lut,
         }
     return lut_dict
 

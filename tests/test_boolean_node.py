@@ -503,7 +503,7 @@ def test_sensitivity_matches_original_implementation():
     for n in nodes:
         for norm in (False, True):
             s, s0 = n.sensitivity(norm=norm), sensitivity.sensitivity_old(n, norm=norm)
-            assert s == s0, f"sensitivity(norm={norm}) for k={n.k} outputs={''.join(n.outputs)}: {s!r} != sensitivity_old {s0!r}"
+            assert s == s0, f"sensitivity(norm={norm}) for k={n.k} outputs={''.join(map(str, n.outputs))}: {s!r} != sensitivity_old {s0!r}"
         assert abs(n.sensitivity(norm=True) - n.c_sensitivity(1)) < 1e-12
 
 
@@ -538,7 +538,7 @@ def test_activities_matches_original_implementation():
             nodes.append(BooleanNode.from_output_list([rng.randint(0, 1) for _ in range(2**k)]))
     for n in nodes:
         a, a0 = n.activities(), sensitivity.activities_old(n)
-        assert a == a0, f"activities for k={n.k} outputs={''.join(n.outputs)}: {a!r} != activities_old {a0!r}"
+        assert a == a0, f"activities for k={n.k} outputs={''.join(map(str, n.outputs))}: {a!r} != activities_old {a0!r}"
 # Test from_output_list
 #
 

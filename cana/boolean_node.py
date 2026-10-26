@@ -26,12 +26,14 @@ import cana.canalization.cboolean_canalization as cBCanalization
 from cana.canalization.canalizing_map import build_canalizing_map
 import cana.symmetry as symmetry
 import cana.sensitivity as sensitivity
+from cana.bit_lut import BitLut
 from cana.cutils import (
     binstate_to_statenum,
     flip_bit,
     outputs_to_binstates_of_given_type,
     statenum_to_binstate,
 )
+from cana.function_outputs import FunctionOutputs
 from cana.utils import input_monotone, ncr
 
 
@@ -59,9 +61,25 @@ class BooleanNode(object):
         self.state = str(
             int(state)
         )  # the initial state of the node. internally this is treated as a string.
-        self.outputs = list(map(str, outputs))  # the list of transition outputs
+        # Multi-representation outputs (dense BitLut today; schemata/expression later).
+        # TODO: migrate cached ``_prime_implicants`` into ``outputs.schemata``.
+        self.outputs = FunctionOutputs.from_sequence(outputs)
         self.network = network  # the BooleanNetwork object this nodes belongs to
         self.verbose = verbose  # verbose mode
+
+        # When attached to a network, share the LutDict BitLut object.
+        if (
+            network is not None
+            and getattr(network, "lut_dict", None) is not None
+            and id in network.lut_dict
+        ):
+            shared = network.lut_dict[id]["lut"]
+            if isinstance(shared, BitLut):
+                self.outputs.bit_lut = shared
+            else:
+                bit = BitLut.from_sequence(shared)
+                network.lut_dict[id]["lut"] = bit
+                self.outputs.bit_lut = bit
 
         # mask for inputs
         if len(self.inputs) > 0:
@@ -70,14 +88,18 @@ class BooleanNode(object):
             self.mask = []
 
         # Consistency
-        if (k != 0) and (k != int(np.log2(len(outputs)))):
+        if (k != 0) and (k != int(np.log2(len(self.outputs)))):
             raise ValueError(
                 "Number of k (inputs) do not match the number of output transitions"
             )
 
         # If all outputs are either positive or negative, the node is treated as a constant.
-        if (len(set(outputs)) == 1) or (constant):
-            self.set_constant(constant=True, state=outputs[0])
+        const_val = self.outputs.is_constant()
+        if (const_val is not None) or (constant):
+            self.set_constant(
+                constant=True,
+                state=const_val if const_val is not None else self.outputs[0],
+            )
         else:
             self.set_constant(constant=False)
 
@@ -181,7 +203,7 @@ class BooleanNode(object):
         Returns:
             output (bool) : the output value.
         """
-        self.state = self.outputs[binstate_to_statenum(input_state)]
+        self.state = str(self.outputs[binstate_to_statenum(input_state)])
         return self.state
 
     def input_redundancy(self, operator=mean, norm=True):
@@ -499,8 +521,8 @@ class BooleanNode(object):
         if type == "pi":
             self._check_compute_canalization_variables(prime_implicants=True)
 
-            pi0s = self._prime_implicants.get("0", [])
-            pi1s = self._prime_implicants.get("1", [])
+            pi0s = self._prime_implicants.get(0, [])
+            pi1s = self._prime_implicants.get(1, [])
 
             for output, pi in zip([0, 1], [pi0s, pi1s]):
                 for schemata in sorted(pi):
@@ -694,13 +716,14 @@ class BooleanNode(object):
             self._check_compute_canalization_variables(prime_implicants=True)
             if self._two_symbols is None:
                 # this is a temporary fix until we update 'find_two_symbols' to cython.
-                if "0" in self._prime_implicants:
-                    pi0 = self._prime_implicants["0"]
+                # Prime-implicant dict keys are int polarities 0/1 (dense BitLut path).
+                if 0 in self._prime_implicants:
+                    pi0 = self._prime_implicants[0]
                     pi0 = set([pi.replace("#", "2") for pi in pi0])
                 else:
                     pi0 = []
-                if "1" in self._prime_implicants:
-                    pi1 = self._prime_implicants["1"]
+                if 1 in self._prime_implicants:
+                    pi1 = self._prime_implicants[1]
                     pi1 = set([pi.replace("#", "2") for pi in pi1])
                 else:
                     pi1 = []
@@ -733,7 +756,9 @@ class BooleanNode(object):
         See Also:
             :func:`~cana.boolean_network.BooleanNetwork.network_bias`
         """
-        return sum(map(int, self.outputs)) / 2**self.k
+        if self.outputs.bit_lut is not None:
+            return self.outputs.bit_lut.popcount() / 2**self.k
+        return sum(self.outputs) / 2**self.k
 
     def c_sensitivity(self, c, mode="default", max_k=0):
         """Node c-sensitivity.

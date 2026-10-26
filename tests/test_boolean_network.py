@@ -35,11 +35,11 @@ def test_from_string_booleannet():
     network = BooleanNetwork.from_string_booleannet(rules, keep_constants=True)
     assert network.Nnodes == 3
     # A = copy of B: output transitions [0, 1]
-    assert network.nodes[0].outputs == ['0', '1']
+    assert list(network.nodes[0].outputs) == [0, 1]
     # B = A AND C: output transitions [0, 0, 0, 1]
-    assert network.nodes[1].outputs == ['0', '0', '0', '1']
+    assert list(network.nodes[1].outputs) == [0, 0, 0, 1]
     # C = A OR B: output transitions [0, 1, 1, 1]
-    assert network.nodes[2].outputs == ['0', '1', '1', '1']
+    assert list(network.nodes[2].outputs) == [0, 1, 1, 1]
 
 
 def test_load_booleannet_LEUKEMIA():
@@ -48,4 +48,4 @@ def test_load_booleannet_LEUKEMIA():
     assert network.Nnodes == 60
     # Spot-check first rule: CTLA4* = TCR (identity)
     assert network.nodes[0].name == 'CTLA4'
-    assert network.nodes[0].outputs == ['0', '1']
+    assert list(network.nodes[0].outputs) == [0, 1]

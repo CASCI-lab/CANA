@@ -22,6 +22,7 @@ import networkx as nx
 import numpy as np
 
 import cana.bns as bns
+from cana.bit_lut import BitLut
 from cana.boolean_node import BooleanNode
 from cana.control import fvs, mds, sc
 from cana.cutils import (
@@ -57,23 +58,25 @@ class BooleanNetwork:
 
         - ``name`` (``str``): unique node name.
         - ``regulators`` (``list[int]``): ordered input **node ids** (length ``k``).
-        - ``lut`` (``list[int]``): truth table of length ``2**k`` with entries in
-          ``{0, 1}``.  Row ``s`` is the next value of the node when the input
-          state — interpreted in the ``regulators`` order with
-          ``regulators[0]`` as the most significant bit — equals ``s``.  This
-          matches :func:`~cana.utils.output_transitions` /
+        - ``lut`` (:class:`~cana.bit_lut.BitLut`): packed truth table of length
+          ``2**k`` with entries in ``{0, 1}``.  Row ``s`` is the next value of
+          the node when the input state — interpreted in the ``regulators``
+          order with ``regulators[0]`` as the most significant bit — equals
+          ``s``.  This matches :func:`~cana.utils.output_transitions` /
           :func:`~cana.cutils.statenum_to_binstate`.
 
         Example (AND of ``A`` then ``B``, node ids 0 and 1)::
 
-            {0: {"name": "A", "regulators": [0], "lut": [0, 1]},   # identity
-             1: {"name": "B", "regulators": [0, 1], "lut": [0, 0, 0, 1]}}  # A AND B
+            {0: {"name": "A", "regulators": [0], "lut": BitLut.from_sequence([0, 1])},
+             1: {"name": "B", "regulators": [0, 1],
+                 "lut": BitLut.from_sequence([0, 0, 0, 1])}}
 
     Relation to :class:`~cana.boolean_node.BooleanNode`
-        On construction, each ``lut_dict[i]`` becomes a ``BooleanNode`` with the
-        same inputs and outputs (outputs stored as ``"0"``/``"1"`` strings).
-        ``lut_dict`` remains the network-level LUT table; nodes are the runtime
-        objects used for canalization analysis.
+        On construction, each ``lut_dict[i]`` becomes a ``BooleanNode`` whose
+        ``outputs`` is a :class:`~cana.function_outputs.FunctionOutputs` that
+        **shares** the same ``BitLut`` object as ``lut_dict[i]["lut"]``.
+        ``lut_dict`` remains the network-level dense LUT table; nodes are the
+        runtime objects used for canalization analysis.
     """
 
     def __init__(
@@ -100,6 +103,12 @@ class BooleanNetwork:
         self.name = name  # Name of the Network
         self.Nnodes = Nnodes  # Number of Nodes
         # See class docstring for the full ``lut_dict`` schema.
+        # Normalize dense LUTs to BitLut so nodes can share the same object.
+        if lut_dict is not None:
+            for _i, _entry in lut_dict.items():
+                _lut = _entry.get("lut")
+                if _lut is not None and not isinstance(_lut, BitLut):
+                    _entry["lut"] = BitLut.from_sequence(_lut)
         self.lut_dict = lut_dict
         self._sg = sg  # Structure-Graph (SG)
         self._stg = stg  # State-Transition-Graph (STG)
@@ -629,7 +638,9 @@ class BooleanNetwork:
 
                 # now update the conditioned_lut_dict in case these nodes are further modified by additional conditioned variables
                 conditioned_lut_dict[n]["regulators"] = new_successor_inputs
-                conditioned_lut_dict[n]["lut"] = new_successor_outputs
+                conditioned_lut_dict[n]["lut"] = BitLut.from_sequence(
+                    new_successor_outputs
+                )
 
                 # check if we just made a constant node
                 if (

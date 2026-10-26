@@ -4,6 +4,7 @@ from __future__ import annotations
 
 from typing import Any, Dict, List, Mapping
 
+from cana.bit_lut import BitLut
 from cana.cutils import binstate_to_statenum, expand_logic_line, statenum_to_binstate
 from cana.lut_dict import LutDict
 
@@ -30,7 +31,7 @@ def parse_cnet(text: str) -> LutDict:
         if ".v" in line:
             nnodes = int(line.split()[1])
             for inode in range(nnodes):
-                lut_dict[inode] = {"name": "", "regulators": [], "lut": []}
+                lut_dict[inode] = {"name": "", "regulators": [], "lut": BitLut(0)}
         elif ".l" in line:
             parts = line.split()
             lut_dict[int(parts[1]) - 1]["name"] = parts[2]
@@ -41,10 +42,6 @@ def parse_cnet(text: str) -> LutDict:
             for j in range(indegree):
                 lut_dict[inode]["regulators"].append(int(parts[3 + j]) - 1)
 
-            lut_dict[inode]["lut"] = [
-                0 for _ in range(2**indegree) if indegree > 0
-            ]
-
             if i >= len(lines):
                 logic_line = ""
             else:
@@ -54,10 +51,11 @@ def parse_cnet(text: str) -> LutDict:
             if indegree <= 0:
                 if logic_line == "":
                     lut_dict[inode]["regulators"] = [inode]
-                    lut_dict[inode]["lut"] = [0, 1]
+                    lut_dict[inode]["lut"] = BitLut.from_sequence([0, 1])
                 else:
-                    lut_dict[inode]["lut"] = [int(logic_line)]
+                    lut_dict[inode]["lut"] = BitLut.from_sequence([int(logic_line)])
             else:
+                lut = BitLut(indegree)
                 while (
                     logic_line != ""
                     and logic_line != "\n"
@@ -65,13 +63,12 @@ def parse_cnet(text: str) -> LutDict:
                 ):
                     for nlogicline in expand_logic_line(logic_line):
                         bits, out_bit = nlogicline.split()[0], nlogicline.split()[1]
-                        lut_dict[inode]["lut"][
-                            binstate_to_statenum(bits)
-                        ] = int(out_bit)
+                        lut[binstate_to_statenum(bits)] = int(out_bit)
                     if i >= len(lines):
                         break
                     logic_line = lines[i].strip()
                     i += 1
+                lut_dict[inode]["lut"] = lut
         elif ".e" in line:
             break
 
@@ -96,7 +93,9 @@ def lut_dict_to_cnet(
         i: {
             "name": data["name"],
             "regulators": list(data["regulators"]),
-            "lut": list(data["lut"]),
+            "lut": data["lut"]
+            if isinstance(data["lut"], BitLut)
+            else BitLut.from_sequence(data["lut"]),
         }
         for i, data in lut_dict.items()
     }
@@ -104,7 +103,7 @@ def lut_dict_to_cnet(
         for i, data in local.items():
             if len(data["regulators"]) == 0:
                 data["regulators"] = [i]
-                data["lut"] = [0, 1]
+                data["lut"] = BitLut.from_sequence([0, 1])
 
     nnodes = len(local)
     parts: List[str] = [".v {0}".format(nnodes), ""]
@@ -120,14 +119,15 @@ def lut_dict_to_cnet(
                 " ".join(str(v + 1) for v in local[i]["regulators"]),
             ).rstrip()
         )
-        for statenum in range(2**k):
-            if len(local[i]["lut"]) == 1:
-                parts.append(str(local[i]["lut"][statenum]))
+        lut = local[i]["lut"]
+        for statenum in range(2**k if k > 0 else 1):
+            if k == 0:
+                parts.append(str(lut[statenum]))
             else:
                 parts.append(
                     "{0} {1}".format(
                         statenum_to_binstate(statenum, base=k),
-                        local[i]["lut"][statenum],
+                        lut[statenum],
                     )
                 )
         parts.append("")

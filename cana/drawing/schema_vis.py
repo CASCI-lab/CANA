@@ -24,8 +24,8 @@ def plot_schemata(n, plotTS=True):
         ts0s = n._two_symbols[0]
         ts1s = n._two_symbols[1]
         n_ts = sum(len(tss) for tss in [ts0s, ts1s])
-    pi0s = n._prime_implicants.get("0", [])
-    pi1s = n._prime_implicants.get("1", [])
+    pi0s = n._prime_implicants.get(0, [])
+    pi1s = n._prime_implicants.get(1, [])
     # Count number of PI and TS
     n_pi = sum(len(pis) for pis in [pi0s, pi1s])
     # Schemata Cell Width and spacing

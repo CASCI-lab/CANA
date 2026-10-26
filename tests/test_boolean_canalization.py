@@ -317,12 +317,12 @@ def test_prime_implicants_random():
     pis = dict()
     for f, n in nodes.items():
         n._check_compute_canalization_variables(prime_implicants=True)
-        if "0" in n._prime_implicants:
-            zeros = n._prime_implicants["0"]
+        if 0 in n._prime_implicants:
+            zeros = n._prime_implicants[0]
         else:
             zeros = set()
-        if "1" in n._prime_implicants:
-            ones = n._prime_implicants["1"]
+        if 1 in n._prime_implicants:
+            ones = n._prime_implicants[1]
         else:
             ones = set()
         pis[f] = {"0": set(i.replace("#", "2") for i in zeros),
