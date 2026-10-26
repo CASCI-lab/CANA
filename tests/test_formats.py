@@ -9,10 +9,12 @@ from cana.io.formats import (
     equivalent_logic,
     export_string,
     infer_format,
+    logic_to_cnet,
     name_keyed_luts,
     parse_aeon,
     parse_bnet,
     parse_booleannet,
+    parse_cnet,
     parse_sbml,
     parse_string,
     rules_to_logic,
@@ -72,25 +74,32 @@ def test_rules_to_logic_adds_free_input_identity():
 
 def test_export_reimport_roundtrip_each_format():
     logic = parse_booleannet(TINY_BOOLEANNET)
-    for fmt in ("booleannet", "bnet", "aeon", "sbml"):
+    for fmt in ("booleannet", "bnet", "aeon", "sbml", "cnet"):
         text = export_string(logic, fmt)
         again = parse_string(text, fmt)
         assert equivalent_logic(logic, again), fmt
 
 
 def test_any_to_any_convert():
-    formats = ("booleannet", "bnet", "aeon", "sbml")
+    formats = ("booleannet", "bnet", "aeon", "sbml", "cnet")
     sources = {
         "booleannet": TINY_BOOLEANNET,
         "bnet": TINY_BNET,
         "aeon": TINY_AEON,
         "sbml": export_string(parse_booleannet(TINY_BOOLEANNET), "sbml"),
+        "cnet": logic_to_cnet(parse_booleannet(TINY_BOOLEANNET)),
     }
     ref = parse_booleannet(TINY_BOOLEANNET)
     for src in formats:
         for dst in formats:
             out = convert(sources[src], src, dst)
             assert equivalent_logic(ref, parse_string(out, dst)), (src, dst)
+
+
+def test_parse_cnet_direct():
+    logic = parse_booleannet(TINY_BOOLEANNET)
+    again = parse_cnet(logic_to_cnet(logic))
+    assert equivalent_logic(logic, again)
 
 
 def test_boolean_network_from_string_and_equivalent_to():

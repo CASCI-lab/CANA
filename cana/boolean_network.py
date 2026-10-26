@@ -12,18 +12,10 @@ Main class for Boolean network objects.
 #   Thomas Parmer <tjparmer@indiana.edu>
 #   All rights reserved.
 #   MIT license.
-from collections import defaultdict
-
-try:
-    import cStringIO.StringIO as StringIO  # type: ignore
-except ImportError:
-    from io import StringIO
-
 import copy
 import itertools
 import pickle
 import random
-import re
 import warnings
 
 import networkx as nx
@@ -38,7 +30,6 @@ from cana.cutils import (
     binstate_to_constantbinstate,
     binstate_to_statenum,
     constantbinstate_to_statenum,
-    expand_logic_line,
     flip_binstate_bit,
     flip_bit,
     hamming_distance,
@@ -49,7 +40,7 @@ from cana.cutils import (
 
 # from cana.utils import *
 from cana.canalization.cm_simplify import simplify_canalizing_map
-from cana.utils import entropy, flip_binstate_bit_set, output_transitions
+from cana.utils import entropy, flip_binstate_bit_set
 
 
 class BooleanNetwork:
@@ -213,36 +204,24 @@ class BooleanNetwork:
         with open(file, "r") as infile:
             text = infile.read()
 
-        if fmt == "cnet":
-            return self.from_string_cnet(
-                text, keep_constants=keep_constants, **kwargs
-            )
-        if fmt == "booleannet":
-            # Prefer the hub parser (free-input identity, operator normalize).
-            # Fall back path for callers that relied on from_string_boolean:
-            # parse_string handles the same BooleanNet syntax.
-            logic = parse_string(text, "booleannet")
-            return self.from_dict(logic, keep_constants=keep_constants, **kwargs)
+        return self.from_dict(
+            parse_string(text, fmt), keep_constants=keep_constants, **kwargs
+        )
 
-        logic = parse_string(text, fmt)
-        return self.from_dict(logic, keep_constants=keep_constants, **kwargs)
-
-    def to_string(self, type="booleannet"):
+    def to_string(self, type="booleannet", **kwargs):
         """Serialize this network to a format string via the ``logic`` hub.
 
         Args:
             type (string) : Target format (``booleannet``/``logical``, ``bnet``,
                 ``aeon``, ``sbml``, ``cnet``).
+            **kwargs : Forwarded to the exporter (e.g. ``adjust_no_input`` for cnet).
 
         Returns:
             (string) : The serialized network.
         """
-        from cana.io.formats import export_string, normalize_format
+        from cana.io.formats import export_string
 
-        fmt = normalize_format(type)
-        if fmt == "cnet":
-            return self.to_cnet()
-        return export_string(self.logic, fmt)
+        return export_string(self.logic, type, **kwargs)
 
     def to_file(self, file, type=None, **kwargs):
         """Write this network to ``file``.
@@ -250,8 +229,7 @@ class BooleanNetwork:
         Args:
             file (string) : Output path.
             type (string, optional) : Format; inferred from the suffix if omitted.
-            **kwargs : Forwarded to :meth:`to_cnet` when exporting cnet
-                (e.g. ``adjust_no_input``).
+            **kwargs : Forwarded to the exporter (e.g. ``adjust_no_input`` for cnet).
 
         Returns:
             (string) : The written contents.
@@ -263,10 +241,7 @@ class BooleanNetwork:
             raise ValueError(
                 "Cannot infer format from {0!r}; pass type= explicitly.".format(file)
             )
-        if fmt == "cnet":
-            text = self.to_cnet(**kwargs) if kwargs else self.to_cnet()
-        else:
-            text = self.to_string(type=fmt)
+        text = self.to_string(type=fmt, **kwargs)
         with open(file, "w") as outfile:
             outfile.write(text)
         return text
@@ -284,15 +259,11 @@ class BooleanNetwork:
         Returns:
             (BooleanNetwork)
         """
-        from cana.io.formats import normalize_format, parse_string
+        from cana.io.formats import parse_string
 
-        fmt = normalize_format(type)
-        if fmt == "cnet":
-            return self.from_string_cnet(
-                string, keep_constants=keep_constants, **kwargs
-            )
-        logic = parse_string(string, fmt)
-        return self.from_dict(logic, keep_constants=keep_constants, **kwargs)
+        return self.from_dict(
+            parse_string(string, type), keep_constants=keep_constants, **kwargs
+        )
 
     @classmethod
     def from_string_bnet(self, string, keep_constants=True, **kwargs):
@@ -322,184 +293,42 @@ class BooleanNetwork:
         return equivalent_logic(self, other)
 
     @classmethod
-    def convert_string(self, string, from_type, to_type):
+    def convert_string(self, string, from_type, to_type, **kwargs):
         """Convert a model string between formats via the ``logic`` hub.
 
         Args:
             string (string) : Source model text.
             from_type, to_type (string) : Format names.
+            **kwargs : Forwarded to the destination exporter.
 
         Returns:
             (string) : Converted model text.
         """
-        from cana.io.formats import convert, normalize_format
+        from cana.io.formats import convert
 
-        src = normalize_format(from_type)
-        dst = normalize_format(to_type)
-
-        def cnet_parser(text):
-            return self.from_string_cnet(text).logic
-
-        def cnet_exporter(logic):
-            return self.from_dict(logic).to_cnet()
-
-        return convert(
-            string,
-            src,
-            dst,
-            cnet_parser=cnet_parser if src == "cnet" else None,
-            cnet_exporter=cnet_exporter if dst == "cnet" else None,
-        )
+        return convert(string, from_type, to_type, **kwargs)
 
     @classmethod
     def from_string_cnet(self, string, keep_constants=True, **kwargs):
-        """
-        Instanciates a Boolean Network from a string in cnet format.
-
-        Args:
-            string (string): A cnet format representation of a Boolean Network.
-
-        Returns:
-            (BooleanNetwork)
-
-        Examples:
-            String should be structured as follow:
-
-            .. code-block:: text
-
-                #.v = number of nodes
-                .v 1
-                #.l = node label
-                .l 1 node-a
-                .l 2 node-b
-                #.n = (node number) (in-degree) (input node 1) … (input node k)
-                .n 1 2 4 5
-                01 1 # transition rule
+        """Instantiate a Boolean Network from a ``.cnet`` string.
 
         See also:
-            :func:`from_file` :func:`from_dict`
+            :func:`from_file` :func:`from_dict` :func:`from_string`
         """
-        network_file = StringIO(string)
-        logic = defaultdict(dict)
-
-        line = network_file.readline()
-        while line != "":
-            if line[0] != "#" and line != "\n":
-                # .v <#-nodes>
-                if ".v" in line:
-                    Nnodes = int(line.split()[1])
-                    for inode in range(Nnodes):
-                        logic[inode] = {"name": "", "in": [], "out": []}
-                # .l <node-id> <node-name>
-                elif ".l" in line:
-                    logic[int(line.split()[1]) - 1]["name"] = line.split()[2]
-                # .n <node-id> <#-inputs> <input-node-id>
-                elif ".n" in line:
-                    inode = int(line.split()[1]) - 1
-                    indegree = int(line.split()[2])
-                    for jnode in range(indegree):
-                        logic[inode]["in"].append(int(line.split()[3 + jnode]) - 1)
-
-                    logic[inode]["out"] = [
-                        0 for i in range(2**indegree) if indegree > 0
-                    ]
-
-                    logic_line = network_file.readline().strip()
-
-                    if indegree <= 0:
-                        if logic_line == "":
-                            logic[inode]["in"] = [inode]
-                            logic[inode]["out"] = [0, 1]
-                        else:
-                            logic[inode]["out"] = [int(logic_line)]
-                    else:
-                        while (
-                            logic_line != "\n"
-                            and logic_line != ""
-                            and len(logic_line) > 1
-                        ):
-                            for nlogicline in expand_logic_line(logic_line):
-                                logic[inode]["out"][
-                                    binstate_to_statenum(nlogicline.split()[0])
-                                ] = int(nlogicline.split()[1])
-                            logic_line = network_file.readline().strip()
-
-                # .e = end of file
-                elif ".e" in line:
-                    break
-            line = network_file.readline()
-
-        return self.from_dict(logic, keep_constants=keep_constants, **kwargs)
+        return self.from_string(
+            string, type="cnet", keep_constants=keep_constants, **kwargs
+        )
 
     @classmethod
     def from_string_boolean(self, string, keep_constants=True, **kwargs):
-        """
-        Instanciates a Boolean Network from a Boolean update rules format.
-
-        Args:
-            string (string) : A boolean update rules format representation of a Boolean Network.
-
-        Returns:
-            (BooleanNetwork) : The boolean network object.
-
-        Examples:
-            String should be structured as follow
-
-            .. code-block:: text
-
-                # BOOLEAN RULES (this is a comment)
-                # node_name*=node_input_1 [logic operator] node_input_2 ...
-                NODE3*=NODE1 AND NODE2 ...
+        """Instantiate from BooleanNet / logical update-rule text.
 
         See also:
             :func:`from_string` :func:`from_dict`
         """
-
-        logic = defaultdict(dict)
-
-        # parse lines to receive node names
-        network_file = StringIO(string)
-        line = network_file.readline()
-        i = 0
-        while line != "":
-            if line[0] == "#":
-                line = network_file.readline()
-                continue
-            logic[i] = {"name": line.split("*")[0].strip(), "in": [], "out": []}
-            line = network_file.readline()
-            i += 1
-
-        # Parse lines again to determine inputs and output sequence
-        network_file = StringIO(string)
-        line = network_file.readline()
-        i = 0
-        while line != "":
-            if line[0] == "#":
-                line = network_file.readline()
-                continue
-            eval_line = line.split("=")[1]  # logical condition to evaluate
-            # RE checks for non-alphanumeric character before/after node name (node names are included in other node names)
-            # Additional characters added to eval_line to avoid start/end of string complications
-            input_names = [
-                logic[node]["name"]
-                for node in logic
-                if re.compile(r"\W" + logic[node]["name"] + r"\W").search(
-                    "*" + eval_line + "*"
-                )
-            ]
-            input_nums = [
-                node
-                for input in input_names
-                for node in logic
-                if input == logic[node]["name"]
-            ]
-            logic[i]["in"] = input_nums
-            # Determine output transitions
-            logic[i]["out"] = output_transitions(eval_line, input_names)
-            line = network_file.readline()
-            i += 1
-
-        return self.from_dict(logic, keep_constants=keep_constants, **kwargs)
+        return self.from_string(
+            string, type="booleannet", keep_constants=keep_constants, **kwargs
+        )
 
     @classmethod
     def from_dict(self, logic, keep_constants=True, **kwargs):
@@ -539,12 +368,11 @@ class BooleanNetwork:
         )
 
     def to_cnet(self, file=None, adjust_no_input=False):
-        """Outputs the network logic to ``.cnet`` format, which is similar to the Berkeley Logic Interchange Format (BLIF).
-        This is the format used by BNS to compute attractors.
+        """Outputs the network logic to ``.cnet`` format (BNS / BLIF-like).
 
         Args:
-            file (string,optional) : A string of the file to write the output to. If not supplied, a string will be returned.
-            adjust_no_input (bool) : Adjust output string for nodes with no input.
+            file (string, optional) : If given, write the string to this path.
+            adjust_no_input (bool) : Rewrite empty-input nodes as identity self-loops.
 
         Returns:
             (string) : The ``.cnet`` format string.
@@ -552,59 +380,18 @@ class BooleanNetwork:
         Note:
             See `BNS <https://people.kth.se/~dubrova/bns.html>`_ for more information.
         """
-        # Copy
-        logic = self.logic.copy()
-        #
-        if adjust_no_input:
-            for i, data in logic.items():
-                # updates in place
-                if len(data["in"]) == 0:
-                    data["in"] = [i + 1]
-                    data["out"] = [0, 1]
+        from cana.io.formats import logic_to_cnet
 
-        bns_string = ".v " + str(self.Nnodes) + "\n" + "\n"
-        # Emit node labels so round-trips preserve names (`.l <id> <name>`).
-        for i in range(self.Nnodes):
-            bns_string += (
-                ".l " + str(i + 1) + " " + str(logic[i]["name"]) + "\n"
-            )
-        bns_string += "\n"
-        for i in range(self.Nnodes):
-            k = len(logic[i]["in"])
-            bns_string += (
-                ".n "
-                + str(i + 1)
-                + " "
-                + str(k)
-                + " "
-                + " ".join([str(v + 1) for v in logic[i]["in"]])
-                + "\n"
-            )
-            for statenum in range(2**k):
-                # If is a constant (TODO: This must come from the BooleanNode, not the logic)
-                if len(logic[i]["out"]) == 1:
-                    bns_string += str(logic[i]["out"][statenum]) + "\n"
-                # Not a constant, print the state and output
-                else:
-                    bns_string += (
-                        statenum_to_binstate(statenum, base=k)
-                        + " "
-                        + str(logic[i]["out"][statenum])
-                        + "\n"
-                    )
-            bns_string += "\n"
-
+        bns_string = logic_to_cnet(self.logic, adjust_no_input=adjust_no_input)
         if file is None:
             return bns_string
-        else:
-            if isinstance(file, str):
-                with open(file, "w") as iofile:
-                    iofile.write(bns_string)
-                    iofile.close()
-            else:
-                raise AttributeError(
-                    "File format not supported. Please specify a string."
-                )
+        if isinstance(file, str):
+            with open(file, "w") as iofile:
+                iofile.write(bns_string)
+            return bns_string
+        raise AttributeError(
+            "File format not supported. Please specify a string."
+        )
 
     #
     # Methods

@@ -3,8 +3,8 @@
 Import / export Boolean networks via the CANA ``logic`` dict.
 
 The ``logic`` dict is the network hub: a dense map from node id to a per-node
-look-up table (LUT) plus wiring. Expression formats (booleannet, bnet, aeon,
-sbml) are converted to/from this structure; textual expressions need not be
+look-up table (LUT) plus wiring. File formats (booleannet, bnet, aeon, sbml,
+cnet) are converted to/from this structure; textual expressions need not be
 preserved across round-trips as long as name-keyed LUTs match.
 """
 from __future__ import annotations
@@ -14,7 +14,7 @@ import xml.etree.ElementTree as ET
 from pathlib import Path
 from typing import Any, Dict, Iterable, List, Mapping, Optional, Sequence, Tuple, TypedDict, Union
 
-from cana.cutils import binstate_to_statenum, statenum_to_binstate
+from cana.cutils import binstate_to_statenum, expand_logic_line, statenum_to_binstate
 from cana.utils import output_transitions
 
 # ---------------------------------------------------------------------------
@@ -501,6 +501,75 @@ def _qual_attr(elem: ET.Element, local_name: str) -> Optional[str]:
     return None
 
 
+def parse_cnet(text: str) -> LogicDict:
+    """Parse BNS / Cell Collective ``.cnet`` (BLIF-like) text into a ``logic`` dict.
+
+    Format sketch::
+
+        .v <N>
+        .l <id> <name>
+        .n <id> <k> <in1> ... <ink>
+        <binstate> <out>   # may use ``-`` don't-care bits
+        .e
+    """
+    logic: Dict[int, Dict[str, Any]] = {}
+    lines = text.splitlines()
+    i = 0
+    while i < len(lines):
+        line = lines[i]
+        i += 1
+        if not line or line[0] == "#" or line.strip() == "":
+            continue
+        if ".v" in line:
+            nnodes = int(line.split()[1])
+            for inode in range(nnodes):
+                logic[inode] = {"name": "", "in": [], "out": []}
+        elif ".l" in line:
+            parts = line.split()
+            logic[int(parts[1]) - 1]["name"] = parts[2]
+        elif ".n" in line:
+            parts = line.split()
+            inode = int(parts[1]) - 1
+            indegree = int(parts[2])
+            for j in range(indegree):
+                logic[inode]["in"].append(int(parts[3 + j]) - 1)
+
+            logic[inode]["out"] = [0 for _ in range(2**indegree) if indegree > 0]
+
+            if i >= len(lines):
+                logic_line = ""
+            else:
+                logic_line = lines[i].strip()
+                i += 1
+
+            if indegree <= 0:
+                if logic_line == "":
+                    logic[inode]["in"] = [inode]
+                    logic[inode]["out"] = [0, 1]
+                else:
+                    logic[inode]["out"] = [int(logic_line)]
+            else:
+                while (
+                    logic_line != ""
+                    and logic_line != "\n"
+                    and len(logic_line) > 1
+                ):
+                    for nlogicline in expand_logic_line(logic_line):
+                        bits, out_bit = nlogicline.split()[0], nlogicline.split()[1]
+                        logic[inode]["out"][binstate_to_statenum(bits)] = int(out_bit)
+                    if i >= len(lines):
+                        break
+                    logic_line = lines[i].strip()
+                    i += 1
+        elif ".e" in line:
+            break
+
+    if not logic:
+        raise ValueError("No cnet nodes found")
+    # Typed as LogicDict; values match NodeLogic shape.
+    return logic  # type: ignore[return-value]
+
+
 def parse_sbml(text: str) -> LogicDict:
     """Parse SBML-qual Boolean models into a ``logic`` dict."""
     root = ET.fromstring(text)
@@ -568,7 +637,7 @@ def parse_sbml(text: str) -> LogicDict:
 
 
 def parse_string(text: str, fmt: str) -> LogicDict:
-    """Parse ``text`` of the given format into a ``logic`` dict (not cnet)."""
+    """Parse ``text`` of the given format into a ``logic`` dict."""
     fmt = normalize_format(fmt)
     if fmt == "booleannet":
         return parse_booleannet(text)
@@ -578,11 +647,9 @@ def parse_string(text: str, fmt: str) -> LogicDict:
         return parse_aeon(text)
     if fmt == "sbml":
         return parse_sbml(text)
-    raise ValueError(
-        "parse_string does not handle format {0!r}; use BooleanNetwork.from_string_cnet".format(
-            fmt
-        )
-    )
+    if fmt == "cnet":
+        return parse_cnet(text)
+    raise ValueError("parse_string does not handle format {0!r}".format(fmt))
 
 
 # ---------------------------------------------------------------------------
@@ -776,6 +843,61 @@ def _lut_to_mathml(input_names: Sequence[str], out: Sequence[Any]) -> ET.Element
     return _parse_python_bool_to_mathml(expr)
 
 
+def logic_to_cnet(
+    logic: Mapping[int, Mapping[str, Any]],
+    *,
+    adjust_no_input: bool = False,
+) -> str:
+    """Export ``logic`` to BNS / Cell Collective ``.cnet`` text.
+
+    Args:
+        logic: CANA ``logic`` dict.
+        adjust_no_input: If True, rewrite empty-input nodes as self-loops with
+            identity LUT ``[0, 1]`` (BNS compatibility).
+    """
+    logic_local: Dict[int, Dict[str, Any]] = {
+        i: {
+            "name": data["name"],
+            "in": list(data["in"]),
+            "out": list(data["out"]),
+        }
+        for i, data in logic.items()
+    }
+    if adjust_no_input:
+        for i, data in logic_local.items():
+            if len(data["in"]) == 0:
+                # Self-loop identity; ids are 0-based (matching parse_cnet).
+                data["in"] = [i]
+                data["out"] = [0, 1]
+
+    nnodes = len(logic_local)
+    parts: List[str] = [".v {0}".format(nnodes), ""]
+    for i in range(nnodes):
+        parts.append(".l {0} {1}".format(i + 1, logic_local[i]["name"]))
+    parts.append("")
+    for i in range(nnodes):
+        k = len(logic_local[i]["in"])
+        parts.append(
+            ".n {0} {1} {2}".format(
+                i + 1,
+                k,
+                " ".join(str(v + 1) for v in logic_local[i]["in"]),
+            ).rstrip()
+        )
+        for statenum in range(2**k):
+            if len(logic_local[i]["out"]) == 1:
+                parts.append(str(logic_local[i]["out"][statenum]))
+            else:
+                parts.append(
+                    "{0} {1}".format(
+                        statenum_to_binstate(statenum, base=k),
+                        logic_local[i]["out"][statenum],
+                    )
+                )
+        parts.append("")
+    return "\n".join(parts) + "\n"
+
+
 def logic_to_sbml(logic: Mapping[int, Mapping[str, Any]]) -> str:
     """Export ``logic`` to SBML Level 3 qualitative XML."""
     SBML = "http://www.sbml.org/sbml/level3/version1/core"
@@ -866,8 +988,16 @@ def logic_to_sbml(logic: Mapping[int, Mapping[str, Any]]) -> str:
     return '<?xml version="1.0" encoding="UTF-8"?>' + rough
 
 
-def export_string(logic: Mapping[int, Mapping[str, Any]], fmt: str) -> str:
-    """Serialize ``logic`` to the requested format string (not cnet)."""
+def export_string(
+    logic: Mapping[int, Mapping[str, Any]],
+    fmt: str,
+    **kwargs: Any,
+) -> str:
+    """Serialize ``logic`` to the requested format string.
+
+    Extra ``kwargs`` are forwarded to format-specific exporters (e.g.
+    ``adjust_no_input`` for cnet).
+    """
     fmt = normalize_format(fmt)
     if fmt == "booleannet":
         return logic_to_booleannet(logic)
@@ -877,38 +1007,16 @@ def export_string(logic: Mapping[int, Mapping[str, Any]], fmt: str) -> str:
         return logic_to_aeon(logic)
     if fmt == "sbml":
         return logic_to_sbml(logic)
-    raise ValueError(
-        "export_string does not handle format {0!r}; use BooleanNetwork.to_cnet".format(
-            fmt
-        )
-    )
+    if fmt == "cnet":
+        return logic_to_cnet(logic, **kwargs)
+    raise ValueError("export_string does not handle format {0!r}".format(fmt))
 
 
-def convert(
-    text: str,
-    from_type: str,
-    to_type: str,
-    *,
-    cnet_parser=None,
-    cnet_exporter=None,
-) -> str:
+def convert(text: str, from_type: str, to_type: str, **kwargs: Any) -> str:
     """Convert a model string from ``from_type`` to ``to_type`` via ``logic``.
 
-    For ``cnet``, pass ``cnet_parser(text) -> logic`` and
-    ``cnet_exporter(logic) -> str`` callables (typically bound
-    :class:`~cana.boolean_network.BooleanNetwork` helpers).
+    Extra ``kwargs`` are forwarded to the destination exporter (e.g.
+    ``adjust_no_input`` for cnet).
     """
-    src = normalize_format(from_type)
-    dst = normalize_format(to_type)
-    if src == "cnet":
-        if cnet_parser is None:
-            raise ValueError("cnet_parser required for cnet input")
-        logic = cnet_parser(text)
-    else:
-        logic = parse_string(text, src)
-
-    if dst == "cnet":
-        if cnet_exporter is None:
-            raise ValueError("cnet_exporter required for cnet output")
-        return cnet_exporter(logic)
-    return export_string(logic, dst)
+    logic = parse_string(text, from_type)
+    return export_string(logic, to_type, **kwargs)
