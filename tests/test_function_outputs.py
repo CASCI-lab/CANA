@@ -3,7 +3,7 @@
 from cana.bit_lut import BitLut
 from cana.boolean_network import BooleanNetwork
 from cana.boolean_node import BooleanNode
-from cana.function_outputs import BooleanEval, FunctionOutputs
+from cana.function_outputs import FunctionOutputs
 from cana.function_outputs import one_symbol as one_symbol_mod
 from cana.function_outputs import two_symbol as two_symbol_mod
 import warnings
@@ -32,7 +32,6 @@ def test_from_sequence_and_eval():
     assert list(fo) == [0, 0, 0, 1]
     assert fo.eval(3) == 1
     assert fo[3] == 1
-    assert isinstance(fo, BooleanEval)
 
 
 def test_wraps_bit_lut_same_object():
