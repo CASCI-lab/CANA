@@ -9,13 +9,13 @@ at import; exporters may materialize dense LUTs. Name-keyed LUT equivalence
 is the round-trip authority across formats.
 
 Modules:
-    expressions: re-exports of :mod:`cana.function_outputs.expression`
     booleannet, bnet, aeon, sbml, cnet: per-format parse / export
 
 The hub types and builders live in :mod:`cana.network_dict`.
+Expression helpers live in :mod:`cana.function_outputs.expression`.
 
-Format parsers/exporters are loaded lazily so ``cana.io.expressions`` can be
-imported without pulling every format module.
+Format parsers/exporters are loaded lazily so importing a single helper
+does not pull every format module.
 """
 from __future__ import annotations
 
@@ -45,15 +45,21 @@ _LAZY_EXPORTS = {
     "parse_booleannet": ("cana.io.booleannet", "parse_booleannet"),
     "network_dict_to_cnet": ("cana.io.cnet", "network_dict_to_cnet"),
     "parse_cnet": ("cana.io.cnet", "parse_cnet"),
-    "lut_to_expression": ("cana.io.expressions", "lut_to_expression"),
-    "normalize_operators": ("cana.io.expressions", "normalize_operators"),
+    "lut_to_expression": (
+        "cana.function_outputs.expression",
+        "lut_to_expression",
+    ),
+    "normalize_operators": (
+        "cana.function_outputs.expression",
+        "normalize_operators",
+    ),
     "network_dict_to_sbml": ("cana.io.sbml", "network_dict_to_sbml"),
     "parse_sbml": ("cana.io.sbml", "parse_sbml"),
 }
 
 
 def __getattr__(name: str):
-    """Lazy-load format helpers so ``import cana.io.expressions`` stays cycle-free."""
+    """Lazy-load format / expression helpers without importing every submodule."""
     target = _LAZY_EXPORTS.get(name)
     if target is None:
         raise AttributeError(f"module {__name__!r} has no attribute {name!r}")

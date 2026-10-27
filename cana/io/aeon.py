@@ -5,7 +5,7 @@ from __future__ import annotations
 import re
 from typing import Any, Dict, List, Mapping
 
-from cana.io.expressions import (
+from cana.function_outputs.expression import (
     expression_identifiers,
     lut_to_expression,
     normalize_operators,
