@@ -103,10 +103,29 @@ def test_boolean_node_named_expression():
     assert by_name["B"].expression(style="symbolic") == "A & C"
 
 
+def test_export_preserves_imported_expression_strings():
+    """Expression-first export keeps authored rules (not LUT minterm DNF)."""
+    network_dict = parse_booleannet(TINY_BOOLEANNET)
+    text = export_string(network_dict, "booleannet", warn=False)
+    lines = {
+        line.split("*", 1)[0].strip(): line.split("=", 1)[1].strip()
+        for line in text.splitlines()
+        if "*" in line and "=" in line
+    }
+    assert lines["A"] == "B"
+    assert lines["B"] == "A and C"
+    assert lines["C"] == "C"
+    # Still LUT-equivalent after reimport.
+    assert equivalent_network_dicts(network_dict, parse_booleannet(text))
+
+    bnet_text = export_string(network_dict, "bnet", warn=False)
+    assert "B, A & C" in bnet_text or "B, A&C" in bnet_text.replace(" ", "")
+
+
 def test_export_reimport_roundtrip_each_format():
     network_dict = parse_booleannet(TINY_BOOLEANNET)
     for fmt in ("booleannet", "bnet", "aeon", "sbml", "cnet"):
-        text = export_string(network_dict, fmt)
+        text = export_string(network_dict, fmt, warn=False)
         again = parse_string(text, fmt)
         assert equivalent_network_dicts(network_dict, again), fmt
 

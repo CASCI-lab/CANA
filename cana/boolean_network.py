@@ -377,7 +377,8 @@ class BooleanNetwork:
         Args:
             type (string) : Target format (``booleannet``, ``bnet``,
                 ``aeon``, ``sbml``, ``cnet``).
-            **kwargs : Forwarded to the exporter (e.g. ``adjust_no_input`` for cnet).
+            **kwargs : Forwarded to the exporter (e.g. ``adjust_no_input``
+                for cnet, ``warn`` for expression formats).
 
         Returns:
             (string) : The serialized network.

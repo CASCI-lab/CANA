@@ -7,7 +7,7 @@ from typing import Any, Dict, List, Mapping
 
 from cana.function_outputs.expression import (
     expression_identifiers,
-    lut_to_expression,
+    function_outputs_to_expression,
     normalize_operators,
 )
 from cana.network_dict import (
@@ -52,8 +52,16 @@ def parse_aeon(text: str) -> NetworkDict:
     return expressions_to_network_dict(expressions, names)
 
 
-def network_dict_to_aeon(network_dict: Mapping[int, Mapping[str, Any]]) -> str:
-    """Export ``NetworkDict`` to AEON text (regulations + update functions)."""
+def network_dict_to_aeon(
+    network_dict: Mapping[int, Mapping[str, Any]],
+    *,
+    warn: bool = True,
+) -> str:
+    """Export ``NetworkDict`` to AEON text (regulations + update functions).
+
+    Prefers stored expression, then one-symbol schemata, then LUT DNF.
+    Soft-warns when verification flags are not ``True`` (never blocks).
+    """
     lines: List[str] = []
     for i in sorted_node_ids(network_dict):
         target = network_dict[i]["name"]
@@ -63,7 +71,12 @@ def network_dict_to_aeon(network_dict: Mapping[int, Mapping[str, Any]]) -> str:
     for i in sorted_node_ids(network_dict):
         name = network_dict[i]["name"]
         inputs = input_names_for_node(network_dict, i)
-        lut = network_dict[i]["outputs"].get_bit_lut()
-        expr = lut_to_expression(inputs, lut, style="symbolic")
+        expr = function_outputs_to_expression(
+            network_dict[i]["outputs"],
+            inputs,
+            style="symbolic",
+            node_label=name,
+            warn=warn,
+        )
         lines.append("${0}: {1}".format(name, expr))
     return "\n".join(lines) + "\n"

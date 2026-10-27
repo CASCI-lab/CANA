@@ -8,7 +8,8 @@ I/O / :class:`~cana.boolean_node.BooleanNode` boundary.
 from __future__ import annotations
 
 import re
-from typing import Any, List, Sequence
+import warnings
+from typing import Any, List, Mapping, Optional, Sequence, Set
 
 from cana.bit_lut import BitLut
 from cana.cutils import statenum_to_binstate
@@ -27,6 +28,8 @@ __all__ = [
     "reorder_positional",
     "bit_lut_from_expression",
     "lut_to_expression",
+    "one_symbol_to_expression",
+    "function_outputs_to_expression",
 ]
 
 BOOL_KEYWORDS = frozenset({"and", "or", "not", "true", "false", "xor"})
@@ -214,3 +217,169 @@ def lut_to_expression(
         return "({x} | !{x})".format(x=x)
 
     return or_op.join(terms)
+
+
+def _style_ops(style: str):
+    """Return ``(and_op, or_op, not_prefix)`` for ``style``."""
+    if style == "python":
+        return " and ", " or ", "not "
+    if style == "symbolic":
+        return " & ", " | ", "!"
+    raise ValueError("style must be 'python' or 'symbolic'")
+
+
+def _contradiction_expr(input_names: Sequence[str], style: str) -> str:
+    """Return a constant-False expression over ``input_names``."""
+    x = input_names[0]
+    if style == "python":
+        return "({x} and not {x})".format(x=x)
+    return "({x} & !{x})".format(x=x)
+
+
+def one_symbol_to_expression(
+    input_names: Sequence[str],
+    schemata: Mapping[int, Set[str]],
+    style: str = "python",
+) -> str:
+    """Build a DNF expression from a one-symbol ON cover (polarity ``1``).
+
+    Schema characters: ``1`` → literal, ``0`` → negated literal, ``2`` →
+    don't-care (omitted).  Incomplete covers are still exported as the
+    positive DNF of whatever ON schemas are present (no LUT materialization).
+
+    Args:
+        input_names: Variable names in schema bit order (MSB first).
+        schemata: One-symbol map polarity → set of length-``k`` schemas.
+        style: ``"python"`` or ``"symbolic"``.
+    """
+    k = len(input_names)
+    and_op, or_op, not_prefix = _style_ops(style)
+    on_cover = schemata.get(1, set()) if schemata else set()
+
+    if k == 0:
+        return "True" if on_cover else "False"
+
+    terms: List[str] = []
+    for schema in sorted(on_cover):
+        if len(schema) != k:
+            raise ValueError(
+                "schema length {0:d} does not match k={1:d}".format(
+                    len(schema), k
+                )
+            )
+        lits: List[str] = []
+        for name, bit in zip(input_names, schema):
+            if bit == "1":
+                lits.append(name)
+            elif bit == "0":
+                lits.append(not_prefix + name)
+            elif bit == "2":
+                continue
+            else:
+                raise ValueError(
+                    "invalid schema character {0!r} in {1!r}".format(
+                        bit, schema
+                    )
+                )
+        if not lits:
+            # All don't-cares: covers the full cube → constant True.
+            return "True"
+        if len(lits) == 1:
+            terms.append(lits[0])
+        else:
+            terms.append("(" + and_op.join(lits) + ")")
+
+    if not terms:
+        return _contradiction_expr(input_names, style)
+    return or_op.join(terms)
+
+
+def function_outputs_to_expression(
+    outputs: Any,
+    input_names: Sequence[str],
+    style: str = "python",
+    *,
+    node_label: Optional[str] = None,
+    warn: bool = True,
+) -> str:
+    """Named expression from ``FunctionOutputs`` via expression → schemata → LUT.
+
+    Never runs ``verify_*``; only reads
+    ``representations_consistent`` / ``one_symbol_is_prime_implicant``.
+    Soft-warns (never raises) for the chosen non-LUT source:
+    one-symbol when ``one_symbol_is_prime_implicant`` is not ``True``;
+    consistency only when ``representations_consistent is False``
+    (``None`` is silent — common after lazy LUT fill).
+
+    Args:
+        outputs: A :class:`~cana.function_outputs.FunctionOutputs` (duck-typed).
+        input_names: Regulator names in LUT / expression bit order.
+        style: ``"python"`` or ``"symbolic"``.
+        node_label: Optional node name for warning text.
+        warn: If False, suppress verification soft-warnings.
+    """
+    label = "Node {0!r}".format(node_label) if node_label is not None else "Node"
+
+    def _multi_slot() -> bool:
+        n = 0
+        if getattr(outputs, "expression", None) is not None:
+            n += 1
+        if getattr(outputs, "one_symbol_schemata", None) is not None:
+            n += 1
+        if getattr(outputs, "bit_lut", None) is not None:
+            n += 1
+        return n >= 2
+
+    def _warn_consistency(source: str) -> None:
+        # Only warn on known mismatch (False). ``None`` is normal when a LUT
+        # was lazily filled from the same expression and never verified.
+        if not warn or not _multi_slot():
+            return
+        flag = getattr(outputs, "representations_consistent", None)
+        if flag is not False:
+            return
+        warnings.warn(
+            "{0}: exporting from {1} "
+            "(representations_consistent={2!r})".format(label, source, flag),
+            UserWarning,
+            stacklevel=3,
+        )
+
+    def _warn_prime() -> None:
+        if not warn:
+            return
+        flag = getattr(outputs, "one_symbol_is_prime_implicant", None)
+        if flag is True:
+            return
+        warnings.warn(
+            "{0}: exporting from one_symbol_schemata "
+            "(one_symbol_is_prime_implicant={1!r})".format(label, flag),
+            UserWarning,
+            stacklevel=3,
+        )
+
+    expr = getattr(outputs, "expression", None)
+    if expr is not None:
+        _warn_consistency("expression")
+        named = from_positional(expr, input_names)
+        if style == "python":
+            return named
+        return normalize_operators(named, style)
+
+    schemata = getattr(outputs, "one_symbol_schemata", None)
+    if schemata is not None:
+        _warn_prime()
+        _warn_consistency("one_symbol_schemata")
+        return one_symbol_to_expression(input_names, schemata, style=style)
+
+    get_bit_lut = getattr(outputs, "get_bit_lut", None)
+    if get_bit_lut is not None:
+        lut = get_bit_lut()
+    else:
+        lut = getattr(outputs, "bit_lut", None)
+        if lut is None:
+            raise ValueError(
+                "Cannot build named expression: neither expression, "
+                "one_symbol_schemata, nor bit_lut is available on outputs"
+            )
+    return lut_to_expression(input_names, lut, style=style)

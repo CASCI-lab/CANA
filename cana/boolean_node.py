@@ -139,34 +139,28 @@ class BooleanNode(object):
             )
         return [self.network.nodes[j].name for j in self.inputs]
 
-    def expression(self, style="python"):
+    def expression(self, style="python", warn=True):
         """Return a named boolean expression for this node's update rule.
 
-        Rebinds positional FO IR (``x0``…) to :meth:`input_names`.  If FO has
-        no expression but has a dense LUT, builds a DNF via
-        :func:`~cana.function_outputs.expression.lut_to_expression`.
+        Uses :func:`~cana.function_outputs.expression.function_outputs_to_expression`:
+        stored expression, else one-symbol ON cover, else dense LUT DNF.
+        Soft-warns when verification flags are not ``True`` for the chosen
+        non-LUT source (never blocks).
 
         Args:
             style (str) : ``"python"`` or ``"symbolic"``.
+            warn (bool) : If False, suppress verification soft-warnings.
         """
         from cana.function_outputs.expression import (
-            from_positional,
-            lut_to_expression,
-            normalize_operators,
+            function_outputs_to_expression,
         )
 
-        names = self.input_names()
-        if self.outputs.expression is not None:
-            named = from_positional(self.outputs.expression, names)
-            if style == "python":
-                return named
-            return normalize_operators(named, style)
-        lut = self.outputs.bit_lut
-        if lut is not None:
-            return lut_to_expression(names, lut, style=style)
-        raise ValueError(
-            "Cannot build named expression: neither expression nor bit_lut "
-            "is available on outputs"
+        return function_outputs_to_expression(
+            self.outputs,
+            self.input_names(),
+            style=style,
+            node_label=self.name,
+            warn=warn,
         )
 
     def __str__(self):

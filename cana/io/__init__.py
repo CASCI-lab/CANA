@@ -139,29 +139,33 @@ def export_string(
     """Serialize ``network_dict`` to the requested format string.
 
     Extra ``kwargs`` are forwarded to format-specific exporters (e.g.
-    ``adjust_no_input`` for cnet).
+    ``adjust_no_input`` for cnet, ``warn`` for expression formats).
     """
     fmt = normalize_format(fmt)
     if fmt == "booleannet":
         from cana.io.booleannet import network_dict_to_booleannet
 
-        return network_dict_to_booleannet(network_dict)
+        return network_dict_to_booleannet(network_dict, **kwargs)
     if fmt == "bnet":
         from cana.io.bnet import network_dict_to_bnet
 
-        return network_dict_to_bnet(network_dict)
+        return network_dict_to_bnet(network_dict, **kwargs)
     if fmt == "aeon":
         from cana.io.aeon import network_dict_to_aeon
 
-        return network_dict_to_aeon(network_dict)
+        return network_dict_to_aeon(network_dict, **kwargs)
     if fmt == "sbml":
         from cana.io.sbml import network_dict_to_sbml
 
-        return network_dict_to_sbml(network_dict)
+        return network_dict_to_sbml(network_dict, **kwargs)
     if fmt == "cnet":
         from cana.io.cnet import network_dict_to_cnet
 
-        return network_dict_to_cnet(network_dict, **kwargs)
+        # ``warn`` applies to expression formats only.
+        cnet_kwargs = {
+            k: v for k, v in kwargs.items() if k != "warn"
+        }
+        return network_dict_to_cnet(network_dict, **cnet_kwargs)
     raise ValueError("export_string does not handle format {0!r}".format(fmt))
 
 

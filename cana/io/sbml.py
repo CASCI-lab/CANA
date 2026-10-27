@@ -6,7 +6,10 @@ import re
 import xml.etree.ElementTree as ET
 from typing import Any, Dict, List, Mapping, Optional, Sequence
 
-from cana.function_outputs.expression import lut_to_expression
+from cana.function_outputs.expression import (
+    function_outputs_to_expression,
+    lut_to_expression,
+)
 from cana.network_dict import (
     NetworkDict,
     expressions_to_network_dict,
@@ -316,8 +319,17 @@ def parse_sbml(text: str) -> NetworkDict:
     return expressions_to_network_dict(expressions, species)
 
 
-def network_dict_to_sbml(network_dict: Mapping[int, Mapping[str, Any]]) -> str:
-    """Export ``NetworkDict`` to SBML Level 3 qualitative XML."""
+def network_dict_to_sbml(
+    network_dict: Mapping[int, Mapping[str, Any]],
+    *,
+    warn: bool = True,
+) -> str:
+    """Export ``NetworkDict`` to SBML Level 3 qualitative XML.
+
+    Prefers stored expression, then one-symbol schemata, then LUT DNF for
+    MathML update functions. Soft-warns when verification flags are not
+    ``True`` (never blocks).
+    """
     SBML = "http://www.sbml.org/sbml/level3/version1/core"
     QUAL = "http://www.sbml.org/sbml/level3/version1/qual/version1"
     MATH = "http://www.w3.org/1998/Math/MathML"
@@ -391,9 +403,14 @@ def network_dict_to_sbml(network_dict: Mapping[int, Mapping[str, Any]]) -> str:
         )
         math = ET.SubElement(ft, "{%s}math" % MATH)
         math.set("xmlns", MATH)
-        math.append(
-            lut_to_mathml(inputs, network_dict[i]["outputs"].get_bit_lut())
+        expr = function_outputs_to_expression(
+            network_dict[i]["outputs"],
+            inputs,
+            style="python",
+            node_label=name,
+            warn=warn,
         )
+        math.append(python_expr_to_mathml(expr))
 
     rough = ET.tostring(sbml, encoding="unicode")
     if "xmlns:qual=" not in rough:

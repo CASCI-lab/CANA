@@ -5,9 +5,15 @@ from cana.boolean_network import BooleanNetwork
 from cana.boolean_node import BooleanNode
 from cana.function_outputs import BooleanEval, FunctionOutputs
 from cana.function_outputs import one_symbol as one_symbol_mod
+import warnings
+
+import pytest
+
 from cana.function_outputs.expression import (
     bit_lut_from_expression,
     from_positional,
+    function_outputs_to_expression,
+    one_symbol_to_expression,
     to_positional,
 )
 from cana.function_outputs.one_symbol import bit_lut_from_schemata, reorder as reorder_one_symbol
@@ -46,6 +52,125 @@ def test_positional_to_from_roundtrip():
     positional = to_positional(named, names)
     assert positional == "(x0 and not x1) or x2"
     assert from_positional(positional, names) == named
+
+
+def test_one_symbol_to_expression_concise():
+    # Cover {1: {"12"}} with inputs A,B → A (not two minterms).
+    expr = one_symbol_to_expression(["A", "B"], {1: {"12"}}, style="python")
+    assert expr == "A"
+    # Sorted schemas: "01" then "10"
+    assert one_symbol_to_expression(
+        ["A", "B"], {1: {"01", "10"}}, style="python"
+    ) == "(not A and B) or (A and not B)"
+    assert one_symbol_to_expression(
+        ["A", "B"], {1: {"01", "10"}}, style="symbolic"
+    ) == "(!A & B) | (A & !B)"
+    assert one_symbol_to_expression(["A", "B"], {1: set()}, style="python") == (
+        "(A and not A)"
+    )
+    assert one_symbol_to_expression(["A", "B"], {1: {"22"}}, style="python") == (
+        "True"
+    )
+
+
+def test_function_outputs_to_expression_ladder():
+    names = ["A", "B"]
+    # Expression wins over schemata / LUT.
+    fo = FunctionOutputs(
+        bit_lut=BitLut.from_sequence([0, 0, 0, 1]),
+        one_symbol_schemata={1: {"11"}},
+        expression="x0 or x1",
+        k=2,
+    )
+    fo.representations_consistent = True
+    fo.one_symbol_is_prime_implicant = True
+    assert (
+        function_outputs_to_expression(fo, names, warn=False) == "A or B"
+    )
+
+    # Schemata wins over LUT when no expression.
+    fo2 = FunctionOutputs(
+        bit_lut=BitLut.from_sequence([0, 1, 1, 1]),  # OR LUT
+        one_symbol_schemata={1: {"12"}},  # would say A
+        k=2,
+    )
+    fo2.one_symbol_is_prime_implicant = True
+    fo2.representations_consistent = True
+    assert function_outputs_to_expression(fo2, names, warn=False) == "A"
+
+    # LUT fallback.
+    fo3 = FunctionOutputs.from_sequence([0, 0, 0, 1])
+    assert (
+        function_outputs_to_expression(fo3, names, warn=False)
+        == "(A and B)"
+    )
+
+
+def test_function_outputs_to_expression_warnings():
+    names = ["A", "B"]
+    schemata_only = FunctionOutputs(
+        one_symbol_schemata={1: {"12"}}, k=2
+    )
+    assert schemata_only.one_symbol_is_prime_implicant is None
+    with pytest.warns(UserWarning, match="one_symbol_schemata"):
+        assert (
+            function_outputs_to_expression(
+                schemata_only, names, node_label="X"
+            )
+            == "A"
+        )
+    with warnings.catch_warnings(record=True) as caught:
+        warnings.simplefilter("always")
+        function_outputs_to_expression(schemata_only, names, warn=False)
+        assert caught == []
+
+    # Expression-only: no consistency warn (single slot).
+    expr_only = FunctionOutputs(expression="x0 and x1", k=2)
+    with warnings.catch_warnings(record=True) as caught:
+        warnings.simplefilter("always")
+        function_outputs_to_expression(
+            expr_only, names, node_label="B", warn=True
+        )
+        assert caught == []
+
+    # Multi-slot expression with known mismatch → warn.
+    multi = FunctionOutputs(
+        bit_lut=BitLut.from_sequence([0, 0, 0, 1]),
+        expression="x0 and x1",
+        k=2,
+    )
+    multi.representations_consistent = False
+    with pytest.warns(UserWarning, match="representations_consistent"):
+        function_outputs_to_expression(multi, names, node_label="B")
+    # Unchecked (None) multi-slot does not warn on expression path.
+    multi.representations_consistent = None
+    with warnings.catch_warnings(record=True) as caught:
+        warnings.simplefilter("always")
+        function_outputs_to_expression(multi, names, node_label="B")
+        assert caught == []
+
+
+def test_boolean_node_expression_from_schemata():
+    n = BooleanNode(
+        id=0,
+        name="AND",
+        k=2,
+        inputs=[1, 2],
+        outputs=FunctionOutputs(one_symbol_schemata={1: {"11"}}, k=2),
+    )
+    # Attach a tiny network so input_names() works.
+    class _Net(object):
+        nodes = [
+            n,
+            BooleanNode(id=1, name="A", k=0, inputs=[], outputs=[0]),
+            BooleanNode(id=2, name="B", k=0, inputs=[], outputs=[0]),
+        ]
+
+    n.network = _Net()
+    with pytest.warns(UserWarning, match="one_symbol"):
+        assert n.expression() == "(A and B)"
+    assert n.expression(warn=False) == "(A and B)"
+    assert n.expression(style="symbolic", warn=False) == "(A & B)"
 
 
 def test_bit_lut_from_expression_and_get_bit_lut():
