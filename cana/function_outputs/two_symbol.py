@@ -15,6 +15,7 @@ from cana.function_outputs.expression import _contradiction_expr, _style_ops
 from cana.function_outputs.one_symbol import OneSymbolSchemata
 
 __all__ = [
+    "reorder",
     "one_symbol_from_two_symbol",
     "two_symbol_to_expression",
 ]
@@ -27,6 +28,65 @@ def _as_schema_str(schema) -> str:
     if isinstance(schema, str):
         return schema
     return "".join(map(str, schema))
+
+
+def _infer_k(ts: TwoSymbolSchemata) -> Optional[int]:
+    for polarity_list in ts:
+        for entry in polarity_list or ():
+            return len(_as_schema_str(entry[0]))
+    return None
+
+
+def _remap_groups(groups, old_to_new: dict) -> list:
+    return [sorted(old_to_new[i] for i in group) for group in (groups or ())]
+
+
+def reorder(
+    ts: TwoSymbolSchemata,
+    old_labels: Sequence[object],
+    new_labels: Sequence[object],
+) -> TwoSymbolSchemata:
+    """Return a copy with schema positions and group indices remapped.
+
+    Labels identify the ``k`` input variables in MSB-first bit order (same
+    convention as :func:`~cana.function_outputs.one_symbol.reorder`).
+    ``new_labels`` must be a permutation of ``old_labels``.  Remaps schema
+    characters and both ``perm_groups`` and ``same_groups`` indices; each
+    remapped group is sorted ascending to match construction.  If the orders
+    already match, returns ``ts`` unchanged.
+    """
+    if list(old_labels) == list(new_labels):
+        return ts
+    k = len(old_labels)
+    if k != len(new_labels) or set(old_labels) != set(new_labels):
+        raise ValueError("old_labels and new_labels must be permutations")
+    inferred = _infer_k(ts)
+    if inferred is not None and inferred != k:
+        raise ValueError(
+            "old_labels length {0:d} does not match schema length {1:d}".format(
+                k, inferred
+            )
+        )
+    name_to_old = {n: i for i, n in enumerate(old_labels)}
+    old_to_new = {name_to_old[n]: j for j, n in enumerate(new_labels)}
+
+    remapped_polarities = []
+    for polarity_list in ts:
+        remapped_entries = []
+        for entry in polarity_list or ():
+            schema = _as_schema_str(entry[0])
+            new_schema = "".join(schema[name_to_old[name]] for name in new_labels)
+            perm_groups = entry[1] if len(entry) > 1 else []
+            same_groups = entry[2] if len(entry) > 2 else []
+            remapped_entries.append(
+                [
+                    new_schema,
+                    _remap_groups(perm_groups, old_to_new),
+                    _remap_groups(same_groups, old_to_new),
+                ]
+            )
+        remapped_polarities.append(remapped_entries)
+    return (remapped_polarities[0], remapped_polarities[1])
 
 
 def _expand_entry(schema_str: str, perm_groups: Optional[Iterable]) -> Set[str]:

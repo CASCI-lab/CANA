@@ -31,6 +31,7 @@ from cana.function_outputs.one_symbol import (
 )
 from cana.function_outputs.two_symbol import (
     one_symbol_from_two_symbol,
+    reorder as reorder_two_symbol,
     two_symbol_to_expression,
 )
 
@@ -365,9 +366,8 @@ class FunctionOutputs(object):
     ) -> "FunctionOutputs":
         """Return a copy with input order remapped across filled peer reps.
 
-        Remaps ``bit_lut``, ``one_symbol_schemata``, and positional
-        ``expression`` when present (no QM).  Clears ``two_symbol_schemata``
-        when the order changes (no remapper yet).  Preserves
+        Remaps ``bit_lut``, ``one_symbol_schemata``, ``two_symbol_schemata``,
+        and positional ``expression`` when present (no QM).  Preserves
         ``one_symbol_is_prime_implicant``.  If orders already match, returns
         ``self`` unchanged.
         """
@@ -384,6 +384,12 @@ class FunctionOutputs(object):
                 self.one_symbol_schemata, old_labels, new_labels
             )
 
+        new_two_symbol = None
+        if self.two_symbol_schemata is not None:
+            new_two_symbol = reorder_two_symbol(
+                self.two_symbol_schemata, old_labels, new_labels
+            )
+
         new_expression = None
         if self.expression is not None:
             try:
@@ -393,11 +399,10 @@ class FunctionOutputs(object):
             except (ValueError, KeyError):
                 new_expression = None
 
-        # No two-symbol remapper yet; drop stale index-based groups.
         out = FunctionOutputs(
             bit_lut=new_bit_lut,
             one_symbol_schemata=new_one_symbol,
-            two_symbol_schemata=None,
+            two_symbol_schemata=new_two_symbol,
             expression=new_expression,
             k=self.k,
         )

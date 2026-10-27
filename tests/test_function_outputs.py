@@ -20,6 +20,7 @@ from cana.function_outputs.expression import (
 from cana.function_outputs.one_symbol import bit_lut_from_schemata, reorder as reorder_one_symbol
 from cana.function_outputs.two_symbol import (
     one_symbol_from_two_symbol,
+    reorder as reorder_two_symbol,
     two_symbol_to_expression,
 )
 
@@ -437,9 +438,9 @@ def test_one_symbol_reorder_swaps_and_implies():
 def test_function_outputs_reorder_both_peers():
     fo = FunctionOutputs.from_sequence([1, 1, 0, 1])  # A->B
     fo.get_one_symbol_schemata()
+    fo.get_two_symbol_schemata()
     assert fo.one_symbol_is_prime_implicant is True
     fo.representations_consistent = True
-    fo.two_symbol_schemata = ([], [])  # stub; should be cleared
 
     out = fo.reorder(["A", "B"], ["B", "A"])
     assert out is not fo
@@ -448,7 +449,9 @@ def test_function_outputs_reorder_both_peers():
     assert list(bit_lut_from_schemata(out.one_symbol_schemata, 2)) == [1, 0, 1, 1]
     assert out.one_symbol_is_prime_implicant is True
     assert out.representations_consistent is True
-    assert out.two_symbol_schemata is None
+    assert out.two_symbol_schemata is not None
+    expanded = one_symbol_from_two_symbol(out.two_symbol_schemata)
+    assert list(bit_lut_from_schemata(expanded, 2)) == [1, 0, 1, 1]
     assert out.verify_representations_consistent() is True
 
 
@@ -467,6 +470,37 @@ def test_one_symbol_module_public_api():
 def test_two_symbol_module_public_api():
     assert callable(two_symbol_mod.one_symbol_from_two_symbol)
     assert callable(two_symbol_mod.two_symbol_to_expression)
+    assert callable(two_symbol_mod.reorder)
+
+
+def test_two_symbol_reorder_identity_returns_same():
+    ts = ([["00", [], [[0, 1]]]], [["12", [[0, 1]], []]])
+    assert reorder_two_symbol(ts, ["A", "B"], ["A", "B"]) is ts
+
+
+def test_two_symbol_reorder_swaps_or_and_same_groups():
+    # OR ON entry: schema chars swap; groups stay ascending after remap.
+    or_ts = ([["00", [], [[0, 1]]]], [["12", [[0, 1]], []]])
+    swapped_or = reorder_two_symbol(or_ts, ["A", "B"], ["B", "A"])
+    assert swapped_or == ([["00", [], [[0, 1]]]], [["21", [[0, 1]], []]])
+    assert one_symbol_from_two_symbol(swapped_or)[1] == {"12", "21"}
+    assert list(bit_lut_from_schemata(one_symbol_from_two_symbol(swapped_or), 2)) == [
+        0,
+        1,
+        1,
+        1,
+    ]
+
+    # AND: OFF has perm_groups; ON has same_groups — both remapped/sorted.
+    and_ts = ([["02", [[0, 1]], []]], [["11", [], [[0, 1]]]])
+    swapped_and = reorder_two_symbol(and_ts, ["A", "B"], ["B", "A"])
+    assert swapped_and == ([["20", [[0, 1]], []]], [["11", [], [[0, 1]]]])
+    assert list(bit_lut_from_schemata(one_symbol_from_two_symbol(swapped_and), 2)) == [
+        0,
+        0,
+        0,
+        1,
+    ]
 
 
 @pytest.mark.parametrize(
