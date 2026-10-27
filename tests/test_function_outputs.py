@@ -97,11 +97,62 @@ def test_eval_from_one_symbol_only():
     assert list(fo.bit_lut) == [0, 0, 0, 1]
 
 
-def test_one_symbol_schemata_match_bit_lut():
+def test_compute_one_symbol_sets_prime_tag():
+    fo = FunctionOutputs.from_sequence([0, 0, 0, 1])  # AND
+    assert fo.one_symbol_is_prime_implicant is None
+    fo.get_one_symbol_schemata()
+    assert fo.one_symbol_is_prime_implicant is True
+
+
+def test_verify_one_symbol_schemata_from_qm():
     fo = FunctionOutputs.from_sequence([0, 1, 1, 0])  # XOR
-    assert fo.one_symbol_schemata is None
-    assert fo.one_symbol_schemata_match_bit_lut() is True
-    assert fo.one_symbol_schemata is not None
+    schemata = fo.get_one_symbol_schemata()
+    assert fo.one_symbol_is_prime_implicant is True
+    assert fo.verify_one_symbol_schemata() is True
+    assert fo.one_symbol_is_prime_implicant is True
+    # Schemata-only copy of the same PI cover.
+    only = FunctionOutputs(one_symbol_schemata=schemata, k=2)
+    assert only.bit_lut is None
+    assert only.verify_one_symbol_schemata() is True
+    assert only.one_symbol_is_prime_implicant is True
+
+
+def test_verify_one_symbol_incomplete_and_conflict():
+    incomplete = FunctionOutputs(
+        one_symbol_schemata={1: {"11"}}, k=2
+    )
+    assert incomplete.verify_one_symbol_schemata() is False
+    assert incomplete.one_symbol_is_prime_implicant is False
+
+    conflict = FunctionOutputs(
+        one_symbol_schemata={0: {"11"}, 1: {"11"}}, k=2
+    )
+    assert conflict.verify_one_symbol_schemata() is False
+    assert conflict.one_symbol_is_prime_implicant is False
+
+
+def test_verify_one_symbol_non_prime_complete_cover():
+    # Complete AND cover as minterms (not the QM prime-implicant set).
+    schemata = {0: {"00", "01", "10"}, 1: {"11"}}
+    fo = FunctionOutputs(one_symbol_schemata=schemata, k=2)
+    assert fo.verify_one_symbol_schemata() is False
+    assert fo.one_symbol_is_prime_implicant is False
+
+
+def test_verify_representations_consistent():
+    fo = FunctionOutputs.from_sequence([0, 0, 0, 1])
+    assert fo.representations_consistent is None
+    assert fo.verify_representations_consistent() is True  # vacuous: only bit_lut
+    assert fo.representations_consistent is True
+
+    fo.get_one_symbol_schemata()
+    assert fo.verify_representations_consistent() is True
+    assert fo.representations_consistent is True
+
+    mismatched = FunctionOutputs.from_sequence([0, 0, 0, 1])
+    mismatched.one_symbol_schemata = {0: {"00"}, 1: {"01", "10", "11"}}  # OR
+    assert mismatched.verify_representations_consistent() is False
+    assert mismatched.representations_consistent is False
 
 
 def test_node_stores_one_symbol_on_outputs():

@@ -55,6 +55,12 @@ class FunctionOutputs(object):
         ``[schema_str, perm_groups, same_groups]`` entries.
     expression :
         Reserved for a source expression string or AST.
+    one_symbol_is_prime_implicant :
+        ``None`` until known; ``True``/``False`` after QM compute or
+        :meth:`verify_one_symbol_schemata`.
+    representations_consistent :
+        ``None`` until known; ``True``/``False`` after
+        :meth:`verify_representations_consistent`.
     """
 
     __slots__ = (
@@ -62,6 +68,8 @@ class FunctionOutputs(object):
         "one_symbol_schemata",
         "two_symbol_schemata",
         "expression",
+        "one_symbol_is_prime_implicant",
+        "representations_consistent",
         "_k",
     )
 
@@ -77,6 +85,8 @@ class FunctionOutputs(object):
         self.one_symbol_schemata = one_symbol_schemata
         self.two_symbol_schemata = two_symbol_schemata
         self.expression = expression
+        self.one_symbol_is_prime_implicant = None  # type: Optional[bool]
+        self.representations_consistent = None  # type: Optional[bool]
         if bit_lut is not None:
             self._k = bit_lut.k
         elif k is not None:
@@ -174,19 +184,10 @@ class FunctionOutputs(object):
             raise ValueError(
                 "compute_one_symbol_schemata_from_bit_lut requires bit_lut"
             )
-        import cana.canalization.cboolean_canalization as cBCanalization
-
-        k = self.bit_lut.k
-        schemata = {}  # type: OneSymbolSchemata
-        for output in sorted(set(self.bit_lut)):
-            output_binstates = outputs_to_binstates_of_given_type(
-                self.bit_lut, output=output, k=k
-            )
-            schemata[output] = cBCanalization.find_implicants_qm(
-                input_binstates=output_binstates
-            )
+        schemata = self._one_symbol_schemata_from_bit_lut(self.bit_lut)
         self.one_symbol_schemata = schemata
-        self._k = k
+        self.one_symbol_is_prime_implicant = True
+        self._k = self.bit_lut.k
         return self.one_symbol_schemata
 
     @staticmethod
@@ -239,18 +240,77 @@ class FunctionOutputs(object):
         self._k = self.bit_lut.k
         return self.bit_lut
 
-    def one_symbol_schemata_match_bit_lut(self) -> bool:
-        """Return whether one-symbol schemata agree with ``bit_lut`` (opt-in).
+    @staticmethod
+    def _one_symbol_schemata_from_bit_lut(bit_lut: BitLut) -> OneSymbolSchemata:
+        """Run Quine-McCluskey on ``bit_lut`` without mutating a container."""
+        import cana.canalization.cboolean_canalization as cBCanalization
 
-        Lazily obtains either side via :meth:`get_one_symbol_schemata` /
-        :meth:`get_bit_lut` if missing, then rebuilds a fresh LUT from the
-        schemata and compares it to the stored dense LUT.  Never called by
+        k = bit_lut.k
+        schemata = {}  # type: OneSymbolSchemata
+        for output in sorted(set(bit_lut)):
+            output_binstates = outputs_to_binstates_of_given_type(
+                bit_lut, output=output, k=k
+            )
+            schemata[output] = cBCanalization.find_implicants_qm(
+                input_binstates=output_binstates
+            )
+        return schemata
+
+    def verify_one_symbol_schemata(self) -> bool:
+        """Opt-in: stored one-symbol schemata are complete, consistent, and PIs.
+
+        Builds a LUT from the stored schemata (fails on conflict/incompleteness),
+        re-runs Quine-McCluskey, and checks set equality with the stored cover.
+        Sets :attr:`one_symbol_is_prime_implicant`.  Never called by normal
+        canalization paths.
+        """
+        if self.one_symbol_schemata is None:
+            raise ValueError(
+                "verify_one_symbol_schemata requires one_symbol_schemata"
+            )
+        schemata = self.one_symbol_schemata
+        try:
+            lut = self.bit_lut_from_one_symbol_schemata(schemata, self.k)
+        except ValueError:
+            self.one_symbol_is_prime_implicant = False
+            return False
+        recomputed = self._one_symbol_schemata_from_bit_lut(lut)
+        ok = (
+            set(schemata.get(0, ())) == set(recomputed.get(0, ()))
+            and set(schemata.get(1, ())) == set(recomputed.get(1, ()))
+        )
+        self.one_symbol_is_prime_implicant = ok
+        return ok
+
+    def verify_representations_consistent(self) -> bool:
+        """Opt-in: all convertible representations describe the same function.
+
+        Derives a LUT from each populated slot that can produce one (stored
+        ``bit_lut``, and ``one_symbol_schemata`` for now) and checks they
+        agree.  Sets :attr:`representations_consistent`.  Never called by
         normal canalization paths.
         """
-        schemata = self.get_one_symbol_schemata()
-        lut = self.get_bit_lut()
-        rebuilt = self.bit_lut_from_one_symbol_schemata(schemata, lut.k)
-        return rebuilt == lut
+        candidates = []  # type: List[BitLut]
+        if self.bit_lut is not None:
+            candidates.append(self.bit_lut)
+        if self.one_symbol_schemata is not None:
+            try:
+                candidates.append(
+                    self.bit_lut_from_one_symbol_schemata(
+                        self.one_symbol_schemata, self.k
+                    )
+                )
+            except ValueError:
+                self.representations_consistent = False
+                return False
+        # two_symbol_schemata / expression: no LUT builder yet.
+        if len(candidates) < 2:
+            self.representations_consistent = True
+            return True
+        first = candidates[0]
+        ok = all(c == first for c in candidates[1:])
+        self.representations_consistent = ok
+        return ok
 
     def __len__(self) -> int:
         return len(self._require_bit_lut())
@@ -290,6 +350,18 @@ class FunctionOutputs(object):
             parts.append("two_symbol_schemata=...")
         if self.expression is not None:
             parts.append("expression={0!r}".format(self.expression))
+        if self.one_symbol_is_prime_implicant is not None:
+            parts.append(
+                "one_symbol_is_prime_implicant={0!r}".format(
+                    self.one_symbol_is_prime_implicant
+                )
+            )
+        if self.representations_consistent is not None:
+            parts.append(
+                "representations_consistent={0!r}".format(
+                    self.representations_consistent
+                )
+            )
         return "FunctionOutputs({0})".format(", ".join(parts) or "k={0}".format(self._k))
 
     def to_list(self) -> List[int]:
