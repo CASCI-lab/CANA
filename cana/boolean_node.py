@@ -39,6 +39,8 @@ from cana.utils import input_monotone, ncr
 class BooleanNode(object):
     """ """
 
+    # --- Construction ---
+
     def __init__(
         self,
         id=0,
@@ -94,96 +96,6 @@ class BooleanNode(object):
         # Canalization Variables (PI / TS live on outputs.*; coverage stays here)
         self._pi_coverage = None  # The Coverage of inputs by Prime Implicants schemata
         self._ts_coverage = None  # The Coverage of inputs by Two Symbol schemata
-
-    def fill_function_outputs(self, representation):
-        """Fill a missing ``FunctionOutputs`` representation slot from another.
-
-        Args:
-            representation (str) : ``"bit_lut"`` or ``"one_symbol_schemata"``.
-
-        Returns:
-            (FunctionOutputs) : This node's ``outputs`` (mutated in place).
-        """
-        if representation == "bit_lut":
-            self.outputs.get_bit_lut()
-        elif representation == "one_symbol_schemata":
-            self.outputs.get_one_symbol_schemata()
-        else:
-            raise ValueError(
-                "Unknown representation {0!r}; expected 'bit_lut' or "
-                "'one_symbol_schemata'".format(representation)
-            )
-        return self.outputs
-
-    def input_names(self):
-        """Return regulator names in LUT / expression bit order.
-
-        Requires this node to be attached to a :class:`BooleanNetwork`.
-        """
-        if self.network is None:
-            raise ValueError(
-                "input_names requires a BooleanNode attached to a network"
-            )
-        return [self.network.nodes[j].name for j in self.inputs]
-
-    def expression(self, style="python", warn=True):
-        """Return a named boolean expression for this node's update rule.
-
-        Uses :func:`~cana.function_outputs.expression.function_outputs_to_expression`:
-        stored expression, else two-symbol, else one-symbol ON cover, else
-        dense LUT DNF. Soft-warns when verification flags are not ``True``
-        for the chosen non-LUT source (never blocks).
-
-        Args:
-            style (str) : ``"python"`` or ``"symbolic"``.
-            warn (bool) : If False, suppress verification soft-warnings.
-        """
-        from cana.function_outputs.expression import (
-            function_outputs_to_expression,
-        )
-
-        return function_outputs_to_expression(
-            self.outputs,
-            self.input_names(),
-            style=style,
-            node_label=self.name,
-            warn=warn,
-        )
-
-    def __str__(self):
-        if self.outputs.bit_lut is not None:
-            if len(self.outputs) > 10:
-                outputs = (
-                    "["
-                    + ",".join(map(str, self.outputs[:4]))
-                    + "..."
-                    + ",".join(map(str, self.outputs[-4:]))
-                    + "]"
-                )
-            else:
-                outputs = "[" + ",".join(map(str, self.outputs)) + "]"
-        elif self.outputs.expression is not None:
-            if self.network is not None:
-                try:
-                    outputs = "expression={0!r}".format(self.expression())
-                except ValueError:
-                    outputs = "expression={0!r}".format(self.outputs.expression)
-            else:
-                outputs = "expression={0!r}".format(self.outputs.expression)
-        elif self.outputs.one_symbol_schemata is not None:
-            outputs = "one_symbol_schemata"
-        else:
-            outputs = "k={0}".format(self.outputs.k)
-        inputs = "[" + ",".join(map(str, self.inputs)) + "]"
-        return "<BNode(id={id}, name='{name}', k={k}, inputs={inputs:s}, state='{state}', outputs={outputs} constant={constant})>".format(
-            id=self.id,
-            name=self.name,
-            k=self.k,
-            inputs=inputs,
-            state=self.state,
-            outputs=outputs,
-            constant=self.constant,
-        )
 
     @staticmethod
     def _factory_common_kwargs(k, kwargs):
@@ -347,6 +259,100 @@ class BooleanNode(object):
             **kwargs
         )
 
+    # --- Representation ---
+
+    def __str__(self):
+        if self.outputs.bit_lut is not None:
+            if len(self.outputs) > 10:
+                outputs = (
+                    "["
+                    + ",".join(map(str, self.outputs[:4]))
+                    + "..."
+                    + ",".join(map(str, self.outputs[-4:]))
+                    + "]"
+                )
+            else:
+                outputs = "[" + ",".join(map(str, self.outputs)) + "]"
+        elif self.outputs.expression is not None:
+            if self.network is not None:
+                try:
+                    outputs = "expression={0!r}".format(self.expression())
+                except ValueError:
+                    outputs = "expression={0!r}".format(self.outputs.expression)
+            else:
+                outputs = "expression={0!r}".format(self.outputs.expression)
+        elif self.outputs.one_symbol_schemata is not None:
+            outputs = "one_symbol_schemata"
+        else:
+            outputs = "k={0}".format(self.outputs.k)
+        inputs = "[" + ",".join(map(str, self.inputs)) + "]"
+        return "<BNode(id={id}, name='{name}', k={k}, inputs={inputs:s}, state='{state}', outputs={outputs} constant={constant})>".format(
+            id=self.id,
+            name=self.name,
+            k=self.k,
+            inputs=inputs,
+            state=self.state,
+            outputs=outputs,
+            constant=self.constant,
+        )
+
+    def input_names(self):
+        """Return regulator names in LUT / expression bit order.
+
+        Requires this node to be attached to a :class:`BooleanNetwork`.
+        """
+        if self.network is None:
+            raise ValueError(
+                "input_names requires a BooleanNode attached to a network"
+            )
+        return [self.network.nodes[j].name for j in self.inputs]
+
+    def expression(self, style="python", warn=True):
+        """Return a named boolean expression for this node's update rule.
+
+        Uses :func:`~cana.function_outputs.expression.function_outputs_to_expression`:
+        stored expression, else two-symbol, else one-symbol ON cover, else
+        dense LUT DNF. Soft-warns when verification flags are not ``True``
+        for the chosen non-LUT source (never blocks).
+
+        Args:
+            style (str) : ``"python"`` or ``"symbolic"``.
+            warn (bool) : If False, suppress verification soft-warnings.
+        """
+        from cana.function_outputs.expression import (
+            function_outputs_to_expression,
+        )
+
+        return function_outputs_to_expression(
+            self.outputs,
+            self.input_names(),
+            style=style,
+            node_label=self.name,
+            warn=warn,
+        )
+
+    def fill_function_outputs(self, representation):
+        """Fill a missing ``FunctionOutputs`` representation slot from another.
+
+        Args:
+            representation (str) : ``"bit_lut"`` or ``"one_symbol_schemata"``.
+
+        Returns:
+            (FunctionOutputs) : This node's ``outputs`` (mutated in place).
+        """
+        if representation == "bit_lut":
+            self.outputs.get_bit_lut()
+        elif representation == "one_symbol_schemata":
+            self.outputs.get_one_symbol_schemata()
+        else:
+            raise ValueError(
+                "Unknown representation {0!r}; expected 'bit_lut' or "
+                "'one_symbol_schemata'".format(representation)
+            )
+        return self.outputs
+
+    # --- Dynamics ---
+
     def set_constant(self, constant=True, state=None):
         """Sets whether the node is to be treated as a contant
 
@@ -379,6 +385,282 @@ class BooleanNode(object):
         """
         self.state = str(self.outputs[binstate_to_statenum(input_state)])
         return self.state
+
+    def input_mask(self, binstate):
+        """Returns the mask applied to the binary state binstate
+
+        Args:
+            binstate (str) : the binary state
+
+        Returns:
+            output (str) : the masked state
+        """
+        return "".join(compress(binstate, self.mask))
+
+    # --- Look-up tables ---
+
+    def look_up_table(self):
+        """Returns the Look Up Table (LUT)
+
+        Returns:
+            (pandas.DataFrame): the LUT
+
+        Examples:
+            >>> AND = BooleanNode.from_bit_lut([0,0,0,1])
+            >>> AND.look_up_table()
+
+        See also:
+            :func:`schemata_look_up_table`
+
+        """
+        d = []
+        if (self.k < 2) and (self.constant is False):
+            k = 2
+        else:
+            k = self.k
+
+        for statenum, output in zip(range(2**k), self.outputs):
+            # Binary State, Transition
+            d.append((statenum_to_binstate(statenum, base=self.k), output))
+
+        df = pd.DataFrame(d, columns=["In:", "Out:"])
+
+        return df
+
+    def schemata_look_up_table(
+        self,
+        type="pi",
+        pi_symbol="#",
+        ts_symbol_list=["\u030A", "\u032F", "\u0303", "\u0330", "\u0306", "\u032E"],
+    ):
+        """Returns the simplified schemata Look Up Table (LUT)
+
+        Args:
+            type (string) : The type of schemata to return, either Prime Implicants ``pi`` or Two-Symbol ``ts``. Defaults to 'pi'.
+            pi_symbol (str) : The Prime Implicant don't care symbol. Default is ``#``.
+            ts_symbol_list (list) : A list containing Two Symbol permutable symbols, one per permutation group of a schema (combining marks: ring above, inverted breve below, tilde, tilde below, breve, breve below). A ``ValueError`` is raised if a schema has more groups than symbols.
+
+        Returns:
+            (pandas.DataFrame or Latex): the schemata LUT
+
+        Examples:
+            >>> AND = BooleanNode.from_bit_lut([0,0,0,1])
+            >>> AND.schemata_look_up_table(type='pi')
+
+        Note:
+            See the full list of `combining characters <https://en.wikipedia.org/wiki/Combining_character>`_ to use other symbols as the permutation symbol.
+
+        See also:
+            :func:`look_up_table`
+        """
+        r = []
+        # Prime Implicant LUT
+        if type == "pi":
+            self._check_compute_canalization_variables(prime_implicants=True)
+
+            pi0s = self._prime_implicants.get(0, [])
+            pi1s = self._prime_implicants.get(1, [])
+
+            for output, pi in zip([0, 1], [pi0s, pi1s]):
+                # Sort on display form so row order matches the visible don't-care symbol.
+                for schemata in sorted(s.replace("2", pi_symbol) for s in pi):
+                    r.append((schemata, output))
+
+        # Two Symbol LUT
+        elif type == "ts":
+            self._check_compute_canalization_variables(two_symbols=True)
+
+            ts0s, ts1s = self._two_symbols
+
+            for output, ts in zip([0, 1], [ts0s, ts1s]):
+                for i, (schemata, permutables, samesymbols) in enumerate(ts):
+                    if max(len(permutables), len(samesymbols)) > len(ts_symbol_list):
+                        raise ValueError(
+                            "Schema %s has %d permutation groups but ts_symbol_list has only %d symbols; pass a longer ts_symbol_list."
+                            % (schemata, max(len(permutables), len(samesymbols)), len(ts_symbol_list))
+                        )
+                    string = ""
+                    if len(permutables):
+                        string += "("
+                        # Permutable
+                        for j, permutable in enumerate(permutables):
+                            #
+                            ts_symbol_unicode = ts_symbol_list[j]
+                            if j > 0:
+                                string += " | "
+                            string += "".join(
+                                [
+                                    x
+                                    if (k not in permutable)
+                                    else "%s%s" % (x, ts_symbol_unicode)
+                                    for k, x in enumerate(schemata, start=0)
+                                ]
+                            )
+                        string += ")"
+
+                    else:
+                        string += "(" + schemata + ")"
+
+                    if len(samesymbols):
+                        string += " | ("
+                        # Same Symbol
+                        for j, samesymbol in enumerate(samesymbols):
+                            ts_symbol_unicode = ts_symbol_list[j]
+                            if j > 0:
+                                string += " | "
+                            string += "".join(
+                                [
+                                    x
+                                    if (k not in samesymbol)
+                                    else "%s%s" % (x, ts_symbol_unicode)
+                                    for k, x in enumerate(schemata, start=0)
+                                ]
+                            )
+                        string += ")"
+                    r.append((string, output))
+        else:
+            raise AttributeError(
+                'The schemata type could not be found. Try "PI" (Prime Implicants) or "TS" (Two-Symbol).'
+            )
+
+        r = [(schemata.replace("2", pi_symbol), output) for schemata, output in r]
+        return pd.DataFrame(r, columns=["Input", "Output"])
+
+    # --- Canalization (internals) ---
+
+    @property
+    def _prime_implicants(self):
+        """Proxy to :attr:`outputs.one_symbol_schemata` (one source of truth)."""
+        return self.outputs.one_symbol_schemata
+
+    @_prime_implicants.setter
+    def _prime_implicants(self, value):
+        self.outputs.one_symbol_schemata = value
+
+    @property
+    def _two_symbols(self):
+        """Proxy to :attr:`outputs.two_symbol_schemata` (one source of truth)."""
+        return self.outputs.two_symbol_schemata
+
+    @_two_symbols.setter
+    def _two_symbols(self, value):
+        self.outputs.two_symbol_schemata = value
+
+    def _warn_one_symbol_unverified(self):
+        """Soft-warn when canalization will use an unverified one-symbol cover.
+
+        Does not run Quine–McCluskey or build a LUT.  Opt-in verification is
+        :meth:`~cana.function_outputs.FunctionOutputs.verify_one_symbol_schemata`.
+        """
+        outs = self.outputs
+        if outs.one_symbol_schemata is None:
+            return
+        if outs.one_symbol_is_prime_implicant is True:
+            return
+        warnings.warn(
+            "Node {0!r}: using one_symbol_schemata "
+            "(one_symbol_is_prime_implicant={1!r}); "
+            "canalization assumes a prime-implicant cover. "
+            "Call outputs.verify_one_symbol_schemata() to check.".format(
+                self.name, outs.one_symbol_is_prime_implicant
+            ),
+            UserWarning,
+            stacklevel=3,
+        )
+
+    def _check_compute_canalization_variables(self, **kwargs):
+        """Recursevely check if the requested canalization variables are instantiated/computed, otherwise computes them in order.
+        For example: to compute `two_symbols` we need `one_symbol_schemata` first
+        (stored cover, or Quine–McCluskey from the dense LUT when absent).
+        """
+        if "prime_implicants" in kwargs:
+            self._warn_one_symbol_unverified()
+            self.outputs.get_one_symbol_schemata()
+
+        elif "pi_coverage" in kwargs:
+            self._check_compute_canalization_variables(prime_implicants=True)
+            if self._pi_coverage is None:
+                self._pi_coverage = dict()
+                for output, piset in self._prime_implicants.items():
+                    self._pi_coverage.update(cBCanalization.return_pi_coverage(piset))
+
+                # make sure every inputstate was covered by at least one prime implicant
+                assert len(self._pi_coverage) == 2**self.k
+
+        elif "two_symbols" in kwargs:
+            # Soft-warn (if needed) lives in get_two_symbol_schemata.
+            self.outputs.get_two_symbol_schemata()
+        elif "ts_coverage" in kwargs:
+            self._check_compute_canalization_variables(two_symbols=True)
+            if self._ts_coverage is None:
+                self._ts_coverage = BCanalization.computes_ts_coverage(
+                    self.k, self.outputs, self._two_symbols
+                )
+
+        else:
+            raise Exception("Canalization variable name not found. %s" % kwargs)
+        return True
+
+    def pi_coverage(self):
+        """Returns the :math:`F'` (Prime Implicants) binary state coverage.
+
+        Returns:
+            (list)
+
+        See also:
+            :func:`ts_coverage`
+        """
+        self._check_compute_canalization_variables(pi_coverage=True)
+        return self._pi_coverage
+
+    def ts_coverage(self):
+        """Returns the :math:`F''` (Two-Symbol schematas) binary state coverage.
+
+        Returns:
+            (list)
+
+        See also:
+            :func:`pi_coverage`
+        """
+        self._check_compute_canalization_variables(ts_coverage=True)
+        return self._ts_coverage
+
+    def canalizing_map(self, output=None, builder="legacy"):
+        """Computes the node Canalizing Map (CM).
+
+        Args:
+            output (int) : The output CM to return. Default is ``None``, retuning both [0,1].
+            builder (str or callable) : CM construction method. Default is ``'legacy'``.
+                See :func:`cana.canalization.canalizing_map.build_canalizing_map`.
+
+        Returns:
+            CM (networkx.DiGraph) : a directed graph representation of the CM.
+
+        See Also:
+            :func:`boolean_network.dynamics_canalization_map` for the DCM and :func:`drawing.draw_canalizing_map_graphviz` for plotting.
+        """
+        self._check_compute_canalization_variables(two_symbols=True)
+
+        input_labels = {}
+        for in_id in self.inputs:
+            if self.network is not None:
+                input_labels[in_id] = self.network.get_node_name(in_id)[0]
+            else:
+                input_labels[in_id] = str(in_id)
+
+        return build_canalizing_map(
+            self._two_symbols,
+            node_id=self.id,
+            inputs=self.inputs,
+            name=self.name,
+            constant=self.constant,
+            output=output,
+            input_labels=input_labels,
+            k=self.k,
+            builder=builder,
+        )
+
+    # --- Canalization metrics ---
 
     def input_redundancy(self, operator=mean, norm=True):
         r"""The Input Redundancy :math:`k_{r}` is the mean number of unnecessary inputs (or ``#``) in the Prime Implicants Look Up Table (LUT).
@@ -542,6 +824,8 @@ class BooleanNode(object):
         e_i = [1.0 - x_i for x_i in self.edge_redundancy(bound=bound)]
         return e_i
 
+    # --- Symmetry ---
+
     def symKernel_numDots(self, ts, sameSymbol=False):
         """compute the number of variables involved in a symmetry group.
 
@@ -585,7 +869,6 @@ class BooleanNode(object):
 
         return self._input_symmetry(strToOp[aggOp], kernFunc)
 
-    # refactor ks for speed, avg op only
     def input_symmetry_mean(self):
         """compute the input symmetry (k_s) of the boolean node.
            Specifically, computes it using the avg operator for the summand.
@@ -636,143 +919,7 @@ class BooleanNode(object):
         """
         return symmetry.raw_symmetry(self.outputs, self.k)
 
-    def look_up_table(self):
-        """Returns the Look Up Table (LUT)
-
-        Returns:
-            (pandas.DataFrame): the LUT
-
-        Examples:
-            >>> AND = BooleanNode.from_bit_lut([0,0,0,1])
-            >>> AND.look_up_table()
-
-        See also:
-            :func:`schemata_look_up_table`
-
-        """
-        d = []
-        if (self.k < 2) and (self.constant is False):
-            k = 2
-        else:
-            k = self.k
-
-        for statenum, output in zip(range(2**k), self.outputs):
-            # Binary State, Transition
-            d.append((statenum_to_binstate(statenum, base=self.k), output))
-
-        df = pd.DataFrame(d, columns=["In:", "Out:"])
-
-        return df
-
-    def schemata_look_up_table(
-        self,
-        type="pi",
-        pi_symbol="#",
-        ts_symbol_list=["\u030A", "\u032F", "\u0303", "\u0330", "\u0306", "\u032E"],
-    ):
-        """Returns the simplified schemata Look Up Table (LUT)
-
-        Args:
-            type (string) : The type of schemata to return, either Prime Implicants ``pi`` or Two-Symbol ``ts``. Defaults to 'pi'.
-            pi_symbol (str) : The Prime Implicant don't care symbol. Default is ``#``.
-            ts_symbol_list (list) : A list containing Two Symbol permutable symbols, one per permutation group of a schema (combining marks: ring above, inverted breve below, tilde, tilde below, breve, breve below). A ``ValueError`` is raised if a schema has more groups than symbols.
-
-        Returns:
-            (pandas.DataFrame or Latex): the schemata LUT
-
-        Examples:
-            >>> AND = BooleanNode.from_bit_lut([0,0,0,1])
-            >>> AND.schemata_look_up_table(type='pi')
-
-        Note:
-            See the full list of `combining characters <https://en.wikipedia.org/wiki/Combining_character>`_ to use other symbols as the permutation symbol.
-
-        See also:
-            :func:`look_up_table`
-        """
-        r = []
-        # Prime Implicant LUT
-        if type == "pi":
-            self._check_compute_canalization_variables(prime_implicants=True)
-
-            pi0s = self._prime_implicants.get(0, [])
-            pi1s = self._prime_implicants.get(1, [])
-
-            for output, pi in zip([0, 1], [pi0s, pi1s]):
-                # Sort on display form so row order matches the visible don't-care symbol.
-                for schemata in sorted(s.replace("2", pi_symbol) for s in pi):
-                    r.append((schemata, output))
-
-        # Two Symbol LUT
-        elif type == "ts":
-            self._check_compute_canalization_variables(two_symbols=True)
-
-            ts0s, ts1s = self._two_symbols
-
-            for output, ts in zip([0, 1], [ts0s, ts1s]):
-                for i, (schemata, permutables, samesymbols) in enumerate(ts):
-                    if max(len(permutables), len(samesymbols)) > len(ts_symbol_list):
-                        raise ValueError(
-                            "Schema %s has %d permutation groups but ts_symbol_list has only %d symbols; pass a longer ts_symbol_list."
-                            % (schemata, max(len(permutables), len(samesymbols)), len(ts_symbol_list))
-                        )
-                    string = ""
-                    if len(permutables):
-                        string += "("
-                        # Permutable
-                        for j, permutable in enumerate(permutables):
-                            #
-                            ts_symbol_unicode = ts_symbol_list[j]
-                            if j > 0:
-                                string += " | "
-                            string += "".join(
-                                [
-                                    x
-                                    if (k not in permutable)
-                                    else "%s%s" % (x, ts_symbol_unicode)
-                                    for k, x in enumerate(schemata, start=0)
-                                ]
-                            )
-                        string += ")"
-
-                    else:
-                        string += "(" + schemata + ")"
-
-                    if len(samesymbols):
-                        string += " | ("
-                        # Same Symbol
-                        for j, samesymbol in enumerate(samesymbols):
-                            ts_symbol_unicode = ts_symbol_list[j]
-                            if j > 0:
-                                string += " | "
-                            string += "".join(
-                                [
-                                    x
-                                    if (k not in samesymbol)
-                                    else "%s%s" % (x, ts_symbol_unicode)
-                                    for k, x in enumerate(schemata, start=0)
-                                ]
-                            )
-                        string += ")"
-                    r.append((string, output))
-        else:
-            raise AttributeError(
-                'The schemata type could not be found. Try "PI" (Prime Implicants) or "TS" (Two-Symbol).'
-            )
-
-        r = [(schemata.replace("2", pi_symbol), output) for schemata, output in r]
-        return pd.DataFrame(r, columns=["Input", "Output"])
-
-    def input_mask(self, binstate):
-        """Returns the mask applied to the binary state binstate
-
-        Args:
-            binstate (str) : the binary state
-
-        Returns:
-            output (str) : the masked state
-        """
-        return "".join(compress(binstate, self.mask))
+    # --- Sensitivity ---
 
     def activities(self):
         """compute the activities of each incoming edge of the node, directly from the LUT.
@@ -801,155 +948,6 @@ class BooleanNode(object):
             :func:`cana.sensitivity.sensitivity`, :func:`activities`, :func:`c_sensitivity`.
         """
         return sensitivity.sensitivity(self.outputs, self.k, norm=norm)
-
-    def canalizing_map(self, output=None, builder="legacy"):
-        """Computes the node Canalizing Map (CM).
-
-        Args:
-            output (int) : The output CM to return. Default is ``None``, retuning both [0,1].
-            builder (str or callable) : CM construction method. Default is ``'legacy'``.
-                See :func:`cana.canalization.canalizing_map.build_canalizing_map`.
-
-        Returns:
-            CM (networkx.DiGraph) : a directed graph representation of the CM.
-
-        See Also:
-            :func:`boolean_network.dynamics_canalization_map` for the DCM and :func:`drawing.draw_canalizing_map_graphviz` for plotting.
-        """
-        self._check_compute_canalization_variables(two_symbols=True)
-
-        input_labels = {}
-        for in_id in self.inputs:
-            if self.network is not None:
-                input_labels[in_id] = self.network.get_node_name(in_id)[0]
-            else:
-                input_labels[in_id] = str(in_id)
-
-        return build_canalizing_map(
-            self._two_symbols,
-            node_id=self.id,
-            inputs=self.inputs,
-            name=self.name,
-            constant=self.constant,
-            output=output,
-            input_labels=input_labels,
-            k=self.k,
-            builder=builder,
-        )
-
-    def pi_coverage(self):
-        """Returns the :math:`F'` (Prime Implicants) binary state coverage.
-
-        Returns:
-            (list)
-
-        See also:
-            :func:`ts_coverage`
-        """
-        self._check_compute_canalization_variables(pi_coverage=True)
-        return self._pi_coverage
-
-    def ts_coverage(self):
-        """Returns the :math:`F''` (Two-Symbol schematas) binary state coverage.
-
-        Returns:
-            (list)
-
-        See also:
-            :func:`pi_coverage`
-        """
-        self._check_compute_canalization_variables(ts_coverage=True)
-        return self._ts_coverage
-
-    @property
-    def _prime_implicants(self):
-        """Proxy to :attr:`outputs.one_symbol_schemata` (one source of truth)."""
-        return self.outputs.one_symbol_schemata
-
-    @_prime_implicants.setter
-    def _prime_implicants(self, value):
-        self.outputs.one_symbol_schemata = value
-
-    @property
-    def _two_symbols(self):
-        """Proxy to :attr:`outputs.two_symbol_schemata` (one source of truth)."""
-        return self.outputs.two_symbol_schemata
-
-    @_two_symbols.setter
-    def _two_symbols(self, value):
-        self.outputs.two_symbol_schemata = value
-
-    def _warn_one_symbol_unverified(self):
-        """Soft-warn when canalization will use an unverified one-symbol cover.
-
-        Does not run Quine–McCluskey or build a LUT.  Opt-in verification is
-        :meth:`~cana.function_outputs.FunctionOutputs.verify_one_symbol_schemata`.
-        """
-        outs = self.outputs
-        if outs.one_symbol_schemata is None:
-            return
-        if outs.one_symbol_is_prime_implicant is True:
-            return
-        warnings.warn(
-            "Node {0!r}: using one_symbol_schemata "
-            "(one_symbol_is_prime_implicant={1!r}); "
-            "canalization assumes a prime-implicant cover. "
-            "Call outputs.verify_one_symbol_schemata() to check.".format(
-                self.name, outs.one_symbol_is_prime_implicant
-            ),
-            UserWarning,
-            stacklevel=3,
-        )
-
-    def _check_compute_canalization_variables(self, **kwargs):
-        """Recursevely check if the requested canalization variables are instantiated/computed, otherwise computes them in order.
-        For example: to compute `two_symbols` we need `one_symbol_schemata` first
-        (stored cover, or Quine–McCluskey from the dense LUT when absent).
-        """
-        if "prime_implicants" in kwargs:
-            self._warn_one_symbol_unverified()
-            self.outputs.get_one_symbol_schemata()
-
-        elif "pi_coverage" in kwargs:
-            self._check_compute_canalization_variables(prime_implicants=True)
-            if self._pi_coverage is None:
-                self._pi_coverage = dict()
-                for output, piset in self._prime_implicants.items():
-                    self._pi_coverage.update(cBCanalization.return_pi_coverage(piset))
-
-                # make sure every inputstate was covered by at least one prime implicant
-                assert len(self._pi_coverage) == 2**self.k
-
-        elif "two_symbols" in kwargs:
-            # Soft-warn (if needed) lives in get_two_symbol_schemata.
-            self.outputs.get_two_symbol_schemata()
-        elif "ts_coverage" in kwargs:
-            self._check_compute_canalization_variables(two_symbols=True)
-            if self._ts_coverage is None:
-                self._ts_coverage = BCanalization.computes_ts_coverage(
-                    self.k, self.outputs, self._two_symbols
-                )
-
-        else:
-            raise Exception("Canalization variable name not found. %s" % kwargs)
-        return True
-
-    def bias(self):
-        r"""The node bias. The sum of the boolean output transitions divided by the number of entries (:math:`2^k`) in the LUT.
-
-        .. math::
-
-            bias(x) = \frac{ \sum_{f_{\alpha}\in F} s_{\alpha} }{ |F| }
-
-        Returns:
-            (float)
-
-        See Also:
-            :func:`~cana.boolean_network.BooleanNetwork.network_bias`
-        """
-        if self.outputs.bit_lut is not None:
-            return self.outputs.bit_lut.popcount() / 2**self.k
-        return sum(self.outputs) / 2**self.k
 
     def c_sensitivity(self, c, mode="default", max_k=0):
         """Node c-sensitivity.
@@ -1002,6 +1000,25 @@ class BooleanNode(object):
                         ):
                             S_c_f += ncr(max_k - self.k, c - ic)
             return S_c_f / float(ncr(max_k, c)) / float(2**self.k)
+
+    # --- Node properties ---
+
+    def bias(self):
+        r"""The node bias. The sum of the boolean output transitions divided by the number of entries (:math:`2^k`) in the LUT.
+
+        .. math::
+
+            bias(x) = \frac{ \sum_{f_{\alpha}\in F} s_{\alpha} }{ |F| }
+
+        Returns:
+            (float)
+
+        See Also:
+            :func:`~cana.boolean_network.BooleanNetwork.network_bias`
+        """
+        if self.outputs.bit_lut is not None:
+            return self.outputs.bit_lut.popcount() / 2**self.k
+        return sum(self.outputs) / 2**self.k
 
     def input_signs(self):
         """
