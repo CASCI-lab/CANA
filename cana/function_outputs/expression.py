@@ -302,7 +302,9 @@ def function_outputs_to_expression(
     node_label: Optional[str] = None,
     warn: bool = True,
 ) -> str:
-    """Named expression from ``FunctionOutputs`` via expression → schemata → LUT.
+    """Named expression from ``FunctionOutputs``.
+
+    Priority: stored expression → one-symbol → two-symbol → LUT.
 
     Never runs ``verify_*``; only reads
     ``representations_consistent`` / ``one_symbol_is_prime_implicant``.
@@ -318,6 +320,9 @@ def function_outputs_to_expression(
         node_label: Optional node name for warning text.
         warn: If False, suppress verification soft-warnings.
     """
+    # Local import avoids a cycle with two_symbol importing style helpers.
+    from cana.function_outputs.two_symbol import two_symbol_to_expression
+
     label = "Node {0!r}".format(node_label) if node_label is not None else "Node"
 
     def _multi_slot() -> bool:
@@ -325,6 +330,8 @@ def function_outputs_to_expression(
         if getattr(outputs, "expression", None) is not None:
             n += 1
         if getattr(outputs, "one_symbol_schemata", None) is not None:
+            n += 1
+        if getattr(outputs, "two_symbol_schemata", None) is not None:
             n += 1
         if getattr(outputs, "bit_lut", None) is not None:
             n += 1
@@ -372,6 +379,11 @@ def function_outputs_to_expression(
         _warn_consistency("one_symbol_schemata")
         return one_symbol_to_expression(input_names, schemata, style=style)
 
+    ts = getattr(outputs, "two_symbol_schemata", None)
+    if ts is not None:
+        _warn_consistency("two_symbol_schemata")
+        return two_symbol_to_expression(input_names, ts, style=style)
+
     get_bit_lut = getattr(outputs, "get_bit_lut", None)
     if get_bit_lut is not None:
         lut = get_bit_lut()
@@ -380,6 +392,7 @@ def function_outputs_to_expression(
         if lut is None:
             raise ValueError(
                 "Cannot build named expression: neither expression, "
-                "one_symbol_schemata, nor bit_lut is available on outputs"
+                "one_symbol_schemata, two_symbol_schemata, nor bit_lut "
+                "is available on outputs"
             )
     return lut_to_expression(input_names, lut, style=style)

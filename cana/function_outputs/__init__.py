@@ -9,8 +9,9 @@ coexist; named converters document each derivation, and lazy getters fill
 a missing slot from another available slot when possible.
 
 Dense Sequence access (``len``, ``[i]``, iterate) and :meth:`eval` prefer
-``bit_lut`` and materialize it from one-symbol schemata or a positional
-expression via :meth:`get_bit_lut` when needed.
+``bit_lut`` and materialize it from one-symbol schemata, two-symbol
+schemata (via one-symbol), or a positional expression via
+:meth:`get_bit_lut` when needed.
 """
 from __future__ import annotations
 
@@ -28,8 +29,19 @@ from cana.function_outputs.one_symbol import (
     reorder as reorder_one_symbol,
     schemata_from_bit_lut,
 )
+from cana.function_outputs.two_symbol import (
+    one_symbol_from_two_symbol,
+    two_symbol_to_expression,
+)
 
-__all__ = ["BooleanEval", "FunctionOutputs", "OneSymbolSchemata", "TwoSymbolSchemata"]
+__all__ = [
+    "BooleanEval",
+    "FunctionOutputs",
+    "OneSymbolSchemata",
+    "TwoSymbolSchemata",
+    "one_symbol_from_two_symbol",
+    "two_symbol_to_expression",
+]
 
 # (ts0, ts1); each entry is [schema_str, perm_groups, same_groups].
 TwoSymbolSchemata = Tuple[list, list]
@@ -111,6 +123,19 @@ class FunctionOutputs(object):
                 if inferred is not None:
                     break
             self._k = inferred if inferred is not None else 0
+        elif two_symbol_schemata:
+            inferred = None
+            for polarity_list in two_symbol_schemata:
+                for entry in polarity_list or ():
+                    schema = entry[0]
+                    if isinstance(schema, str):
+                        inferred = len(schema)
+                    else:
+                        inferred = len(schema)
+                    break
+                if inferred is not None:
+                    break
+            self._k = inferred if inferred is not None else 0
         else:
             self._k = 0
 
@@ -134,30 +159,48 @@ class FunctionOutputs(object):
         """Evaluate the function at input state ``statenum``.
 
         Prefers ``bit_lut``.  If absent, materializes via :meth:`get_bit_lut`
-        from one-symbol schemata or a positional expression.
+        from one-symbol schemata, two-symbol schemata (via one-symbol), or a
+        positional expression.
         """
         if self.bit_lut is not None:
             return self.bit_lut.eval(statenum)
         return self.get_bit_lut().eval(statenum)
 
     def get_one_symbol_schemata(self) -> OneSymbolSchemata:
-        """Return one-symbol schemata, computing from ``bit_lut`` if needed."""
+        """Return one-symbol schemata, deriving from two-symbol or ``bit_lut``.
+
+        Prefer stored one-symbol; else expand ``two_symbol_schemata`` (does not
+        set :attr:`one_symbol_is_prime_implicant`); else Quine–McCluskey from
+        ``bit_lut``.
+        """
         if self.one_symbol_schemata is not None:
+            return self.one_symbol_schemata
+        if self.two_symbol_schemata is not None:
+            self.one_symbol_schemata = one_symbol_from_two_symbol(
+                self.two_symbol_schemata
+            )
             return self.one_symbol_schemata
         self.get_bit_lut()
         return self.compute_one_symbol_schemata_from_bit_lut()
 
     def get_bit_lut(self) -> BitLut:
-        """Return the dense LUT, building from schemata or expression if needed."""
+        """Return the dense LUT, building from schemata or expression if needed.
+
+        Two-symbol materializes in two steps: expand to one-symbol, then build
+        the LUT from that cover.
+        """
         if self.bit_lut is not None:
             return self.bit_lut
         if self.one_symbol_schemata is not None:
             return self.build_bit_lut_from_one_symbol_schemata()
         if self.expression is not None:
             return self.build_bit_lut_from_expression()
+        if self.two_symbol_schemata is not None:
+            self.get_one_symbol_schemata()
+            return self.build_bit_lut_from_one_symbol_schemata()
         raise ValueError(
             "Cannot get bit_lut: neither bit_lut, one_symbol_schemata, "
-            "nor expression is available"
+            "two_symbol_schemata, nor expression is available"
         )
 
     def build_bit_lut_from_expression(self) -> BitLut:
@@ -278,9 +321,10 @@ class FunctionOutputs(object):
         """Opt-in: all convertible representations describe the same function.
 
         Derives a LUT from each populated slot that can produce one (stored
-        ``bit_lut``, ``one_symbol_schemata``, and positional ``expression``)
-        and checks they agree.  Sets :attr:`representations_consistent`.
-        Never called by normal canalization paths.
+        ``bit_lut``, ``one_symbol_schemata``, ``two_symbol_schemata``, and
+        positional ``expression``) and checks they agree.  Sets
+        :attr:`representations_consistent`.  Never called by normal
+        canalization paths.
         """
         candidates = []  # type: List[BitLut]
         if self.bit_lut is not None:
@@ -301,7 +345,13 @@ class FunctionOutputs(object):
             except ValueError:
                 self.representations_consistent = False
                 return False
-        # two_symbol_schemata: no LUT builder yet.
+        if self.two_symbol_schemata is not None:
+            try:
+                expanded = one_symbol_from_two_symbol(self.two_symbol_schemata)
+                candidates.append(bit_lut_from_schemata(expanded, self.k))
+            except ValueError:
+                self.representations_consistent = False
+                return False
         if len(candidates) < 2:
             self.representations_consistent = True
             return True

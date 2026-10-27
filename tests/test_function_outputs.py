@@ -5,6 +5,7 @@ from cana.boolean_network import BooleanNetwork
 from cana.boolean_node import BooleanNode
 from cana.function_outputs import BooleanEval, FunctionOutputs
 from cana.function_outputs import one_symbol as one_symbol_mod
+from cana.function_outputs import two_symbol as two_symbol_mod
 import warnings
 
 import pytest
@@ -17,6 +18,10 @@ from cana.function_outputs.expression import (
     to_positional,
 )
 from cana.function_outputs.one_symbol import bit_lut_from_schemata, reorder as reorder_one_symbol
+from cana.function_outputs.two_symbol import (
+    one_symbol_from_two_symbol,
+    two_symbol_to_expression,
+)
 
 
 def test_from_sequence_and_eval():
@@ -457,3 +462,126 @@ def test_one_symbol_module_public_api():
     assert callable(one_symbol_mod.reorder)
     assert callable(one_symbol_mod.bit_lut_from_schemata)
     assert callable(one_symbol_mod.schemata_from_bit_lut)
+
+
+def test_two_symbol_module_public_api():
+    assert callable(two_symbol_mod.one_symbol_from_two_symbol)
+    assert callable(two_symbol_mod.two_symbol_to_expression)
+
+
+@pytest.mark.parametrize(
+    "lut",
+    [
+        [0, 0, 0, 1],  # AND
+        [0, 1, 1, 1],  # OR
+        [0, 1, 1, 0],  # XOR
+        [0, 0, 0, 0, 0, 0, 0, 1],  # ABC (k=3 AND)
+    ],
+)
+def test_two_symbol_one_symbol_lut_roundtrip(lut):
+    fo = FunctionOutputs.from_sequence(lut)
+    original = list(fo.bit_lut)
+    pre_one = {
+        p: set(s) for p, s in fo.get_one_symbol_schemata().items()
+    }
+    ts = fo.get_two_symbol_schemata()
+
+    # Drop dense / one-symbol; rebuild from two-symbol only.
+    rebuilt = FunctionOutputs(two_symbol_schemata=ts, k=fo.k)
+    assert rebuilt.bit_lut is None
+    assert rebuilt.one_symbol_schemata is None
+
+    expanded = rebuilt.get_one_symbol_schemata()
+    assert rebuilt.one_symbol_schemata is expanded
+    assert rebuilt.one_symbol_is_prime_implicant is None
+    assert expanded[0] == pre_one[0]
+    assert expanded[1] == pre_one[1]
+
+    assert list(rebuilt.get_bit_lut()) == original
+    assert rebuilt.bit_lut is not None
+
+
+def test_get_bit_lut_from_two_symbol_is_two_step():
+    # OR: polarity-1 schema "12" with perm group on both inputs.
+    ts = (
+        [["00", [], [[0, 1]]]],
+        [["12", [[0, 1]], []]],
+    )
+    fo = FunctionOutputs(two_symbol_schemata=ts, k=2)
+    assert fo.one_symbol_schemata is None
+    assert fo.bit_lut is None
+    lut = fo.get_bit_lut()
+    assert fo.one_symbol_schemata is not None
+    assert fo.one_symbol_schemata[1] == {"12", "21"}
+    assert list(lut) == [0, 1, 1, 1]
+
+
+def test_two_symbol_to_expression_unit_cases():
+    names3 = ["x0", "x1", "x2"]
+    # 022 + full perm → OR of negations (as ON cover for the unit test).
+    ts_022 = ([], [["022", [[0, 1, 2]], []]])
+    assert two_symbol_to_expression(names3, ts_022) == (
+        "(not x0 or not x1 or not x2)"
+    )
+    # 112 + full perm → at-least-two ones.
+    ts_112 = ([], [["112", [[0, 1, 2]], []]])
+    assert two_symbol_to_expression(names3, ts_112) == (
+        "((x0 and x1) or (x0 and x2) or (x1 and x2))"
+    )
+    # OR node polarity-1: "12" with perm on both inputs.
+    names2 = ["x0", "x1"]
+    ts_or = ([], [["12", [[0, 1]], []]])
+    assert two_symbol_to_expression(names2, ts_or) == "(x0 or x1)"
+
+    # Two perm groups ANDed: (x0|x1) and (x2|x3) from "1212".
+    names4 = ["x0", "x1", "x2", "x3"]
+    ts_multi = ([], [["1212", [[0, 1], [2, 3]], []]])
+    assert two_symbol_to_expression(names4, ts_multi) == (
+        "((x0 or x1) and (x2 or x3))"
+    )
+
+    assert two_symbol_to_expression(
+        names2, ts_or, style="symbolic"
+    ) == "(x0 | x1)"
+
+
+def test_function_outputs_to_expression_from_two_symbol_only():
+    ts = (
+        [["00", [], []]],
+        [["12", [[0, 1]], []]],
+    )
+    fo = FunctionOutputs(two_symbol_schemata=ts, k=2)
+    assert (
+        function_outputs_to_expression(fo, ["A", "B"], warn=False)
+        == "(A or B)"
+    )
+
+
+def test_verify_representations_consistent_with_two_symbol():
+    fo = FunctionOutputs.from_sequence([0, 1, 1, 1])
+    fo.get_two_symbol_schemata()
+    assert fo.verify_representations_consistent() is True
+
+    # Agreeing LUT + two-symbol only (no stored one-symbol).
+    ts = fo.two_symbol_schemata
+    fo2 = FunctionOutputs(
+        bit_lut=BitLut.from_sequence([0, 1, 1, 1]),
+        two_symbol_schemata=ts,
+        k=2,
+    )
+    assert fo2.verify_representations_consistent() is True
+
+    # Mismatch.
+    fo3 = FunctionOutputs(
+        bit_lut=BitLut.from_sequence([0, 0, 0, 1]),
+        two_symbol_schemata=ts,
+        k=2,
+    )
+    assert fo3.verify_representations_consistent() is False
+
+
+def test_one_symbol_from_two_symbol_no_perm_keeps_representative():
+    ts = ([["11", [], [[0, 1]]]], [["00", [], []]])
+    expanded = one_symbol_from_two_symbol(ts)
+    assert expanded[0] == {"11"}
+    assert expanded[1] == {"00"}
