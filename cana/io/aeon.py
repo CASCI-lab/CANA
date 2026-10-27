@@ -10,10 +10,10 @@ from cana.io.expressions import (
     lut_to_expression,
     normalize_operators,
 )
-from cana.lut_dict import (
-    LutDict,
-    expressions_to_lut_dict,
-    regulator_names_for_node,
+from cana.network_dict import (
+    NetworkDict,
+    expressions_to_network_dict,
+    input_names_for_node,
     sorted_node_ids,
 )
 
@@ -25,8 +25,8 @@ AEON_UPDATE_RE = re.compile(
 )
 
 
-def parse_aeon(text: str) -> LutDict:
-    """Parse AEON ``*.aeon`` into a ``LutDict``."""
+def parse_aeon(text: str) -> NetworkDict:
+    """Parse AEON ``*.aeon`` into a ``NetworkDict``."""
     expressions: Dict[str, str] = {}
     names: set = set()
     for raw in text.splitlines():
@@ -49,20 +49,21 @@ def parse_aeon(text: str) -> LutDict:
             continue
     if not expressions and not names:
         raise ValueError("No aeon rules or regulations found")
-    return expressions_to_lut_dict(expressions, names)
+    return expressions_to_network_dict(expressions, names)
 
 
-def lut_dict_to_aeon(lut_dict: Mapping[int, Mapping[str, Any]]) -> str:
-    """Export ``LutDict`` to AEON text (regulations + update functions)."""
+def network_dict_to_aeon(network_dict: Mapping[int, Mapping[str, Any]]) -> str:
+    """Export ``NetworkDict`` to AEON text (regulations + update functions)."""
     lines: List[str] = []
-    for i in sorted_node_ids(lut_dict):
-        target = lut_dict[i]["name"]
-        for src_id in lut_dict[i]["regulators"]:
-            src = lut_dict[src_id]["name"]
+    for i in sorted_node_ids(network_dict):
+        target = network_dict[i]["name"]
+        for src_id in network_dict[i]["inputs"]:
+            src = network_dict[src_id]["name"]
             lines.append("{0} -? {1}".format(src, target))
-    for i in sorted_node_ids(lut_dict):
-        name = lut_dict[i]["name"]
-        inputs = regulator_names_for_node(lut_dict, i)
-        expr = lut_to_expression(inputs, lut_dict[i]["lut"], style="symbolic")
+    for i in sorted_node_ids(network_dict):
+        name = network_dict[i]["name"]
+        inputs = input_names_for_node(network_dict, i)
+        lut = network_dict[i]["outputs"].get_bit_lut()
+        expr = lut_to_expression(inputs, lut, style="symbolic")
         lines.append("${0}: {1}".format(name, expr))
     return "\n".join(lines) + "\n"

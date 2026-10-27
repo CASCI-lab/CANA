@@ -50,7 +50,7 @@ def test_boolean_node_uses_function_outputs():
     assert list(n.outputs) == [0, 0, 0, 1]
 
 
-def test_network_shares_bit_lut():
+def test_network_shares_function_outputs():
     rules = "\n".join(
         [
             "A *= B",
@@ -59,9 +59,10 @@ def test_network_shares_bit_lut():
     )
     network = BooleanNetwork.from_string_booleannet(rules, keep_constants=True)
     for i, node in enumerate(network.nodes):
-        assert isinstance(network.lut_dict[i]["lut"], BitLut)
+        assert isinstance(network.network_dict[i]["outputs"], FunctionOutputs)
         assert isinstance(node.outputs, FunctionOutputs)
-        assert node.outputs.bit_lut is network.lut_dict[i]["lut"]
+        assert node.outputs is network.network_dict[i]["outputs"]
+        assert isinstance(node.outputs.bit_lut, BitLut)
 
 
 def test_get_one_symbol_schemata_lazy():

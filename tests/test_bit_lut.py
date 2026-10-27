@@ -87,3 +87,30 @@ def test_from_bytes_roundtrip():
     lut = BitLut.from_sequence([1, 0, 1, 1, 0, 0, 0, 1])
     again = BitLut.from_bytes(lut.to_bytes(), k=3)
     assert again == lut
+
+
+def test_reorder_identity_returns_self():
+    lut = BitLut.from_sequence([0, 0, 0, 1])  # AND on (A, B)
+    assert lut.reorder(["A", "B"], ["A", "B"]) is lut
+
+
+def test_reorder_swaps_input_bits():
+    # AND with order (A, B): only 11 -> 1  => [0,0,0,1]
+    # After swap to (B, A): still AND => [0,0,0,1]
+    and_lut = BitLut.from_sequence([0, 0, 0, 1])
+    assert list(and_lut.reorder(["A", "B"], ["B", "A"])) == [0, 0, 0, 1]
+
+    # Implies A->B with order (A, B): outputs for 00,01,10,11 = 1,1,0,1
+    implies = BitLut.from_sequence([1, 1, 0, 1])
+    # Swap to (B, A): new state bits are (B,A); old was (A,B)
+    # new 00 -> old 00 -> 1
+    # new 01 -> old 10 -> 0
+    # new 10 -> old 01 -> 1
+    # new 11 -> old 11 -> 1
+    swapped = implies.reorder(["A", "B"], ["B", "A"])
+    assert list(swapped) == [1, 0, 1, 1]
+
+
+def test_reorder_sequence_from_list():
+    lut = BitLut.reorder_sequence([1, 1, 0, 1], ["A", "B"], ["B", "A"])
+    assert list(lut) == [1, 0, 1, 1]

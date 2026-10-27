@@ -26,7 +26,6 @@ import cana.canalization.cboolean_canalization as cBCanalization
 from cana.canalization.canalizing_map import build_canalizing_map
 import cana.symmetry as symmetry
 import cana.sensitivity as sensitivity
-from cana.bit_lut import BitLut
 from cana.cutils import (
     binstate_to_statenum,
     flip_bit,
@@ -61,23 +60,26 @@ class BooleanNode(object):
             int(state)
         )  # the initial state of the node. internally this is treated as a string.
         # Multi-representation outputs (dense BitLut; one-/two-symbol on demand).
-        self.outputs = FunctionOutputs.from_sequence(outputs)
+        if isinstance(outputs, FunctionOutputs):
+            self.outputs = outputs
+        else:
+            self.outputs = FunctionOutputs.from_sequence(outputs)
         self.network = network  # the BooleanNetwork object this nodes belongs to
         self.verbose = verbose  # verbose mode
 
-        # When attached to a network, share the LutDict BitLut object.
+        # When attached to a network, share the NetworkDict FunctionOutputs object.
         if (
             network is not None
-            and getattr(network, "lut_dict", None) is not None
-            and id in network.lut_dict
+            and getattr(network, "network_dict", None) is not None
+            and id in network.network_dict
         ):
-            shared = network.lut_dict[id]["lut"]
-            if isinstance(shared, BitLut):
-                self.outputs.bit_lut = shared
+            shared = network.network_dict[id]["outputs"]
+            if isinstance(shared, FunctionOutputs):
+                self.outputs = shared
             else:
-                bit = BitLut.from_sequence(shared)
-                network.lut_dict[id]["lut"] = bit
-                self.outputs.bit_lut = bit
+                fo = FunctionOutputs.from_sequence(shared)
+                network.network_dict[id]["outputs"] = fo
+                self.outputs = fo
 
         # mask for inputs
         if len(self.inputs) > 0:

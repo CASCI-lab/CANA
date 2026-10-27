@@ -1,8 +1,8 @@
 # -*- coding: utf-8 -*-
 """
-Import / export Boolean networks via the CANA ``LutDict`` hub.
+Import / export Boolean networks via the CANA ``NetworkDict`` hub.
 
-A ``LutDict`` maps node id → ``{name, regulators, lut}``. File formats
+A ``NetworkDict`` maps node id → ``{name, inputs, outputs}``. File formats
 (booleannet, bnet, aeon, sbml, cnet) convert to/from this structure; textual
 expressions need not be preserved across round-trips as long as name-keyed
 LUTs match.
@@ -11,10 +11,10 @@ Modules:
     expressions: boolean expression string helpers
     booleannet, bnet, aeon, sbml, cnet: per-format parse / export
 
-The hub types and builders live in :mod:`cana.lut_dict`.
+The hub types and builders live in :mod:`cana.network_dict`.
 
 Format parsers/exporters are loaded lazily so ``cana.io.expressions`` can be
-imported from :mod:`cana.lut_dict` without a circular import.
+imported from :mod:`cana.network_dict` without a circular import.
 """
 from __future__ import annotations
 
@@ -33,17 +33,20 @@ FORMAT_ALIASES = {
 
 # Name → (submodule, attribute) for lazy public re-exports.
 _LAZY_EXPORTS = {
-    "lut_dict_to_aeon": ("cana.io.aeon", "lut_dict_to_aeon"),
+    "network_dict_to_aeon": ("cana.io.aeon", "network_dict_to_aeon"),
     "parse_aeon": ("cana.io.aeon", "parse_aeon"),
-    "lut_dict_to_bnet": ("cana.io.bnet", "lut_dict_to_bnet"),
+    "network_dict_to_bnet": ("cana.io.bnet", "network_dict_to_bnet"),
     "parse_bnet": ("cana.io.bnet", "parse_bnet"),
-    "lut_dict_to_booleannet": ("cana.io.booleannet", "lut_dict_to_booleannet"),
+    "network_dict_to_booleannet": (
+        "cana.io.booleannet",
+        "network_dict_to_booleannet",
+    ),
     "parse_booleannet": ("cana.io.booleannet", "parse_booleannet"),
-    "lut_dict_to_cnet": ("cana.io.cnet", "lut_dict_to_cnet"),
+    "network_dict_to_cnet": ("cana.io.cnet", "network_dict_to_cnet"),
     "parse_cnet": ("cana.io.cnet", "parse_cnet"),
     "lut_to_expression": ("cana.io.expressions", "lut_to_expression"),
     "normalize_operators": ("cana.io.expressions", "normalize_operators"),
-    "lut_dict_to_sbml": ("cana.io.sbml", "lut_dict_to_sbml"),
+    "network_dict_to_sbml": ("cana.io.sbml", "network_dict_to_sbml"),
     "parse_sbml": ("cana.io.sbml", "parse_sbml"),
 }
 
@@ -96,7 +99,7 @@ def infer_format(path: PathLike) -> Optional[str]:
 
 
 def parse_string(text: str, fmt: str):
-    """Parse ``text`` of the given format into a ``LutDict``."""
+    """Parse ``text`` of the given format into a ``NetworkDict``."""
     fmt = normalize_format(fmt)
     if fmt == "booleannet":
         from cana.io.booleannet import parse_booleannet
@@ -122,47 +125,47 @@ def parse_string(text: str, fmt: str):
 
 
 def export_string(
-    lut_dict: Mapping[int, Mapping[str, Any]],
+    network_dict: Mapping[int, Mapping[str, Any]],
     fmt: str,
     **kwargs: Any,
 ) -> str:
-    """Serialize ``lut_dict`` to the requested format string.
+    """Serialize ``network_dict`` to the requested format string.
 
     Extra ``kwargs`` are forwarded to format-specific exporters (e.g.
     ``adjust_no_input`` for cnet).
     """
     fmt = normalize_format(fmt)
     if fmt == "booleannet":
-        from cana.io.booleannet import lut_dict_to_booleannet
+        from cana.io.booleannet import network_dict_to_booleannet
 
-        return lut_dict_to_booleannet(lut_dict)
+        return network_dict_to_booleannet(network_dict)
     if fmt == "bnet":
-        from cana.io.bnet import lut_dict_to_bnet
+        from cana.io.bnet import network_dict_to_bnet
 
-        return lut_dict_to_bnet(lut_dict)
+        return network_dict_to_bnet(network_dict)
     if fmt == "aeon":
-        from cana.io.aeon import lut_dict_to_aeon
+        from cana.io.aeon import network_dict_to_aeon
 
-        return lut_dict_to_aeon(lut_dict)
+        return network_dict_to_aeon(network_dict)
     if fmt == "sbml":
-        from cana.io.sbml import lut_dict_to_sbml
+        from cana.io.sbml import network_dict_to_sbml
 
-        return lut_dict_to_sbml(lut_dict)
+        return network_dict_to_sbml(network_dict)
     if fmt == "cnet":
-        from cana.io.cnet import lut_dict_to_cnet
+        from cana.io.cnet import network_dict_to_cnet
 
-        return lut_dict_to_cnet(lut_dict, **kwargs)
+        return network_dict_to_cnet(network_dict, **kwargs)
     raise ValueError("export_string does not handle format {0!r}".format(fmt))
 
 
 def convert(text: str, from_type: str, to_type: str, **kwargs: Any) -> str:
-    """Convert a model string from ``from_type`` to ``to_type`` via ``LutDict``.
+    """Convert a model string from ``from_type`` to ``to_type`` via ``NetworkDict``.
 
     Extra ``kwargs`` are forwarded to the destination exporter (e.g.
     ``adjust_no_input`` for cnet).
     """
-    lut_dict = parse_string(text, from_type)
-    return export_string(lut_dict, to_type, **kwargs)
+    network_dict = parse_string(text, from_type)
+    return export_string(network_dict, to_type, **kwargs)
 
 
 __all__ = [
@@ -170,11 +173,11 @@ __all__ = [
     "convert",
     "export_string",
     "infer_format",
-    "lut_dict_to_aeon",
-    "lut_dict_to_bnet",
-    "lut_dict_to_booleannet",
-    "lut_dict_to_cnet",
-    "lut_dict_to_sbml",
+    "network_dict_to_aeon",
+    "network_dict_to_bnet",
+    "network_dict_to_booleannet",
+    "network_dict_to_cnet",
+    "network_dict_to_sbml",
     "lut_to_expression",
     "normalize_format",
     "normalize_operators",

@@ -22,6 +22,7 @@ import networkx as nx
 
 from cana.bit_lut import BitLut
 from cana.boolean_network import BooleanNetwork
+from cana.function_outputs import FunctionOutputs
 from cana.utils import output_transitions
 
 
@@ -49,13 +50,15 @@ def regular_boolean_network(
             graph=regular_graph, niter_remove=niter_remove
         )
 
-    # A LutDict {<id>:{'name':<string>,'regulators':<list-input-node-id>,'lut':<list>},..}
+    # A NetworkDict {id: {name, inputs, outputs}, ...}
     bn_dict = {
         node: {
             "name": str(node),
-            "regulators": sorted([n for n in regular_graph.predecessors(node)]),
-            "lut": random_automata_table(
-                regular_graph.in_degree(node), bias, bias_constraint
+            "inputs": sorted([n for n in regular_graph.predecessors(node)]),
+            "outputs": FunctionOutputs(
+                bit_lut=random_automata_table(
+                    regular_graph.in_degree(node), bias, bias_constraint
+                )
             ),
         }
         for node in range(N)
@@ -82,13 +85,15 @@ def er_boolean_network(
     if remove_multiedges:
         er_graph = _remove_duplicate_edges(graph=er_graph, niter_remove=niter_remove)
 
-    # A LutDict {<id>:{'name':<string>,'regulators':<list-input-node-id>,'lut':<list>},..}
+    # A NetworkDict {id: {name, inputs, outputs}, ...}
     bn_dict = {
         node: {
             "name": str(node),
-            "regulators": sorted([n for n in er_graph.predecessors(node)]),
-            "lut": random_automata_table(
-                er_graph.in_degree(node), bias, bias_constraint
+            "inputs": sorted([n for n in er_graph.predecessors(node)]),
+            "outputs": FunctionOutputs(
+                bit_lut=random_automata_table(
+                    er_graph.in_degree(node), bias, bias_constraint
+                )
             ),
         }
         for node in range(N)
@@ -188,7 +193,7 @@ def from_string_booleannet(self, string, keep_constants=True, **kwargs):
         :func:`from_string` :func:`from_dict`
     """
 
-    lut_dict = defaultdict(dict)
+    network_dict = defaultdict(dict)
 
     # parse lines to receive node names
     network_file = StringIO(string)
@@ -198,7 +203,11 @@ def from_string_booleannet(self, string, keep_constants=True, **kwargs):
         if line[0] == "#":
             line = network_file.readline()
             continue
-        lut_dict[i] = {"name": line.split("*")[0].strip(), "regulators": [], "lut": []}
+        network_dict[i] = {
+            "name": line.split("*")[0].strip(),
+            "inputs": [],
+            "outputs": None,
+        }
         line = network_file.readline()
         i += 1
 
@@ -214,24 +223,26 @@ def from_string_booleannet(self, string, keep_constants=True, **kwargs):
         # RE checks for non-alphanumeric character before/after node name (node names are included in other node names)
         # Additional characters added to eval_line to avoid start/end of string complications
         input_names = [
-            lut_dict[node]["name"]
-            for node in lut_dict
-            if re.compile(r"\W" + lut_dict[node]["name"] + r"\W").search(
+            network_dict[node]["name"]
+            for node in network_dict
+            if re.compile(r"\W" + network_dict[node]["name"] + r"\W").search(
                 "*" + eval_line + "*"
             )
         ]
         input_nums = [
             node
             for input in input_names
-            for node in lut_dict
-            if input == lut_dict[node]["name"]
+            for node in network_dict
+            if input == network_dict[node]["name"]
         ]
-        lut_dict[i]["regulators"] = input_nums
+        network_dict[i]["inputs"] = input_nums
         # Determine output transitions
-        lut_dict[i]["lut"] = BitLut.from_sequence(
-            output_transitions(eval_line, input_names)
+        network_dict[i]["outputs"] = FunctionOutputs(
+            bit_lut=BitLut.from_sequence(
+                output_transitions(eval_line, input_names)
+            )
         )
         line = network_file.readline()
         i += 1
 
-    return self.from_dict(lut_dict, keep_constants=keep_constants, **kwargs)
+    return self.from_dict(network_dict, keep_constants=keep_constants, **kwargs)

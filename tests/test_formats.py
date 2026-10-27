@@ -8,17 +8,16 @@ from cana.io import (
     convert,
     export_string,
     infer_format,
-    lut_dict_to_cnet,
+    network_dict_to_cnet,
     parse_aeon,
     parse_bnet,
     parse_booleannet,
     parse_cnet,
-    parse_sbml,
     parse_string,
 )
-from cana.lut_dict import (
-    equivalent_lut_dicts,
-    expressions_to_lut_dict,
+from cana.network_dict import (
+    equivalent_network_dicts,
+    expressions_to_network_dict,
     name_keyed_luts,
 )
 
@@ -45,12 +44,12 @@ $B: A & C
 """
 
 
-def _assert_tiny(lut_dict_or_net):
-    luts = name_keyed_luts(lut_dict_or_net)
+def _assert_tiny(network_dict_or_net):
+    luts = name_keyed_luts(network_dict_or_net)
     assert set(luts) == {"A", "B", "C"}
     assert luts["A"] == (("B",), (0, 1))
     assert luts["C"] == (("C",), (0, 1))
-    # B = A and C, regulators sorted (A, C): lut [0,0,0,1]
+    # B = A and C, inputs sorted (A, C): lut [0,0,0,1]
     assert luts["B"] == (("A", "C"), (0, 0, 0, 1))
 
 
@@ -69,17 +68,17 @@ def test_parse_tiny_bnet_booleannet_aeon():
     _assert_tiny(parse_aeon(TINY_AEON))
 
 
-def test_expressions_to_lut_dict_adds_free_input_identity():
-    lut_dict = expressions_to_lut_dict({"A": "B", "B": "A and C"})
-    _assert_tiny(lut_dict)
+def test_expressions_to_network_dict_adds_free_input_identity():
+    network_dict = expressions_to_network_dict({"A": "B", "B": "A and C"})
+    _assert_tiny(network_dict)
 
 
 def test_export_reimport_roundtrip_each_format():
-    lut_dict = parse_booleannet(TINY_BOOLEANNET)
+    network_dict = parse_booleannet(TINY_BOOLEANNET)
     for fmt in ("booleannet", "bnet", "aeon", "sbml", "cnet"):
-        text = export_string(lut_dict, fmt)
+        text = export_string(network_dict, fmt)
         again = parse_string(text, fmt)
-        assert equivalent_lut_dicts(lut_dict, again), fmt
+        assert equivalent_network_dicts(network_dict, again), fmt
 
 
 def test_any_to_any_convert():
@@ -89,19 +88,19 @@ def test_any_to_any_convert():
         "bnet": TINY_BNET,
         "aeon": TINY_AEON,
         "sbml": export_string(parse_booleannet(TINY_BOOLEANNET), "sbml"),
-        "cnet": lut_dict_to_cnet(parse_booleannet(TINY_BOOLEANNET)),
+        "cnet": network_dict_to_cnet(parse_booleannet(TINY_BOOLEANNET)),
     }
     ref = parse_booleannet(TINY_BOOLEANNET)
     for src in formats:
         for dst in formats:
             out = convert(sources[src], src, dst)
-            assert equivalent_lut_dicts(ref, parse_string(out, dst)), (src, dst)
+            assert equivalent_network_dicts(ref, parse_string(out, dst)), (src, dst)
 
 
 def test_parse_cnet_direct():
-    lut_dict = parse_booleannet(TINY_BOOLEANNET)
-    again = parse_cnet(lut_dict_to_cnet(lut_dict))
-    assert equivalent_lut_dicts(lut_dict, again)
+    network_dict = parse_booleannet(TINY_BOOLEANNET)
+    again = parse_cnet(network_dict_to_cnet(network_dict))
+    assert equivalent_network_dicts(network_dict, again)
 
 
 def test_boolean_network_from_string_and_equivalent_to():
@@ -146,6 +145,44 @@ def test_ambiguous_format_aliases_rejected():
         parse_string(TINY_BOOLEANNET, "logical")
     with pytest.raises(ValueError, match="Unknown format"):
         parse_string(TINY_BOOLEANNET, "boolean")
+
+
+def test_empty_inputs_implies_constant_not_converse():
+    # Empty inputs => constant
+    N = BooleanNetwork.from_dict(
+        {
+            0: {
+                "name": "Const1",
+                "inputs": [],
+                "outputs": [1],
+            }
+        }
+    )
+    assert N.nodes[0].constant is True
+    assert N.nodes[0].k == 0
+    assert 0 in N.constants
+
+    # Flat LUT with inputs => constant, but inputs preserved
+    N2 = BooleanNetwork.from_dict(
+        {
+            0: {"name": "A", "inputs": [0], "outputs": [0, 1]},
+            1: {"name": "Flat", "inputs": [0], "outputs": [1, 1]},
+        }
+    )
+    flat = N2.nodes[1]
+    assert flat.constant is True
+    assert flat.inputs == [0]
+    assert N2.network_dict[1]["inputs"] == [0]
+    assert 1 in N2.constants
+
+    # Self-loop identity => not constant, in input_nodes
+    N3 = BooleanNetwork.from_dict(
+        {
+            0: {"name": "Src", "inputs": [0], "outputs": [0, 1]},
+        }
+    )
+    assert N3.nodes[0].constant is False
+    assert 0 in N3.input_nodes
 
 
 BBM_023 = (

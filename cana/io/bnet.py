@@ -9,16 +9,16 @@ from cana.io.expressions import (
     lut_to_expression,
     normalize_operators,
 )
-from cana.lut_dict import (
-    LutDict,
-    expressions_to_lut_dict,
-    regulator_names_for_node,
+from cana.network_dict import (
+    NetworkDict,
+    expressions_to_network_dict,
+    input_names_for_node,
     sorted_node_ids,
 )
 
 
-def parse_bnet(text: str) -> LutDict:
-    """Parse BoolNet / PyBoolNet ``*.bnet`` into a ``LutDict``."""
+def parse_bnet(text: str) -> NetworkDict:
+    """Parse BoolNet / PyBoolNet ``*.bnet`` into a ``NetworkDict``."""
     expressions: Dict[str, str] = {}
     extras: List[str] = []
     for raw in text.splitlines():
@@ -40,15 +40,16 @@ def parse_bnet(text: str) -> LutDict:
         )
     if not expressions:
         raise ValueError("No bnet rules found")
-    return expressions_to_lut_dict(expressions, extras)
+    return expressions_to_network_dict(expressions, extras)
 
 
-def lut_dict_to_bnet(lut_dict: Mapping[int, Mapping[str, Any]]) -> str:
-    """Export ``LutDict`` to BoolNet ``targets,factors`` text."""
+def network_dict_to_bnet(network_dict: Mapping[int, Mapping[str, Any]]) -> str:
+    """Export ``NetworkDict`` to BoolNet ``targets,factors`` text."""
     lines = ["targets,factors"]
-    for i in sorted_node_ids(lut_dict):
-        name = lut_dict[i]["name"]
-        inputs = regulator_names_for_node(lut_dict, i)
-        expr = lut_to_expression(inputs, lut_dict[i]["lut"], style="symbolic")
+    for i in sorted_node_ids(network_dict):
+        name = network_dict[i]["name"]
+        inputs = input_names_for_node(network_dict, i)
+        lut = network_dict[i]["outputs"].get_bit_lut()
+        expr = lut_to_expression(inputs, lut, style="symbolic")
         lines.append("{0}, {1}".format(name, expr))
     return "\n".join(lines) + "\n"

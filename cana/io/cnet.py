@@ -6,11 +6,12 @@ from typing import Any, Dict, List, Mapping
 
 from cana.bit_lut import BitLut
 from cana.cutils import binstate_to_statenum, expand_logic_line, statenum_to_binstate
-from cana.lut_dict import LutDict
+from cana.function_outputs import FunctionOutputs
+from cana.network_dict import NetworkDict
 
 
-def parse_cnet(text: str) -> LutDict:
-    """Parse BNS / Cell Collective ``.cnet`` text into a ``LutDict``.
+def parse_cnet(text: str) -> NetworkDict:
+    """Parse BNS / Cell Collective ``.cnet`` text into a ``NetworkDict``.
 
     Format sketch::
 
@@ -20,7 +21,7 @@ def parse_cnet(text: str) -> LutDict:
         <binstate> <out>   # may use ``2`` don't-care bits (``-`` also accepted)
         .e
     """
-    lut_dict: Dict[int, Dict[str, Any]] = {}
+    network_dict: Dict[int, Dict[str, Any]] = {}
     lines = text.splitlines()
     i = 0
     while i < len(lines):
@@ -31,16 +32,20 @@ def parse_cnet(text: str) -> LutDict:
         if ".v" in line:
             nnodes = int(line.split()[1])
             for inode in range(nnodes):
-                lut_dict[inode] = {"name": "", "regulators": [], "lut": BitLut(0)}
+                network_dict[inode] = {
+                    "name": "",
+                    "inputs": [],
+                    "outputs": FunctionOutputs(bit_lut=BitLut(0)),
+                }
         elif ".l" in line:
             parts = line.split()
-            lut_dict[int(parts[1]) - 1]["name"] = parts[2]
+            network_dict[int(parts[1]) - 1]["name"] = parts[2]
         elif ".n" in line:
             parts = line.split()
             inode = int(parts[1]) - 1
             indegree = int(parts[2])
             for j in range(indegree):
-                lut_dict[inode]["regulators"].append(int(parts[3 + j]) - 1)
+                network_dict[inode]["inputs"].append(int(parts[3 + j]) - 1)
 
             if i >= len(lines):
                 logic_line = ""
@@ -50,10 +55,14 @@ def parse_cnet(text: str) -> LutDict:
 
             if indegree <= 0:
                 if logic_line == "":
-                    lut_dict[inode]["regulators"] = [inode]
-                    lut_dict[inode]["lut"] = BitLut.from_sequence([0, 1])
+                    network_dict[inode]["inputs"] = [inode]
+                    network_dict[inode]["outputs"] = FunctionOutputs(
+                        bit_lut=BitLut.from_sequence([0, 1])
+                    )
                 else:
-                    lut_dict[inode]["lut"] = BitLut.from_sequence([int(logic_line)])
+                    network_dict[inode]["outputs"] = FunctionOutputs(
+                        bit_lut=BitLut.from_sequence([int(logic_line)])
+                    )
             else:
                 lut = BitLut(indegree)
                 while (
@@ -68,41 +77,45 @@ def parse_cnet(text: str) -> LutDict:
                         break
                     logic_line = lines[i].strip()
                     i += 1
-                lut_dict[inode]["lut"] = lut
+                network_dict[inode]["outputs"] = FunctionOutputs(bit_lut=lut)
         elif ".e" in line:
             break
 
-    if not lut_dict:
+    if not network_dict:
         raise ValueError("No cnet nodes found")
-    return lut_dict  # type: ignore[return-value]
+    return network_dict  # type: ignore[return-value]
 
 
-def lut_dict_to_cnet(
-    lut_dict: Mapping[int, Mapping[str, Any]],
+def network_dict_to_cnet(
+    network_dict: Mapping[int, Mapping[str, Any]],
     *,
     adjust_no_input: bool = False,
 ) -> str:
-    """Export ``LutDict`` to BNS / Cell Collective ``.cnet`` text.
+    """Export ``NetworkDict`` to BNS / Cell Collective ``.cnet`` text.
 
     Args:
-        lut_dict: CANA ``LutDict``.
-        adjust_no_input: If True, rewrite empty-regulator nodes as self-loops
+        network_dict: CANA ``NetworkDict``.
+        adjust_no_input: If True, rewrite empty-input nodes as self-loops
             with identity LUT ``[0, 1]`` (BNS compatibility).
     """
-    local: Dict[int, Dict[str, Any]] = {
-        i: {
+    local: Dict[int, Dict[str, Any]] = {}
+    for i, data in network_dict.items():
+        outputs = data["outputs"]
+        if isinstance(outputs, FunctionOutputs):
+            lut = outputs.get_bit_lut()
+        elif isinstance(outputs, BitLut):
+            lut = outputs
+        else:
+            lut = BitLut.from_sequence(outputs)
+        local[i] = {
             "name": data["name"],
-            "regulators": list(data["regulators"]),
-            "lut": data["lut"]
-            if isinstance(data["lut"], BitLut)
-            else BitLut.from_sequence(data["lut"]),
+            "inputs": list(data["inputs"]),
+            "lut": lut,
         }
-        for i, data in lut_dict.items()
-    }
     if adjust_no_input:
         for i, data in local.items():
-            if len(data["regulators"]) == 0:
-                data["regulators"] = [i]
+            if len(data["inputs"]) == 0:
+                data["inputs"] = [i]
                 data["lut"] = BitLut.from_sequence([0, 1])
 
     nnodes = len(local)
@@ -111,12 +124,12 @@ def lut_dict_to_cnet(
         parts.append(".l {0} {1}".format(i + 1, local[i]["name"]))
     parts.append("")
     for i in range(nnodes):
-        k = len(local[i]["regulators"])
+        k = len(local[i]["inputs"])
         parts.append(
             ".n {0} {1} {2}".format(
                 i + 1,
                 k,
-                " ".join(str(v + 1) for v in local[i]["regulators"]),
+                " ".join(str(v + 1) for v in local[i]["inputs"]),
             ).rstrip()
         )
         lut = local[i]["lut"]

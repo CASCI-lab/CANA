@@ -4,6 +4,8 @@ from __future__ import annotations
 
 from typing import Iterator, List, Optional, Sequence, Union
 
+from cana.cutils import binstate_to_statenum, statenum_to_binstate
+
 __all__ = ["BitLut"]
 
 
@@ -177,3 +179,48 @@ class BitLut(object):
         """Number of rows equal to ``1``."""
         # int.bit_count is 3.10+
         return sum(byte.bit_count() for byte in self._data)
+
+    def reorder(
+        self, old_labels: Sequence[object], new_labels: Sequence[object]
+    ) -> "BitLut":
+        """Return a copy with input-bit order remapped from ``old_labels`` to ``new_labels``.
+
+        Labels identify the ``k`` input variables in MSB-first bit order.
+        ``new_labels`` must be a permutation of ``old_labels``.  If the orders
+        already match, returns ``self`` unchanged.
+        """
+        if list(old_labels) == list(new_labels):
+            return self
+        k = len(old_labels)
+        if k != self._k:
+            raise ValueError(
+                "old_labels length {0:d} does not match BitLut.k={1:d}".format(
+                    k, self._k
+                )
+            )
+        if k != len(new_labels) or set(old_labels) != set(new_labels):
+            raise ValueError("old_labels and new_labels must be permutations")
+        name_to_old = {n: i for i, n in enumerate(old_labels)}
+        new_lut = BitLut(k)
+        for new_state in range(self._n):
+            new_bits = statenum_to_binstate(new_state, k)
+            old_bits = ["0"] * k
+            for new_i, name in enumerate(new_labels):
+                old_bits[name_to_old[name]] = new_bits[new_i]
+            old_state = binstate_to_statenum("".join(old_bits))
+            new_lut[new_state] = self[old_state]
+        return new_lut
+
+    @classmethod
+    def reorder_sequence(
+        cls,
+        lut: Sequence[object],
+        old_labels: Sequence[object],
+        new_labels: Sequence[object],
+    ) -> "BitLut":
+        """Like :meth:`reorder`, but accepts any 0/1 sequence or ``BitLut``."""
+        if isinstance(lut, BitLut):
+            source = lut
+        else:
+            source = cls.from_sequence(lut)
+        return source.reorder(old_labels, new_labels)

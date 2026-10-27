@@ -7,10 +7,10 @@ import xml.etree.ElementTree as ET
 from typing import Any, Dict, List, Mapping, Optional, Sequence
 
 from cana.io.expressions import lut_to_expression
-from cana.lut_dict import (
-    LutDict,
-    expressions_to_lut_dict,
-    regulator_names_for_node,
+from cana.network_dict import (
+    NetworkDict,
+    expressions_to_network_dict,
+    input_names_for_node,
     sorted_node_ids,
 )
 
@@ -251,8 +251,8 @@ def lut_to_mathml(input_names: Sequence[str], lut: Sequence[Any]) -> ET.Element:
     return python_expr_to_mathml(expr)
 
 
-def parse_sbml(text: str) -> LutDict:
-    """Parse SBML-qual Boolean models into a ``LutDict``."""
+def parse_sbml(text: str) -> NetworkDict:
+    """Parse SBML-qual Boolean models into a ``NetworkDict``."""
     root = ET.fromstring(text)
     species: List[str] = []
     for elem in root.iter():
@@ -313,11 +313,11 @@ def parse_sbml(text: str) -> LutDict:
 
     if not species and not expressions:
         raise ValueError("No SBML-qual species or transitions found")
-    return expressions_to_lut_dict(expressions, species)
+    return expressions_to_network_dict(expressions, species)
 
 
-def lut_dict_to_sbml(lut_dict: Mapping[int, Mapping[str, Any]]) -> str:
-    """Export ``LutDict`` to SBML Level 3 qualitative XML."""
+def network_dict_to_sbml(network_dict: Mapping[int, Mapping[str, Any]]) -> str:
+    """Export ``NetworkDict`` to SBML Level 3 qualitative XML."""
     SBML = "http://www.sbml.org/sbml/level3/version1/core"
     QUAL = "http://www.sbml.org/sbml/level3/version1/qual/version1"
     MATH = "http://www.w3.org/1998/Math/MathML"
@@ -334,8 +334,8 @@ def lut_dict_to_sbml(lut_dict: Mapping[int, Mapping[str, Any]]) -> str:
     sbml.set("xmlns:qual", QUAL)
     model = ET.SubElement(sbml, "{%s}model" % SBML)
     list_sp = ET.SubElement(model, "{%s}listOfQualitativeSpecies" % QUAL)
-    for i in sorted_node_ids(lut_dict):
-        name = lut_dict[i]["name"]
+    for i in sorted_node_ids(network_dict):
+        name = network_dict[i]["name"]
         ET.SubElement(
             list_sp,
             "{%s}qualitativeSpecies" % QUAL,
@@ -348,9 +348,9 @@ def lut_dict_to_sbml(lut_dict: Mapping[int, Mapping[str, Any]]) -> str:
         )
 
     list_tr = ET.SubElement(model, "{%s}listOfTransitions" % QUAL)
-    for i in sorted_node_ids(lut_dict):
-        name = lut_dict[i]["name"]
-        inputs = regulator_names_for_node(lut_dict, i)
+    for i in sorted_node_ids(network_dict):
+        name = network_dict[i]["name"]
+        inputs = input_names_for_node(network_dict, i)
         tr = ET.SubElement(
             list_tr,
             "{%s}transition" % QUAL,
@@ -391,7 +391,9 @@ def lut_dict_to_sbml(lut_dict: Mapping[int, Mapping[str, Any]]) -> str:
         )
         math = ET.SubElement(ft, "{%s}math" % MATH)
         math.set("xmlns", MATH)
-        math.append(lut_to_mathml(inputs, lut_dict[i]["lut"]))
+        math.append(
+            lut_to_mathml(inputs, network_dict[i]["outputs"].get_bit_lut())
+        )
 
     rough = ET.tostring(sbml, encoding="unicode")
     if "xmlns:qual=" not in rough:

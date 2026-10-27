@@ -3,7 +3,7 @@
 #
 # Load one Boolean model from the BBM corpus in all four expression formats
 # (``.booleannet.txt``, ``.bnet``, ``.aeon``, ``.sbml``), check that they share
-# the same name-keyed LUTs (CANA ``LutDict`` hub), then exercise any↔any
+# the same name-keyed LUTs (CANA ``NetworkDict`` hub), then exercise any↔any
 # conversion and full round-trips.
 #
 # Free inputs (e.g. ``v_CycD`` in model 023) appear without an update rule in
@@ -26,7 +26,7 @@ for _p in (_DEV_DIR, _PKG_ROOT):
         sys.path.insert(0, str(_p))
 
 from cana.boolean_network import BooleanNetwork
-from cana.lut_dict import equivalent_lut_dicts, name_keyed_luts
+from cana.network_dict import equivalent_network_dicts, name_keyed_luts
 
 # ---------------------------------------------------------------------------
 # Config
@@ -80,28 +80,29 @@ for fmt in FORMATS:
     print(f"  loaded {fmt:12s}  N={N.Nnodes}  names={sorted(n.name for n in N.nodes)}")
 
 # %% [markdown]
-# ## What ``lut_dict`` looks like
+# ## What ``network_dict`` looks like
 #
 # Each network stores a dense dict
-# ``lut_dict[i] = {"name", "regulators", "lut"}`` where ``lut`` is the Boolean
-# truth table of length ``2**k`` for regulator node ids ``regulators``.
+# ``network_dict[i] = {"name", "inputs", "outputs"}`` where ``outputs`` is a
+# ``FunctionOutputs`` (usually with a dense ``bit_lut`` of length ``2**k``)
+# for input node ids ``inputs``.
 # Formats may permute node ids; equivalence is checked by **node name**.
 
 
 # %%
 ref = networks["booleannet"]
-print("Example lut_dict entry (first node of booleannet load):")
+print("Example network_dict entry (first node of booleannet load):")
 i0 = 0
-entry = ref.lut_dict[i0]
+entry = ref.network_dict[i0]
 print(
-    f"  lut_dict[{i0}] = {{"
+    f"  network_dict[{i0}] = {{"
     f"'name': {entry['name']!r}, "
-    f"'regulators': {entry['regulators']}, "
-    f"'lut': {entry['lut']}"
+    f"'inputs': {entry['inputs']}, "
+    f"'outputs': {entry['outputs']}"
     f"}}"
 )
 print(
-    "  (regulators are node ids; LUT row s uses regulators[0] as MSB — "
+    "  (inputs are node ids; LUT row s uses inputs[0] as MSB — "
     "see BooleanNetwork docstring)"
 )
 
@@ -110,10 +111,10 @@ print(
 
 
 # %%
-print("Pairwise equivalent_lut_dicts vs booleannet:")
+print("Pairwise equivalent_network_dicts vs booleannet:")
 all_ok = True
 for fmt, N in networks.items():
-    ok = equivalent_lut_dicts(ref, N)
+    ok = equivalent_network_dicts(ref, N)
     all_ok = all_ok and ok
     print(f"  {fmt:12s}  {ok}")
 assert all_ok, "Formats disagree on name-keyed LUTs"
