@@ -19,7 +19,7 @@ schemata (via one-symbol), or a positional expression via
 from __future__ import annotations
 
 import warnings
-from typing import Any, Iterator, List, Optional, Protocol, Sequence, Tuple, Union, runtime_checkable
+from typing import Any, Iterator, List, Optional, Sequence, Tuple, Union
 
 from cana.bit_lut import BitLut
 from cana.function_outputs.expression import (
@@ -42,7 +42,6 @@ from cana.function_outputs.two_symbol import (
 )
 
 __all__ = [
-    "BooleanEval",
     "FunctionOutputs",
     "OneSymbolSchemata",
     "TwoSymbolSchemata",
@@ -52,18 +51,6 @@ __all__ = [
 
 # (ts0, ts1); each entry is [schema_str, perm_groups, same_groups].
 TwoSymbolSchemata = Tuple[list, list]
-
-
-@runtime_checkable
-class BooleanEval(Protocol):
-    """Minimal interface for evaluating a Boolean update function."""
-
-    @property
-    def k(self) -> int:
-        """Number of input variables."""
-
-    def eval(self, statenum: int) -> int:
-        """Return the next value for input state number ``statenum``."""
 
 
 class FunctionOutputs(object):
