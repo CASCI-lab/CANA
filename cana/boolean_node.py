@@ -244,7 +244,7 @@ class BooleanNode(object):
             )
 
         redundancy = [
-            operator([pi.count("#") for pi in self._pi_coverage[binstate]])
+            operator([pi.count("2") for pi in self._pi_coverage[binstate]])
             for binstate in self._pi_coverage
         ]
 
@@ -525,7 +525,8 @@ class BooleanNode(object):
             pi1s = self._prime_implicants.get(1, [])
 
             for output, pi in zip([0, 1], [pi0s, pi1s]):
-                for schemata in sorted(pi):
+                # Sort on display form so row order matches the visible don't-care symbol.
+                for schemata in sorted(s.replace("2", pi_symbol) for s in pi):
                     r.append((schemata, output))
 
         # Two Symbol LUT
@@ -715,19 +716,9 @@ class BooleanNode(object):
         elif "two_symbols" in kwargs:
             self._check_compute_canalization_variables(prime_implicants=True)
             if self._two_symbols is None:
-                # this is a temporary fix until we update 'find_two_symbols' to cython.
                 # Prime-implicant dict keys are int polarities 0/1 (dense BitLut path).
-                if 0 in self._prime_implicants:
-                    pi0 = self._prime_implicants[0]
-                    pi0 = set([pi.replace("#", "2") for pi in pi0])
-                else:
-                    pi0 = []
-                if 1 in self._prime_implicants:
-                    pi1 = self._prime_implicants[1]
-                    pi1 = set([pi.replace("#", "2") for pi in pi1])
-                else:
-                    pi1 = []
-                # /end fix
+                pi0 = self._prime_implicants.get(0, [])
+                pi1 = self._prime_implicants.get(1, [])
                 self._two_symbols = (
                     BCanalization.find_two_symbols_v2(k=self.k, prime_implicants=pi0),
                     BCanalization.find_two_symbols_v2(k=self.k, prime_implicants=pi1),

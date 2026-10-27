@@ -17,7 +17,7 @@ def parse_cnet(text: str) -> LutDict:
         .v <N>
         .l <id> <name>
         .n <id> <k> <in1> ... <ink>
-        <binstate> <out>   # may use ``-`` don't-care bits
+        <binstate> <out>   # may use ``2`` don't-care bits (``-`` also accepted)
         .e
     """
     lut_dict: Dict[int, Dict[str, Any]] = {}

@@ -235,7 +235,9 @@ def random_binstate(length, random_seed=None):
 
 
 def expand_logic_line(line):
-    """This generator expands a logic line containing ``-`` (ie. ``00- 0`` or ``0-0 1``) to a series of logic lines containing only ``0`` and ``1``.
+    """This generator expands a logic line containing don't-care bits
+    (``2`` preferred, ``-`` also accepted; e.g. ``002 0`` or ``0-0 1``)
+    to a series of logic lines containing only ``0`` and ``1``.
 
     Args:
         line (string) : The logic line. Format is <binary-state><space><output>.
@@ -244,7 +246,7 @@ def expand_logic_line(line):
         generator : a series of logic lines
 
     Example:
-        >>> expand_logic_line('1-- 0')
+        >>> expand_logic_line('122 0')
         >>> 100 0
         >>> 101 0
         >>> 110 0
@@ -260,6 +262,8 @@ def expand_logic_line(line):
         return ''.join(lc)
 
     line1, line2 = line.split()
+    # Normalize preferred don't-care ``2`` to ``-`` for the chunk expander.
+    line1 = line1.replace('2', '-')
     chunks = line1.split('-')
     if len(chunks) > 1:
         for i in product(*[('0', '1')] * (len(chunks) - 1)):

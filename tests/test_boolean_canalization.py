@@ -14,7 +14,7 @@ def test_AND():
     k, outputs = 2, '0001'
 
     # Prime Implicants
-    true_pi0 = set(['0#', '#0'])
+    true_pi0 = set(['02', '20'])
     true_pi1 = set(['11'])
 
     bs0 = outputs_to_binstates_of_given_type(outputs=outputs, output='0', k=k)
@@ -28,10 +28,6 @@ def test_AND():
     # Two Symbols
     true_ts0 = [('20', [[0, 1]], [])]
     true_ts1 = [('11', [], [[0, 1]])]
-
-    # Temporary fix to make find_two_symbols_v2 work until we update it to work more output types.
-    pi0 = set([pi.replace('#', '2') for pi in pi0])
-    pi1 = set([pi.replace('#', '2') for pi in pi1])
 
     ts0, ts1 = find_two_symbols_v2(k=k, prime_implicants=pi0), find_two_symbols_v2(k=k, prime_implicants=pi1)
     
@@ -48,7 +44,7 @@ def test_K1_constant():
     k, outputs = 1, '00'
 
     # Prime Implicants
-    true_pi0 = set(['#'])
+    true_pi0 = set(['2'])
     true_pi1 = set([])
 
     bs0 = outputs_to_binstates_of_given_type(outputs=outputs, output='0', k=k)
@@ -63,10 +59,6 @@ def test_K1_constant():
     # # Two Symbols
     true_ts0 = [('2', [], [])]
     true_ts1 = []
-
-    # Temporary fix to make find_two_symbols_v2 work until we update it to work more output types.
-    pi0 = set([pi.replace('#', '2') for pi in pi0])
-    pi1 = set([pi.replace('#', '2') for pi in pi1])
 
     ts0, ts1 = find_two_symbols_v2(k=k, prime_implicants=pi0), find_two_symbols_v2(k=k, prime_implicants=pi1)
     
@@ -99,10 +91,6 @@ def test_K1_identity():
     true_ts0 = [('0', [], [])]
     true_ts1 = [("1", [], [])]
 
-    # Temporary fix to make find_two_symbols_v2 work until we update it to work more output types.
-    pi0 = set([pi.replace('#', '2') for pi in pi0])
-    pi1 = set([pi.replace('#', '2') for pi in pi1])
-
     ts0, ts1 = find_two_symbols_v2(k=k, prime_implicants=pi0), find_two_symbols_v2(k=k, prime_implicants=pi1)
     
     # convert to unique representation so that equality test works
@@ -119,7 +107,7 @@ def test_OR():
     k, outputs = 2, '0111'
     # Prime Implicants
     true_pi0 = set(['00'])
-    true_pi1 = set(['1#', '#1'])
+    true_pi1 = set(['12', '21'])
 
     bs0 = outputs_to_binstates_of_given_type(outputs=outputs, output='0', k=k)
     bs1 = outputs_to_binstates_of_given_type(outputs=outputs, output='1', k=k)
@@ -132,10 +120,6 @@ def test_OR():
     # Two Symbols
     true_ts0 = [('00', [], [[0, 1]])]
     true_ts1 = [('12', [[0, 1]], [])]
-
-    # Temporary fix to make find_two_symbols_v2 work until we update it to work more output types.
-    pi0 = set([pi.replace('#', '2') for pi in pi0])
-    pi1 = set([pi.replace('#', '2') for pi in pi1])
 
     ts0, ts1 = find_two_symbols_v2(k=k, prime_implicants=pi0), find_two_symbols_v2(k=k, prime_implicants=pi1)
     # convert to unique representation so that equality test works
@@ -165,10 +149,6 @@ def test_XOR():
     true_ts0 = [('00', [], [[0, 1]]), ('11', [], [[0, 1]])]
     true_ts1 = [('01', [[0, 1]], [])]
 
-    # Temporary fix to make find_two_symbols_v2 work until we update it to work more output types.
-    pi0 = set([pi.replace('#', '2') for pi in pi0])
-    pi1 = set([pi.replace('#', '2') for pi in pi1])
-
     ts0, ts1 = find_two_symbols_v2(k=k, prime_implicants=pi0), find_two_symbols_v2(k=k, prime_implicants=pi1)
     # convert to unique representation so that equality test works
     true_ts0 = reorderTwoSymbolOutput(true_ts0)
@@ -184,7 +164,7 @@ def test_CONTRADICTION():
     """Test Canalization - CONTRADICTION (k=2, outputs=[0,0,0,0])"""
     k, outputs = 2, '0000'
     # Prime Implicants
-    true_pi0 = set(['##'])
+    true_pi0 = set(['22'])
     true_pi1 = set([])
 
     bs0 = outputs_to_binstates_of_given_type(outputs=outputs, output='0', k=k)
@@ -196,10 +176,6 @@ def test_CONTRADICTION():
     # Two Symbols
     true_ts0 = [('22', [], [[0, 1]])]
     true_ts1 = []
-
-    # Temporary fix to make find_two_symbols_v2 work until we update it to work more output types.
-    pi0 = set([pi.replace('#', '2') for pi in pi0])
-    pi1 = set([pi.replace('#', '2') for pi in pi1])
 
     ts0, ts1 = find_two_symbols_v2(k=k, prime_implicants=pi0), find_two_symbols_v2(k=k, prime_implicants=pi1)
     # convert to unique representation so that equality test works
@@ -216,8 +192,8 @@ def test_COPYxi():
     """Test Canalization - COPYxI_1 (k=2, outputs=[0,0,1,1])"""
     k, outputs = 2, '0011'
     # Prime Implicants
-    true_pi0 = set(['0#'])
-    true_pi1 = set(['1#'])
+    true_pi0 = set(['02'])
+    true_pi1 = set(['12'])
 
     bs0 = outputs_to_binstates_of_given_type(outputs=outputs, output='0', k=k)
     bs1 = outputs_to_binstates_of_given_type(outputs=outputs, output='1', k=k)
@@ -228,10 +204,6 @@ def test_COPYxi():
     # Two Symbols
     true_ts0 = [('02', [], [])]
     true_ts1 = [('12', [], [])]
-
-    # Temporary fix to make find_two_symbols_v2 work until we update it to work more output types.
-    pi0 = set([pi.replace('#', '2') for pi in pi0])
-    pi1 = set([pi.replace('#', '2') for pi in pi1])
 
     ts0, ts1 = find_two_symbols_v2(k=k, prime_implicants=pi0), find_two_symbols_v2(k=k, prime_implicants=pi1)
     # convert to unique representation so that equality test works
@@ -248,8 +220,8 @@ def test_RULE_90():
     """Test Canalization - RULE 90 (k=3, outputs=[0,1,0,1,1,0,1,0])"""
     k, outputs = 3, '01011010'
     # Prime Implicants
-    true_pi0 = set(['0#0', '1#1'])
-    true_pi1 = set(['0#1', '1#0'])
+    true_pi0 = set(['020', '121'])
+    true_pi1 = set(['021', '120'])
 
     bs0 = outputs_to_binstates_of_given_type(outputs=outputs, output='0', k=k)
     bs1 = outputs_to_binstates_of_given_type(outputs=outputs, output='1', k=k)
@@ -260,10 +232,6 @@ def test_RULE_90():
     # Two Symbols
     true_ts0 = [('020', [], [[0, 2]]), ('121', [], [[0, 2]])]
     true_ts1 = [('120', [[0, 2]], [])]
-
-    # Temporary fix to make find_two_symbols_v2 work until we update it to work more output types.
-    pi0 = set([pi.replace('#', '2') for pi in pi0])
-    pi1 = set([pi.replace('#', '2') for pi in pi1])
 
     ts0, ts1 = find_two_symbols_v2(k=k, prime_implicants=pi0), find_two_symbols_v2(k=k, prime_implicants=pi1)
     # convert to unique representation so that equality test works
@@ -280,8 +248,8 @@ def test_RULE_110():
     """Test Canalization - RULE 110 (k=3, outputs=[0,1,1,1,0,1,1,0])"""
     k, outputs = 3, '01110110'
 
-    true_pi0 = set(['#00', '111'])
-    true_pi1 = set(['0#1', '#01', '01#', '#10'])
+    true_pi0 = set(['200', '111'])
+    true_pi1 = set(['021', '201', '012', '210'])
 
     bs0 = outputs_to_binstates_of_given_type(outputs=outputs, output='0', k=k)
     bs1 = outputs_to_binstates_of_given_type(outputs=outputs, output='1', k=k)
@@ -292,10 +260,6 @@ def test_RULE_110():
     # Two Symbols
     true_ts0 = [('111', [], [[0, 1, 2]]), ('200', [], [[1, 2]])]
     true_ts1 = [('012', [[0, 2]], []), ('012', [[1, 2]], []), ('201', [[0, 1]], []), ('201', [[1, 2]], [])]
-
-    # Temporary fix to make find_two_symbols_v2 work until we update it to work more output types.
-    pi0 = set([pi.replace('#', '2') for pi in pi0])
-    pi1 = set([pi.replace('#', '2') for pi in pi1])
 
     ts0, ts1 = find_two_symbols_v2(k=k, prime_implicants=pi0), find_two_symbols_v2(k=k, prime_implicants=pi1)
     # convert to unique representation so that equality test works
@@ -325,8 +289,7 @@ def test_prime_implicants_random():
             ones = n._prime_implicants[1]
         else:
             ones = set()
-        pis[f] = {"0": set(i.replace("#", "2") for i in zeros),
-                  "1": set(i.replace("#", "2") for i in ones)}
+        pis[f] = {"0": set(zeros), "1": set(ones)}
 
     # expand and compare
     for f in nodes:

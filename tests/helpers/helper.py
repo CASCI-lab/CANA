@@ -111,8 +111,8 @@ def getPis(outputs):
     node._check_compute_canalization_variables(prime_implicants="i dont matter")
     pi = node._prime_implicants
     return {
-        0: set(i.replace("#", "2") for i in pi.get(0, ())),
-        1: set(i.replace("#", "2") for i in pi.get(1, ())),
+        0: set(pi.get(0, ())),
+        1: set(pi.get(1, ())),
     }
 
 

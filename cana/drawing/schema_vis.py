@@ -81,7 +81,7 @@ def plot_schemata(n, plotTS=True):
                 elif input == "1":
                     facecolor = "black"
                     textcolor = "white"
-                elif input == "#":
+                elif input == "2":
                     facecolor = "#cccccc"
                     textcolor = "black"
                 text = "%s" % (input) if (input != "2") else "#"
