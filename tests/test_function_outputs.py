@@ -32,7 +32,7 @@ def test_no_dense_lut_errors():
         len(fo)
     with pytest.raises(ValueError, match="bit_lut"):
         fo[0]
-    with pytest.raises(ValueError, match="bit_lut"):
+    with pytest.raises(ValueError, match="neither bit_lut nor one_symbol_schemata"):
         fo.eval(0)
 
 
@@ -62,3 +62,56 @@ def test_network_shares_bit_lut():
         assert isinstance(network.lut_dict[i]["lut"], BitLut)
         assert isinstance(node.outputs, FunctionOutputs)
         assert node.outputs.bit_lut is network.lut_dict[i]["lut"]
+
+
+def test_get_one_symbol_schemata_lazy():
+    fo = FunctionOutputs.from_sequence([0, 0, 0, 1])  # AND
+    assert fo.one_symbol_schemata is None
+    first = fo.get_one_symbol_schemata()
+    assert fo.one_symbol_schemata is first
+    assert first[1] == {"11"}
+    assert first[0] == {"02", "20"}
+    second = fo.get_one_symbol_schemata()
+    assert second is first
+
+
+def test_build_bit_lut_from_one_symbol_schemata():
+    original = [0, 0, 0, 1]
+    fo = FunctionOutputs.from_sequence(original)
+    schemata = fo.get_one_symbol_schemata()
+    rebuilt = FunctionOutputs(one_symbol_schemata=schemata, k=2)
+    assert rebuilt.bit_lut is None
+    lut = rebuilt.build_bit_lut_from_one_symbol_schemata()
+    assert list(lut) == original
+    assert rebuilt.get_bit_lut() is lut
+
+
+def test_eval_from_one_symbol_only():
+    schemata = {0: {"02", "20"}, 1: {"11"}}  # AND cover with wildcards as '2'
+    fo = FunctionOutputs(one_symbol_schemata=schemata, k=2)
+    assert fo.bit_lut is None
+    assert fo.eval(0) == 0
+    assert fo.eval(3) == 1
+    assert fo.bit_lut is not None
+    assert list(fo.bit_lut) == [0, 0, 0, 1]
+
+
+def test_one_symbol_schemata_match_bit_lut():
+    fo = FunctionOutputs.from_sequence([0, 1, 1, 0])  # XOR
+    assert fo.one_symbol_schemata is None
+    assert fo.one_symbol_schemata_match_bit_lut() is True
+    assert fo.one_symbol_schemata is not None
+
+
+def test_node_stores_one_symbol_on_outputs():
+    n = BooleanNode.from_output_list([0, 0, 0, 1], name="AND")
+    assert n.outputs.one_symbol_schemata is None
+    n._check_compute_canalization_variables(prime_implicants=True)
+    assert n.outputs.one_symbol_schemata is not None
+    assert n._prime_implicants is n.outputs.one_symbol_schemata
+    cached = n.outputs.one_symbol_schemata
+    n._check_compute_canalization_variables(prime_implicants=True)
+    assert n.outputs.one_symbol_schemata is cached
+    n._check_compute_canalization_variables(two_symbols=True)
+    assert n.outputs.two_symbol_schemata is not None
+    assert n._two_symbols is n.outputs.two_symbol_schemata

@@ -30,7 +30,6 @@ from cana.bit_lut import BitLut
 from cana.cutils import (
     binstate_to_statenum,
     flip_bit,
-    outputs_to_binstates_of_given_type,
     statenum_to_binstate,
 )
 from cana.function_outputs import FunctionOutputs
@@ -61,8 +60,7 @@ class BooleanNode(object):
         self.state = str(
             int(state)
         )  # the initial state of the node. internally this is treated as a string.
-        # Multi-representation outputs (dense BitLut today; schemata/expression later).
-        # TODO: migrate cached ``_prime_implicants`` into ``outputs.schemata``.
+        # Multi-representation outputs (dense BitLut; one-/two-symbol on demand).
         self.outputs = FunctionOutputs.from_sequence(outputs)
         self.network = network  # the BooleanNetwork object this nodes belongs to
         self.verbose = verbose  # verbose mode
@@ -103,11 +101,7 @@ class BooleanNode(object):
         else:
             self.set_constant(constant=False)
 
-        # Canalization Variables
-        self._prime_implicants = (
-            None  # A tuple of negative and positive prime implicants.
-        )
-        self._two_symbols = None  # The Two Symbol (TS) Schemata
+        # Canalization Variables (PI / TS live on outputs.*; coverage stays here)
         self._pi_coverage = None  # The Coverage of inputs by Prime Implicants schemata
         self._ts_coverage = None  # The Coverage of inputs by Two Symbol schemata
 
@@ -687,21 +681,31 @@ class BooleanNode(object):
         self._check_compute_canalization_variables(ts_coverage=True)
         return self._ts_coverage
 
+    @property
+    def _prime_implicants(self):
+        """Proxy to :attr:`outputs.one_symbol_schemata` (one source of truth)."""
+        return self.outputs.one_symbol_schemata
+
+    @_prime_implicants.setter
+    def _prime_implicants(self, value):
+        self.outputs.one_symbol_schemata = value
+
+    @property
+    def _two_symbols(self):
+        """Proxy to :attr:`outputs.two_symbol_schemata` (one source of truth)."""
+        return self.outputs.two_symbol_schemata
+
+    @_two_symbols.setter
+    def _two_symbols(self, value):
+        self.outputs.two_symbol_schemata = value
+
     def _check_compute_canalization_variables(self, **kwargs):
         """Recursevely check if the requested canalization variables are instantiated/computed, otherwise computes them in order.
         For example: to compute `two_symbols` we need `prime_implicants` first.
-        Likewise, to compute `prime_implicants` we need the `transition_density_table` first.
+        Likewise, to compute `prime_implicants` we need the dense LUT (or stored schemata) first.
         """
         if "prime_implicants" in kwargs:
-            if self._prime_implicants is None:
-                self._prime_implicants = dict()
-                for output in sorted(set(self.outputs)):
-                    output_binstates = outputs_to_binstates_of_given_type(
-                        self.outputs, output=output, k=self.k
-                    )
-                    self._prime_implicants[output] = cBCanalization.find_implicants_qm(
-                        input_binstates=output_binstates
-                    )
+            self.outputs.get_one_symbol_schemata()
 
         elif "pi_coverage" in kwargs:
             self._check_compute_canalization_variables(prime_implicants=True)
@@ -714,15 +718,7 @@ class BooleanNode(object):
                 assert len(self._pi_coverage) == 2**self.k
 
         elif "two_symbols" in kwargs:
-            self._check_compute_canalization_variables(prime_implicants=True)
-            if self._two_symbols is None:
-                # Prime-implicant dict keys are int polarities 0/1 (dense BitLut path).
-                pi0 = self._prime_implicants.get(0, [])
-                pi1 = self._prime_implicants.get(1, [])
-                self._two_symbols = (
-                    BCanalization.find_two_symbols_v2(k=self.k, prime_implicants=pi0),
-                    BCanalization.find_two_symbols_v2(k=self.k, prime_implicants=pi1),
-                )
+            self.outputs.get_two_symbol_schemata()
         elif "ts_coverage" in kwargs:
             self._check_compute_canalization_variables(two_symbols=True)
             if self._ts_coverage is None:

@@ -2,20 +2,29 @@
 """Multi-representation Boolean function outputs for a node.
 
 ``FunctionOutputs`` is what :attr:`cana.boolean_node.BooleanNode.outputs`
-stores.  Today the dense slot is a :class:`~cana.bit_lut.BitLut`; later
-slots may hold prime-implicant / one-symbol schemata and/or an expression
-AST.  Multiple representations may coexist.
+stores.  Peer representation slots may hold a dense
+:class:`~cana.bit_lut.BitLut`, one-symbol (prime-implicant) schemata,
+two-symbol schemata, and/or an expression.  Multiple representations may
+coexist; named converters document each derivation, and lazy getters fill
+a missing slot from another available slot when possible.
 
 Dense Sequence access (``len``, ``[i]``, iterate) requires ``bit_lut``.
-:meth:`eval` dispatches to whatever representation can answer.
+:meth:`eval` prefers ``bit_lut`` and can materialize it from one-symbol
+schemata via :meth:`get_bit_lut`.
 """
 from __future__ import annotations
 
-from typing import Any, Iterator, List, Optional, Protocol, Sequence, Union, runtime_checkable
+from typing import Any, Dict, Iterator, List, Optional, Protocol, Sequence, Set, Tuple, Union, runtime_checkable
 
 from cana.bit_lut import BitLut
+from cana.cutils import binstate_to_statenum, outputs_to_binstates_of_given_type
 
 __all__ = ["BooleanEval", "FunctionOutputs"]
+
+# Polarity -> set of length-k strings over {0,1,2} (2 = don't-care).
+OneSymbolSchemata = Dict[int, Set[str]]
+# (ts0, ts1); each entry is [schema_str, perm_groups, same_groups].
+TwoSymbolSchemata = Tuple[list, list]
 
 
 @runtime_checkable
@@ -37,29 +46,51 @@ class FunctionOutputs(object):
     ----------
     bit_lut :
         Dense packed truth table of length ``2**k``, if known.
-    schemata :
-        Reserved for prime-implicant / one-symbol / wildcard covers
-        (unused in this pass; canalization may migrate here later).
+    one_symbol_schemata :
+        Prime-implicant / one-symbol (wildcard) cover: ``dict`` keyed by
+        polarity ``0``/``1`` with sets of length-``k`` strings over
+        ``{0,1,2}`` (``2`` = don't-care), if known.
+    two_symbol_schemata :
+        Two-symbol schemata as ``(ts0, ts1)``, if known.  Each list holds
+        ``[schema_str, perm_groups, same_groups]`` entries.
     expression :
-        Reserved for a source expression string or AST (unused in this pass).
+        Reserved for a source expression string or AST.
     """
 
-    __slots__ = ("bit_lut", "schemata", "expression", "_k")
+    __slots__ = (
+        "bit_lut",
+        "one_symbol_schemata",
+        "two_symbol_schemata",
+        "expression",
+        "_k",
+    )
 
     def __init__(
         self,
         bit_lut: Optional[BitLut] = None,
-        schemata: Optional[Any] = None,
+        one_symbol_schemata: Optional[OneSymbolSchemata] = None,
+        two_symbol_schemata: Optional[TwoSymbolSchemata] = None,
         expression: Optional[Any] = None,
         k: Optional[int] = None,
     ) -> None:
         self.bit_lut = bit_lut
-        self.schemata = schemata
+        self.one_symbol_schemata = one_symbol_schemata
+        self.two_symbol_schemata = two_symbol_schemata
         self.expression = expression
         if bit_lut is not None:
             self._k = bit_lut.k
         elif k is not None:
             self._k = int(k)
+        elif one_symbol_schemata:
+            # Infer k from the first schema string when only schemata are given.
+            inferred = None
+            for piset in one_symbol_schemata.values():
+                for schema in piset:
+                    inferred = len(schema)
+                    break
+                if inferred is not None:
+                    break
+            self._k = inferred if inferred is not None else 0
         else:
             self._k = 0
 
@@ -82,16 +113,12 @@ class FunctionOutputs(object):
     def eval(self, statenum: int) -> int:
         """Evaluate the function at input state ``statenum``.
 
-        Prefers ``bit_lut``.  Schemata / expression backends are not
-        implemented yet; calling without a dense LUT raises ``ValueError``.
+        Prefers ``bit_lut``.  If absent but one-symbol schemata are present,
+        materializes the LUT via :meth:`get_bit_lut`.
         """
         if self.bit_lut is not None:
             return self.bit_lut.eval(statenum)
-        # Future: match schemata, then expression/AST.
-        raise ValueError(
-            "FunctionOutputs.eval requires a dense bit_lut "
-            "(schemata/expression backends are not implemented yet)"
-        )
+        return self.get_bit_lut().eval(statenum)
 
     def _require_bit_lut(self) -> BitLut:
         if self.bit_lut is None:
@@ -101,6 +128,129 @@ class FunctionOutputs(object):
                 "cannot be indexed as a Sequence yet)"
             )
         return self.bit_lut
+
+    def get_one_symbol_schemata(self) -> OneSymbolSchemata:
+        """Return one-symbol schemata, computing from ``bit_lut`` if needed."""
+        if self.one_symbol_schemata is not None:
+            return self.one_symbol_schemata
+        if self.bit_lut is not None:
+            return self.compute_one_symbol_schemata_from_bit_lut()
+        raise ValueError(
+            "Cannot get one_symbol_schemata: neither one_symbol_schemata "
+            "nor bit_lut is available"
+        )
+
+    def get_bit_lut(self) -> BitLut:
+        """Return the dense LUT, building it from one-symbol schemata if needed."""
+        if self.bit_lut is not None:
+            return self.bit_lut
+        if self.one_symbol_schemata is not None:
+            return self.build_bit_lut_from_one_symbol_schemata()
+        raise ValueError(
+            "Cannot get bit_lut: neither bit_lut nor one_symbol_schemata "
+            "is available"
+        )
+
+    def get_two_symbol_schemata(self) -> TwoSymbolSchemata:
+        """Return two-symbol schemata, deriving from one-symbol if needed."""
+        if self.two_symbol_schemata is not None:
+            return self.two_symbol_schemata
+        # Local import avoids a circular import at module load time.
+        import cana.canalization.boolean_canalization as BCanalization
+
+        one_symbol = self.get_one_symbol_schemata()
+        k = self.k
+        pi0 = one_symbol.get(0, set())
+        pi1 = one_symbol.get(1, set())
+        self.two_symbol_schemata = (
+            BCanalization.find_two_symbols_v2(k=k, prime_implicants=pi0),
+            BCanalization.find_two_symbols_v2(k=k, prime_implicants=pi1),
+        )
+        return self.two_symbol_schemata
+
+    def compute_one_symbol_schemata_from_bit_lut(self) -> OneSymbolSchemata:
+        """Compute and store one-symbol schemata from ``bit_lut`` via Quine-McCluskey."""
+        if self.bit_lut is None:
+            raise ValueError(
+                "compute_one_symbol_schemata_from_bit_lut requires bit_lut"
+            )
+        import cana.canalization.cboolean_canalization as cBCanalization
+
+        k = self.bit_lut.k
+        schemata = {}  # type: OneSymbolSchemata
+        for output in sorted(set(self.bit_lut)):
+            output_binstates = outputs_to_binstates_of_given_type(
+                self.bit_lut, output=output, k=k
+            )
+            schemata[output] = cBCanalization.find_implicants_qm(
+                input_binstates=output_binstates
+            )
+        self.one_symbol_schemata = schemata
+        self._k = k
+        return self.one_symbol_schemata
+
+    @staticmethod
+    def bit_lut_from_one_symbol_schemata(
+        schemata: OneSymbolSchemata, k: int
+    ) -> BitLut:
+        """Build a :class:`BitLut` from one-symbol schemata without mutating self.
+
+        Raises
+        ------
+        ValueError
+            On polarity conflicts or incomplete coverage of the ``2**k`` rows.
+        """
+        import cana.canalization.cboolean_canalization as cBCanalization
+
+        lut = BitLut(k)
+        covered = [False] * len(lut)
+        for output, piset in schemata.items():
+            out_bit = int(output)
+            for pi in piset:
+                for binstate in cBCanalization.expand_wildcard_schemata(pi):
+                    idx = binstate_to_statenum(binstate)
+                    if covered[idx] and lut[idx] != out_bit:
+                        raise ValueError(
+                            "one-symbol schemata polarity conflict at "
+                            "state {0!r}: {1:d} vs {2:d}".format(
+                                binstate, lut[idx], out_bit
+                            )
+                        )
+                    lut[idx] = out_bit
+                    covered[idx] = True
+        if not all(covered):
+            missing = sum(1 for c in covered if not c)
+            raise ValueError(
+                "one-symbol schemata do not cover all 2**k states "
+                "({0:d} uncovered for k={1:d})".format(missing, k)
+            )
+        return lut
+
+    def build_bit_lut_from_one_symbol_schemata(self) -> BitLut:
+        """Build and store ``bit_lut`` from ``one_symbol_schemata``."""
+        if self.one_symbol_schemata is None:
+            raise ValueError(
+                "build_bit_lut_from_one_symbol_schemata requires "
+                "one_symbol_schemata"
+            )
+        self.bit_lut = self.bit_lut_from_one_symbol_schemata(
+            self.one_symbol_schemata, self.k
+        )
+        self._k = self.bit_lut.k
+        return self.bit_lut
+
+    def one_symbol_schemata_match_bit_lut(self) -> bool:
+        """Return whether one-symbol schemata agree with ``bit_lut`` (opt-in).
+
+        Lazily obtains either side via :meth:`get_one_symbol_schemata` /
+        :meth:`get_bit_lut` if missing, then rebuilds a fresh LUT from the
+        schemata and compares it to the stored dense LUT.  Never called by
+        normal canalization paths.
+        """
+        schemata = self.get_one_symbol_schemata()
+        lut = self.get_bit_lut()
+        rebuilt = self.bit_lut_from_one_symbol_schemata(schemata, lut.k)
+        return rebuilt == lut
 
     def __len__(self) -> int:
         return len(self._require_bit_lut())
@@ -120,7 +270,8 @@ class FunctionOutputs(object):
                 return self.bit_lut == other.bit_lut
             return (
                 self.bit_lut == other.bit_lut
-                and self.schemata == other.schemata
+                and self.one_symbol_schemata == other.one_symbol_schemata
+                and self.two_symbol_schemata == other.two_symbol_schemata
                 and self.expression == other.expression
             )
         if self.bit_lut is not None and isinstance(other, Sequence) and not isinstance(
@@ -133,8 +284,10 @@ class FunctionOutputs(object):
         parts = []
         if self.bit_lut is not None:
             parts.append("bit_lut={0!r}".format(self.bit_lut))
-        if self.schemata is not None:
-            parts.append("schemata=...")
+        if self.one_symbol_schemata is not None:
+            parts.append("one_symbol_schemata=...")
+        if self.two_symbol_schemata is not None:
+            parts.append("two_symbol_schemata=...")
         if self.expression is not None:
             parts.append("expression={0!r}".format(self.expression))
         return "FunctionOutputs({0})".format(", ".join(parts) or "k={0}".format(self._k))
