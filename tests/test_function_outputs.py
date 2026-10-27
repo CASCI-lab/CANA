@@ -238,9 +238,9 @@ def test_network_shares_function_outputs():
     )
     network = BooleanNetwork.from_string_booleannet(rules, keep_constants=True)
     for i, node in enumerate(network.nodes):
-        assert isinstance(network.network_dict[i]["outputs"], FunctionOutputs)
+        assert node is network.nodes[i]
+        assert node.id == i
         assert isinstance(node.outputs, FunctionOutputs)
-        assert node.outputs is network.network_dict[i]["outputs"]
         # Expression formats store positional IR; LUT is lazy.
         assert node.outputs.expression is not None
         assert node.outputs.bit_lut is None
@@ -411,22 +411,25 @@ def test_fill_function_outputs_node_and_network():
     n2.fill_function_outputs("one_symbol_schemata")
     assert n2.outputs.one_symbol_schemata is not None
 
-    network = BooleanNetwork.from_dict(
-        {
-            0: {"name": "A", "inputs": [0], "outputs": [0, 1]},
-            1: {
-                "name": "B",
-                "inputs": [0, 1],
-                "outputs": FunctionOutputs(
+    network = BooleanNetwork.from_nodes(
+        [
+            BooleanNode(id=0, name="A", k=1, inputs=[0], outputs=[0, 1]),
+            BooleanNode(
+                id=1,
+                name="B",
+                k=2,
+                inputs=[0, 1],
+                outputs=FunctionOutputs(
                     one_symbol_schemata={0: {"02", "20"}, 1: {"11"}}, k=2
                 ),
-            },
-        }
+            ),
+        ]
     )
     assert network.nodes[1].outputs.bit_lut is None
     network.fill_function_outputs("bit_lut")
     assert list(network.nodes[1].outputs.bit_lut) == [0, 0, 0, 1]
-    assert network.network_dict[1]["outputs"].bit_lut is network.nodes[1].outputs.bit_lut
+    # Hub is the node list itself — fill mutates node.outputs in place.
+    assert network.nodes[1].outputs.bit_lut is not None
     network.fill_function_outputs("one_symbol_schemata")
     assert network.nodes[0].outputs.one_symbol_schemata is not None
 

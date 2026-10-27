@@ -2,12 +2,12 @@
 """BNS / Cell Collective ``.cnet`` (BLIF-like) import and export."""
 from __future__ import annotations
 
-from typing import Any, Dict, List, Mapping, Tuple
+from typing import Any, Dict, List, Sequence, Tuple
 
 from cana.bit_lut import BitLut
+from cana.boolean_node import BooleanNode
 from cana.cutils import binstate_to_statenum, expand_logic_line, statenum_to_binstate
 from cana.function_outputs import FunctionOutputs, OneSymbolSchemata
-from cana.network_dict import NetworkDict
 
 
 def _logic_line_has_wildcard(bits: str) -> bool:
@@ -57,8 +57,8 @@ def _bit_lut_from_logic_lines(logic_lines: List[str], indegree: int) -> BitLut:
     return lut
 
 
-def parse_cnet(text: str) -> NetworkDict:
-    """Parse BNS / Cell Collective ``.cnet`` text into a ``NetworkDict``.
+def parse_cnet(text: str) -> List[BooleanNode]:
+    """Parse BNS / Cell Collective ``.cnet`` text into a node list.
 
     Format sketch::
 
@@ -76,7 +76,8 @@ def parse_cnet(text: str) -> NetworkDict:
     ``BooleanNetwork.fill_function_outputs(...)`` (or the node helper) when
     you need the other slot.
     """
-    network_dict: Dict[int, Dict[str, Any]] = {}
+    # Scratch during parse; converted to BooleanNode at the end so k/mask match.
+    scratch: Dict[int, Dict[str, Any]] = {}
     lines = text.splitlines()
     i = 0
     while i < len(lines):
@@ -87,7 +88,7 @@ def parse_cnet(text: str) -> NetworkDict:
         if ".v" in line:
             nnodes = int(line.split()[1])
             for inode in range(nnodes):
-                network_dict[inode] = {
+                scratch[inode] = {
                     "name": "",
                     "inputs": [],
                     "outputs": FunctionOutputs(bit_lut=BitLut(0)),
@@ -96,13 +97,13 @@ def parse_cnet(text: str) -> NetworkDict:
             parts = line.split()
             # Tolerate missing / empty names (``.l <id>`` or ``.l <id> ``).
             if len(parts) >= 3:
-                network_dict[int(parts[1]) - 1]["name"] = parts[2]
+                scratch[int(parts[1]) - 1]["name"] = parts[2]
         elif ".n" in line:
             parts = line.split()
             inode = int(parts[1]) - 1
             indegree = int(parts[2])
             for j in range(indegree):
-                network_dict[inode]["inputs"].append(int(parts[3 + j]) - 1)
+                scratch[inode]["inputs"].append(int(parts[3 + j]) - 1)
 
             if indegree <= 0:
                 # Constant / free-input: a single output token (len 1), not a
@@ -113,12 +114,12 @@ def parse_cnet(text: str) -> NetworkDict:
                     logic_line = lines[i].strip()
                     i += 1
                 if logic_line == "":
-                    network_dict[inode]["inputs"] = [inode]
-                    network_dict[inode]["outputs"] = FunctionOutputs(
+                    scratch[inode]["inputs"] = [inode]
+                    scratch[inode]["outputs"] = FunctionOutputs(
                         bit_lut=BitLut.from_sequence([0, 1])
                     )
                 else:
-                    network_dict[inode]["outputs"] = FunctionOutputs(
+                    scratch[inode]["outputs"] = FunctionOutputs(
                         bit_lut=BitLut.from_sequence([int(logic_line)])
                     )
             else:
@@ -128,18 +129,27 @@ def parse_cnet(text: str) -> NetworkDict:
                 )
                 if has_wildcard:
                     schemata = _schemata_from_logic_lines(logic_lines)
-                    network_dict[inode]["outputs"] = FunctionOutputs(
+                    scratch[inode]["outputs"] = FunctionOutputs(
                         one_symbol_schemata=schemata, k=indegree
                     )
                 else:
                     lut = _bit_lut_from_logic_lines(logic_lines, indegree)
-                    network_dict[inode]["outputs"] = FunctionOutputs(bit_lut=lut)
+                    scratch[inode]["outputs"] = FunctionOutputs(bit_lut=lut)
         elif ".e" in line:
             break
 
-    if not network_dict:
+    if not scratch:
         raise ValueError("No cnet nodes found")
-    return network_dict  # type: ignore[return-value]
+    return [
+        BooleanNode(
+            id=inode,
+            name=scratch[inode]["name"],
+            k=len(scratch[inode]["inputs"]),
+            inputs=list(scratch[inode]["inputs"]),
+            outputs=scratch[inode]["outputs"],
+        )
+        for inode in range(len(scratch))
+    ]
 
 
 def _append_dense_lut_lines(
@@ -172,26 +182,26 @@ def _node_label(i: int, name: str) -> str:
 
 
 def _require_representation(
-    local: Mapping[int, Mapping[str, Any]],
+    nodes: Sequence[BooleanNode],
     *,
     representation: str,
 ) -> None:
     """Raise if any node lacks the requested ``FunctionOutputs`` slot."""
     missing = []
-    for i in sorted(local):
-        outputs = local[i]["outputs"]
+    for i, node in enumerate(nodes):
+        outputs = node.outputs
         if representation == "bit_lut":
             if outputs.bit_lut is None:
                 try:
                     outputs.get_bit_lut()
                 except ValueError:
-                    missing.append(_node_label(i, local[i]["name"]))
+                    missing.append(_node_label(i, node.name))
         elif representation == "one_symbol_schemata":
             if outputs.one_symbol_schemata is None:
                 try:
                     outputs.get_one_symbol_schemata()
                 except ValueError:
-                    missing.append(_node_label(i, local[i]["name"]))
+                    missing.append(_node_label(i, node.name))
         else:
             raise ValueError(
                 "Unknown representation {0!r}".format(representation)
@@ -206,16 +216,16 @@ def _require_representation(
         )
 
 
-def network_dict_to_cnet(
-    network_dict: Mapping[int, Mapping[str, Any]],
+def nodes_to_cnet(
+    nodes: Sequence[BooleanNode],
     *,
     adjust_no_input: bool = False,
     one_symbol_schemata: bool = False,
 ) -> str:
-    """Export ``NetworkDict`` to BNS / Cell Collective ``.cnet`` text.
+    """Export a node list to BNS / Cell Collective ``.cnet`` text.
 
     Args:
-        network_dict: CANA ``NetworkDict``.
+        nodes: Dense ``list[BooleanNode]`` hub (``nodes[i].id == i``).
         adjust_no_input: If True, rewrite empty-input nodes as self-loops
             with identity LUT ``[0, 1]`` (BNS compatibility).
         one_symbol_schemata: If True, export one-symbol (wildcard) covers;
@@ -226,51 +236,60 @@ def network_dict_to_cnet(
     ``one_symbol_schemata`` similarly. If a representation cannot be derived,
     raises ``ValueError``.
     """
-    local: Dict[int, Dict[str, Any]] = {}
-    for i, data in network_dict.items():
-        outputs = data["outputs"]
+    # Working copies so adjust_no_input does not mutate the caller's nodes.
+    local_inputs: List[List[int]] = [list(n.inputs) for n in nodes]
+    local_outputs: List[FunctionOutputs] = []
+    for node in nodes:
+        outputs = node.outputs
         if not isinstance(outputs, FunctionOutputs):
             if isinstance(outputs, BitLut):
                 outputs = FunctionOutputs(bit_lut=outputs)
             else:
                 outputs = FunctionOutputs.from_sequence(outputs)
-        local[i] = {
-            "name": data["name"],
-            "inputs": list(data["inputs"]),
-            "outputs": outputs,
-        }
+        local_outputs.append(outputs)
 
     if adjust_no_input:
-        for i, data in local.items():
-            if len(data["inputs"]) == 0:
-                data["inputs"] = [i]
-                data["outputs"] = FunctionOutputs(
+        for i in range(len(nodes)):
+            if len(local_inputs[i]) == 0:
+                local_inputs[i] = [i]
+                local_outputs[i] = FunctionOutputs(
                     bit_lut=BitLut.from_sequence([0, 1])
                 )
 
-    if one_symbol_schemata:
-        _require_representation(local, representation="one_symbol_schemata")
-    else:
-        _require_representation(local, representation="bit_lut")
+    # Temporary node views for the representation check / export loop.
+    export_nodes = [
+        BooleanNode(
+            id=i,
+            name=nodes[i].name,
+            k=len(local_inputs[i]),
+            inputs=local_inputs[i],
+            outputs=local_outputs[i],
+        )
+        for i in range(len(nodes))
+    ]
 
-    nnodes = len(local)
+    if one_symbol_schemata:
+        _require_representation(export_nodes, representation="one_symbol_schemata")
+    else:
+        _require_representation(export_nodes, representation="bit_lut")
+
+    nnodes = len(export_nodes)
     parts: List[str] = [".v {0}".format(nnodes), ""]
-    for i in range(nnodes):
-        name = local[i]["name"]
-        if name:
-            parts.append(".l {0} {1}".format(i + 1, name))
-    if any(local[i]["name"] for i in range(nnodes)):
+    for i, node in enumerate(export_nodes):
+        if node.name:
+            parts.append(".l {0} {1}".format(i + 1, node.name))
+    if any(n.name for n in export_nodes):
         parts.append("")
-    for i in range(nnodes):
-        k = len(local[i]["inputs"])
+    for i, node in enumerate(export_nodes):
+        k = len(node.inputs)
         parts.append(
             ".n {0} {1} {2}".format(
                 i + 1,
                 k,
-                " ".join(str(v + 1) for v in local[i]["inputs"]),
+                " ".join(str(v + 1) for v in node.inputs),
             ).rstrip()
         )
-        outputs = local[i]["outputs"]
+        outputs = node.outputs
         if one_symbol_schemata:
             if k == 0:
                 # Constant cnet line is a single bit (not a schema pair).

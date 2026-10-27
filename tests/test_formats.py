@@ -4,21 +4,22 @@ from pathlib import Path
 import pytest
 
 from cana.boolean_network import BooleanNetwork
+from cana.boolean_node import BooleanNode
 from cana.function_outputs import FunctionOutputs
 from cana.io import (
     convert,
     export_string,
     infer_format,
-    network_dict_to_cnet,
+    nodes_to_cnet,
     parse_aeon,
     parse_bnet,
     parse_booleannet,
     parse_cnet,
     parse_string,
 )
-from cana.network_dict import (
-    equivalent_network_dicts,
-    expressions_to_network_dict,
+from cana.nodes_builder import (
+    equivalent_networks,
+    expressions_to_nodes,
     name_keyed_luts,
 )
 
@@ -45,8 +46,8 @@ $B: A & C
 """
 
 
-def _assert_tiny(network_dict_or_net):
-    luts = name_keyed_luts(network_dict_or_net)
+def _assert_tiny(nodes_or_net):
+    luts = name_keyed_luts(nodes_or_net)
     assert set(luts) == {"A", "B", "C"}
     assert luts["A"] == (("B",), (0, 1))
     assert luts["C"] == (("C",), (0, 1))
@@ -69,32 +70,30 @@ def test_parse_tiny_bnet_booleannet_aeon():
     _assert_tiny(parse_aeon(TINY_AEON))
 
 
-def test_expressions_to_network_dict_adds_free_input_identity():
-    network_dict = expressions_to_network_dict({"A": "B", "B": "A and C"})
-    _assert_tiny(network_dict)
+def test_expressions_to_nodes_adds_free_input_identity():
+    nodes = expressions_to_nodes({"A": "B", "B": "A and C"})
+    _assert_tiny(nodes)
 
 
 def test_import_stores_positional_expression_only():
-    network_dict = parse_booleannet(TINY_BOOLEANNET)
+    nodes = parse_booleannet(TINY_BOOLEANNET)
     # A* = B  -> inputs [B], expression x0
     # B* = A and C -> inputs [A, C] in discovery order, expression x0 and x1
     # C* = C -> inputs [C], expression x0
-    by_name = {e["name"]: e for e in network_dict.values()}
-    for entry in by_name.values():
-        assert entry["outputs"].bit_lut is None
-        assert entry["outputs"].expression is not None
-    assert by_name["A"]["outputs"].expression == "x0"
-    assert by_name["B"]["outputs"].expression == "x0 and x1"
-    assert by_name["C"]["outputs"].expression == "x0"
+    by_name = {n.name: n for n in nodes}
+    for node in by_name.values():
+        assert node.outputs.bit_lut is None
+        assert node.outputs.expression is not None
+    assert by_name["A"].outputs.expression == "x0"
+    assert by_name["B"].outputs.expression == "x0 and x1"
+    assert by_name["C"].outputs.expression == "x0"
     # Symbolic operators normalize to python positional IR
     aeon = parse_aeon(TINY_AEON)
-    assert {e["name"]: e["outputs"].expression for e in aeon.values()}[
-        "B"
-    ] == "x0 and x1"
+    assert {n.name: n.outputs.expression for n in aeon}["B"] == "x0 and x1"
 
 
 def test_boolean_node_named_expression():
-    network = BooleanNetwork.from_dict(parse_booleannet(TINY_BOOLEANNET))
+    network = BooleanNetwork.from_nodes(parse_booleannet(TINY_BOOLEANNET))
     by_name = {n.name: n for n in network.nodes}
     assert by_name["A"].expression() == "B"
     assert by_name["B"].expression() == "A and C"
@@ -105,8 +104,8 @@ def test_boolean_node_named_expression():
 
 def test_export_preserves_imported_expression_strings():
     """Expression-first export keeps authored rules (not LUT minterm DNF)."""
-    network_dict = parse_booleannet(TINY_BOOLEANNET)
-    text = export_string(network_dict, "booleannet", warn=False)
+    nodes = parse_booleannet(TINY_BOOLEANNET)
+    text = export_string(nodes, "booleannet", warn=False)
     lines = {
         line.split("*", 1)[0].strip(): line.split("=", 1)[1].strip()
         for line in text.splitlines()
@@ -116,18 +115,18 @@ def test_export_preserves_imported_expression_strings():
     assert lines["B"] == "A and C"
     assert lines["C"] == "C"
     # Still LUT-equivalent after reimport.
-    assert equivalent_network_dicts(network_dict, parse_booleannet(text))
+    assert equivalent_networks(nodes, parse_booleannet(text))
 
-    bnet_text = export_string(network_dict, "bnet", warn=False)
+    bnet_text = export_string(nodes, "bnet", warn=False)
     assert "B, A & C" in bnet_text or "B, A&C" in bnet_text.replace(" ", "")
 
 
 def test_export_reimport_roundtrip_each_format():
-    network_dict = parse_booleannet(TINY_BOOLEANNET)
+    nodes = parse_booleannet(TINY_BOOLEANNET)
     for fmt in ("booleannet", "bnet", "aeon", "sbml", "cnet"):
-        text = export_string(network_dict, fmt, warn=False)
+        text = export_string(nodes, fmt, warn=False)
         again = parse_string(text, fmt)
-        assert equivalent_network_dicts(network_dict, again), fmt
+        assert equivalent_networks(nodes, again), fmt
 
 
 def test_any_to_any_convert():
@@ -137,19 +136,19 @@ def test_any_to_any_convert():
         "bnet": TINY_BNET,
         "aeon": TINY_AEON,
         "sbml": export_string(parse_booleannet(TINY_BOOLEANNET), "sbml"),
-        "cnet": network_dict_to_cnet(parse_booleannet(TINY_BOOLEANNET)),
+        "cnet": nodes_to_cnet(parse_booleannet(TINY_BOOLEANNET)),
     }
     ref = parse_booleannet(TINY_BOOLEANNET)
     for src in formats:
         for dst in formats:
             out = convert(sources[src], src, dst)
-            assert equivalent_network_dicts(ref, parse_string(out, dst)), (src, dst)
+            assert equivalent_networks(ref, parse_string(out, dst)), (src, dst)
 
 
 def test_parse_cnet_direct():
-    network_dict = parse_booleannet(TINY_BOOLEANNET)
-    again = parse_cnet(network_dict_to_cnet(network_dict))
-    assert equivalent_network_dicts(network_dict, again)
+    nodes = parse_booleannet(TINY_BOOLEANNET)
+    again = parse_cnet(nodes_to_cnet(nodes))
+    assert equivalent_networks(nodes, again)
 
 
 # Mixed: CycD dense identity; CycE wildcard one-symbol cover (mammalian-style).
@@ -172,13 +171,13 @@ MIXED_CNET = """\
 
 def test_parse_cnet_wildcard_as_one_symbol_schemata():
     nd = parse_cnet(MIXED_CNET)
-    cyc_e = nd[1]["outputs"]
+    cyc_e = nd[1].outputs
     assert cyc_e.bit_lut is None
     assert cyc_e.one_symbol_schemata is not None
     assert cyc_e.one_symbol_schemata[1] == {"01"}
     assert cyc_e.one_symbol_schemata[0] == {"12", "20"}
     # Dense sibling stays LUT-only (no auto-fill).
-    cyc_d = nd[0]["outputs"]
+    cyc_d = nd[0].outputs
     assert cyc_d.bit_lut is not None
     assert cyc_d.one_symbol_schemata is None
     assert list(cyc_d.bit_lut) == [0, 1]
@@ -196,7 +195,7 @@ def test_parse_cnet_dense_minterms_not_schemata():
 11 1
 """
     nd = parse_cnet(dense)
-    fo = nd[0]["outputs"]
+    fo = nd[0].outputs
     assert fo.bit_lut is not None
     assert fo.one_symbol_schemata is None
     assert list(fo.bit_lut) == [0, 0, 0, 1]
@@ -205,21 +204,23 @@ def test_parse_cnet_dense_minterms_not_schemata():
 def test_cnet_export_materializes_requested_representation():
     nd = parse_cnet(MIXED_CNET)
     # Dense export materializes bit_lut from schemata-only peers.
-    dense_text = network_dict_to_cnet(nd)
+    dense_text = nodes_to_cnet(nd)
     assert "00 0" in dense_text or "0 0" in dense_text
-    assert equivalent_network_dicts(nd, parse_cnet(dense_text))
+    assert equivalent_networks(nd, parse_cnet(dense_text))
 
     # Schemata export materializes one-symbol from dense peers.
-    schemata_text = network_dict_to_cnet(nd, one_symbol_schemata=True)
+    schemata_text = nodes_to_cnet(nd, one_symbol_schemata=True)
     assert "2" in schemata_text
-    assert equivalent_network_dicts(nd, parse_cnet(schemata_text))
+    assert equivalent_networks(nd, parse_cnet(schemata_text))
 
     # Truly empty FO still cannot export.
-    empty = {
-        0: {"name": "A", "inputs": [0], "outputs": FunctionOutputs(k=1)},
-    }
+    empty = [
+        BooleanNode(
+            id=0, name="A", k=1, inputs=[0], outputs=FunctionOutputs(k=1)
+        )
+    ]
     with pytest.raises(ValueError, match=r"fill_function_outputs\('bit_lut'\)"):
-        network_dict_to_cnet(empty)
+        nodes_to_cnet(empty)
 
 
 def test_boolean_network_cnet_schemata_and_fill():
@@ -283,14 +284,10 @@ def test_ambiguous_format_aliases_rejected():
 
 def test_empty_inputs_implies_constant_not_converse():
     # Empty inputs => constant
-    N = BooleanNetwork.from_dict(
-        {
-            0: {
-                "name": "Const1",
-                "inputs": [],
-                "outputs": [1],
-            }
-        }
+    N = BooleanNetwork.from_nodes(
+        [
+            BooleanNode(id=0, name="Const1", k=0, inputs=[], outputs=[1]),
+        ]
     )
     assert N.nodes[0].constant is True
     assert N.nodes[0].k == 0
@@ -299,27 +296,27 @@ def test_empty_inputs_implies_constant_not_converse():
     assert list(N.get_constants()) == [0]
 
     # Flat LUT with inputs => constant, but inputs preserved
-    N2 = BooleanNetwork.from_dict(
-        {
-            0: {"name": "A", "inputs": [0], "outputs": [0, 1]},
-            1: {"name": "Flat", "inputs": [0], "outputs": [1, 1]},
-        }
+    N2 = BooleanNetwork.from_nodes(
+        [
+            BooleanNode(id=0, name="A", k=1, inputs=[0], outputs=[0, 1]),
+            BooleanNode(id=1, name="Flat", k=1, inputs=[0], outputs=[1, 1]),
+        ]
     )
     flat = N2.nodes[1]
     assert flat.constant is True
     assert flat.inputs == [0]
-    assert N2.network_dict[1]["inputs"] == [0]
+    assert N2.nodes[1].inputs == [0]
     assert N2.constants == {1: 1}
     assert N2.Nconstants == 1
     # Pinning shrinks free state space; constancy itself is independent.
     assert N2.keep_constants is True
     assert N2.Nstates == 2  # only node 0 is free
 
-    N2_unpin = BooleanNetwork.from_dict(
-        {
-            0: {"name": "A", "inputs": [0], "outputs": [0, 1]},
-            1: {"name": "Flat", "inputs": [0], "outputs": [1, 1]},
-        },
+    N2_unpin = BooleanNetwork.from_nodes(
+        [
+            BooleanNode(id=0, name="A", k=1, inputs=[0], outputs=[0, 1]),
+            BooleanNode(id=1, name="Flat", k=1, inputs=[0], outputs=[1, 1]),
+        ],
         keep_constants=False,
     )
     assert N2_unpin.constants == {1: 1}
@@ -327,10 +324,10 @@ def test_empty_inputs_implies_constant_not_converse():
     assert N2_unpin.Nstates == 4  # full 2**N when not pinning
 
     # Self-loop identity => not constant, in input_nodes
-    N3 = BooleanNetwork.from_dict(
-        {
-            0: {"name": "Src", "inputs": [0], "outputs": [0, 1]},
-        }
+    N3 = BooleanNetwork.from_nodes(
+        [
+            BooleanNode(id=0, name="Src", k=1, inputs=[0], outputs=[0, 1]),
+        ]
     )
     assert N3.nodes[0].constant is False
     assert 0 in N3.input_nodes

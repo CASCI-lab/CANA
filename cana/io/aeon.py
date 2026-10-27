@@ -3,19 +3,15 @@
 from __future__ import annotations
 
 import re
-from typing import Any, Dict, List, Mapping
+from typing import Dict, List, Sequence
 
+from cana.boolean_node import BooleanNode
 from cana.function_outputs.expression import (
     expression_identifiers,
     function_outputs_to_expression,
     normalize_operators,
 )
-from cana.network_dict import (
-    NetworkDict,
-    expressions_to_network_dict,
-    input_names_for_node,
-    sorted_node_ids,
-)
+from cana.nodes_builder import expressions_to_nodes, input_names
 
 AEON_EDGE_RE = re.compile(
     r"^\s*([A-Za-z_][A-Za-z0-9_]*)\s*(-[>|?]?|\|)\s*([A-Za-z_][A-Za-z0-9_]*)\s*$"
@@ -25,8 +21,8 @@ AEON_UPDATE_RE = re.compile(
 )
 
 
-def parse_aeon(text: str) -> NetworkDict:
-    """Parse AEON ``*.aeon`` into a ``NetworkDict``."""
+def parse_aeon(text: str) -> List[BooleanNode]:
+    """Parse AEON ``*.aeon`` into a node list."""
     expressions: Dict[str, str] = {}
     names: set = set()
     for raw in text.splitlines():
@@ -49,34 +45,32 @@ def parse_aeon(text: str) -> NetworkDict:
             continue
     if not expressions and not names:
         raise ValueError("No aeon rules or regulations found")
-    return expressions_to_network_dict(expressions, names)
+    return expressions_to_nodes(expressions, names)
 
 
-def network_dict_to_aeon(
-    network_dict: Mapping[int, Mapping[str, Any]],
+def nodes_to_aeon(
+    nodes: Sequence[BooleanNode],
     *,
     warn: bool = True,
 ) -> str:
-    """Export ``NetworkDict`` to AEON text (regulations + update functions).
+    """Export a node list to AEON text (regulations + update functions).
 
     Prefers stored expression, then one-symbol schemata, then LUT DNF.
     Soft-warns when verification flags are not ``True`` (never blocks).
     """
     lines: List[str] = []
-    for i in sorted_node_ids(network_dict):
-        target = network_dict[i]["name"]
-        for src_id in network_dict[i]["inputs"]:
-            src = network_dict[src_id]["name"]
-            lines.append("{0} -? {1}".format(src, target))
-    for i in sorted_node_ids(network_dict):
-        name = network_dict[i]["name"]
-        inputs = input_names_for_node(network_dict, i)
+    for node in nodes:
+        for src_id in node.inputs:
+            src = nodes[src_id].name
+            lines.append("{0} -? {1}".format(src, node.name))
+    for i, node in enumerate(nodes):
+        names = input_names(nodes, i)
         expr = function_outputs_to_expression(
-            network_dict[i]["outputs"],
-            inputs,
+            node.outputs,
+            names,
             style="symbolic",
-            node_label=name,
+            node_label=node.name,
             warn=warn,
         )
-        lines.append("${0}: {1}".format(name, expr))
+        lines.append("${0}: {1}".format(node.name, expr))
     return "\n".join(lines) + "\n"

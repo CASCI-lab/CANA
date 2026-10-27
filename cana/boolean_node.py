@@ -68,20 +68,6 @@ class BooleanNode(object):
         self.network = network  # the BooleanNetwork object this nodes belongs to
         self.verbose = verbose  # verbose mode
 
-        # When attached to a network, share the NetworkDict FunctionOutputs object.
-        if (
-            network is not None
-            and getattr(network, "network_dict", None) is not None
-            and id in network.network_dict
-        ):
-            shared = network.network_dict[id]["outputs"]
-            if isinstance(shared, FunctionOutputs):
-                self.outputs = shared
-            else:
-                fo = FunctionOutputs.from_sequence(shared)
-                network.network_dict[id]["outputs"] = fo
-                self.outputs = fo
-
         # mask for inputs
         if len(self.inputs) > 0:
             self.mask = [(i in self.inputs) for i in range(max(self.inputs) + 1)]

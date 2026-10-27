@@ -4,18 +4,14 @@ from __future__ import annotations
 
 import re
 import xml.etree.ElementTree as ET
-from typing import Any, Dict, List, Mapping, Optional, Sequence
+from typing import Any, Dict, List, Optional, Sequence
 
+from cana.boolean_node import BooleanNode
 from cana.function_outputs.expression import (
     function_outputs_to_expression,
     lut_to_expression,
 )
-from cana.network_dict import (
-    NetworkDict,
-    expressions_to_network_dict,
-    input_names_for_node,
-    sorted_node_ids,
-)
+from cana.nodes_builder import expressions_to_nodes, input_names
 
 
 def xml_local_name(tag: str) -> str:
@@ -254,8 +250,8 @@ def lut_to_mathml(input_names: Sequence[str], lut: Sequence[Any]) -> ET.Element:
     return python_expr_to_mathml(expr)
 
 
-def parse_sbml(text: str) -> NetworkDict:
-    """Parse SBML-qual Boolean models into a ``NetworkDict``."""
+def parse_sbml(text: str) -> List[BooleanNode]:
+    """Parse SBML-qual Boolean models into a node list."""
     root = ET.fromstring(text)
     species: List[str] = []
     for elem in root.iter():
@@ -316,15 +312,15 @@ def parse_sbml(text: str) -> NetworkDict:
 
     if not species and not expressions:
         raise ValueError("No SBML-qual species or transitions found")
-    return expressions_to_network_dict(expressions, species)
+    return expressions_to_nodes(expressions, species)
 
 
-def network_dict_to_sbml(
-    network_dict: Mapping[int, Mapping[str, Any]],
+def nodes_to_sbml(
+    nodes: Sequence[BooleanNode],
     *,
     warn: bool = True,
 ) -> str:
-    """Export ``NetworkDict`` to SBML Level 3 qualitative XML.
+    """Export a node list to SBML Level 3 qualitative XML.
 
     Prefers stored expression, then one-symbol schemata, then LUT DNF for
     MathML update functions. Soft-warns when verification flags are not
@@ -346,30 +342,29 @@ def network_dict_to_sbml(
     sbml.set("xmlns:qual", QUAL)
     model = ET.SubElement(sbml, "{%s}model" % SBML)
     list_sp = ET.SubElement(model, "{%s}listOfQualitativeSpecies" % QUAL)
-    for i in sorted_node_ids(network_dict):
-        name = network_dict[i]["name"]
+    for node in nodes:
         ET.SubElement(
             list_sp,
             "{%s}qualitativeSpecies" % QUAL,
             {
                 "{%s}maxLevel" % QUAL: "1",
                 "{%s}constant" % QUAL: "false",
-                "{%s}name" % QUAL: name,
-                "{%s}id" % QUAL: name,
+                "{%s}name" % QUAL: node.name,
+                "{%s}id" % QUAL: node.name,
             },
         )
 
     list_tr = ET.SubElement(model, "{%s}listOfTransitions" % QUAL)
-    for i in sorted_node_ids(network_dict):
-        name = network_dict[i]["name"]
-        inputs = input_names_for_node(network_dict, i)
+    for i, node in enumerate(nodes):
+        name = node.name
+        src_names = input_names(nodes, i)
         tr = ET.SubElement(
             list_tr,
             "{%s}transition" % QUAL,
             {"{%s}id" % QUAL: "tr_{0}".format(name)},
         )
         loi = ET.SubElement(tr, "{%s}listOfInputs" % QUAL)
-        for src in inputs:
+        for src in src_names:
             ET.SubElement(
                 loi,
                 "{%s}input" % QUAL,
@@ -404,8 +399,8 @@ def network_dict_to_sbml(
         math = ET.SubElement(ft, "{%s}math" % MATH)
         math.set("xmlns", MATH)
         expr = function_outputs_to_expression(
-            network_dict[i]["outputs"],
-            inputs,
+            node.outputs,
+            src_names,
             style="python",
             node_label=name,
             warn=warn,

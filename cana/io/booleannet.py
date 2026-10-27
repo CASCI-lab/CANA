@@ -2,23 +2,19 @@
 """BooleanNet / ``*.booleannet.txt`` (``name* = expr``) import and export."""
 from __future__ import annotations
 
-from typing import Any, Dict, List, Mapping
+from typing import Dict, List, Sequence
 
+from cana.boolean_node import BooleanNode
 from cana.function_outputs.expression import (
     expression_identifiers,
     function_outputs_to_expression,
     normalize_operators,
 )
-from cana.network_dict import (
-    NetworkDict,
-    expressions_to_network_dict,
-    input_names_for_node,
-    sorted_node_ids,
-)
+from cana.nodes_builder import expressions_to_nodes, input_names
 
 
-def parse_booleannet(text: str) -> NetworkDict:
-    """Parse BooleanNet / ``*.booleannet.txt`` rules into a ``NetworkDict``."""
+def parse_booleannet(text: str) -> List[BooleanNode]:
+    """Parse BooleanNet / ``*.booleannet.txt`` rules into a node list."""
     expressions: Dict[str, str] = {}
     extras: List[str] = []
     for raw in text.splitlines():
@@ -37,29 +33,28 @@ def parse_booleannet(text: str) -> NetworkDict:
         )
     if not expressions:
         raise ValueError("No booleannet rules found")
-    return expressions_to_network_dict(expressions, extras)
+    return expressions_to_nodes(expressions, extras)
 
 
-def network_dict_to_booleannet(
-    network_dict: Mapping[int, Mapping[str, Any]],
+def nodes_to_booleannet(
+    nodes: Sequence[BooleanNode],
     *,
     warn: bool = True,
 ) -> str:
-    """Export ``NetworkDict`` to BooleanNet text (``name* = expr``).
+    """Export a node list to BooleanNet text (``name* = expr``).
 
     Prefers stored expression, then one-symbol schemata, then LUT DNF.
     Soft-warns when verification flags are not ``True`` (never blocks).
     """
     lines: List[str] = []
-    for i in sorted_node_ids(network_dict):
-        name = network_dict[i]["name"]
-        inputs = input_names_for_node(network_dict, i)
+    for i, node in enumerate(nodes):
+        names = input_names(nodes, i)
         expr = function_outputs_to_expression(
-            network_dict[i]["outputs"],
-            inputs,
+            node.outputs,
+            names,
             style="python",
-            node_label=name,
+            node_label=node.name,
             warn=warn,
         )
-        lines.append("{0}* = {1}".format(name, expr))
+        lines.append("{0}* = {1}".format(node.name, expr))
     return "\n".join(lines) + "\n"

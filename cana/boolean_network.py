@@ -45,58 +45,34 @@ from cana.function_outputs import FunctionOutputs
 from cana.utils import entropy, flip_binstate_bit_set
 
 
-def _normalize_node_outputs(entry):
-    """Ensure ``entry["outputs"]`` is a :class:`FunctionOutputs` (in place)."""
-    outputs = entry.get("outputs")
-    if outputs is None and "lut" in entry:
-        # Tolerate legacy ``lut`` key during migration of callers.
-        outputs = entry.pop("lut")
-    if isinstance(outputs, FunctionOutputs):
-        entry["outputs"] = outputs
-        return
-    if isinstance(outputs, BitLut):
-        entry["outputs"] = FunctionOutputs(bit_lut=outputs)
-        return
-    if outputs is not None:
-        entry["outputs"] = FunctionOutputs.from_sequence(outputs)
-        return
-    entry["outputs"] = FunctionOutputs(bit_lut=BitLut(0))
-
-
 class BooleanNetwork:
-    """A Boolean network built from a per-node ``NetworkDict`` hub.
+    """A Boolean network whose hub is a dense ``list[BooleanNode]``.
 
-    The ``network_dict`` is the serializable hub for the network.  Every import
-    format is converted into a ``NetworkDict``; every export format is produced
-    from it.  It stores wiring plus each node's
+    Every import format is converted into a ``list[BooleanNode]``; every
+    export format is produced from it.  Each
+    :class:`~cana.boolean_node.BooleanNode` stores wiring (``inputs``) plus
     :class:`~cana.function_outputs.FunctionOutputs` (usually a dense LUT).
 
-    Schema
-        ``network_dict`` is a dense ``dict[int, dict]`` with keys ``0 .. Nnodes-1``.
-        Each value has exactly three fields:
+    Hub invariant
+        ``self.nodes`` is dense with indices ``0 .. Nnodes-1``.  For all ``i``,
+        ``nodes[i].id == i``, and every ``inputs`` entry is an index into that
+        list.  CANA does not delete BN nodes after construction; constants
+        stay in the list and are only pinned / flagged.
 
-        - ``name`` (``str``): unique node name.
-        - ``inputs`` (``list[int]``): ordered input **node ids** (length ``k``).
-          Empty ``inputs`` implies a constant (length-1) function; a constant
-          LUT may also exist with non-empty ``inputs``.
-        - ``outputs`` (:class:`~cana.function_outputs.FunctionOutputs`): update
-          rule.  When a dense :class:`~cana.bit_lut.BitLut` is present, row
-          ``s`` is the next value when the input state — interpreted in the
-          ``inputs`` order with ``inputs[0]`` as the most significant bit —
-          equals ``s``.  This matches :func:`~cana.utils.output_transitions` /
-          :func:`~cana.cutils.statenum_to_binstate`.
+        When a dense :class:`~cana.bit_lut.BitLut` is present on a node, row
+        ``s`` is the next value when the input state — interpreted in the
+        ``inputs`` order with ``inputs[0]`` as the most significant bit —
+        equals ``s``.  This matches :func:`~cana.utils.output_transitions` /
+        :func:`~cana.cutils.statenum_to_binstate`.
 
         Example (AND of ``A`` then ``B``, node ids 0 and 1)::
 
-            {0: {"name": "A", "inputs": [0],
-                 "outputs": FunctionOutputs(bit_lut=BitLut.from_sequence([0, 1]))},
-             1: {"name": "B", "inputs": [0, 1],
-                 "outputs": FunctionOutputs(bit_lut=BitLut.from_sequence([0, 0, 0, 1]))}}
-
-    Relation to :class:`~cana.boolean_node.BooleanNode`
-        On construction, each ``network_dict[i]`` becomes a ``BooleanNode`` whose
-        ``outputs`` **is** the same ``FunctionOutputs`` object as
-        ``network_dict[i]["outputs"]``.
+            [
+                BooleanNode(id=0, name="A", k=1, inputs=[0],
+                    outputs=FunctionOutputs(bit_lut=BitLut.from_sequence([0, 1]))),
+                BooleanNode(id=1, name="B", k=2, inputs=[0, 1],
+                    outputs=FunctionOutputs(bit_lut=BitLut.from_sequence([0, 0, 0, 1]))),
+            ]
 
     Constants
         A node is constant when its LUT is flat (see
@@ -115,7 +91,7 @@ class BooleanNetwork:
         self,
         name="",
         Nnodes=0,
-        network_dict=None,
+        nodes=None,
         sg=None,
         stg=None,
         stg_r=None,
@@ -130,9 +106,6 @@ class BooleanNetwork:
     ):
         # NOTE: *args and **kwargs don't do anything. I'm not sure why they wre added here, so I'm not going to remove them.
 
-        # Backward-compatible constructor aliases.
-        if network_dict is None and "lut_dict" in kwargs:
-            network_dict = kwargs.pop("lut_dict")
         if "constants" in kwargs or "Nconstants" in kwargs:
             warnings.warn(
                 "BooleanNetwork(..., constants=..., Nconstants=...) is ignored; "
@@ -145,14 +118,24 @@ class BooleanNetwork:
             kwargs.pop("Nconstants", None)
 
         self.name = name  # Name of the Network
+        self.nodes = list(nodes) if nodes is not None else []
+        if Nnodes == 0:
+            Nnodes = len(self.nodes)
         self.Nnodes = Nnodes  # Number of Nodes
-        # See class docstring for the full ``network_dict`` schema.
-        if network_dict is not None:
-            for _i, _entry in network_dict.items():
-                if "inputs" not in _entry and "regulators" in _entry:
-                    _entry["inputs"] = _entry.pop("regulators")
-                _normalize_node_outputs(_entry)
-        self.network_dict = network_dict
+        if len(self.nodes) != Nnodes:
+            raise ValueError(
+                "Nnodes={0} does not match len(nodes)={1}".format(
+                    Nnodes, len(self.nodes)
+                )
+            )
+        for i, node in enumerate(self.nodes):
+            if node.id != i:
+                raise ValueError(
+                    "Hub invariant violated: nodes[{0}].id == {1}".format(
+                        i, node.id
+                    )
+                )
+            node.network = self
         self._sg = sg  # Structure-Graph (SG)
         self._stg = stg  # State-Transition-Graph (STG)
         self._stg_r = stg_r  # State-Transition-Graph Reachability dict (STG-R)
@@ -165,28 +148,10 @@ class BooleanNetwork:
         #
         self.verbose = verbose
 
-        # Intanciate BooleanNodes
-        self.name2int = {network_dict[i]["name"]: i for i in range(Nnodes)}
+        self.name2int = {node.name: i for i, node in enumerate(self.nodes)}
         self.Nself_loops = sum(
-            [
-                self.name2int[network_dict[i]["name"]] in network_dict[i]["inputs"]
-                for i in range(Nnodes)
-            ]
+            1 for i, node in enumerate(self.nodes) if i in node.inputs
         )
-
-        self.nodes = list()
-        for i in range(Nnodes):
-            name = network_dict[i]["name"]
-            k = len(network_dict[i]["inputs"])
-            inputs = [
-                self.name2int[network_dict[j]["name"]]
-                for j in network_dict[i]["inputs"]
-            ]
-            outputs = network_dict[i]["outputs"]
-            node = BooleanNode(
-                id=i, name=name, k=k, inputs=inputs, outputs=outputs, network=self
-            )
-            self.nodes.append(node)
 
         self.input_nodes = [
             i
@@ -233,15 +198,12 @@ class BooleanNetwork:
     # conversion / comparison.
     #
     @classmethod
-    def from_dict(self, network_dict, keep_constants=True, **kwargs):
-        """Instantiate a BooleanNetwork from a ``NetworkDict``.
+    def from_nodes(self, nodes, keep_constants=True, **kwargs):
+        """Instantiate a BooleanNetwork from a dense ``list[BooleanNode]``.
 
         Args:
-            network_dict (dict) : Map ``{0 .. N-1: {"name": str,
-                "inputs": [ids], "outputs": FunctionOutputs|sequence}}``.
-                See the :class:`BooleanNetwork` class docstring for the full
-                schema.  Empty ``inputs`` implies a constant function; a
-                constant LUT with non-empty ``inputs`` is also allowed.
+            nodes (list[BooleanNode]) : Hub with ``nodes[i].id == i``.
+                See the :class:`BooleanNetwork` class docstring.
             keep_constants (bool) : If True, pin functionally constant nodes
                 in state-space helpers and include them in the DCM.  Constancy
                 itself always comes from each node's LUT.
@@ -252,7 +214,6 @@ class BooleanNetwork:
         See also:
             :func:`from_file` :func:`from_string`
         """
-        Nnodes = len(network_dict)
         if "name" in kwargs:
             name = kwargs["name"]
         else:
@@ -260,8 +221,8 @@ class BooleanNetwork:
 
         return BooleanNetwork(
             name=name,
-            network_dict=network_dict,
-            Nnodes=Nnodes,
+            nodes=nodes,
+            Nnodes=len(nodes),
             keep_constants=keep_constants,
         )
 
@@ -275,14 +236,14 @@ class BooleanNetwork:
                 ``bnet``, ``aeon``, ``sbml``).
             keep_constants (bool) : Pin constant nodes in state-space helpers
                 (see :class:`BooleanNetwork`).
-            **kwargs : Forwarded to :meth:`from_dict` (e.g. ``name``).
+            **kwargs : Forwarded to :meth:`from_nodes` (e.g. ``name``).
 
         Returns:
             (BooleanNetwork)
         """
         from cana.io import parse_string
 
-        return self.from_dict(
+        return self.from_nodes(
             parse_string(string, type), keep_constants=keep_constants, **kwargs
         )
 
@@ -300,13 +261,13 @@ class BooleanNetwork:
                 ``.txt`` files still require an explicit ``type``.
             keep_constants (bool) : Pin constant nodes in state-space helpers
                 (see :class:`BooleanNetwork`).
-            **kwargs : Forwarded to :meth:`from_dict` (e.g. ``name``).
+            **kwargs : Forwarded to :meth:`from_nodes` (e.g. ``name``).
 
         Returns:
             BooleanNetwork (object) : The boolean network object.
 
         See also:
-            :func:`to_file` :func:`from_string` :func:`from_dict`
+            :func:`to_file` :func:`from_string` :func:`from_nodes`
         """
         from cana.io import infer_format, normalize_format, parse_string
 
@@ -324,7 +285,7 @@ class BooleanNetwork:
         with open(file, "r") as infile:
             text = infile.read()
 
-        return self.from_dict(
+        return self.from_nodes(
             parse_string(text, fmt), keep_constants=keep_constants, **kwargs
         )
 
@@ -333,7 +294,7 @@ class BooleanNetwork:
         """Instantiate from BooleanNet / ``*.booleannet.txt`` update-rule text.
 
         See also:
-            :func:`from_string` :func:`from_dict`
+            :func:`from_string` :func:`from_nodes`
         """
         return self.from_string(
             string, type="booleannet", keep_constants=keep_constants, **kwargs
@@ -365,14 +326,14 @@ class BooleanNetwork:
         """Instantiate a Boolean Network from a ``.cnet`` string.
 
         See also:
-            :func:`from_file` :func:`from_dict` :func:`from_string`
+            :func:`from_file` :func:`from_nodes` :func:`from_string`
         """
         return self.from_string(
             string, type="cnet", keep_constants=keep_constants, **kwargs
         )
 
     def to_string(self, type="booleannet", **kwargs):
-        """Serialize this network to a format string via the ``network_dict`` hub.
+        """Serialize this network to a format string via the ``nodes`` hub.
 
         Args:
             type (string) : Target format (``booleannet``, ``bnet``,
@@ -385,7 +346,7 @@ class BooleanNetwork:
         """
         from cana.io import export_string
 
-        return export_string(self.network_dict, type, **kwargs)
+        return export_string(self.nodes, type, **kwargs)
 
     def to_file(self, file, type=None, **kwargs):
         """Write this network to ``file``.
@@ -417,7 +378,7 @@ class BooleanNetwork:
             representation (str) : ``"bit_lut"`` or ``"one_symbol_schemata"``.
 
         Returns:
-            (BooleanNetwork) : ``self`` (nodes share ``network_dict`` outputs).
+            (BooleanNetwork) : ``self``.
         """
         for node in self.nodes:
             node.fill_function_outputs(representation)
@@ -429,7 +390,7 @@ class BooleanNetwork:
         adjust_no_input=False,
         one_symbol_schemata=False,
     ):
-        """Outputs the network ``network_dict`` to ``.cnet`` format (BNS / BLIF-like).
+        """Outputs the network nodes to ``.cnet`` format (BNS / BLIF-like).
 
         Args:
             file (string, optional) : If given, write the string to this path.
@@ -445,10 +406,10 @@ class BooleanNetwork:
         Note:
             See `BNS <https://people.kth.se/~dubrova/bns.html>`_ for more information.
         """
-        from cana.io import network_dict_to_cnet
+        from cana.io import nodes_to_cnet
 
-        bns_string = network_dict_to_cnet(
-            self.network_dict,
+        bns_string = nodes_to_cnet(
+            self.nodes,
             adjust_no_input=adjust_no_input,
             one_symbol_schemata=one_symbol_schemata,
         )
@@ -464,7 +425,7 @@ class BooleanNetwork:
 
     @classmethod
     def convert_string(self, string, from_type, to_type, **kwargs):
-        """Convert a model string between formats via the ``NetworkDict`` hub.
+        """Convert a model string between formats via the node-list hub.
 
         Args:
             string (string) : Source model text.
@@ -480,9 +441,9 @@ class BooleanNetwork:
 
     def equivalent_to(self, other):
         """True if ``other`` has the same name-keyed LUTs as this network."""
-        from cana.network_dict import equivalent_network_dicts
+        from cana.nodes_builder import equivalent_networks
 
-        return equivalent_network_dicts(self, other)
+        return equivalent_networks(self, other)
 
     #
     # Methods
@@ -503,7 +464,7 @@ class BooleanNetwork:
             (i, {"label": n.name}) for i, n in enumerate(self.nodes)
         )
         for target in range(self.Nnodes):
-            for source in self.network_dict[target]["inputs"]:
+            for source in self.nodes[target].inputs:
                 self._sg.add_edge(source, target, **{"weight": 1.0})
 
         if remove_constants:
@@ -560,7 +521,7 @@ class BooleanNetwork:
         for target in range(self.Nnodes):
             input_signs = self.nodes[target].input_signs()
 
-            for idx, source in enumerate(self.network_dict[target]["inputs"]):
+            for idx, source in enumerate(self.nodes[target].inputs):
                 signed_ig.add_edge(source, target, **{"weight": input_signs[idx]})
 
         return signed_ig
@@ -597,7 +558,7 @@ class BooleanNetwork:
             for i, node in enumerate(self.nodes, start=0):
                 e_is = node.edge_effectiveness(bound=bound)
 
-                for inputs, e_i in zip(self.network_dict[i]["inputs"], e_is):
+                for inputs, e_i in zip(self.nodes[i].inputs, e_is):
                     self._eg.add_edge(inputs, i, **{"weight": e_i})
 
         if threshold is not None:
@@ -643,8 +604,14 @@ class BooleanNetwork:
         )
         conditioned_subgraph = set([])
 
-        # make a copy of the logic dict so we can edit it
-        conditioned_lut_dict = copy.deepcopy(self.network_dict)
+        # Working copy of wiring + outputs so we can edit without mutating self.nodes
+        conditioned_logic = [
+            {
+                "inputs": list(node.inputs),
+                "outputs": copy.deepcopy(node.outputs),
+            }
+            for node in self.nodes
+        ]
 
         # separate input conditioned nodes and nodes that get conditioned
         all_conditioned_nodes = dict(conditioned_nodes)
@@ -667,21 +634,21 @@ class BooleanNetwork:
             # we have to loop through all of the successors of the conditioned node and change their logic
             for n in successors:
                 # find the index of the conditioned node in the successor logic
-                conditioned_node_idx = conditioned_lut_dict[n]["inputs"].index(
+                conditioned_node_idx = conditioned_logic[n]["inputs"].index(
                     conditioned_node
                 )
 
-                conditioned_subgraph.update(conditioned_lut_dict[n]["inputs"])
+                conditioned_subgraph.update(conditioned_logic[n]["inputs"])
 
                 # the new successor inputs without the conditioned node
                 new_successor_inputs = (
-                    conditioned_lut_dict[n]["inputs"][:conditioned_node_idx]
-                    + conditioned_lut_dict[n]["inputs"][(conditioned_node_idx + 1) :]
+                    conditioned_logic[n]["inputs"][:conditioned_node_idx]
+                    + conditioned_logic[n]["inputs"][(conditioned_node_idx + 1) :]
                 )
                 newk = len(new_successor_inputs)
 
                 # now we create a conditioned LUT as the subset of the original for which the conditioned node is fixed to its value
-                n_lut = conditioned_lut_dict[n]["outputs"].get_bit_lut()
+                n_lut = conditioned_logic[n]["outputs"].get_bit_lut()
                 if newk == 0:
                     new_successor_outputs = [
                         n_lut[binstate_to_statenum(conditioned_value)]
@@ -712,9 +679,9 @@ class BooleanNetwork:
                         "weight"
                     ] = new_edge_effectiveness[i]
 
-                # now update the conditioned dict in case these nodes are further modified by additional conditioned variables
-                conditioned_lut_dict[n]["inputs"] = new_successor_inputs
-                conditioned_lut_dict[n]["outputs"] = FunctionOutputs(
+                # now update the conditioned logic in case these nodes are further modified by additional conditioned variables
+                conditioned_logic[n]["inputs"] = new_successor_inputs
+                conditioned_logic[n]["outputs"] = FunctionOutputs(
                     bit_lut=BitLut.from_sequence(new_successor_outputs)
                 )
 
@@ -821,7 +788,7 @@ class BooleanNetwork:
         # Add Edges
         for i, node in enumerate(self.nodes, start=0):
             a_is = node.activities()
-            for inputs, a_i in zip(self.network_dict[i]["inputs"], a_is):
+            for inputs, a_i in zip(self.nodes[i].inputs, a_is):
                 # If there is a threshold, only return those number above the threshold. Else, return all edges.
                 if ((threshold is None) and (a_i > 0)) or (
                     (threshold is not None) and (a_i > threshold)
@@ -996,7 +963,7 @@ class BooleanNetwork:
         """Sets or unsets a node as a constant.
 
         Args:
-            node (int) : The node ``id`` in the ``network_dict``.
+            node (int) : The node ``id`` in ``self.nodes``.
             constant (Boolean) : Whether to set or unset the node as a constant.
             state (str; optional) : The state value to which to set the node. Either '0' or '1'; default to current state value.
         """
@@ -1266,7 +1233,7 @@ class BooleanNetwork:
         assert len(initial) == self.Nnodes
         return "".join(
             [
-                str(node.step("".join(initial[j] for j in self.network_dict[i]["inputs"])))
+                str(node.step("".join(initial[j] for j in self.nodes[i].inputs)))
                 if not (i in pinned_var)
                 else initial[i]
                 for i, node in enumerate(self.nodes, start=0)

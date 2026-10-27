@@ -15,13 +15,14 @@ import re
 #   Thomas Parmer <tjparmer@indiana.edu>
 #   All rights reserved.
 #   MIT license.
-from collections import Counter, defaultdict
+from collections import Counter
 from io import StringIO
 
 import networkx as nx
 
 from cana.bit_lut import BitLut
 from cana.boolean_network import BooleanNetwork
+from cana.boolean_node import BooleanNode
 from cana.function_outputs import FunctionOutputs
 from cana.utils import output_transitions
 
@@ -50,21 +51,24 @@ def regular_boolean_network(
             graph=regular_graph, niter_remove=niter_remove
         )
 
-    # A NetworkDict {id: {name, inputs, outputs}, ...}
-    bn_dict = {
-        node: {
-            "name": str(node),
-            "inputs": sorted([n for n in regular_graph.predecessors(node)]),
-            "outputs": FunctionOutputs(
-                bit_lut=random_automata_table(
-                    regular_graph.in_degree(node), bias, bias_constraint
-                )
-            ),
-        }
-        for node in range(N)
-    }
+    nodes = []
+    for node in range(N):
+        inputs = sorted(n for n in regular_graph.predecessors(node))
+        nodes.append(
+            BooleanNode(
+                id=node,
+                name=str(node),
+                k=len(inputs),
+                inputs=inputs,
+                outputs=FunctionOutputs(
+                    bit_lut=random_automata_table(
+                        regular_graph.in_degree(node), bias, bias_constraint
+                    )
+                ),
+            )
+        )
 
-    return BooleanNetwork.from_dict(bn_dict, keep_constants=keep_constants)
+    return BooleanNetwork.from_nodes(nodes, keep_constants=keep_constants)
 
 
 def er_boolean_network(
@@ -85,21 +89,24 @@ def er_boolean_network(
     if remove_multiedges:
         er_graph = _remove_duplicate_edges(graph=er_graph, niter_remove=niter_remove)
 
-    # A NetworkDict {id: {name, inputs, outputs}, ...}
-    bn_dict = {
-        node: {
-            "name": str(node),
-            "inputs": sorted([n for n in er_graph.predecessors(node)]),
-            "outputs": FunctionOutputs(
-                bit_lut=random_automata_table(
-                    er_graph.in_degree(node), bias, bias_constraint
-                )
-            ),
-        }
-        for node in range(N)
-    }
+    nodes = []
+    for node in range(N):
+        inputs = sorted(n for n in er_graph.predecessors(node))
+        nodes.append(
+            BooleanNode(
+                id=node,
+                name=str(node),
+                k=len(inputs),
+                inputs=inputs,
+                outputs=FunctionOutputs(
+                    bit_lut=random_automata_table(
+                        er_graph.in_degree(node), bias, bias_constraint
+                    )
+                ),
+            )
+        )
 
-    return BooleanNetwork.from_dict(bn_dict)
+    return BooleanNetwork.from_nodes(nodes)
 
 
 def random_automata_table(indegree, bias, bias_constraint="soft"):
@@ -190,30 +197,25 @@ def from_string_booleannet(self, string, keep_constants=True, **kwargs):
             NODE3*=NODE1 AND NODE2 ...
 
     See also:
-        :func:`from_string` :func:`from_dict`
+        :func:`from_string` :func:`from_nodes`
     """
 
-    network_dict = defaultdict(dict)
+    names = []
 
     # parse lines to receive node names
     network_file = StringIO(string)
     line = network_file.readline()
-    i = 0
     while line != "":
         if line[0] == "#":
             line = network_file.readline()
             continue
-        network_dict[i] = {
-            "name": line.split("*")[0].strip(),
-            "inputs": [],
-            "outputs": None,
-        }
+        names.append(line.split("*")[0].strip())
         line = network_file.readline()
-        i += 1
 
     # Parse lines again to determine inputs and output sequence
     network_file = StringIO(string)
     line = network_file.readline()
+    nodes = []
     i = 0
     while line != "":
         if line[0] == "#":
@@ -222,27 +224,26 @@ def from_string_booleannet(self, string, keep_constants=True, **kwargs):
         eval_line = line.split("=")[1]  # logical condition to evaluate
         # RE checks for non-alphanumeric character before/after node name (node names are included in other node names)
         # Additional characters added to eval_line to avoid start/end of string complications
-        input_names = [
-            network_dict[node]["name"]
-            for node in network_dict
-            if re.compile(r"\W" + network_dict[node]["name"] + r"\W").search(
-                "*" + eval_line + "*"
-            )
+        input_name_list = [
+            name
+            for name in names
+            if re.compile(r"\W" + name + r"\W").search("*" + eval_line + "*")
         ]
-        input_nums = [
-            node
-            for input in input_names
-            for node in network_dict
-            if input == network_dict[node]["name"]
-        ]
-        network_dict[i]["inputs"] = input_nums
-        # Determine output transitions
-        network_dict[i]["outputs"] = FunctionOutputs(
-            bit_lut=BitLut.from_sequence(
-                output_transitions(eval_line, input_names)
+        input_nums = [names.index(inp) for inp in input_name_list]
+        nodes.append(
+            BooleanNode(
+                id=i,
+                name=names[i],
+                k=len(input_nums),
+                inputs=input_nums,
+                outputs=FunctionOutputs(
+                    bit_lut=BitLut.from_sequence(
+                        output_transitions(eval_line, input_name_list)
+                    )
+                ),
             )
         )
         line = network_file.readline()
         i += 1
 
-    return self.from_dict(network_dict, keep_constants=keep_constants, **kwargs)
+    return self.from_nodes(nodes, keep_constants=keep_constants, **kwargs)
