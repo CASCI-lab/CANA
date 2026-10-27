@@ -94,15 +94,31 @@ def test_function_outputs_to_expression_ladder():
         function_outputs_to_expression(fo, names, warn=False) == "A or B"
     )
 
-    # Schemata wins over LUT when no expression.
+    # Two-symbol wins over one-symbol / LUT when no expression.
     fo2 = FunctionOutputs(
-        bit_lut=BitLut.from_sequence([0, 1, 1, 1]),  # OR LUT
+        bit_lut=BitLut.from_sequence([0, 0, 0, 1]),  # AND LUT
         one_symbol_schemata={1: {"12"}},  # would say A
+        two_symbol_schemata=(
+            [["00", [], []]],
+            [["12", [[0, 1]], []]],  # OR → (A or B)
+        ),
         k=2,
     )
     fo2.one_symbol_is_prime_implicant = True
     fo2.representations_consistent = True
-    assert function_outputs_to_expression(fo2, names, warn=False) == "A"
+    assert (
+        function_outputs_to_expression(fo2, names, warn=False) == "(A or B)"
+    )
+
+    # One-symbol wins over LUT when no expression / two-symbol.
+    fo2b = FunctionOutputs(
+        bit_lut=BitLut.from_sequence([0, 1, 1, 1]),  # OR LUT
+        one_symbol_schemata={1: {"12"}},  # would say A
+        k=2,
+    )
+    fo2b.one_symbol_is_prime_implicant = True
+    fo2b.representations_consistent = True
+    assert function_outputs_to_expression(fo2b, names, warn=False) == "A"
 
     # LUT fallback.
     fo3 = FunctionOutputs.from_sequence([0, 0, 0, 1])
@@ -589,6 +605,30 @@ def test_function_outputs_to_expression_from_two_symbol_only():
         function_outputs_to_expression(fo, ["A", "B"], warn=False)
         == "(A or B)"
     )
+    # Two-symbol alone: no prime warn (no stored one-symbol).
+    with warnings.catch_warnings(record=True) as caught:
+        warnings.simplefilter("always")
+        function_outputs_to_expression(fo, ["A", "B"], warn=True)
+        assert caught == []
+
+    # Two-symbol + one-symbol: warn prime when flag is not True.
+    fo_both = FunctionOutputs(
+        one_symbol_schemata={1: {"12", "21"}},
+        two_symbol_schemata=ts,
+        k=2,
+    )
+    with pytest.warns(UserWarning, match="two_symbol_schemata"):
+        assert (
+            function_outputs_to_expression(
+                fo_both, ["A", "B"], node_label="X"
+            )
+            == "(A or B)"
+        )
+    fo_both.one_symbol_is_prime_implicant = True
+    with warnings.catch_warnings(record=True) as caught:
+        warnings.simplefilter("always")
+        function_outputs_to_expression(fo_both, ["A", "B"], warn=True)
+        assert caught == []
 
 
 def test_verify_representations_consistent_with_two_symbol():

@@ -304,12 +304,14 @@ def function_outputs_to_expression(
 ) -> str:
     """Named expression from ``FunctionOutputs``.
 
-    Priority: stored expression → one-symbol → two-symbol → LUT.
+    Priority: stored expression → two-symbol → one-symbol → LUT.
 
     Never runs ``verify_*``; only reads
     ``representations_consistent`` / ``one_symbol_is_prime_implicant``.
     Soft-warns (never raises) for the chosen non-LUT source:
     one-symbol when ``one_symbol_is_prime_implicant`` is not ``True``;
+    two-symbol likewise when a one-symbol cover is also stored (two-symbol
+    is often derived from it);
     consistency only when ``representations_consistent is False``
     (``None`` is silent — common after lazy LUT fill).
 
@@ -352,15 +354,17 @@ def function_outputs_to_expression(
             stacklevel=3,
         )
 
-    def _warn_prime() -> None:
+    def _warn_prime(source: str) -> None:
         if not warn:
             return
         flag = getattr(outputs, "one_symbol_is_prime_implicant", None)
         if flag is True:
             return
         warnings.warn(
-            "{0}: exporting from one_symbol_schemata "
-            "(one_symbol_is_prime_implicant={1!r})".format(label, flag),
+            "{0}: exporting from {1} "
+            "(one_symbol_is_prime_implicant={2!r})".format(
+                label, source, flag
+            ),
             UserWarning,
             stacklevel=3,
         )
@@ -373,16 +377,22 @@ def function_outputs_to_expression(
             return named
         return normalize_operators(named, style)
 
-    schemata = getattr(outputs, "one_symbol_schemata", None)
-    if schemata is not None:
-        _warn_prime()
-        _warn_consistency("one_symbol_schemata")
-        return one_symbol_to_expression(input_names, schemata, style=style)
-
-    ts = getattr(outputs, "two_symbol_schemata", None)
-    if ts is not None:
+    two_symbol = getattr(outputs, "two_symbol_schemata", None)
+    one_symbol = getattr(outputs, "one_symbol_schemata", None)
+    if two_symbol is not None:
+        # Two-symbol is often built from one-symbol; warn if that cover
+        # is present and not known to be prime.
+        if one_symbol is not None:
+            _warn_prime("two_symbol_schemata")
         _warn_consistency("two_symbol_schemata")
-        return two_symbol_to_expression(input_names, ts, style=style)
+        return two_symbol_to_expression(
+            input_names, two_symbol, style=style
+        )
+
+    if one_symbol is not None:
+        _warn_prime("one_symbol_schemata")
+        _warn_consistency("one_symbol_schemata")
+        return one_symbol_to_expression(input_names, one_symbol, style=style)
 
     get_bit_lut = getattr(outputs, "get_bit_lut", None)
     if get_bit_lut is not None:

@@ -144,9 +144,9 @@ class BooleanNode(object):
         """Return a named boolean expression for this node's update rule.
 
         Uses :func:`~cana.function_outputs.expression.function_outputs_to_expression`:
-        stored expression, else one-symbol ON cover, else dense LUT DNF.
-        Soft-warns when verification flags are not ``True`` for the chosen
-        non-LUT source (never blocks).
+        stored expression, else two-symbol, else one-symbol ON cover, else
+        dense LUT DNF. Soft-warns when verification flags are not ``True``
+        for the chosen non-LUT source (never blocks).
 
         Args:
             style (str) : ``"python"`` or ``"symbolic"``.
