@@ -6,6 +6,8 @@ from cana.bit_lut import BitLut
 from cana.boolean_network import BooleanNetwork
 from cana.boolean_node import BooleanNode
 from cana.function_outputs import BooleanEval, FunctionOutputs
+from cana.function_outputs import one_symbol as one_symbol_mod
+from cana.function_outputs.one_symbol import bit_lut_from_schemata, reorder as reorder_one_symbol
 
 
 def test_from_sequence_and_eval():
@@ -203,3 +205,53 @@ def test_fill_function_outputs_node_and_network():
     assert network.network_dict[1]["outputs"].bit_lut is network.nodes[1].outputs.bit_lut
     network.fill_function_outputs("one_symbol_schemata")
     assert network.nodes[0].outputs.one_symbol_schemata is not None
+
+
+def test_one_symbol_reorder_identity_returns_same():
+    schemata = {0: {"02", "20"}, 1: {"11"}}
+    assert reorder_one_symbol(schemata, ["A", "B"], ["A", "B"]) is schemata
+
+
+def test_one_symbol_reorder_swaps_and_implies():
+    # AND on (A, B): QM cover {0: 02,20; 1: 11}; swap keeps AND.
+    and_schemata = {0: {"02", "20"}, 1: {"11"}}
+    swapped_and = reorder_one_symbol(and_schemata, ["A", "B"], ["B", "A"])
+    assert swapped_and[1] == {"11"}
+    assert swapped_and[0] == {"02", "20"}
+    assert list(bit_lut_from_schemata(swapped_and, 2)) == [0, 0, 0, 1]
+
+    # Implies A->B on (A, B): [1,1,0,1]; after swap to (B, A): [1,0,1,1].
+    implies = FunctionOutputs.from_sequence([1, 1, 0, 1])
+    schemata = implies.get_one_symbol_schemata()
+    swapped = reorder_one_symbol(schemata, ["A", "B"], ["B", "A"])
+    assert list(bit_lut_from_schemata(swapped, 2)) == [1, 0, 1, 1]
+
+
+def test_function_outputs_reorder_both_peers():
+    fo = FunctionOutputs.from_sequence([1, 1, 0, 1])  # A->B
+    fo.get_one_symbol_schemata()
+    assert fo.one_symbol_is_prime_implicant is True
+    fo.representations_consistent = True
+    fo.two_symbol_schemata = ([], [])  # stub; should be cleared
+
+    out = fo.reorder(["A", "B"], ["B", "A"])
+    assert out is not fo
+    assert list(out.bit_lut) == [1, 0, 1, 1]
+    assert out.one_symbol_schemata is not None
+    assert list(bit_lut_from_schemata(out.one_symbol_schemata, 2)) == [1, 0, 1, 1]
+    assert out.one_symbol_is_prime_implicant is True
+    assert out.representations_consistent is True
+    assert out.two_symbol_schemata is None
+    assert out.verify_representations_consistent() is True
+
+
+def test_function_outputs_reorder_identity_returns_self():
+    fo = FunctionOutputs.from_sequence([0, 0, 0, 1])
+    assert fo.reorder(["A", "B"], ["A", "B"]) is fo
+
+
+def test_one_symbol_module_public_api():
+    assert "OneSymbolSchemata" in one_symbol_mod.__all__
+    assert callable(one_symbol_mod.reorder)
+    assert callable(one_symbol_mod.bit_lut_from_schemata)
+    assert callable(one_symbol_mod.schemata_from_bit_lut)

@@ -6,6 +6,14 @@
 # the same name-keyed LUTs (CANA ``NetworkDict`` hub), then exercise any↔any
 # conversion and full round-trips.
 #
+# Also export to ``.cnet`` (BNS / BLIF-like) in both representations:
+#
+# - **dense LUT** — ``2**k`` rows per node (default ``to_cnet()`` / ``to_string``)
+# - **one-symbol schemata** — wildcard ``2`` covers after
+#   ``fill_function_outputs("one_symbol_schemata")``
+#
+# and round-trip each mode back through the expression formats.
+#
 # Free inputs (e.g. ``v_CycD`` in model 023) appear without an update rule in
 # ``.bnet`` / ``.aeon``; CANA assigns the **identity** ``f(x)=x`` so they match
 # BBM's ``model.booleannet.txt`` representation.
@@ -164,4 +172,92 @@ for src in FORMATS:
         print(f"  {src:12s} → {dst:12s} → {src:12s}  {ok}")
         assert ok, (src, dst)
 
-print("\nAll format loads, conversions, and round-trips passed.")
+# %% [markdown]
+# ## ``.cnet`` dense LUT export and round-trips
+#
+# BBM does not ship ``.cnet``; we synthesize dense (``bit_lut``) covers from
+# each loaded expression format, re-import, and round-trip
+# ``src → cnet → src``.
+
+
+# %%
+print("cnet dense LUT: src → cnet → network (~= ref):")
+cnet_lut_texts: Dict[str, str] = {}
+for src in FORMATS:
+    cnet = networks[src].to_cnet()  # one_symbol_schemata=False (default)
+    cnet_lut_texts[src] = cnet
+    N2 = BooleanNetwork.from_string(cnet, type="cnet")
+    ok = ref.equivalent_to(N2)
+    print(f"  {src:12s} → cnet (lut)               {ok}")
+    assert ok, ("cnet lut import", src)
+
+print("\ncnet dense LUT round-trips src → cnet → src:")
+for src in FORMATS:
+    mid = cnet_lut_texts[src]
+    back = BooleanNetwork.convert_string(mid, "cnet", src)
+    N2 = BooleanNetwork.from_string(back, type=src)
+    ok = ref.equivalent_to(N2)
+    print(f"  {src:12s} → cnet (lut) → {src:12s}  {ok}")
+    assert ok, ("cnet lut round-trip", src)
+
+# %% [markdown]
+# ## ``.cnet`` one-symbol-schemata export and round-trips
+#
+# Fill ``one_symbol_schemata`` on each loaded network, export with
+# ``one_symbol_schemata=True`` (wildcard ``2`` covers), re-import, and
+# round-trip ``src → cnet(schemata) → src``. Expression exporters resolve
+# LUTs via ``get_bit_lut()``, so schemata-only re-imports still convert.
+
+
+# %%
+print("cnet one-symbol schemata: src → fill → cnet → network (~= ref):")
+cnet_schema_texts: Dict[str, str] = {}
+for src in FORMATS:
+    networks[src].fill_function_outputs("one_symbol_schemata")
+    cnet = networks[src].to_cnet(one_symbol_schemata=True)
+    cnet_schema_texts[src] = cnet
+    N2 = BooleanNetwork.from_string(cnet, type="cnet")
+    ok = ref.equivalent_to(N2)
+    has_wildcard = any(
+        "2" in line.split()[0]
+        for line in cnet.splitlines()
+        if line and line[0] not in ".#" and " " in line
+    )
+    print(
+        f"  {src:12s} → cnet (schemata)  wildcard={has_wildcard}  {ok}"
+    )
+    assert ok, ("cnet schemata import", src)
+
+print("\ncnet one-symbol schemata round-trips src → cnet → src:")
+for src in FORMATS:
+    mid = cnet_schema_texts[src]
+    back = BooleanNetwork.convert_string(mid, "cnet", src)
+    N2 = BooleanNetwork.from_string(back, type=src)
+    ok = ref.equivalent_to(N2)
+    print(f"  {src:12s} → cnet (schemata) → {src:12s}  {ok}")
+    assert ok, ("cnet schemata round-trip", src)
+
+# Sample schemata cover for the first non-trivial node (k>=2)
+print("\nSample one-symbol schemata cnet lines (first k>=2 node):")
+sample = cnet_schema_texts["booleannet"]
+sample_lines = sample.splitlines()
+printed = False
+i = 0
+while i < len(sample_lines):
+    line = sample_lines[i]
+    if line.startswith(".n "):
+        parts = line.split()
+        k = int(parts[2]) if len(parts) >= 3 else 0
+        if k >= 2:
+            print(f"  {line}")
+            i += 1
+            while i < len(sample_lines) and sample_lines[i] and not sample_lines[i].startswith("."):
+                print(f"  {sample_lines[i]}")
+                i += 1
+            printed = True
+            break
+    i += 1
+if not printed:
+    print("  (no k>=2 node — model may be all identity/constants)")
+
+print("\nAll format loads, conversions, and round-trips passed (incl. cnet lut + schemata).")

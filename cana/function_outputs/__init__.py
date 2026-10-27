@@ -14,15 +14,18 @@ schemata via :meth:`get_bit_lut`.
 """
 from __future__ import annotations
 
-from typing import Any, Dict, Iterator, List, Optional, Protocol, Sequence, Set, Tuple, Union, runtime_checkable
+from typing import Any, Iterator, List, Optional, Protocol, Sequence, Tuple, Union, runtime_checkable
 
 from cana.bit_lut import BitLut
-from cana.cutils import binstate_to_statenum, outputs_to_binstates_of_given_type
+from cana.function_outputs.one_symbol import (
+    OneSymbolSchemata,
+    bit_lut_from_schemata,
+    reorder as reorder_one_symbol,
+    schemata_from_bit_lut,
+)
 
 __all__ = ["BooleanEval", "FunctionOutputs", "OneSymbolSchemata", "TwoSymbolSchemata"]
 
-# Polarity -> set of length-k strings over {0,1,2} (2 = don't-care).
-OneSymbolSchemata = Dict[int, Set[str]]
 # (ts0, ts1); each entry is [schema_str, perm_groups, same_groups].
 TwoSymbolSchemata = Tuple[list, list]
 
@@ -184,7 +187,7 @@ class FunctionOutputs(object):
             raise ValueError(
                 "compute_one_symbol_schemata_from_bit_lut requires bit_lut"
             )
-        schemata = self._one_symbol_schemata_from_bit_lut(self.bit_lut)
+        schemata = schemata_from_bit_lut(self.bit_lut)
         self.one_symbol_schemata = schemata
         self.one_symbol_is_prime_implicant = True
         self._k = self.bit_lut.k
@@ -201,31 +204,7 @@ class FunctionOutputs(object):
         ValueError
             On polarity conflicts or incomplete coverage of the ``2**k`` rows.
         """
-        import cana.canalization.cboolean_canalization as cBCanalization
-
-        lut = BitLut(k)
-        covered = [False] * len(lut)
-        for output, piset in schemata.items():
-            out_bit = int(output)
-            for pi in piset:
-                for binstate in cBCanalization.expand_wildcard_schemata(pi):
-                    idx = binstate_to_statenum(binstate)
-                    if covered[idx] and lut[idx] != out_bit:
-                        raise ValueError(
-                            "one-symbol schemata polarity conflict at "
-                            "state {0!r}: {1:d} vs {2:d}".format(
-                                binstate, lut[idx], out_bit
-                            )
-                        )
-                    lut[idx] = out_bit
-                    covered[idx] = True
-        if not all(covered):
-            missing = sum(1 for c in covered if not c)
-            raise ValueError(
-                "one-symbol schemata do not cover all 2**k states "
-                "({0:d} uncovered for k={1:d})".format(missing, k)
-            )
-        return lut
+        return bit_lut_from_schemata(schemata, k)
 
     def build_bit_lut_from_one_symbol_schemata(self) -> BitLut:
         """Build and store ``bit_lut`` from ``one_symbol_schemata``."""
@@ -234,27 +213,14 @@ class FunctionOutputs(object):
                 "build_bit_lut_from_one_symbol_schemata requires "
                 "one_symbol_schemata"
             )
-        self.bit_lut = self.bit_lut_from_one_symbol_schemata(
-            self.one_symbol_schemata, self.k
-        )
+        self.bit_lut = bit_lut_from_schemata(self.one_symbol_schemata, self.k)
         self._k = self.bit_lut.k
         return self.bit_lut
 
     @staticmethod
     def _one_symbol_schemata_from_bit_lut(bit_lut: BitLut) -> OneSymbolSchemata:
         """Run Quine-McCluskey on ``bit_lut`` without mutating a container."""
-        import cana.canalization.cboolean_canalization as cBCanalization
-
-        k = bit_lut.k
-        schemata = {}  # type: OneSymbolSchemata
-        for output in sorted(set(bit_lut)):
-            output_binstates = outputs_to_binstates_of_given_type(
-                bit_lut, output=output, k=k
-            )
-            schemata[output] = cBCanalization.find_implicants_qm(
-                input_binstates=output_binstates
-            )
-        return schemata
+        return schemata_from_bit_lut(bit_lut)
 
     def verify_one_symbol_schemata(self) -> bool:
         """Opt-in: stored one-symbol schemata are complete, consistent, and PIs.
@@ -270,11 +236,11 @@ class FunctionOutputs(object):
             )
         schemata = self.one_symbol_schemata
         try:
-            lut = self.bit_lut_from_one_symbol_schemata(schemata, self.k)
+            lut = bit_lut_from_schemata(schemata, self.k)
         except ValueError:
             self.one_symbol_is_prime_implicant = False
             return False
-        recomputed = self._one_symbol_schemata_from_bit_lut(lut)
+        recomputed = schemata_from_bit_lut(lut)
         ok = (
             set(schemata.get(0, ())) == set(recomputed.get(0, ()))
             and set(schemata.get(1, ())) == set(recomputed.get(1, ()))
@@ -296,9 +262,7 @@ class FunctionOutputs(object):
         if self.one_symbol_schemata is not None:
             try:
                 candidates.append(
-                    self.bit_lut_from_one_symbol_schemata(
-                        self.one_symbol_schemata, self.k
-                    )
+                    bit_lut_from_schemata(self.one_symbol_schemata, self.k)
                 )
             except ValueError:
                 self.representations_consistent = False
@@ -311,6 +275,43 @@ class FunctionOutputs(object):
         ok = all(c == first for c in candidates[1:])
         self.representations_consistent = ok
         return ok
+
+    def reorder(
+        self, old_labels: Sequence[object], new_labels: Sequence[object]
+    ) -> "FunctionOutputs":
+        """Return a copy with input order remapped across filled peer reps.
+
+        Remaps ``bit_lut`` and ``one_symbol_schemata`` when present (no QM).
+        Clears ``two_symbol_schemata`` when the order changes (no remapper yet).
+        Copies ``expression`` through.  Preserves
+        ``one_symbol_is_prime_implicant``.  If orders already match, returns
+        ``self`` unchanged.
+        """
+        if list(old_labels) == list(new_labels):
+            return self
+
+        new_bit_lut = None
+        if self.bit_lut is not None:
+            new_bit_lut = self.bit_lut.reorder(old_labels, new_labels)
+
+        new_one_symbol = None
+        if self.one_symbol_schemata is not None:
+            new_one_symbol = reorder_one_symbol(
+                self.one_symbol_schemata, old_labels, new_labels
+            )
+
+        # No two-symbol remapper yet; drop stale index-based groups.
+        out = FunctionOutputs(
+            bit_lut=new_bit_lut,
+            one_symbol_schemata=new_one_symbol,
+            two_symbol_schemata=None,
+            expression=self.expression,
+            k=self.k,
+        )
+        out.one_symbol_is_prime_implicant = self.one_symbol_is_prime_implicant
+        # Peers remapped with the same permutation stay consistent iff they were.
+        out.representations_consistent = self.representations_consistent
+        return out
 
     def __len__(self) -> int:
         return len(self._require_bit_lut())
