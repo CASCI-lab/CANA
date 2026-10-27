@@ -329,6 +329,50 @@ def test_node_stores_one_symbol_on_outputs():
     assert n._two_symbols is n.outputs.two_symbol_schemata
 
 
+def test_canalization_uses_stored_one_symbol_with_soft_warn():
+    # Non-prime complete cover: previously would auto-QM and overwrite.
+    schemata = {0: {"00", "01", "10"}, 1: {"11"}}
+    n = BooleanNode(
+        id=0,
+        name="AND",
+        k=2,
+        inputs=[0, 1],
+        outputs=FunctionOutputs(one_symbol_schemata=schemata, k=2),
+    )
+    assert n.outputs.one_symbol_is_prime_implicant is None
+    assert n.outputs.bit_lut is None
+
+    with pytest.warns(UserWarning, match="one_symbol_is_prime_implicant"):
+        n._check_compute_canalization_variables(prime_implicants=True)
+
+    # Stored cover kept; no LUT / QM forced.
+    assert n.outputs.one_symbol_schemata is schemata
+    assert n.outputs.bit_lut is None
+    assert n.outputs.one_symbol_is_prime_implicant is None
+
+    with pytest.warns(UserWarning, match="one_symbol_is_prime_implicant"):
+        n._check_compute_canalization_variables(two_symbols=True)
+    assert n.outputs.two_symbol_schemata is not None
+    assert n.outputs.bit_lut is None
+    assert n.outputs.one_symbol_schemata is schemata
+
+
+def test_canalization_skips_warn_when_one_symbol_verified():
+    schemata = {0: {"02", "20"}, 1: {"11"}}
+    fo = FunctionOutputs(one_symbol_schemata=schemata, k=2)
+    assert fo.verify_one_symbol_schemata() is True
+    n = BooleanNode(
+        id=0, name="AND", k=2, inputs=[0, 1], outputs=fo
+    )
+    with warnings.catch_warnings(record=True) as caught:
+        warnings.simplefilter("always")
+        n._check_compute_canalization_variables(prime_implicants=True)
+        n._check_compute_canalization_variables(two_symbols=True)
+    assert not [w for w in caught if issubclass(w.category, UserWarning)]
+    assert n.outputs.one_symbol_schemata is schemata
+    assert n.outputs.bit_lut is None
+
+
 def test_fill_function_outputs_node_and_network():
     schemata = {0: {"02", "20"}, 1: {"11"}}
     n = BooleanNode(

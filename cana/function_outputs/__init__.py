@@ -14,6 +14,7 @@ expression via :meth:`get_bit_lut` when needed.
 """
 from __future__ import annotations
 
+import warnings
 from typing import Any, Iterator, List, Optional, Protocol, Sequence, Tuple, Union, runtime_checkable
 
 from cana.bit_lut import BitLut
@@ -168,11 +169,33 @@ class FunctionOutputs(object):
         return self.bit_lut
 
     def get_two_symbol_schemata(self) -> TwoSymbolSchemata:
-        """Return two-symbol schemata, deriving from one-symbol if needed."""
+        """Return two-symbol schemata, deriving from one-symbol if needed.
+
+        Uses stored ``one_symbol_schemata`` when present (soft-warns unless
+        :attr:`one_symbol_is_prime_implicant` is ``True``).  Otherwise
+        computes one-symbol via Quine–McCluskey from ``bit_lut``.  Does not
+        re-run QM over a stored cover; call :meth:`verify_one_symbol_schemata`
+        to check explicitly.
+        """
         if self.two_symbol_schemata is not None:
             return self.two_symbol_schemata
         # Local import avoids a circular import at module load time.
         import cana.canalization.boolean_canalization as BCanalization
+
+        if (
+            self.one_symbol_schemata is not None
+            and self.one_symbol_is_prime_implicant is not True
+        ):
+            warnings.warn(
+                "using one_symbol_schemata "
+                "(one_symbol_is_prime_implicant={0!r}); "
+                "two-symbol derivation assumes a prime-implicant cover. "
+                "Call verify_one_symbol_schemata() to check.".format(
+                    self.one_symbol_is_prime_implicant
+                ),
+                UserWarning,
+                stacklevel=2,
+            )
 
         one_symbol = self.get_one_symbol_schemata()
         k = self.k

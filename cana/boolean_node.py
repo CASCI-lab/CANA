@@ -15,6 +15,7 @@ Main class for Boolean node objects.
 from __future__ import division
 
 import math
+import warnings
 from itertools import combinations, compress, product
 from statistics import mean
 
@@ -770,28 +771,36 @@ class BooleanNode(object):
     def _two_symbols(self, value):
         self.outputs.two_symbol_schemata = value
 
-    def _ensure_prime_implicants(self):
-        """Ensure ``outputs.one_symbol_schemata`` holds Quine–McCluskey PIs.
+    def _warn_one_symbol_unverified(self):
+        """Soft-warn when canalization will use an unverified one-symbol cover.
 
-        Stored one-symbol covers are not treated as PIs unless
-        :attr:`~cana.function_outputs.FunctionOutputs.one_symbol_is_prime_implicant`
-        is ``True``.  Otherwise materialize a dense LUT (complete schemata or
-        expression) and recompute.  Incomplete schemata cannot be materialized.
+        Does not run Quine–McCluskey or build a LUT.  Opt-in verification is
+        :meth:`~cana.function_outputs.FunctionOutputs.verify_one_symbol_schemata`.
         """
         outs = self.outputs
-        if outs.one_symbol_is_prime_implicant is True:
-            outs.get_one_symbol_schemata()
+        if outs.one_symbol_schemata is None:
             return
-        outs.get_bit_lut()
-        outs.compute_one_symbol_schemata_from_bit_lut()
+        if outs.one_symbol_is_prime_implicant is True:
+            return
+        warnings.warn(
+            "Node {0!r}: using one_symbol_schemata "
+            "(one_symbol_is_prime_implicant={1!r}); "
+            "canalization assumes a prime-implicant cover. "
+            "Call outputs.verify_one_symbol_schemata() to check.".format(
+                self.name, outs.one_symbol_is_prime_implicant
+            ),
+            UserWarning,
+            stacklevel=3,
+        )
 
     def _check_compute_canalization_variables(self, **kwargs):
         """Recursevely check if the requested canalization variables are instantiated/computed, otherwise computes them in order.
-        For example: to compute `two_symbols` we need `prime_implicants` first.
-        Likewise, to compute `prime_implicants` we need the dense LUT (or stored schemata) first.
+        For example: to compute `two_symbols` we need `one_symbol_schemata` first
+        (stored cover, or Quine–McCluskey from the dense LUT when absent).
         """
         if "prime_implicants" in kwargs:
-            self._ensure_prime_implicants()
+            self._warn_one_symbol_unverified()
+            self.outputs.get_one_symbol_schemata()
 
         elif "pi_coverage" in kwargs:
             self._check_compute_canalization_variables(prime_implicants=True)
@@ -804,7 +813,7 @@ class BooleanNode(object):
                 assert len(self._pi_coverage) == 2**self.k
 
         elif "two_symbols" in kwargs:
-            self._check_compute_canalization_variables(prime_implicants=True)
+            # Soft-warn (if needed) lives in get_two_symbol_schemata.
             self.outputs.get_two_symbol_schemata()
         elif "ts_coverage" in kwargs:
             self._check_compute_canalization_variables(two_symbols=True)

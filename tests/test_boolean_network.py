@@ -1,6 +1,14 @@
 from cana.boolean_network import BooleanNetwork
 import networkx as nx
+import pytest
 from cana.datasets.bio import THALIANA, LEUKEMIA
+
+# THALIANA loads schemata-only nodes from cnet; canalization soft-warns when
+# one_symbol_is_prime_implicant is unset. Not under test here.
+pytestmark = pytest.mark.filterwarnings(
+    "ignore:.*one_symbol_is_prime_implicant.*:UserWarning"
+)
+
 
 def test_EG_weight_THALIANA():
     """Test that effective graph in-degree edge weights are computed correctly."""
