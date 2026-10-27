@@ -97,6 +97,18 @@ class BooleanNetwork:
         On construction, each ``network_dict[i]`` becomes a ``BooleanNode`` whose
         ``outputs`` **is** the same ``FunctionOutputs`` object as
         ``network_dict[i]["outputs"]``.
+
+    Constants
+        A node is constant when its LUT is flat (see
+        :meth:`~cana.boolean_node.BooleanNode.set_constant`).  That is the
+        source of truth: ``node.constant``, :attr:`constants`,
+        :attr:`Nconstants`, and :meth:`get_constants` all derive from it.
+
+        ``keep_constants`` does **not** decide whether nodes are constant.  When
+        ``True``, constant nodes are pinned in state-space helpers (free
+        ``Nstates`` is ``2**(N-Nconstants)``, converters inject fixed bits) and
+        are included in the dynamics canalizing map.  When ``False``, the full
+        ``2**N`` state space is used and constant nodes are omitted from the DCM.
     """
 
     def __init__(
@@ -109,9 +121,7 @@ class BooleanNetwork:
         stg_r=None,
         _eg=None,
         attractors=None,
-        constants=None,
-        Nconstants=None,
-        keep_constants=False,
+        keep_constants=True,
         bin2num=None,
         num2bin=None,
         verbose=False,
@@ -120,9 +130,19 @@ class BooleanNetwork:
     ):
         # NOTE: *args and **kwargs don't do anything. I'm not sure why they wre added here, so I'm not going to remove them.
 
-        # Backward-compatible constructor alias.
+        # Backward-compatible constructor aliases.
         if network_dict is None and "lut_dict" in kwargs:
             network_dict = kwargs.pop("lut_dict")
+        if "constants" in kwargs or "Nconstants" in kwargs:
+            warnings.warn(
+                "BooleanNetwork(..., constants=..., Nconstants=...) is ignored; "
+                "constants are derived from each node's LUT via node.constant. "
+                "Use keep_constants to pin them in state-space helpers.",
+                DeprecationWarning,
+                stacklevel=2,
+            )
+            kwargs.pop("constants", None)
+            kwargs.pop("Nconstants", None)
 
         self.name = name  # Name of the Network
         self.Nnodes = Nnodes  # Number of Nodes
@@ -138,16 +158,8 @@ class BooleanNetwork:
         self._stg_r = stg_r  # State-Transition-Graph Reachability dict (STG-R)
         self._eg = _eg  # Effective Graph, computed from the effective connectivity
         self._attractors = attractors  # Network Attractors
-        #
-        self.keep_constants = (
-            keep_constants  # Keep/Include constants in some of the computations
-        )
-        if constants is None:
-            self.constants = {}
-        else:
-            self.constants = (
-                constants  # Keep/Include constants in some of the computations
-            )
+        # Pin constant nodes in state-space / DCM helpers (see class docstring).
+        self.keep_constants = keep_constants
 
         self.Nstates = 2**Nnodes  # Number of possible states in the network 2^N
         #
@@ -176,21 +188,6 @@ class BooleanNetwork:
             )
             self.nodes.append(node)
 
-        if Nconstants is None:
-            self.Nconstants = sum(
-                [n.constant for n in self.nodes]
-            )  # Number of constant variables
-        else:
-            self.Nconstants = Nconstants
-
-        # Prefer functional constancy (node.constant) over empty-inputs alone.
-        if keep_constants and not self.constants:
-            self.constants = {
-                i: int(node.state)
-                for i, node in enumerate(self.nodes)
-                if node.constant
-            }
-
         self.input_nodes = [
             i
             for i in range(Nnodes)
@@ -203,6 +200,23 @@ class BooleanNetwork:
         self.bin2num = bin2num  # Helper function. Converts binstate to statenum. It gets updated by `_update_trans_func`
         self.num2bin = num2bin  # Helper function. Converts statenum to binstate. It gets updated by `_update_trans_func`
         self._update_trans_func()  # Updates helper functions and other variables
+
+    @property
+    def constants(self):
+        """Map of constant node id → frozen state (``0`` or ``1``).
+
+        Derived from ``node.constant`` / ``node.state``; always in sync.
+        """
+        return {
+            i: int(node.state)
+            for i, node in enumerate(self.nodes)
+            if node.constant
+        }
+
+    @property
+    def Nconstants(self):
+        """Number of functionally constant nodes."""
+        return sum(1 for node in self.nodes if node.constant)
 
     def __str__(self):
         node_names = [node.name for node in self.nodes]
@@ -228,9 +242,9 @@ class BooleanNetwork:
                 See the :class:`BooleanNetwork` class docstring for the full
                 schema.  Empty ``inputs`` implies a constant function; a
                 constant LUT with non-empty ``inputs`` is also allowed.
-            keep_constants (bool) : If True, functionally constant nodes
-                (via ``node.constant`` / dense LUT) are recorded in
-                ``constants`` and frozen in state-space helpers.
+            keep_constants (bool) : If True, pin functionally constant nodes
+                in state-space helpers and include them in the DCM.  Constancy
+                itself always comes from each node's LUT.
 
         Returns:
             (BooleanNetwork)
@@ -248,7 +262,6 @@ class BooleanNetwork:
             name=name,
             network_dict=network_dict,
             Nnodes=Nnodes,
-            constants={},
             keep_constants=keep_constants,
         )
 
@@ -260,7 +273,8 @@ class BooleanNetwork:
             string (string) : Model contents.
             type (string) : Format name (``cnet``, ``booleannet``,
                 ``bnet``, ``aeon``, ``sbml``).
-            keep_constants (bool) :
+            keep_constants (bool) : Pin constant nodes in state-space helpers
+                (see :class:`BooleanNetwork`).
 
         Returns:
             (BooleanNetwork)
@@ -283,7 +297,8 @@ class BooleanNetwork:
                 format is inferred from the file suffix (``.cnet``,
                 ``.booleannet.txt``, ``.bnet``, ``.aeon``, ``.sbml``).  Ambiguous
                 ``.txt`` files still require an explicit ``type``.
-            keep_constants (bool) : Whether to record constant nodes.
+            keep_constants (bool) : Pin constant nodes in state-space helpers
+                (see :class:`BooleanNetwork`).
 
         Returns:
             BooleanNetwork (object) : The boolean network object.
@@ -958,20 +973,22 @@ class BooleanNetwork:
             constant (Boolean) : Whether to set or unset the node as a constant.
             state (str; optional) : The state value to which to set the node. Either '0' or '1'; default to current state value.
         """
-        # Se a node to a constant or not
         self.nodes[node].set_constant(constant=constant, state=state)
-        # Update the number of constant nodes
-        self.Nconstants = sum([n.constant for n in self.nodes])
         self._update_trans_func()
 
     def get_constants(self):
-        """Retrieved a dictionary containing all constant nodes"""
+        """Return ``{node_id: BooleanNode}`` for every functionally constant node.
+
+        See also :attr:`constants` for ``{node_id: int}`` frozen states.
+        """
         return {i: node for i, node in enumerate(self.nodes) if node.constant}
 
     def unset_all_constants(self):
+        """Clear every node's constant flag and disable pinning."""
         self.keep_constants = False
         for node in self.nodes:
             node.set_constant(constant=False)
+        self._update_trans_func()
 
     def _update_trans_func(self):
         """Sets the correct functions to convert from binary-state format to/from numeric-state format."""

@@ -160,7 +160,9 @@ def test_empty_inputs_implies_constant_not_converse():
     )
     assert N.nodes[0].constant is True
     assert N.nodes[0].k == 0
-    assert 0 in N.constants
+    assert N.constants == {0: 1}
+    assert N.Nconstants == 1
+    assert list(N.get_constants()) == [0]
 
     # Flat LUT with inputs => constant, but inputs preserved
     N2 = BooleanNetwork.from_dict(
@@ -173,7 +175,22 @@ def test_empty_inputs_implies_constant_not_converse():
     assert flat.constant is True
     assert flat.inputs == [0]
     assert N2.network_dict[1]["inputs"] == [0]
-    assert 1 in N2.constants
+    assert N2.constants == {1: 1}
+    assert N2.Nconstants == 1
+    # Pinning shrinks free state space; constancy itself is independent.
+    assert N2.keep_constants is True
+    assert N2.Nstates == 2  # only node 0 is free
+
+    N2_unpin = BooleanNetwork.from_dict(
+        {
+            0: {"name": "A", "inputs": [0], "outputs": [0, 1]},
+            1: {"name": "Flat", "inputs": [0], "outputs": [1, 1]},
+        },
+        keep_constants=False,
+    )
+    assert N2_unpin.constants == {1: 1}
+    assert N2_unpin.Nconstants == 1
+    assert N2_unpin.Nstates == 4  # full 2**N when not pinning
 
     # Self-loop identity => not constant, in input_nodes
     N3 = BooleanNetwork.from_dict(
@@ -183,6 +200,8 @@ def test_empty_inputs_implies_constant_not_converse():
     )
     assert N3.nodes[0].constant is False
     assert 0 in N3.input_nodes
+    assert N3.constants == {}
+    assert N3.Nconstants == 0
 
 
 BBM_023 = (
