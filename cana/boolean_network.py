@@ -375,7 +375,8 @@ class BooleanNetwork:
         """Fill a missing ``FunctionOutputs`` slot on every node.
 
         Args:
-            representation (str) : ``"bit_lut"`` or ``"one_symbol_schemata"``.
+            representation (str) : ``"bit_lut"``, ``"one_symbol_schemata"``,
+                ``"two_symbol_schemata"``, or ``"expression"``.
 
         Returns:
             (BooleanNetwork) : ``self``.

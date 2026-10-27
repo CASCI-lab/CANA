@@ -5,8 +5,11 @@
 stores.  Peer representation slots may hold a dense
 :class:`~cana.bit_lut.BitLut`, one-symbol (prime-implicant) schemata,
 two-symbol schemata, and/or an expression.  Multiple representations may
-coexist; named converters document each derivation, and lazy getters fill
-a missing slot from another available slot when possible.
+coexist; named converters document each derivation, and lazy getters
+(:meth:`get_bit_lut`, :meth:`get_one_symbol_schemata`,
+:meth:`get_two_symbol_schemata`, :meth:`get_expression`) try every peer
+slot, cache intermediates computed along the way, and raise
+``ValueError`` when none can produce the requested representation.
 
 Dense Sequence access (``len``, ``[i]``, iterate) and :meth:`eval` prefer
 ``bit_lut`` and materialize it from one-symbol schemata, two-symbol
@@ -21,6 +24,9 @@ from typing import Any, Iterator, List, Optional, Protocol, Sequence, Tuple, Uni
 from cana.bit_lut import BitLut
 from cana.function_outputs.expression import (
     bit_lut_from_expression,
+    lut_to_expression,
+    one_symbol_to_expression,
+    positional_names,
     reorder_positional,
 )
 from cana.function_outputs.one_symbol import (
@@ -168,11 +174,13 @@ class FunctionOutputs(object):
         return self.get_bit_lut().eval(statenum)
 
     def get_one_symbol_schemata(self) -> OneSymbolSchemata:
-        """Return one-symbol schemata, deriving from two-symbol or ``bit_lut``.
+        """Return one-symbol schemata, deriving from any available peer slot.
 
         Prefer stored one-symbol; else expand ``two_symbol_schemata`` (does not
         set :attr:`one_symbol_is_prime_implicant`); else Quine–McCluskey from
-        ``bit_lut``.
+        ``bit_lut``; else build ``bit_lut`` from ``expression`` then QM.
+        Intermediates (e.g. ``bit_lut`` from expression) are cached.
+        Raises ``ValueError`` if no peer can produce one-symbol schemata.
         """
         if self.one_symbol_schemata is not None:
             return self.one_symbol_schemata
@@ -181,14 +189,22 @@ class FunctionOutputs(object):
                 self.two_symbol_schemata
             )
             return self.one_symbol_schemata
-        self.get_bit_lut()
-        return self.compute_one_symbol_schemata_from_bit_lut()
+        if self.bit_lut is not None:
+            return self.compute_one_symbol_schemata_from_bit_lut()
+        if self.expression is not None:
+            self.build_bit_lut_from_expression()
+            return self.compute_one_symbol_schemata_from_bit_lut()
+        raise ValueError(
+            "Cannot get one_symbol_schemata: neither one_symbol_schemata, "
+            "two_symbol_schemata, bit_lut, nor expression is available"
+        )
 
     def get_bit_lut(self) -> BitLut:
         """Return the dense LUT, building from schemata or expression if needed.
 
-        Two-symbol materializes in two steps: expand to one-symbol, then build
-        the LUT from that cover.
+        Tries stored ``bit_lut``, then one-symbol, then expression, then
+        two-symbol (expand to one-symbol, then build the LUT).  Intermediates
+        are cached.  Raises ``ValueError`` if no peer can produce a LUT.
         """
         if self.bit_lut is not None:
             return self.bit_lut
@@ -212,36 +228,88 @@ class FunctionOutputs(object):
         self._k = self.bit_lut.k
         return self.bit_lut
 
-    def get_two_symbol_schemata(self) -> TwoSymbolSchemata:
-        """Return two-symbol schemata, deriving from one-symbol if needed.
+    def get_expression(self) -> Any:
+        """Return positional expression IR, deriving from any available peer.
 
-        Uses stored ``one_symbol_schemata`` when present (soft-warns unless
-        :attr:`one_symbol_is_prime_implicant` is ``True``).  Otherwise
-        computes one-symbol via Quine–McCluskey from ``bit_lut``.  Does not
+        Prefer stored ``expression``; else build from ``two_symbol_schemata``,
+        then ``one_symbol_schemata``, then ``bit_lut`` (positional ``x0``…
+        ``x{k-1}`` python IR).  Does not call :meth:`get_bit_lut` so an empty
+        container fails here rather than via a side-effect materialization.
+        Raises ``ValueError`` if no peer can produce an expression.
+
+        Named / styled export stays in
+        :func:`~cana.function_outputs.expression.function_outputs_to_expression`.
+        """
+        if self.expression is not None:
+            return self.expression
+        names = positional_names(self.k)
+        if self.two_symbol_schemata is not None:
+            self.expression = two_symbol_to_expression(
+                names, self.two_symbol_schemata
+            )
+            return self.expression
+        if self.one_symbol_schemata is not None:
+            self.expression = one_symbol_to_expression(
+                names, self.one_symbol_schemata
+            )
+            return self.expression
+        if self.bit_lut is not None:
+            self.expression = lut_to_expression(names, self.bit_lut)
+            return self.expression
+        raise ValueError(
+            "Cannot get expression: neither expression, two_symbol_schemata, "
+            "one_symbol_schemata, nor bit_lut is available"
+        )
+
+    def get_two_symbol_schemata(self) -> TwoSymbolSchemata:
+        """Return two-symbol schemata, deriving from any available peer slot.
+
+        Prefer stored two-symbol; else derive from ``one_symbol_schemata``
+        (soft-warns unless :attr:`one_symbol_is_prime_implicant` is ``True``);
+        else Quine–McCluskey from ``bit_lut`` then derive; else build LUT from
+        ``expression``, QM, then derive.  Intermediates are cached.  Does not
         re-run QM over a stored cover; call :meth:`verify_one_symbol_schemata`
-        to check explicitly.
+        to check explicitly.  Raises ``ValueError`` if no peer can produce
+        two-symbol schemata.
         """
         if self.two_symbol_schemata is not None:
             return self.two_symbol_schemata
+
+        if self.one_symbol_schemata is not None:
+            if self.one_symbol_is_prime_implicant is not True:
+                warnings.warn(
+                    "using one_symbol_schemata "
+                    "(one_symbol_is_prime_implicant={0!r}); "
+                    "two-symbol derivation assumes a prime-implicant cover. "
+                    "Call verify_one_symbol_schemata() to check.".format(
+                        self.one_symbol_is_prime_implicant
+                    ),
+                    UserWarning,
+                    stacklevel=2,
+                )
+            return self._two_symbol_from_one_symbol(self.one_symbol_schemata)
+
+        if self.bit_lut is not None:
+            one_symbol = self.compute_one_symbol_schemata_from_bit_lut()
+            return self._two_symbol_from_one_symbol(one_symbol)
+
+        if self.expression is not None:
+            self.build_bit_lut_from_expression()
+            one_symbol = self.compute_one_symbol_schemata_from_bit_lut()
+            return self._two_symbol_from_one_symbol(one_symbol)
+
+        raise ValueError(
+            "Cannot get two_symbol_schemata: neither two_symbol_schemata, "
+            "one_symbol_schemata, bit_lut, nor expression is available"
+        )
+
+    def _two_symbol_from_one_symbol(
+        self, one_symbol: OneSymbolSchemata
+    ) -> TwoSymbolSchemata:
+        """Derive and store two-symbol schemata from a one-symbol cover."""
         # Local import avoids a circular import at module load time.
         import cana.canalization.boolean_canalization as BCanalization
 
-        if (
-            self.one_symbol_schemata is not None
-            and self.one_symbol_is_prime_implicant is not True
-        ):
-            warnings.warn(
-                "using one_symbol_schemata "
-                "(one_symbol_is_prime_implicant={0!r}); "
-                "two-symbol derivation assumes a prime-implicant cover. "
-                "Call verify_one_symbol_schemata() to check.".format(
-                    self.one_symbol_is_prime_implicant
-                ),
-                UserWarning,
-                stacklevel=2,
-            )
-
-        one_symbol = self.get_one_symbol_schemata()
         k = self.k
         pi0 = one_symbol.get(0, set())
         pi1 = one_symbol.get(1, set())

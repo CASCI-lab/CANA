@@ -258,6 +258,65 @@ def test_get_one_symbol_schemata_lazy():
     assert second is first
 
 
+def test_empty_function_outputs_getters_raise():
+    fo = FunctionOutputs(k=2)
+    with pytest.raises(ValueError, match=r"Cannot get bit_lut"):
+        fo.get_bit_lut()
+    with pytest.raises(ValueError, match=r"Cannot get one_symbol_schemata"):
+        fo.get_one_symbol_schemata()
+    with pytest.raises(ValueError, match=r"Cannot get two_symbol_schemata"):
+        fo.get_two_symbol_schemata()
+    with pytest.raises(ValueError, match=r"Cannot get expression"):
+        fo.get_expression()
+
+
+def test_get_one_symbol_schemata_from_expression_caches_lut():
+    fo = FunctionOutputs(expression="x0 and x1", k=2)
+    assert fo.bit_lut is None
+    schemata = fo.get_one_symbol_schemata()
+    assert schemata[1] == {"11"}
+    assert fo.bit_lut is not None
+    assert list(fo.bit_lut) == [0, 0, 0, 1]
+
+
+def test_get_two_symbol_schemata_from_expression():
+    fo = FunctionOutputs(expression="x0 or x1", k=2)
+    assert fo.two_symbol_schemata is None
+    assert fo.bit_lut is None
+    ts = fo.get_two_symbol_schemata()
+    assert fo.two_symbol_schemata is ts
+    assert fo.bit_lut is not None
+    assert fo.one_symbol_schemata is not None
+    assert list(fo.bit_lut) == [0, 1, 1, 1]
+
+
+def test_get_expression_caches_from_peers():
+    # From bit_lut.
+    fo_lut = FunctionOutputs.from_sequence([0, 0, 0, 1])  # AND
+    assert fo_lut.expression is None
+    expr_lut = fo_lut.get_expression()
+    assert fo_lut.expression is expr_lut
+    assert fo_lut.get_expression() is expr_lut
+    assert list(fo_lut.get_bit_lut()) == [0, 0, 0, 1]
+
+    # From one-symbol.
+    schemata = {0: {"02", "20"}, 1: {"11"}}
+    fo_one = FunctionOutputs(one_symbol_schemata=schemata, k=2)
+    expr_one = fo_one.get_expression()
+    assert fo_one.expression == expr_one
+    assert expr_one == one_symbol_to_expression(["x0", "x1"], schemata)
+
+    # From two-symbol (OR).
+    ts = (
+        [["00", [], []]],
+        [["12", [[0, 1]], []]],
+    )
+    fo_two = FunctionOutputs(two_symbol_schemata=ts, k=2)
+    expr_two = fo_two.get_expression()
+    assert fo_two.expression == expr_two
+    assert expr_two == "(x0 or x1)"
+
+
 def test_build_bit_lut_from_one_symbol_schemata():
     original = [0, 0, 0, 1]
     fo = FunctionOutputs.from_sequence(original)
@@ -432,6 +491,14 @@ def test_fill_function_outputs_node_and_network():
     assert network.nodes[1].outputs.bit_lut is not None
     network.fill_function_outputs("one_symbol_schemata")
     assert network.nodes[0].outputs.one_symbol_schemata is not None
+
+    n3 = BooleanNode.from_bit_lut([0, 1, 1, 1], name="OR")
+    assert n3.outputs.two_symbol_schemata is None
+    n3.fill_function_outputs("two_symbol_schemata")
+    assert n3.outputs.two_symbol_schemata is not None
+    assert n3.outputs.expression is None
+    n3.fill_function_outputs("expression")
+    assert n3.outputs.expression is not None
 
 
 def test_one_symbol_reorder_identity_returns_same():

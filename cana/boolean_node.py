@@ -335,7 +335,8 @@ class BooleanNode(object):
         """Fill a missing ``FunctionOutputs`` representation slot from another.
 
         Args:
-            representation (str) : ``"bit_lut"`` or ``"one_symbol_schemata"``.
+            representation (str) : ``"bit_lut"``, ``"one_symbol_schemata"``,
+                ``"two_symbol_schemata"``, or ``"expression"``.
 
         Returns:
             (FunctionOutputs) : This node's ``outputs`` (mutated in place).
@@ -344,10 +345,15 @@ class BooleanNode(object):
             self.outputs.get_bit_lut()
         elif representation == "one_symbol_schemata":
             self.outputs.get_one_symbol_schemata()
+        elif representation == "two_symbol_schemata":
+            self.outputs.get_two_symbol_schemata()
+        elif representation == "expression":
+            self.outputs.get_expression()
         else:
             raise ValueError(
-                "Unknown representation {0!r}; expected 'bit_lut' or "
-                "'one_symbol_schemata'".format(representation)
+                "Unknown representation {0!r}; expected 'bit_lut', "
+                "'one_symbol_schemata', 'two_symbol_schemata', or "
+                "'expression'".format(representation)
             )
         return self.outputs
 
