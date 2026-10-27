@@ -182,10 +182,16 @@ def _require_representation(
         outputs = local[i]["outputs"]
         if representation == "bit_lut":
             if outputs.bit_lut is None:
-                missing.append(_node_label(i, local[i]["name"]))
+                try:
+                    outputs.get_bit_lut()
+                except ValueError:
+                    missing.append(_node_label(i, local[i]["name"]))
         elif representation == "one_symbol_schemata":
             if outputs.one_symbol_schemata is None:
-                missing.append(_node_label(i, local[i]["name"]))
+                try:
+                    outputs.get_one_symbol_schemata()
+                except ValueError:
+                    missing.append(_node_label(i, local[i]["name"]))
         else:
             raise ValueError(
                 "Unknown representation {0!r}".format(representation)
@@ -215,10 +221,10 @@ def network_dict_to_cnet(
         one_symbol_schemata: If True, export one-symbol (wildcard) covers;
             if False (default), export dense ``2**k`` LUT rows.
 
-    Export does not fill missing representations. Dense export requires
-    ``bit_lut`` on every node; schemata export requires
-    ``one_symbol_schemata`` on every node. Otherwise raises ``ValueError``
-    asking the caller to run ``fill_function_outputs``.
+    Dense export materializes ``bit_lut`` via :meth:`FunctionOutputs.get_bit_lut`
+    when only expression/schemata are present. Schemata export materializes
+    ``one_symbol_schemata`` similarly. If a representation cannot be derived,
+    raises ``ValueError``.
     """
     local: Dict[int, Dict[str, Any]] = {}
     for i, data in network_dict.items():

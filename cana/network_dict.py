@@ -7,12 +7,12 @@ from pathlib import Path
 
 from cana.bit_lut import BitLut
 from cana.function_outputs import FunctionOutputs
-from cana.io.expressions import (
+from cana.function_outputs.expression import (
     expression_identifiers,
     normalize_operators,
     regulator_names_in_expression,
+    to_positional,
 )
-from cana.utils import output_transitions
 
 NodeSpec = TypedDict(
     "NodeSpec",
@@ -30,10 +30,12 @@ Keys:
         a structural constant (single-bit function); that implies a constant
         node, but a constant LUT can also exist with non-empty ``inputs``.
     outputs: :class:`~cana.function_outputs.FunctionOutputs` holding a dense
-        :class:`~cana.bit_lut.BitLut` and/or other representations.  Row ``s``
-        of the dense LUT is the next value when the input state (in the
-        ``inputs`` order, MSB = ``inputs[0]``) equals ``s``, matching
-        :func:`~cana.utils.output_transitions`.
+        :class:`~cana.bit_lut.BitLut`, positional expression, and/or other
+        representations.  When a dense LUT is present, row ``s`` is the next
+        value when the input state (in the ``inputs`` order, MSB =
+        ``inputs[0]``) equals ``s``, matching
+        :func:`~cana.utils.output_transitions`.  Expression-only nodes
+        materialize that LUT on demand via :meth:`FunctionOutputs.get_bit_lut`.
 """
 
 NetworkDict = Dict[int, NodeSpec]
@@ -50,7 +52,10 @@ def expressions_to_network_dict(
 
     Names that appear only as inputs (free inputs) receive the identity
     update ``f(x) = x``, matching BBM's booleannet representation of inputs.
-    Literal constants use empty ``inputs`` and a length-1 LUT.
+    Literal constants use empty ``inputs`` and positional ``True``/``False``.
+
+    Each node's ``outputs`` stores a **positional** python expression
+    (``x0``…``x{k-1}``) without building a dense LUT at import time.
     """
     # Preserve insertion order of targets; append free inputs alphabetically.
     ordered: List[str] = list(expressions.keys())
@@ -80,29 +85,27 @@ def expressions_to_network_dict(
             network_dict[i] = {
                 "name": name,
                 "inputs": [],
-                "outputs": FunctionOutputs(
-                    bit_lut=BitLut.from_sequence([1])
-                ),
+                "outputs": FunctionOutputs(expression="True", k=0),
             }
             continue
         if expr in ("False", "false", "0"):
             network_dict[i] = {
                 "name": name,
                 "inputs": [],
-                "outputs": FunctionOutputs(
-                    bit_lut=BitLut.from_sequence([0])
-                ),
+                "outputs": FunctionOutputs(expression="False", k=0),
             }
             continue
         input_names = regulator_names_in_expression(expr, ordered)
         if expr.strip() == name and name not in input_names:
             input_names = [name]
         input_ids = [name_to_id[n] for n in input_names]
-        lut = BitLut.from_sequence(output_transitions(expr, input_names))
+        positional = to_positional(expr, input_names)
         network_dict[i] = {
             "name": name,
             "inputs": input_ids,
-            "outputs": FunctionOutputs(bit_lut=lut),
+            "outputs": FunctionOutputs(
+                expression=positional, k=len(input_names)
+            ),
         }
     return network_dict
 

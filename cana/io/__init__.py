@@ -3,18 +3,19 @@
 Import / export Boolean networks via the CANA ``NetworkDict`` hub.
 
 A ``NetworkDict`` maps node id → ``{name, inputs, outputs}``. File formats
-(booleannet, bnet, aeon, sbml, cnet) convert to/from this structure; textual
-expressions need not be preserved across round-trips as long as name-keyed
-LUTs match.
+(booleannet, bnet, aeon, sbml, cnet) convert to/from this structure. Expression
+formats store positional IR on :class:`~cana.function_outputs.FunctionOutputs`
+at import; exporters may materialize dense LUTs. Name-keyed LUT equivalence
+is the round-trip authority across formats.
 
 Modules:
-    expressions: boolean expression string helpers
+    expressions: re-exports of :mod:`cana.function_outputs.expression`
     booleannet, bnet, aeon, sbml, cnet: per-format parse / export
 
 The hub types and builders live in :mod:`cana.network_dict`.
 
 Format parsers/exporters are loaded lazily so ``cana.io.expressions`` can be
-imported from :mod:`cana.network_dict` without a circular import.
+imported without pulling every format module.
 """
 from __future__ import annotations
 

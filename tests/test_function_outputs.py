@@ -7,6 +7,11 @@ from cana.boolean_network import BooleanNetwork
 from cana.boolean_node import BooleanNode
 from cana.function_outputs import BooleanEval, FunctionOutputs
 from cana.function_outputs import one_symbol as one_symbol_mod
+from cana.function_outputs.expression import (
+    bit_lut_from_expression,
+    from_positional,
+    to_positional,
+)
 from cana.function_outputs.one_symbol import bit_lut_from_schemata, reorder as reorder_one_symbol
 
 
@@ -26,16 +31,45 @@ def test_wraps_bit_lut_same_object():
     assert fo.bit_lut is bit
 
 
-def test_no_dense_lut_errors():
-    fo = FunctionOutputs(expression="A and B", k=2)
+def test_no_dense_lut_sequence_errors():
+    fo = FunctionOutputs(expression="x0 and x1", k=2)
     assert fo.bit_lut is None
     assert fo.k == 2
     with pytest.raises(ValueError, match="bit_lut"):
         len(fo)
     with pytest.raises(ValueError, match="bit_lut"):
         fo[0]
-    with pytest.raises(ValueError, match="neither bit_lut nor one_symbol_schemata"):
-        fo.eval(0)
+    # eval may materialize from expression without Sequence access
+    assert fo.eval(3) == 1
+    assert list(fo.get_bit_lut()) == [0, 0, 0, 1]
+
+
+def test_positional_to_from_roundtrip():
+    named = "(A and not B) or C"
+    names = ["A", "B", "C"]
+    positional = to_positional(named, names)
+    assert positional == "(x0 and not x1) or x2"
+    assert from_positional(positional, names) == named
+
+
+def test_bit_lut_from_expression_and_get_bit_lut():
+    lut = bit_lut_from_expression("x0 and x1", 2)
+    assert list(lut) == [0, 0, 0, 1]
+    fo = FunctionOutputs(expression="x0 or x1", k=2)
+    assert fo.bit_lut is None
+    built = fo.get_bit_lut()
+    assert list(built) == [0, 1, 1, 1]
+    assert fo.bit_lut is built
+
+
+def test_function_outputs_reorder_expression():
+    fo = FunctionOutputs(expression="x0 and not x1", k=2)
+    fo.get_bit_lut()
+    expected_lut = list(fo.bit_lut.reorder(["A", "B"], ["B", "A"]))
+    out = fo.reorder(["A", "B"], ["B", "A"])
+    assert out.expression == "x1 and not x0"
+    assert list(out.bit_lut) == expected_lut
+    assert out.verify_representations_consistent() is True
 
 
 def test_equality_with_list():
@@ -64,7 +98,10 @@ def test_network_shares_function_outputs():
         assert isinstance(network.network_dict[i]["outputs"], FunctionOutputs)
         assert isinstance(node.outputs, FunctionOutputs)
         assert node.outputs is network.network_dict[i]["outputs"]
-        assert isinstance(node.outputs.bit_lut, BitLut)
+        # Expression formats store positional IR; LUT is lazy.
+        assert node.outputs.expression is not None
+        assert node.outputs.bit_lut is None
+        assert isinstance(node.outputs.get_bit_lut(), BitLut)
 
 
 def test_get_one_symbol_schemata_lazy():

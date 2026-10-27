@@ -4,6 +4,7 @@ from pathlib import Path
 import pytest
 
 from cana.boolean_network import BooleanNetwork
+from cana.function_outputs import FunctionOutputs
 from cana.io import (
     convert,
     export_string,
@@ -71,6 +72,35 @@ def test_parse_tiny_bnet_booleannet_aeon():
 def test_expressions_to_network_dict_adds_free_input_identity():
     network_dict = expressions_to_network_dict({"A": "B", "B": "A and C"})
     _assert_tiny(network_dict)
+
+
+def test_import_stores_positional_expression_only():
+    network_dict = parse_booleannet(TINY_BOOLEANNET)
+    # A* = B  -> inputs [B], expression x0
+    # B* = A and C -> inputs [A, C] in discovery order, expression x0 and x1
+    # C* = C -> inputs [C], expression x0
+    by_name = {e["name"]: e for e in network_dict.values()}
+    for entry in by_name.values():
+        assert entry["outputs"].bit_lut is None
+        assert entry["outputs"].expression is not None
+    assert by_name["A"]["outputs"].expression == "x0"
+    assert by_name["B"]["outputs"].expression == "x0 and x1"
+    assert by_name["C"]["outputs"].expression == "x0"
+    # Symbolic operators normalize to python positional IR
+    aeon = parse_aeon(TINY_AEON)
+    assert {e["name"]: e["outputs"].expression for e in aeon.values()}[
+        "B"
+    ] == "x0 and x1"
+
+
+def test_boolean_node_named_expression():
+    network = BooleanNetwork.from_dict(parse_booleannet(TINY_BOOLEANNET))
+    by_name = {n.name: n for n in network.nodes}
+    assert by_name["A"].expression() == "B"
+    assert by_name["B"].expression() == "A and C"
+    assert by_name["C"].expression() == "C"
+    assert by_name["B"].input_names() == ["A", "C"]
+    assert by_name["B"].expression(style="symbolic") == "A & C"
 
 
 def test_export_reimport_roundtrip_each_format():
@@ -153,28 +183,24 @@ def test_parse_cnet_dense_minterms_not_schemata():
     assert list(fo.bit_lut) == [0, 0, 0, 1]
 
 
-def test_cnet_export_requires_requested_representation():
+def test_cnet_export_materializes_requested_representation():
     nd = parse_cnet(MIXED_CNET)
-    # Dense export fails while CycE is schemata-only.
-    with pytest.raises(ValueError, match=r"fill_function_outputs\('bit_lut'\)"):
-        network_dict_to_cnet(nd)
-    # Schemata export fails while CycD lacks one-symbol.
-    with pytest.raises(
-        ValueError, match=r"fill_function_outputs\('one_symbol_schemata'\)"
-    ):
-        network_dict_to_cnet(nd, one_symbol_schemata=True)
-
-    # Explicit fill unlocks each mode.
-    N = BooleanNetwork.from_dict(nd)
-    N.fill_function_outputs("bit_lut")
-    dense_text = N.to_cnet()
+    # Dense export materializes bit_lut from schemata-only peers.
+    dense_text = network_dict_to_cnet(nd)
     assert "00 0" in dense_text or "0 0" in dense_text
+    assert equivalent_network_dicts(nd, parse_cnet(dense_text))
 
-    N.fill_function_outputs("one_symbol_schemata")
-    schemata_text = N.to_cnet(one_symbol_schemata=True)
+    # Schemata export materializes one-symbol from dense peers.
+    schemata_text = network_dict_to_cnet(nd, one_symbol_schemata=True)
     assert "2" in schemata_text
-    again = parse_cnet(schemata_text)
-    assert equivalent_network_dicts(nd, again)
+    assert equivalent_network_dicts(nd, parse_cnet(schemata_text))
+
+    # Truly empty FO still cannot export.
+    empty = {
+        0: {"name": "A", "inputs": [0], "outputs": FunctionOutputs(k=1)},
+    }
+    with pytest.raises(ValueError, match=r"fill_function_outputs\('bit_lut'\)"):
+        network_dict_to_cnet(empty)
 
 
 def test_boolean_network_cnet_schemata_and_fill():

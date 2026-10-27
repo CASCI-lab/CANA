@@ -128,6 +128,47 @@ class BooleanNode(object):
             )
         return self.outputs
 
+    def input_names(self):
+        """Return regulator names in LUT / expression bit order.
+
+        Requires this node to be attached to a :class:`BooleanNetwork`.
+        """
+        if self.network is None:
+            raise ValueError(
+                "input_names requires a BooleanNode attached to a network"
+            )
+        return [self.network.nodes[j].name for j in self.inputs]
+
+    def expression(self, style="python"):
+        """Return a named boolean expression for this node's update rule.
+
+        Rebinds positional FO IR (``x0``…) to :meth:`input_names`.  If FO has
+        no expression but has a dense LUT, builds a DNF via
+        :func:`~cana.function_outputs.expression.lut_to_expression`.
+
+        Args:
+            style (str) : ``"python"`` or ``"symbolic"``.
+        """
+        from cana.function_outputs.expression import (
+            from_positional,
+            lut_to_expression,
+            normalize_operators,
+        )
+
+        names = self.input_names()
+        if self.outputs.expression is not None:
+            named = from_positional(self.outputs.expression, names)
+            if style == "python":
+                return named
+            return normalize_operators(named, style)
+        lut = self.outputs.bit_lut
+        if lut is not None:
+            return lut_to_expression(names, lut, style=style)
+        raise ValueError(
+            "Cannot build named expression: neither expression nor bit_lut "
+            "is available on outputs"
+        )
+
     def __str__(self):
         if self.outputs.bit_lut is not None:
             if len(self.outputs) > 10:
@@ -140,10 +181,16 @@ class BooleanNode(object):
                 )
             else:
                 outputs = "[" + ",".join(map(str, self.outputs)) + "]"
+        elif self.outputs.expression is not None:
+            if self.network is not None:
+                try:
+                    outputs = "expression={0!r}".format(self.expression())
+                except ValueError:
+                    outputs = "expression={0!r}".format(self.outputs.expression)
+            else:
+                outputs = "expression={0!r}".format(self.outputs.expression)
         elif self.outputs.one_symbol_schemata is not None:
             outputs = "one_symbol_schemata"
-        elif self.outputs.expression is not None:
-            outputs = "expression={0!r}".format(self.outputs.expression)
         else:
             outputs = "k={0}".format(self.outputs.k)
         inputs = "[" + ",".join(map(str, self.inputs)) + "]"

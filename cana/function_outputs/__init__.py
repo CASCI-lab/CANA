@@ -10,13 +10,17 @@ a missing slot from another available slot when possible.
 
 Dense Sequence access (``len``, ``[i]``, iterate) requires ``bit_lut``.
 :meth:`eval` prefers ``bit_lut`` and can materialize it from one-symbol
-schemata via :meth:`get_bit_lut`.
+schemata or a positional expression via :meth:`get_bit_lut`.
 """
 from __future__ import annotations
 
 from typing import Any, Iterator, List, Optional, Protocol, Sequence, Tuple, Union, runtime_checkable
 
 from cana.bit_lut import BitLut
+from cana.function_outputs.expression import (
+    bit_lut_from_expression,
+    reorder_positional,
+)
 from cana.function_outputs.one_symbol import (
     OneSymbolSchemata,
     bit_lut_from_schemata,
@@ -57,7 +61,9 @@ class FunctionOutputs(object):
         Two-symbol schemata as ``(ts0, ts1)``, if known.  Each list holds
         ``[schema_str, perm_groups, same_groups]`` entries.
     expression :
-        Reserved for a source expression string or AST.
+        Positional python IR (``and``/``or``/``not`` over ``x0``…``x{k-1}``),
+        if known.  Network names are rebound at the
+        :class:`~cana.boolean_node.BooleanNode` / I/O boundary.
     one_symbol_is_prime_implicant :
         ``None`` until known; ``True``/``False`` after QM compute or
         :meth:`verify_one_symbol_schemata`.
@@ -126,8 +132,8 @@ class FunctionOutputs(object):
     def eval(self, statenum: int) -> int:
         """Evaluate the function at input state ``statenum``.
 
-        Prefers ``bit_lut``.  If absent but one-symbol schemata are present,
-        materializes the LUT via :meth:`get_bit_lut`.
+        Prefers ``bit_lut``.  If absent, materializes via :meth:`get_bit_lut`
+        from one-symbol schemata or a positional expression.
         """
         if self.bit_lut is not None:
             return self.bit_lut.eval(statenum)
@@ -146,23 +152,29 @@ class FunctionOutputs(object):
         """Return one-symbol schemata, computing from ``bit_lut`` if needed."""
         if self.one_symbol_schemata is not None:
             return self.one_symbol_schemata
-        if self.bit_lut is not None:
-            return self.compute_one_symbol_schemata_from_bit_lut()
-        raise ValueError(
-            "Cannot get one_symbol_schemata: neither one_symbol_schemata "
-            "nor bit_lut is available"
-        )
+        self.get_bit_lut()
+        return self.compute_one_symbol_schemata_from_bit_lut()
 
     def get_bit_lut(self) -> BitLut:
-        """Return the dense LUT, building it from one-symbol schemata if needed."""
+        """Return the dense LUT, building from schemata or expression if needed."""
         if self.bit_lut is not None:
             return self.bit_lut
         if self.one_symbol_schemata is not None:
             return self.build_bit_lut_from_one_symbol_schemata()
+        if self.expression is not None:
+            return self.build_bit_lut_from_expression()
         raise ValueError(
-            "Cannot get bit_lut: neither bit_lut nor one_symbol_schemata "
-            "is available"
+            "Cannot get bit_lut: neither bit_lut, one_symbol_schemata, "
+            "nor expression is available"
         )
+
+    def build_bit_lut_from_expression(self) -> BitLut:
+        """Build and store ``bit_lut`` from positional ``expression``."""
+        if self.expression is None:
+            raise ValueError("build_bit_lut_from_expression requires expression")
+        self.bit_lut = bit_lut_from_expression(self.expression, self.k)
+        self._k = self.bit_lut.k
+        return self.bit_lut
 
     def get_two_symbol_schemata(self) -> TwoSymbolSchemata:
         """Return two-symbol schemata, deriving from one-symbol if needed."""
@@ -252,9 +264,9 @@ class FunctionOutputs(object):
         """Opt-in: all convertible representations describe the same function.
 
         Derives a LUT from each populated slot that can produce one (stored
-        ``bit_lut``, and ``one_symbol_schemata`` for now) and checks they
-        agree.  Sets :attr:`representations_consistent`.  Never called by
-        normal canalization paths.
+        ``bit_lut``, ``one_symbol_schemata``, and positional ``expression``)
+        and checks they agree.  Sets :attr:`representations_consistent`.
+        Never called by normal canalization paths.
         """
         candidates = []  # type: List[BitLut]
         if self.bit_lut is not None:
@@ -267,7 +279,15 @@ class FunctionOutputs(object):
             except ValueError:
                 self.representations_consistent = False
                 return False
-        # two_symbol_schemata / expression: no LUT builder yet.
+        if self.expression is not None:
+            try:
+                candidates.append(
+                    bit_lut_from_expression(self.expression, self.k)
+                )
+            except ValueError:
+                self.representations_consistent = False
+                return False
+        # two_symbol_schemata: no LUT builder yet.
         if len(candidates) < 2:
             self.representations_consistent = True
             return True
@@ -281,9 +301,9 @@ class FunctionOutputs(object):
     ) -> "FunctionOutputs":
         """Return a copy with input order remapped across filled peer reps.
 
-        Remaps ``bit_lut`` and ``one_symbol_schemata`` when present (no QM).
-        Clears ``two_symbol_schemata`` when the order changes (no remapper yet).
-        Copies ``expression`` through.  Preserves
+        Remaps ``bit_lut``, ``one_symbol_schemata``, and positional
+        ``expression`` when present (no QM).  Clears ``two_symbol_schemata``
+        when the order changes (no remapper yet).  Preserves
         ``one_symbol_is_prime_implicant``.  If orders already match, returns
         ``self`` unchanged.
         """
@@ -300,12 +320,21 @@ class FunctionOutputs(object):
                 self.one_symbol_schemata, old_labels, new_labels
             )
 
+        new_expression = None
+        if self.expression is not None:
+            try:
+                new_expression = reorder_positional(
+                    self.expression, old_labels, new_labels
+                )
+            except (ValueError, KeyError):
+                new_expression = None
+
         # No two-symbol remapper yet; drop stale index-based groups.
         out = FunctionOutputs(
             bit_lut=new_bit_lut,
             one_symbol_schemata=new_one_symbol,
             two_symbol_schemata=None,
-            expression=self.expression,
+            expression=new_expression,
             k=self.k,
         )
         out.one_symbol_is_prime_implicant = self.one_symbol_is_prime_implicant
@@ -370,7 +399,16 @@ class FunctionOutputs(object):
         return self._require_bit_lut().to_list()
 
     def is_constant(self) -> Optional[int]:
-        """Return ``0``/``1`` if the dense LUT is constant, else ``None``."""
-        if self.bit_lut is None:
-            return None
-        return self.bit_lut.is_constant()
+        """Return ``0``/``1`` if the function is constant, else ``None``.
+
+        Uses ``bit_lut`` when present; otherwise recognizes positional
+        ``True``/``False`` expressions with ``k=0``.
+        """
+        if self.bit_lut is not None:
+            return self.bit_lut.is_constant()
+        if self.expression is not None and self._k == 0:
+            if self.expression in ("True", "true", "1"):
+                return 1
+            if self.expression in ("False", "false", "0"):
+                return 0
+        return None
