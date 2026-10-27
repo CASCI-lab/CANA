@@ -8,9 +8,9 @@ two-symbol schemata, and/or an expression.  Multiple representations may
 coexist; named converters document each derivation, and lazy getters fill
 a missing slot from another available slot when possible.
 
-Dense Sequence access (``len``, ``[i]``, iterate) requires ``bit_lut``.
-:meth:`eval` prefers ``bit_lut`` and can materialize it from one-symbol
-schemata or a positional expression via :meth:`get_bit_lut`.
+Dense Sequence access (``len``, ``[i]``, iterate) and :meth:`eval` prefer
+``bit_lut`` and materialize it from one-symbol schemata or a positional
+expression via :meth:`get_bit_lut` when needed.
 """
 from __future__ import annotations
 
@@ -138,15 +138,6 @@ class FunctionOutputs(object):
         if self.bit_lut is not None:
             return self.bit_lut.eval(statenum)
         return self.get_bit_lut().eval(statenum)
-
-    def _require_bit_lut(self) -> BitLut:
-        if self.bit_lut is None:
-            raise ValueError(
-                "Dense LUT access requires bit_lut; this FunctionOutputs "
-                "has no packed truth table (expression/schemata-only nodes "
-                "cannot be indexed as a Sequence yet)"
-            )
-        return self.bit_lut
 
     def get_one_symbol_schemata(self) -> OneSymbolSchemata:
         """Return one-symbol schemata, computing from ``bit_lut`` if needed."""
@@ -343,16 +334,16 @@ class FunctionOutputs(object):
         return out
 
     def __len__(self) -> int:
-        return len(self._require_bit_lut())
+        return len(self.get_bit_lut())
 
     def __getitem__(self, index: Union[int, slice]) -> Union[int, List[int]]:
-        return self._require_bit_lut()[index]
+        return self.get_bit_lut()[index]
 
     def __setitem__(self, index: int, value: object) -> None:
-        self._require_bit_lut()[index] = value
+        self.get_bit_lut()[index] = value
 
     def __iter__(self) -> Iterator[int]:
-        return iter(self._require_bit_lut())
+        return iter(self.get_bit_lut())
 
     def __eq__(self, other: object) -> bool:
         if isinstance(other, FunctionOutputs):
@@ -396,7 +387,7 @@ class FunctionOutputs(object):
 
     def to_list(self) -> List[int]:
         """Unpack the dense LUT to a ``list`` of ints."""
-        return self._require_bit_lut().to_list()
+        return self.get_bit_lut().to_list()
 
     def is_constant(self) -> Optional[int]:
         """Return ``0``/``1`` if the function is constant, else ``None``.

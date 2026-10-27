@@ -6,7 +6,7 @@ import re
 import xml.etree.ElementTree as ET
 from typing import Any, Dict, List, Mapping, Optional, Sequence
 
-from cana.io.expressions import lut_to_expression
+from cana.function_outputs.expression import lut_to_expression
 from cana.network_dict import (
     NetworkDict,
     expressions_to_network_dict,
@@ -125,7 +125,7 @@ def mathml_to_python_expr(node: ET.Element) -> str:
 def python_expr_to_mathml(expr: str) -> ET.Element:
     """Parse a restricted python boolean expression into MathML ``apply`` trees.
 
-    Supports the small DNF language produced by :func:`~cana.io.expressions.lut_to_expression`.
+    Supports the small DNF language produced by :func:`~cana.function_outputs.expression.lut_to_expression`.
     """
 
     def math_ci(name: str) -> ET.Element:

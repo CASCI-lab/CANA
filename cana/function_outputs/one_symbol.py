@@ -70,6 +70,7 @@ def bit_lut_from_schemata(schemata: OneSymbolSchemata, k: int) -> BitLut:
     ------
     ValueError
         On polarity conflicts or incomplete coverage of the ``2**k`` rows.
+        Incomplete covers are not filled with a default output value.
     """
     import cana.canalization.cboolean_canalization as cBCanalization
 

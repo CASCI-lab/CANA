@@ -1,7 +1,5 @@
 # -*- coding: utf-8 -*-
 """Tests for :class:`cana.function_outputs.FunctionOutputs`."""
-import pytest
-
 from cana.bit_lut import BitLut
 from cana.boolean_network import BooleanNetwork
 from cana.boolean_node import BooleanNode
@@ -31,17 +29,15 @@ def test_wraps_bit_lut_same_object():
     assert fo.bit_lut is bit
 
 
-def test_no_dense_lut_sequence_errors():
+def test_expression_only_sequence_materializes():
     fo = FunctionOutputs(expression="x0 and x1", k=2)
     assert fo.bit_lut is None
     assert fo.k == 2
-    with pytest.raises(ValueError, match="bit_lut"):
-        len(fo)
-    with pytest.raises(ValueError, match="bit_lut"):
-        fo[0]
-    # eval may materialize from expression without Sequence access
+    assert len(fo) == 4
+    assert fo[3] == 1
+    assert list(fo) == [0, 0, 0, 1]
+    assert fo.bit_lut is not None
     assert fo.eval(3) == 1
-    assert list(fo.get_bit_lut()) == [0, 0, 0, 1]
 
 
 def test_positional_to_from_roundtrip():

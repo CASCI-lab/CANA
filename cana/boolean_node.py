@@ -776,13 +776,28 @@ class BooleanNode(object):
     def _two_symbols(self, value):
         self.outputs.two_symbol_schemata = value
 
+    def _ensure_prime_implicants(self):
+        """Ensure ``outputs.one_symbol_schemata`` holds Quine–McCluskey PIs.
+
+        Stored one-symbol covers are not treated as PIs unless
+        :attr:`~cana.function_outputs.FunctionOutputs.one_symbol_is_prime_implicant`
+        is ``True``.  Otherwise materialize a dense LUT (complete schemata or
+        expression) and recompute.  Incomplete schemata cannot be materialized.
+        """
+        outs = self.outputs
+        if outs.one_symbol_is_prime_implicant is True:
+            outs.get_one_symbol_schemata()
+            return
+        outs.get_bit_lut()
+        outs.compute_one_symbol_schemata_from_bit_lut()
+
     def _check_compute_canalization_variables(self, **kwargs):
         """Recursevely check if the requested canalization variables are instantiated/computed, otherwise computes them in order.
         For example: to compute `two_symbols` we need `prime_implicants` first.
         Likewise, to compute `prime_implicants` we need the dense LUT (or stored schemata) first.
         """
         if "prime_implicants" in kwargs:
-            self.outputs.get_one_symbol_schemata()
+            self._ensure_prime_implicants()
 
         elif "pi_coverage" in kwargs:
             self._check_compute_canalization_variables(prime_implicants=True)
@@ -795,6 +810,7 @@ class BooleanNode(object):
                 assert len(self._pi_coverage) == 2**self.k
 
         elif "two_symbols" in kwargs:
+            self._check_compute_canalization_variables(prime_implicants=True)
             self.outputs.get_two_symbol_schemata()
         elif "ts_coverage" in kwargs:
             self._check_compute_canalization_variables(two_symbols=True)
