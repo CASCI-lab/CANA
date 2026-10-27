@@ -167,3 +167,39 @@ def test_node_stores_one_symbol_on_outputs():
     n._check_compute_canalization_variables(two_symbols=True)
     assert n.outputs.two_symbol_schemata is not None
     assert n._two_symbols is n.outputs.two_symbol_schemata
+
+
+def test_fill_function_outputs_node_and_network():
+    schemata = {0: {"02", "20"}, 1: {"11"}}
+    n = BooleanNode(
+        id=0, name="AND", k=2, inputs=[0, 1], outputs=FunctionOutputs(
+            one_symbol_schemata=schemata, k=2
+        )
+    )
+    assert n.outputs.bit_lut is None
+    n.fill_function_outputs("bit_lut")
+    assert list(n.outputs.bit_lut) == [0, 0, 0, 1]
+
+    n2 = BooleanNode.from_output_list([0, 1, 1, 0], name="XOR")
+    assert n2.outputs.one_symbol_schemata is None
+    n2.fill_function_outputs("one_symbol_schemata")
+    assert n2.outputs.one_symbol_schemata is not None
+
+    network = BooleanNetwork.from_dict(
+        {
+            0: {"name": "A", "inputs": [0], "outputs": [0, 1]},
+            1: {
+                "name": "B",
+                "inputs": [0, 1],
+                "outputs": FunctionOutputs(
+                    one_symbol_schemata={0: {"02", "20"}, 1: {"11"}}, k=2
+                ),
+            },
+        }
+    )
+    assert network.nodes[1].outputs.bit_lut is None
+    network.fill_function_outputs("bit_lut")
+    assert list(network.nodes[1].outputs.bit_lut) == [0, 0, 0, 1]
+    assert network.network_dict[1]["outputs"].bit_lut is network.nodes[1].outputs.bit_lut
+    network.fill_function_outputs("one_symbol_schemata")
+    assert network.nodes[0].outputs.one_symbol_schemata is not None

@@ -162,7 +162,7 @@ def convert(text: str, from_type: str, to_type: str, **kwargs: Any) -> str:
     """Convert a model string from ``from_type`` to ``to_type`` via ``NetworkDict``.
 
     Extra ``kwargs`` are forwarded to the destination exporter (e.g.
-    ``adjust_no_input`` for cnet).
+    ``adjust_no_input`` / ``one_symbol_schemata`` for cnet).
     """
     network_dict = parse_string(text, from_type)
     return export_string(network_dict, to_type, **kwargs)

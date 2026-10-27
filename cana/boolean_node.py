@@ -87,13 +87,14 @@ class BooleanNode(object):
         else:
             self.mask = []
 
-        # Consistency
-        if (k != 0) and (k != int(np.log2(len(self.outputs)))):
+        # Consistency (use outputs.k so schemata-only nodes need no dense LUT)
+        if (k != 0) and (k != self.outputs.k):
             raise ValueError(
                 "Number of k (inputs) do not match the number of output transitions"
             )
 
         # If all outputs are either positive or negative, the node is treated as a constant.
+        # Schemata-only nodes skip dense LUT constant detection (is_constant → None).
         const_val = self.outputs.is_constant()
         if (const_val is not None) or (constant):
             self.set_constant(
@@ -107,17 +108,44 @@ class BooleanNode(object):
         self._pi_coverage = None  # The Coverage of inputs by Prime Implicants schemata
         self._ts_coverage = None  # The Coverage of inputs by Two Symbol schemata
 
-    def __str__(self):
-        if len(self.outputs) > 10:
-            outputs = (
-                "["
-                + ",".join(map(str, self.outputs[:4]))
-                + "..."
-                + ",".join(map(str, self.outputs[-4:]))
-                + "]"
-            )
+    def fill_function_outputs(self, representation):
+        """Fill a missing ``FunctionOutputs`` representation slot from another.
+
+        Args:
+            representation (str) : ``"bit_lut"`` or ``"one_symbol_schemata"``.
+
+        Returns:
+            (FunctionOutputs) : This node's ``outputs`` (mutated in place).
+        """
+        if representation == "bit_lut":
+            self.outputs.get_bit_lut()
+        elif representation == "one_symbol_schemata":
+            self.outputs.get_one_symbol_schemata()
         else:
-            outputs = "[" + ",".join(map(str, self.outputs)) + "]"
+            raise ValueError(
+                "Unknown representation {0!r}; expected 'bit_lut' or "
+                "'one_symbol_schemata'".format(representation)
+            )
+        return self.outputs
+
+    def __str__(self):
+        if self.outputs.bit_lut is not None:
+            if len(self.outputs) > 10:
+                outputs = (
+                    "["
+                    + ",".join(map(str, self.outputs[:4]))
+                    + "..."
+                    + ",".join(map(str, self.outputs[-4:]))
+                    + "]"
+                )
+            else:
+                outputs = "[" + ",".join(map(str, self.outputs)) + "]"
+        elif self.outputs.one_symbol_schemata is not None:
+            outputs = "one_symbol_schemata"
+        elif self.outputs.expression is not None:
+            outputs = "expression={0!r}".format(self.outputs.expression)
+        else:
+            outputs = "k={0}".format(self.outputs.k)
         inputs = "[" + ",".join(map(str, self.inputs)) + "]"
         return "<BNode(id={id}, name='{name}', k={k}, inputs={inputs:s}, state='{state}', outputs={outputs} constant={constant})>".format(
             id=self.id,

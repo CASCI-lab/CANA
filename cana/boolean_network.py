@@ -275,6 +275,7 @@ class BooleanNetwork:
                 ``bnet``, ``aeon``, ``sbml``).
             keep_constants (bool) : Pin constant nodes in state-space helpers
                 (see :class:`BooleanNetwork`).
+            **kwargs : Forwarded to :meth:`from_dict` (e.g. ``name``).
 
         Returns:
             (BooleanNetwork)
@@ -299,6 +300,7 @@ class BooleanNetwork:
                 ``.txt`` files still require an explicit ``type``.
             keep_constants (bool) : Pin constant nodes in state-space helpers
                 (see :class:`BooleanNetwork`).
+            **kwargs : Forwarded to :meth:`from_dict` (e.g. ``name``).
 
         Returns:
             BooleanNetwork (object) : The boolean network object.
@@ -407,12 +409,34 @@ class BooleanNetwork:
             outfile.write(text)
         return text
 
-    def to_cnet(self, file=None, adjust_no_input=False):
+    def fill_function_outputs(self, representation):
+        """Fill a missing ``FunctionOutputs`` slot on every node.
+
+        Args:
+            representation (str) : ``"bit_lut"`` or ``"one_symbol_schemata"``.
+
+        Returns:
+            (BooleanNetwork) : ``self`` (nodes share ``network_dict`` outputs).
+        """
+        for node in self.nodes:
+            node.fill_function_outputs(representation)
+        return self
+
+    def to_cnet(
+        self,
+        file=None,
+        adjust_no_input=False,
+        one_symbol_schemata=False,
+    ):
         """Outputs the network ``network_dict`` to ``.cnet`` format (BNS / BLIF-like).
 
         Args:
             file (string, optional) : If given, write the string to this path.
             adjust_no_input (bool) : Rewrite empty-input nodes as identity self-loops.
+            one_symbol_schemata (bool) : If True, export one-symbol (wildcard)
+                covers; if False (default), export dense ``2**k`` LUT rows.
+                Does not fill missing slots — call
+                :meth:`fill_function_outputs` first if needed.
 
         Returns:
             (string) : The ``.cnet`` format string.
@@ -423,7 +447,9 @@ class BooleanNetwork:
         from cana.io import network_dict_to_cnet
 
         bns_string = network_dict_to_cnet(
-            self.network_dict, adjust_no_input=adjust_no_input
+            self.network_dict,
+            adjust_no_input=adjust_no_input,
+            one_symbol_schemata=one_symbol_schemata,
         )
         if file is None:
             return bns_string

@@ -103,6 +103,95 @@ def test_parse_cnet_direct():
     assert equivalent_network_dicts(network_dict, again)
 
 
+# Mixed: CycD dense identity; CycE wildcard one-symbol cover (mammalian-style).
+MIXED_CNET = """\
+.v 2
+
+.l 1 CycD
+.l 2 CycE
+
+.n 1 1 1
+0 0
+1 1
+
+.n 2 2 1 2
+01 1
+12 0
+20 0
+"""
+
+
+def test_parse_cnet_wildcard_as_one_symbol_schemata():
+    nd = parse_cnet(MIXED_CNET)
+    cyc_e = nd[1]["outputs"]
+    assert cyc_e.bit_lut is None
+    assert cyc_e.one_symbol_schemata is not None
+    assert cyc_e.one_symbol_schemata[1] == {"01"}
+    assert cyc_e.one_symbol_schemata[0] == {"12", "20"}
+    # Dense sibling stays LUT-only (no auto-fill).
+    cyc_d = nd[0]["outputs"]
+    assert cyc_d.bit_lut is not None
+    assert cyc_d.one_symbol_schemata is None
+    assert list(cyc_d.bit_lut) == [0, 1]
+
+
+def test_parse_cnet_dense_minterms_not_schemata():
+    # Fully specified 0/1 rows → dense LUT even if “PI-like”.
+    dense = """\
+.v 1
+.l 1 AND
+.n 1 2 1 1
+00 0
+01 0
+10 0
+11 1
+"""
+    nd = parse_cnet(dense)
+    fo = nd[0]["outputs"]
+    assert fo.bit_lut is not None
+    assert fo.one_symbol_schemata is None
+    assert list(fo.bit_lut) == [0, 0, 0, 1]
+
+
+def test_cnet_export_requires_requested_representation():
+    nd = parse_cnet(MIXED_CNET)
+    # Dense export fails while CycE is schemata-only.
+    with pytest.raises(ValueError, match=r"fill_function_outputs\('bit_lut'\)"):
+        network_dict_to_cnet(nd)
+    # Schemata export fails while CycD lacks one-symbol.
+    with pytest.raises(
+        ValueError, match=r"fill_function_outputs\('one_symbol_schemata'\)"
+    ):
+        network_dict_to_cnet(nd, one_symbol_schemata=True)
+
+    # Explicit fill unlocks each mode.
+    N = BooleanNetwork.from_dict(nd)
+    N.fill_function_outputs("bit_lut")
+    dense_text = N.to_cnet()
+    assert "00 0" in dense_text or "0 0" in dense_text
+
+    N.fill_function_outputs("one_symbol_schemata")
+    schemata_text = N.to_cnet(one_symbol_schemata=True)
+    assert "2" in schemata_text
+    again = parse_cnet(schemata_text)
+    assert equivalent_network_dicts(nd, again)
+
+
+def test_boolean_network_cnet_schemata_and_fill():
+    N = BooleanNetwork.from_string(MIXED_CNET, type="cnet")
+    assert N.nodes[1].outputs.bit_lut is None
+    assert N.nodes[1].outputs.one_symbol_schemata is not None
+    N.fill_function_outputs("bit_lut")
+    assert N.nodes[1].outputs.bit_lut is not None
+    assert list(N.nodes[1].outputs.bit_lut) == [0, 1, 0, 0]
+    N.fill_function_outputs("one_symbol_schemata")
+    cnet = N.to_cnet(one_symbol_schemata=True)
+    assert "2" in cnet
+    N2 = BooleanNetwork.from_string(cnet, type="cnet")
+    N2.fill_function_outputs("bit_lut")
+    assert N.equivalent_to(N2)
+
+
 def test_boolean_network_from_string_and_equivalent_to():
     N1 = BooleanNetwork.from_string(TINY_BOOLEANNET, type="booleannet")
     N2 = BooleanNetwork.from_string_bnet(TINY_BNET)

@@ -19,7 +19,7 @@ from typing import Any, Dict, Iterator, List, Optional, Protocol, Sequence, Set,
 from cana.bit_lut import BitLut
 from cana.cutils import binstate_to_statenum, outputs_to_binstates_of_given_type
 
-__all__ = ["BooleanEval", "FunctionOutputs"]
+__all__ = ["BooleanEval", "FunctionOutputs", "OneSymbolSchemata", "TwoSymbolSchemata"]
 
 # Polarity -> set of length-k strings over {0,1,2} (2 = don't-care).
 OneSymbolSchemata = Dict[int, Set[str]]
