@@ -173,6 +173,48 @@ class FunctionOutputs(object):
             return self.bit_lut.eval(statenum)
         return self.get_bit_lut().eval(statenum)
 
+    def to_list(self) -> List[int]:
+        """Unpack the dense LUT to a ``list`` of ints."""
+        return self.get_bit_lut().to_list()
+
+    def is_constant(self) -> Optional[int]:
+        """Return ``0``/``1`` if the function is constant, else ``None``.
+
+        Uses ``bit_lut`` when present; otherwise recognizes positional
+        ``True``/``False`` expressions with ``k=0``.
+        """
+        if self.bit_lut is not None:
+            return self.bit_lut.is_constant()
+        if self.expression is not None and self._k == 0:
+            if self.expression in ("True", "true", "1"):
+                return 1
+            if self.expression in ("False", "false", "0"):
+                return 0
+        return None
+
+    # --- lazy getters (peer slots → requested representation) ---
+
+    def get_bit_lut(self) -> BitLut:
+        """Return the dense LUT, building from schemata or expression if needed.
+
+        Tries stored ``bit_lut``, then one-symbol, then expression, then
+        two-symbol (expand to one-symbol, then build the LUT).  Intermediates
+        are cached.  Raises ``ValueError`` if no peer can produce a LUT.
+        """
+        if self.bit_lut is not None:
+            return self.bit_lut
+        if self.one_symbol_schemata is not None:
+            return self.build_bit_lut_from_one_symbol_schemata()
+        if self.expression is not None:
+            return self.build_bit_lut_from_expression()
+        if self.two_symbol_schemata is not None:
+            self.get_one_symbol_schemata()
+            return self.build_bit_lut_from_one_symbol_schemata()
+        raise ValueError(
+            "Cannot get bit_lut: neither bit_lut, one_symbol_schemata, "
+            "two_symbol_schemata, nor expression is available"
+        )
+
     def get_one_symbol_schemata(self) -> OneSymbolSchemata:
         """Return one-symbol schemata, deriving from any available peer slot.
 
@@ -197,68 +239,6 @@ class FunctionOutputs(object):
         raise ValueError(
             "Cannot get one_symbol_schemata: neither one_symbol_schemata, "
             "two_symbol_schemata, bit_lut, nor expression is available"
-        )
-
-    def get_bit_lut(self) -> BitLut:
-        """Return the dense LUT, building from schemata or expression if needed.
-
-        Tries stored ``bit_lut``, then one-symbol, then expression, then
-        two-symbol (expand to one-symbol, then build the LUT).  Intermediates
-        are cached.  Raises ``ValueError`` if no peer can produce a LUT.
-        """
-        if self.bit_lut is not None:
-            return self.bit_lut
-        if self.one_symbol_schemata is not None:
-            return self.build_bit_lut_from_one_symbol_schemata()
-        if self.expression is not None:
-            return self.build_bit_lut_from_expression()
-        if self.two_symbol_schemata is not None:
-            self.get_one_symbol_schemata()
-            return self.build_bit_lut_from_one_symbol_schemata()
-        raise ValueError(
-            "Cannot get bit_lut: neither bit_lut, one_symbol_schemata, "
-            "two_symbol_schemata, nor expression is available"
-        )
-
-    def build_bit_lut_from_expression(self) -> BitLut:
-        """Build and store ``bit_lut`` from positional ``expression``."""
-        if self.expression is None:
-            raise ValueError("build_bit_lut_from_expression requires expression")
-        self.bit_lut = bit_lut_from_expression(self.expression, self.k)
-        self._k = self.bit_lut.k
-        return self.bit_lut
-
-    def get_expression(self) -> Any:
-        """Return positional expression IR, deriving from any available peer.
-
-        Prefer stored ``expression``; else build from ``two_symbol_schemata``,
-        then ``one_symbol_schemata``, then ``bit_lut`` (positional ``x0``…
-        ``x{k-1}`` python IR).  Does not call :meth:`get_bit_lut` so an empty
-        container fails here rather than via a side-effect materialization.
-        Raises ``ValueError`` if no peer can produce an expression.
-
-        Named / styled export stays in
-        :func:`~cana.function_outputs.expression.function_outputs_to_expression`.
-        """
-        if self.expression is not None:
-            return self.expression
-        names = positional_names(self.k)
-        if self.two_symbol_schemata is not None:
-            self.expression = two_symbol_to_expression(
-                names, self.two_symbol_schemata
-            )
-            return self.expression
-        if self.one_symbol_schemata is not None:
-            self.expression = one_symbol_to_expression(
-                names, self.one_symbol_schemata
-            )
-            return self.expression
-        if self.bit_lut is not None:
-            self.expression = lut_to_expression(names, self.bit_lut)
-            return self.expression
-        raise ValueError(
-            "Cannot get expression: neither expression, two_symbol_schemata, "
-            "one_symbol_schemata, nor bit_lut is available"
         )
 
     def get_two_symbol_schemata(self) -> TwoSymbolSchemata:
@@ -303,6 +283,90 @@ class FunctionOutputs(object):
             "one_symbol_schemata, bit_lut, nor expression is available"
         )
 
+    def get_expression(self) -> Any:
+        """Return positional expression IR, deriving from any available peer.
+
+        Prefer stored ``expression``; else build from ``two_symbol_schemata``,
+        then ``one_symbol_schemata``, then ``bit_lut`` (positional ``x0``…
+        ``x{k-1}`` python IR).  Does not call :meth:`get_bit_lut` so an empty
+        container fails here rather than via a side-effect materialization.
+        Raises ``ValueError`` if no peer can produce an expression.
+
+        Named / styled export stays in
+        :func:`~cana.function_outputs.expression.function_outputs_to_expression`.
+        """
+        if self.expression is not None:
+            return self.expression
+        names = positional_names(self.k)
+        if self.two_symbol_schemata is not None:
+            self.expression = two_symbol_to_expression(
+                names, self.two_symbol_schemata
+            )
+            return self.expression
+        if self.one_symbol_schemata is not None:
+            self.expression = one_symbol_to_expression(
+                names, self.one_symbol_schemata
+            )
+            return self.expression
+        if self.bit_lut is not None:
+            self.expression = lut_to_expression(names, self.bit_lut)
+            return self.expression
+        raise ValueError(
+            "Cannot get expression: neither expression, two_symbol_schemata, "
+            "one_symbol_schemata, nor bit_lut is available"
+        )
+
+    # --- named converters (fill / derive a peer slot) ---
+
+    def build_bit_lut_from_expression(self) -> BitLut:
+        """Build and store ``bit_lut`` from positional ``expression``."""
+        if self.expression is None:
+            raise ValueError("build_bit_lut_from_expression requires expression")
+        self.bit_lut = bit_lut_from_expression(self.expression, self.k)
+        self._k = self.bit_lut.k
+        return self.bit_lut
+
+    def build_bit_lut_from_one_symbol_schemata(self) -> BitLut:
+        """Build and store ``bit_lut`` from ``one_symbol_schemata``."""
+        if self.one_symbol_schemata is None:
+            raise ValueError(
+                "build_bit_lut_from_one_symbol_schemata requires "
+                "one_symbol_schemata"
+            )
+        self.bit_lut = bit_lut_from_schemata(self.one_symbol_schemata, self.k)
+        self._k = self.bit_lut.k
+        return self.bit_lut
+
+    @staticmethod
+    def bit_lut_from_one_symbol_schemata(
+        schemata: OneSymbolSchemata, k: int
+    ) -> BitLut:
+        """Build a :class:`BitLut` from one-symbol schemata without mutating self.
+
+        Raises
+        ------
+        ValueError
+            On polarity conflicts or incomplete coverage of the ``2**k`` rows.
+        """
+        return bit_lut_from_schemata(schemata, k)
+
+    def compute_one_symbol_schemata_from_bit_lut(self) -> OneSymbolSchemata:
+        """Compute and store one-symbol schemata from ``bit_lut`` via Quine-McCluskey."""
+        if self.bit_lut is None:
+            raise ValueError(
+                "compute_one_symbol_schemata_from_bit_lut requires bit_lut"
+            )
+        schemata = schemata_from_bit_lut(self.bit_lut)
+        self.one_symbol_schemata = schemata
+        self.one_symbol_is_prime_implicant = True
+        self._k = self.bit_lut.k
+        return self.one_symbol_schemata
+
+    @staticmethod
+    def _one_symbol_schemata_from_bit_lut(bit_lut: BitLut) -> OneSymbolSchemata:
+        """Run Quine-McCluskey on ``bit_lut`` without mutating a container."""
+        return schemata_from_bit_lut(bit_lut)
+
     def _two_symbol_from_one_symbol(
         self, one_symbol: OneSymbolSchemata
     ) -> TwoSymbolSchemata:
@@ -319,46 +383,7 @@ class FunctionOutputs(object):
         )
         return self.two_symbol_schemata
 
-    def compute_one_symbol_schemata_from_bit_lut(self) -> OneSymbolSchemata:
-        """Compute and store one-symbol schemata from ``bit_lut`` via Quine-McCluskey."""
-        if self.bit_lut is None:
-            raise ValueError(
-                "compute_one_symbol_schemata_from_bit_lut requires bit_lut"
-            )
-        schemata = schemata_from_bit_lut(self.bit_lut)
-        self.one_symbol_schemata = schemata
-        self.one_symbol_is_prime_implicant = True
-        self._k = self.bit_lut.k
-        return self.one_symbol_schemata
-
-    @staticmethod
-    def bit_lut_from_one_symbol_schemata(
-        schemata: OneSymbolSchemata, k: int
-    ) -> BitLut:
-        """Build a :class:`BitLut` from one-symbol schemata without mutating self.
-
-        Raises
-        ------
-        ValueError
-            On polarity conflicts or incomplete coverage of the ``2**k`` rows.
-        """
-        return bit_lut_from_schemata(schemata, k)
-
-    def build_bit_lut_from_one_symbol_schemata(self) -> BitLut:
-        """Build and store ``bit_lut`` from ``one_symbol_schemata``."""
-        if self.one_symbol_schemata is None:
-            raise ValueError(
-                "build_bit_lut_from_one_symbol_schemata requires "
-                "one_symbol_schemata"
-            )
-        self.bit_lut = bit_lut_from_schemata(self.one_symbol_schemata, self.k)
-        self._k = self.bit_lut.k
-        return self.bit_lut
-
-    @staticmethod
-    def _one_symbol_schemata_from_bit_lut(bit_lut: BitLut) -> OneSymbolSchemata:
-        """Run Quine-McCluskey on ``bit_lut`` without mutating a container."""
-        return schemata_from_bit_lut(bit_lut)
+    # --- opt-in verification ---
 
     def verify_one_symbol_schemata(self) -> bool:
         """Opt-in: stored one-symbol schemata are complete, consistent, and PIs.
@@ -530,22 +555,3 @@ class FunctionOutputs(object):
                 )
             )
         return "FunctionOutputs({0})".format(", ".join(parts) or "k={0}".format(self._k))
-
-    def to_list(self) -> List[int]:
-        """Unpack the dense LUT to a ``list`` of ints."""
-        return self.get_bit_lut().to_list()
-
-    def is_constant(self) -> Optional[int]:
-        """Return ``0``/``1`` if the function is constant, else ``None``.
-
-        Uses ``bit_lut`` when present; otherwise recognizes positional
-        ``True``/``False`` expressions with ``k=0``.
-        """
-        if self.bit_lut is not None:
-            return self.bit_lut.is_constant()
-        if self.expression is not None and self._k == 0:
-            if self.expression in ("True", "true", "1"):
-                return 1
-            if self.expression in ("False", "false", "0"):
-                return 0
-        return None
