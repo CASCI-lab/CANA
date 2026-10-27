@@ -86,7 +86,7 @@ def lut_name(k: int, func_id: int) -> str:
 def make_node(k: int, func_id: int) -> BooleanNode:
     outputs = outputs_from_func_id(k, func_id)
     inputs = list(range(k))
-    return BooleanNode.from_output_list(
+    return BooleanNode.from_bit_lut(
         outputs, name=lut_name(k, func_id), inputs=inputs, id=func_id
     )
 

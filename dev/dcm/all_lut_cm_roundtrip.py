@@ -127,7 +127,7 @@ def iter_func_ids(k: int, sample_n: int, seed: int) -> Tuple[str, List[int]]:
 def make_node(k: int, func_id: int) -> BooleanNode:
     outputs = outputs_from_func_id(k, func_id)
     inputs = list(range(k))
-    return BooleanNode.from_output_list(
+    return BooleanNode.from_bit_lut(
         outputs, name=lut_name(k, func_id), inputs=inputs, id=func_id
     )
 

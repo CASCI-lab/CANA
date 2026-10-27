@@ -70,7 +70,7 @@ class TestParity:
         ],
     )
     def test_node_matches_legacy_builder(self, outputs, name, inputs, nid):
-        node = BooleanNode.from_output_list(
+        node = BooleanNode.from_bit_lut(
             outputs, name=name, inputs=inputs, id=nid
         )
         node._check_compute_canalization_variables(two_symbols=True)
@@ -117,7 +117,7 @@ class TestK3RegressionRoundtrip:
     @pytest.mark.parametrize("lut", K3_REGRESSION_LUTS)
     def test_exact_roundtrip(self, lut):
         outputs = [int(b) for b in lut]
-        node = BooleanNode.from_output_list(
+        node = BooleanNode.from_bit_lut(
             outputs, name="k3_{}".format(lut), inputs=[0, 1, 2], id=0
         )
         _assert_exact_roundtrip(node)
@@ -145,7 +145,7 @@ class TestCTNNB1Roundtrip:
 
     def test_exact_roundtrip_from_lut(self):
         outputs = [int(b) for b in CTNNB1_LUT]
-        node = BooleanNode.from_output_list(
+        node = BooleanNode.from_bit_lut(
             outputs,
             name="CTNNB1",
             inputs=[0, 1, 2, 3, 4],
@@ -181,7 +181,7 @@ class TestCanonicalParity:
         ],
     )
     def test_node_matches_canonical_builder(self, outputs, name, inputs, nid):
-        node = BooleanNode.from_output_list(
+        node = BooleanNode.from_bit_lut(
             outputs, name=name, inputs=inputs, id=nid
         )
         node._check_compute_canalization_variables(two_symbols=True)
@@ -220,7 +220,7 @@ class TestCanonicalRoundtrip:
         ],
     )
     def test_and_or(self, outputs, name, inputs, nid):
-        node = BooleanNode.from_output_list(
+        node = BooleanNode.from_bit_lut(
             outputs, name=name, inputs=inputs, id=nid
         )
         _assert_exact_roundtrip(node, builder="canonical")
@@ -228,7 +228,7 @@ class TestCanonicalRoundtrip:
     @pytest.mark.parametrize("lut", K3_REGRESSION_LUTS)
     def test_k3_regression(self, lut):
         outputs = [int(b) for b in lut]
-        node = BooleanNode.from_output_list(
+        node = BooleanNode.from_bit_lut(
             outputs, name="k3_{}".format(lut), inputs=[0, 1, 2], id=0
         )
         _assert_exact_roundtrip(node, builder="canonical")
@@ -431,7 +431,7 @@ class TestSimplifyCanalizingMap:
     """Safe DCM/CM simplify: keep tau=0; merge buffers; bypass schema tau=1 OR."""
 
     def test_constant_tau0_preserved(self):
-        node = BooleanNode.from_output_list(
+        node = BooleanNode.from_bit_lut(
             [0, 0, 0, 0], name="const0", inputs=[0, 1], id=0
         )
         for builder in ("legacy", "canonical"):
@@ -449,7 +449,7 @@ class TestSimplifyCanalizingMap:
 
     def test_xor_canonical_roundtrip(self):
         # Previously broken by stock simplify (multi-pred tau=1 polarity collapse).
-        node = BooleanNode.from_output_list(
+        node = BooleanNode.from_bit_lut(
             [0, 1, 1, 0], name="xor", inputs=[0, 1], id=6
         )
         _assert_exact_roundtrip_simplified(node, builder="canonical")
@@ -579,7 +579,7 @@ class TestSimplifyCanalizingMap:
     )
     @pytest.mark.parametrize("builder", ["legacy", "canonical"])
     def test_roundtrip_common_k2(self, outputs, builder):
-        node = BooleanNode.from_output_list(
+        node = BooleanNode.from_bit_lut(
             outputs, name="f", inputs=[0, 1], id=1
         )
         _assert_exact_roundtrip_simplified(node, builder=builder)

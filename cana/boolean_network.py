@@ -669,7 +669,7 @@ class BooleanNetwork:
                 # use the new logic to calcuate a new edge effectiveness
                 new_edge_effectiveness = (
                     BooleanNode()
-                    .from_output_list(new_successor_outputs)
+                    .from_bit_lut(new_successor_outputs)
                     .edge_effectiveness(bound=bound)
                 )
 

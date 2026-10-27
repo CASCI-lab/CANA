@@ -23,7 +23,7 @@ def _assert_identical_across_hashseeds(what, per_node_expr):
         "    rng = random.Random(seed)\n"
         "    luts.append(('rand%d' % k, ''.join(rng.choice('01') for _ in range(1 << k))))\n"
         "for name, lut in luts:\n"
-        "    node = BooleanNode.from_output_list(list(lut))\n"
+        "    node = BooleanNode.from_bit_lut(list(lut))\n"
         "    print(name, repr(" + per_node_expr + "))\n"
     )
     outputs = []
@@ -67,7 +67,7 @@ def test_pi_rows_are_sorted_and_content_preserved():
     """Rows are emitted in sorted order within each output group, none lost or duplicated."""
     from cana.boolean_node import BooleanNode
 
-    node = BooleanNode.from_output_list(list("00010111"))
+    node = BooleanNode.from_bit_lut(list("00010111"))
     df = node.schemata_look_up_table(type="pi")
     rows = list(df.itertuples(index=False, name=None))
     for out_val in (0, 1):

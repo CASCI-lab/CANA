@@ -223,7 +223,7 @@ def test_equality_with_list():
 
 
 def test_boolean_node_uses_function_outputs():
-    n = BooleanNode.from_output_list([0, 0, 0, 1], name="AND")
+    n = BooleanNode.from_bit_lut([0, 0, 0, 1], name="AND")
     assert isinstance(n.outputs, FunctionOutputs)
     assert isinstance(n.outputs.bit_lut, BitLut)
     assert list(n.outputs) == [0, 0, 0, 1]
@@ -338,7 +338,7 @@ def test_verify_representations_consistent():
 
 
 def test_node_stores_one_symbol_on_outputs():
-    n = BooleanNode.from_output_list([0, 0, 0, 1], name="AND")
+    n = BooleanNode.from_bit_lut([0, 0, 0, 1], name="AND")
     assert n.outputs.one_symbol_schemata is None
     n._check_compute_canalization_variables(prime_implicants=True)
     assert n.outputs.one_symbol_schemata is not None
@@ -406,7 +406,7 @@ def test_fill_function_outputs_node_and_network():
     n.fill_function_outputs("bit_lut")
     assert list(n.outputs.bit_lut) == [0, 0, 0, 1]
 
-    n2 = BooleanNode.from_output_list([0, 1, 1, 0], name="XOR")
+    n2 = BooleanNode.from_bit_lut([0, 1, 1, 0], name="XOR")
     assert n2.outputs.one_symbol_schemata is None
     n2.fill_function_outputs("one_symbol_schemata")
     assert n2.outputs.one_symbol_schemata is not None

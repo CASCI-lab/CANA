@@ -487,7 +487,7 @@ def test_sensitivity_hand_values():
         (list("00010111"), 1.5),    # majority k=3: 000 and 111 have none, the rest have two
     ]
     for outputs, true_s in cases:
-        n = BooleanNode.from_output_list(outputs)
+        n = BooleanNode.from_bit_lut(outputs)
         s = n.sensitivity(norm=False)
         assert s == true_s, f"sensitivity for {''.join(outputs)}: returned {s}, true value is {true_s}"
         assert sensitivity.sensitivity(outputs, n.k) == true_s
@@ -499,7 +499,7 @@ def test_sensitivity_matches_original_implementation():
     rng = random.Random(20260921)
     for k in range(1, 8):
         for _ in range(50 if k <= 5 else 15):
-            nodes.append(BooleanNode.from_output_list([rng.randint(0, 1) for _ in range(2**k)]))
+            nodes.append(BooleanNode.from_bit_lut([rng.randint(0, 1) for _ in range(2**k)]))
     for n in nodes:
         for norm in (False, True):
             s, s0 = n.sensitivity(norm=norm), sensitivity.sensitivity_old(n, norm=norm)
@@ -523,7 +523,7 @@ def test_activities_hand_values():
         (list("00011111"), [0.75, 0.25, 0.25]),  # x1 OR (x2 AND x3)
     ]
     for outputs, true_a in cases:
-        n = BooleanNode.from_output_list(outputs)
+        n = BooleanNode.from_bit_lut(outputs)
         a = n.activities()
         assert a == true_a, f"activities for {''.join(outputs)}: returned {a}, true value is {true_a}"
         assert sensitivity.activities(outputs, n.k) == true_a
@@ -535,28 +535,62 @@ def test_activities_matches_original_implementation():
     rng = random.Random(20260928)
     for k in range(1, 8):
         for _ in range(50 if k <= 5 else 15):
-            nodes.append(BooleanNode.from_output_list([rng.randint(0, 1) for _ in range(2**k)]))
+            nodes.append(BooleanNode.from_bit_lut([rng.randint(0, 1) for _ in range(2**k)]))
     for n in nodes:
         a, a0 = n.activities(), sensitivity.activities_old(n)
         assert a == a0, f"activities for k={n.k} outputs={''.join(map(str, n.outputs))}: {a!r} != activities_old {a0!r}"
-# Test from_output_list
+
+#
+# Test representation factories
 #
 
-def test_from_output_list_rejects_non_power_of_two():
-    """from_output_list must not silently truncate k on a malformed list"""
+def test_from_bit_lut_rejects_non_power_of_two():
+    """from_bit_lut must not silently truncate k on a malformed list"""
     for bad in ([], [0, 1, 1], [0] * 6, [1] * 129):
         with pytest.raises(ValueError):
-            BooleanNode.from_output_list(bad)
+            BooleanNode.from_bit_lut(bad)
 
-def test_from_output_list_returns_subclass():
-    """from_output_list must instantiate the class it is called on"""
+def test_from_bit_lut_returns_subclass():
+    """from_bit_lut must instantiate the class it is called on"""
     class MyNode(BooleanNode):
         pass
 
-    n = MyNode.from_output_list([0, 1, 1, 0], name="xor")
+    n = MyNode.from_bit_lut([0, 1, 1, 0], name="xor")
     assert type(n) is MyNode
     assert (n.k, n.name, n.outputs) == (2, "xor", list("0110"))
     assert n.input_redundancy(norm=False) == XOR().input_redundancy(norm=False)
+
+def test_from_output_list_deprecated_alias():
+    """from_output_list still works and warns toward from_bit_lut"""
+    with pytest.warns(DeprecationWarning, match="from_bit_lut"):
+        n = BooleanNode.from_output_list([0, 0, 0, 1], name="AND")
+    assert n.k == 2
+    assert list(n.outputs) == [0, 0, 0, 1]
+
+def test_from_expression_factory():
+    n = BooleanNode.from_expression("x0 and x1", k=2, name="AND", inputs=[0, 1])
+    assert n.outputs.expression == "x0 and x1"
+    assert list(n.outputs.get_bit_lut()) == [0, 0, 0, 1]
+
+def test_from_one_symbol_schemata_factory():
+    # Complete AND cover (both polarities) so get_bit_lut can expand.
+    schemata = {0: {"02", "20"}, 1: {"11"}}
+    n = BooleanNode.from_one_symbol_schemata(
+        schemata, k=2, name="AND", inputs=[0, 1]
+    )
+    assert n.outputs.one_symbol_schemata == schemata
+    assert list(n.outputs.get_bit_lut()) == [0, 0, 0, 1]
+
+def test_from_two_symbol_schemata_factory():
+    # OR as two-symbol: one wild entry covering both singleton ON minterms.
+    # Use a concrete two-symbol obtained from a known LUT via FunctionOutputs.
+    from cana.function_outputs import FunctionOutputs
+
+    fo = FunctionOutputs.from_sequence([0, 1, 1, 1])
+    ts = fo.get_two_symbol_schemata()
+    n = BooleanNode.from_two_symbol_schemata(ts, k=2, name="OR", inputs=[0, 1])
+    assert n.outputs.two_symbol_schemata is not None
+    assert list(n.outputs.get_bit_lut()) == [0, 1, 1, 1]
 
 def test_input_symmetry_mean_on_fresh_node():
     """input_symmetry_mean must compute its own coverage instead of requiring input_symmetry() to run first"""

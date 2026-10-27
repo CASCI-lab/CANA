@@ -194,7 +194,7 @@ def load_model_nodes(path: Path, max_k: int) -> List[LoadedNode]:
             continue
         outputs = output_transitions(expr, input_names)
         input_ids = [name_to_id[inp] for inp in input_names]
-        node = BooleanNode.from_output_list(
+        node = BooleanNode.from_bit_lut(
             outputs, name=name, inputs=input_ids, id=nid
         )
         loaded.append(LoadedNode(name=name, k=k, node=node))

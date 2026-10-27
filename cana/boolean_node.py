@@ -185,42 +185,164 @@ class BooleanNode(object):
             constant=self.constant,
         )
 
-    @classmethod
-    def from_output_list(cls, outputs=list(), *args, **kwargs):
-        """Instanciate a Boolean Node from a output transition list.
-
-        Args:
-            outputs (list) : The transition outputs of the node. Its length must be a power of two, :math:`2^k`.
-
-        Returns:
-            (BooleanNode) : the instanciated object. Subclasses receive an instance of the subclass.
-
-        Raises:
-            ValueError : if the length of ``outputs`` is not a power of two.
-
-        Example:
-            >>> BooleanNode.from_output_list(outputs=[0,0,0,1], name="AND")
-        """
-        n = len(outputs)
-        if n == 0 or n & (n - 1):
-            raise ValueError(
-                "The length of `outputs` must be a power of two (2**k); got {:d}.".format(n)
-            )
-        k = n.bit_length() - 1
-        id = kwargs.pop("id") if "id" in kwargs else 0
+    @staticmethod
+    def _factory_common_kwargs(k, kwargs):
+        """Pop shared factory kwargs; default ``inputs`` is ``1..k`` (legacy)."""
+        node_id = kwargs.pop("id") if "id" in kwargs else 0
         name = kwargs.pop("name") if "name" in kwargs else "x"
         inputs = (
-            kwargs.pop("inputs") if "inputs" in kwargs else [(x + 1) for x in range(k)]
+            kwargs.pop("inputs")
+            if "inputs" in kwargs
+            else [(x + 1) for x in range(k)]
         )
         state = kwargs.pop("state") if "state" in kwargs else False
+        return node_id, name, inputs, state
 
+    @classmethod
+    def from_bit_lut(cls, lut=None, *args, **kwargs):
+        """Instantiate a Boolean Node from a dense LUT (sequence or ``BitLut``).
+
+        Args:
+            lut : Transition outputs of length :math:`2^k`, or a
+                :class:`~cana.bit_lut.BitLut`.  (Also accepted as the legacy
+                keyword ``outputs=``.)
+
+        Returns:
+            (BooleanNode) : the instantiated object. Subclasses receive an
+            instance of the subclass.
+
+        Raises:
+            ValueError : if a sequence length is not a power of two.
+
+        Example:
+            >>> BooleanNode.from_bit_lut([0, 0, 0, 1], name="AND")
+        """
+        from cana.bit_lut import BitLut
+
+        if lut is None and "outputs" in kwargs:
+            lut = kwargs.pop("outputs")
+        if lut is None:
+            lut = []
+
+        if isinstance(lut, BitLut):
+            k = lut.k
+            outputs = FunctionOutputs(bit_lut=lut)
+        elif isinstance(lut, FunctionOutputs):
+            k = lut.k
+            outputs = lut
+        else:
+            n = len(lut)
+            if n == 0 or n & (n - 1):
+                raise ValueError(
+                    "The length of `lut` must be a power of two (2**k); got {:d}.".format(
+                        n
+                    )
+                )
+            k = n.bit_length() - 1
+            outputs = FunctionOutputs.from_sequence(lut)
+
+        node_id, name, inputs, state = cls._factory_common_kwargs(k, kwargs)
         return cls(
-            id=id,
+            id=node_id,
             name=name,
             k=k,
             inputs=inputs,
             state=state,
             outputs=outputs,
+            *args,
+            **kwargs
+        )
+
+    @classmethod
+    def from_output_list(cls, outputs=list(), *args, **kwargs):
+        """Deprecated alias of :meth:`from_bit_lut`.
+
+        .. deprecated::
+            Use :meth:`from_bit_lut` instead.
+        """
+        warnings.warn(
+            "BooleanNode.from_output_list is deprecated; use from_bit_lut instead.",
+            DeprecationWarning,
+            stacklevel=2,
+        )
+        return cls.from_bit_lut(outputs, *args, **kwargs)
+
+    @classmethod
+    def from_expression(cls, expression, *args, **kwargs):
+        """Instantiate from a positional python expression (``x0``…``x{k-1}``).
+
+        Args:
+            expression (str) : Positional IR stored on
+                :class:`~cana.function_outputs.FunctionOutputs`.
+            k (int) : Number of inputs (required keyword-only).
+
+        Example:
+            >>> BooleanNode.from_expression("x0 and x1", k=2, name="AND")
+        """
+        if "k" not in kwargs:
+            raise TypeError(
+                "from_expression() missing required keyword-only argument: 'k'"
+            )
+        k = int(kwargs.pop("k"))
+        node_id, name, inputs, state = cls._factory_common_kwargs(k, kwargs)
+        return cls(
+            id=node_id,
+            name=name,
+            k=k,
+            inputs=inputs,
+            state=state,
+            outputs=FunctionOutputs(expression=expression, k=k),
+            *args,
+            **kwargs
+        )
+
+    @classmethod
+    def from_one_symbol_schemata(cls, schemata, *args, **kwargs):
+        """Instantiate from a one-symbol (wildcard) cover.
+
+        Args:
+            schemata : Polarity → set of length-``k`` schemas over ``{0,1,2}``.
+            k (int, optional) : Keyword-only; inferred from schema length when
+                omitted.
+
+        Example:
+            >>> BooleanNode.from_one_symbol_schemata({1: {"11"}}, k=2, name="AND")
+        """
+        k = kwargs.pop("k") if "k" in kwargs else None
+        fo = FunctionOutputs(one_symbol_schemata=schemata, k=k)
+        k = fo.k
+        node_id, name, inputs, state = cls._factory_common_kwargs(k, kwargs)
+        return cls(
+            id=node_id,
+            name=name,
+            k=k,
+            inputs=inputs,
+            state=state,
+            outputs=fo,
+            *args,
+            **kwargs
+        )
+
+    @classmethod
+    def from_two_symbol_schemata(cls, schemata, *args, **kwargs):
+        """Instantiate from a two-symbol schemata pair ``(ts0, ts1)``.
+
+        Args:
+            schemata : ``(list, list)`` two-symbol structure.
+            k (int, optional) : Keyword-only; inferred from schema length when
+                omitted.
+        """
+        k = kwargs.pop("k") if "k" in kwargs else None
+        fo = FunctionOutputs(two_symbol_schemata=schemata, k=k)
+        k = fo.k
+        node_id, name, inputs, state = cls._factory_common_kwargs(k, kwargs)
+        return cls(
+            id=node_id,
+            name=name,
+            k=k,
+            inputs=inputs,
+            state=state,
+            outputs=fo,
             *args,
             **kwargs
         )
@@ -521,7 +643,7 @@ class BooleanNode(object):
             (pandas.DataFrame): the LUT
 
         Examples:
-            >>> AND = BooleanNode.from_output_list([0,0,0,1])
+            >>> AND = BooleanNode.from_bit_lut([0,0,0,1])
             >>> AND.look_up_table()
 
         See also:
@@ -559,7 +681,7 @@ class BooleanNode(object):
             (pandas.DataFrame or Latex): the schemata LUT
 
         Examples:
-            >>> AND = BooleanNode.from_output_list([0,0,0,1])
+            >>> AND = BooleanNode.from_bit_lut([0,0,0,1])
             >>> AND.schemata_look_up_table(type='pi')
 
         Note:

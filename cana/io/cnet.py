@@ -76,7 +76,8 @@ def parse_cnet(text: str) -> List[BooleanNode]:
     ``BooleanNetwork.fill_function_outputs(...)`` (or the node helper) when
     you need the other slot.
     """
-    # Scratch during parse; converted to BooleanNode at the end so k/mask match.
+    # Scratch during parse; materialize via BooleanNode factories at the end.
+    # Each entry: name, inputs, kind ("bit_lut"|"one_symbol"), payload, optional k.
     scratch: Dict[int, Dict[str, Any]] = {}
     lines = text.splitlines()
     i = 0
@@ -91,7 +92,8 @@ def parse_cnet(text: str) -> List[BooleanNode]:
                 scratch[inode] = {
                     "name": "",
                     "inputs": [],
-                    "outputs": FunctionOutputs(bit_lut=BitLut(0)),
+                    "kind": "bit_lut",
+                    "payload": BitLut(0),
                 }
         elif ".l" in line:
             parts = line.split()
@@ -115,12 +117,12 @@ def parse_cnet(text: str) -> List[BooleanNode]:
                     i += 1
                 if logic_line == "":
                     scratch[inode]["inputs"] = [inode]
-                    scratch[inode]["outputs"] = FunctionOutputs(
-                        bit_lut=BitLut.from_sequence([0, 1])
-                    )
+                    scratch[inode]["kind"] = "bit_lut"
+                    scratch[inode]["payload"] = BitLut.from_sequence([0, 1])
                 else:
-                    scratch[inode]["outputs"] = FunctionOutputs(
-                        bit_lut=BitLut.from_sequence([int(logic_line)])
+                    scratch[inode]["kind"] = "bit_lut"
+                    scratch[inode]["payload"] = BitLut.from_sequence(
+                        [int(logic_line)]
                     )
             else:
                 logic_lines, i = _collect_logic_lines(lines, i)
@@ -128,28 +130,47 @@ def parse_cnet(text: str) -> List[BooleanNode]:
                     _logic_line_has_wildcard(ll.split()[0]) for ll in logic_lines
                 )
                 if has_wildcard:
-                    schemata = _schemata_from_logic_lines(logic_lines)
-                    scratch[inode]["outputs"] = FunctionOutputs(
-                        one_symbol_schemata=schemata, k=indegree
+                    scratch[inode]["kind"] = "one_symbol"
+                    scratch[inode]["payload"] = _schemata_from_logic_lines(
+                        logic_lines
                     )
+                    scratch[inode]["k"] = indegree
                 else:
-                    lut = _bit_lut_from_logic_lines(logic_lines, indegree)
-                    scratch[inode]["outputs"] = FunctionOutputs(bit_lut=lut)
+                    scratch[inode]["kind"] = "bit_lut"
+                    scratch[inode]["payload"] = _bit_lut_from_logic_lines(
+                        logic_lines, indegree
+                    )
         elif ".e" in line:
             break
 
     if not scratch:
         raise ValueError("No cnet nodes found")
-    return [
-        BooleanNode(
-            id=inode,
-            name=scratch[inode]["name"],
-            k=len(scratch[inode]["inputs"]),
-            inputs=list(scratch[inode]["inputs"]),
-            outputs=scratch[inode]["outputs"],
-        )
-        for inode in range(len(scratch))
-    ]
+
+    nodes: List[BooleanNode] = []
+    for inode in range(len(scratch)):
+        entry = scratch[inode]
+        name = entry["name"]
+        inputs = list(entry["inputs"])
+        if entry["kind"] == "one_symbol":
+            nodes.append(
+                BooleanNode.from_one_symbol_schemata(
+                    entry["payload"],
+                    k=entry.get("k"),
+                    id=inode,
+                    name=name,
+                    inputs=inputs,
+                )
+            )
+        else:
+            nodes.append(
+                BooleanNode.from_bit_lut(
+                    entry["payload"],
+                    id=inode,
+                    name=name,
+                    inputs=inputs,
+                )
+            )
+    return nodes
 
 
 def _append_dense_lut_lines(

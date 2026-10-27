@@ -4253,7 +4253,7 @@ static PyObject *__pyx_pf_4cana_6cutils_6binstate_pinned_to_binstate(CYTHON_UNUS
  * 
  * 
  * def statenum_to_output_list(statenum, base):             # <<<<<<<<<<<<<<
- *     """Converts an interger into a list of 0 and 1, thus can feed to BooleanNode.from_output_list()
+ *     """Converts an interger into a list of 0 and 1, thus can feed to BooleanNode.from_bit_lut()
  * 
 */
 
@@ -4265,7 +4265,7 @@ PyObject *const *__pyx_args, Py_ssize_t __pyx_nargs, PyObject *__pyx_kwds
 PyObject *__pyx_args, PyObject *__pyx_kwds
 #endif
 ); /*proto*/
-PyDoc_STRVAR(__pyx_doc_4cana_6cutils_8statenum_to_output_list, "Converts an interger into a list of 0 and 1, thus can feed to BooleanNode.from_output_list()\n\n    Args:\n        statenum (int) : the state number\n        base (int) : the length of output list\n\n    Returns:\n        list : a list of length base, consisting of 0 and 1\n\n    See also:\n        :attr:\047statenum_to_binstate\047\n    ");
+PyDoc_STRVAR(__pyx_doc_4cana_6cutils_8statenum_to_output_list, "Converts an interger into a list of 0 and 1, thus can feed to BooleanNode.from_bit_lut()\n\n    Args:\n        statenum (int) : the state number\n        base (int) : the length of output list\n\n    Returns:\n        list : a list of length base, consisting of 0 and 1\n\n    See also:\n        :attr:\047statenum_to_binstate\047\n    ");
 static PyMethodDef __pyx_mdef_4cana_6cutils_9statenum_to_output_list = {"statenum_to_output_list", (PyCFunction)(void(*)(void))(__Pyx_PyCFunction_FastCallWithKeywords)__pyx_pw_4cana_6cutils_9statenum_to_output_list, __Pyx_METH_FASTCALL|METH_KEYWORDS, __pyx_doc_4cana_6cutils_8statenum_to_output_list};
 static PyObject *__pyx_pw_4cana_6cutils_9statenum_to_output_list(PyObject *__pyx_self, 
 #if CYTHON_VECTORCALL
@@ -4481,7 +4481,7 @@ static PyObject *__pyx_pf_4cana_6cutils_8statenum_to_output_list(CYTHON_UNUSED P
  * 
  * 
  * def statenum_to_output_list(statenum, base):             # <<<<<<<<<<<<<<
- *     """Converts an interger into a list of 0 and 1, thus can feed to BooleanNode.from_output_list()
+ *     """Converts an interger into a list of 0 and 1, thus can feed to BooleanNode.from_bit_lut()
  * 
 */
 
@@ -8574,7 +8574,7 @@ __Pyx_RefNannySetupContext("PyInit_cutils", 0);
  * 
  * 
  * def statenum_to_output_list(statenum, base):             # <<<<<<<<<<<<<<
- *     """Converts an interger into a list of 0 and 1, thus can feed to BooleanNode.from_output_list()
+ *     """Converts an interger into a list of 0 and 1, thus can feed to BooleanNode.from_bit_lut()
  * 
 */
   __pyx_t_2 = __Pyx_CyFunction_New(&__pyx_mdef_4cana_6cutils_9statenum_to_output_list, 0, __pyx_mstate_global->__pyx_n_u_statenum_to_output_list, NULL, __pyx_mstate_global->__pyx_n_u_cana_cutils, __pyx_mstate_global->__pyx_d, ((PyObject *)__pyx_mstate_global->__pyx_codeobj_tab[6])); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 95, __pyx_L1_error)

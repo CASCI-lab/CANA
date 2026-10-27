@@ -59,23 +59,15 @@ def expressions_to_nodes(
         expr = normalize_operators(completed[name], "python")
         if expr in ("True", "true", "1"):
             nodes.append(
-                BooleanNode(
-                    id=i,
-                    name=name,
-                    k=0,
-                    inputs=[],
-                    outputs=FunctionOutputs(expression="True", k=0),
+                BooleanNode.from_expression(
+                    "True", k=0, id=i, name=name, inputs=[]
                 )
             )
             continue
         if expr in ("False", "false", "0"):
             nodes.append(
-                BooleanNode(
-                    id=i,
-                    name=name,
-                    k=0,
-                    inputs=[],
-                    outputs=FunctionOutputs(expression="False", k=0),
+                BooleanNode.from_expression(
+                    "False", k=0, id=i, name=name, inputs=[]
                 )
             )
             continue
@@ -85,14 +77,12 @@ def expressions_to_nodes(
         input_ids = [name_to_id[n] for n in input_names]
         positional = to_positional(expr, input_names)
         nodes.append(
-            BooleanNode(
+            BooleanNode.from_expression(
+                positional,
+                k=len(input_names),
                 id=i,
                 name=name,
-                k=len(input_names),
                 inputs=input_ids,
-                outputs=FunctionOutputs(
-                    expression=positional, k=len(input_names)
-                ),
             )
         )
     return nodes

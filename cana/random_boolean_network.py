@@ -23,7 +23,6 @@ import networkx as nx
 from cana.bit_lut import BitLut
 from cana.boolean_network import BooleanNetwork
 from cana.boolean_node import BooleanNode
-from cana.function_outputs import FunctionOutputs
 from cana.utils import output_transitions
 
 
@@ -55,16 +54,13 @@ def regular_boolean_network(
     for node in range(N):
         inputs = sorted(n for n in regular_graph.predecessors(node))
         nodes.append(
-            BooleanNode(
+            BooleanNode.from_bit_lut(
+                random_automata_table(
+                    regular_graph.in_degree(node), bias, bias_constraint
+                ),
                 id=node,
                 name=str(node),
-                k=len(inputs),
                 inputs=inputs,
-                outputs=FunctionOutputs(
-                    bit_lut=random_automata_table(
-                        regular_graph.in_degree(node), bias, bias_constraint
-                    )
-                ),
             )
         )
 
@@ -93,16 +89,13 @@ def er_boolean_network(
     for node in range(N):
         inputs = sorted(n for n in er_graph.predecessors(node))
         nodes.append(
-            BooleanNode(
+            BooleanNode.from_bit_lut(
+                random_automata_table(
+                    er_graph.in_degree(node), bias, bias_constraint
+                ),
                 id=node,
                 name=str(node),
-                k=len(inputs),
                 inputs=inputs,
-                outputs=FunctionOutputs(
-                    bit_lut=random_automata_table(
-                        er_graph.in_degree(node), bias, bias_constraint
-                    )
-                ),
             )
         )
 
@@ -231,16 +224,13 @@ def from_string_booleannet(self, string, keep_constants=True, **kwargs):
         ]
         input_nums = [names.index(inp) for inp in input_name_list]
         nodes.append(
-            BooleanNode(
+            BooleanNode.from_bit_lut(
+                BitLut.from_sequence(
+                    output_transitions(eval_line, input_name_list)
+                ),
                 id=i,
                 name=names[i],
-                k=len(input_nums),
                 inputs=input_nums,
-                outputs=FunctionOutputs(
-                    bit_lut=BitLut.from_sequence(
-                        output_transitions(eval_line, input_name_list)
-                    )
-                ),
             )
         )
         line = network_file.readline()

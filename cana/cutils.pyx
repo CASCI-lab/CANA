@@ -93,7 +93,7 @@ def binstate_pinned_to_binstate(binstate, pinned_binstate, pinned_var):
 
 
 def statenum_to_output_list(statenum, base):
-    """Converts an interger into a list of 0 and 1, thus can feed to BooleanNode.from_output_list()
+    """Converts an interger into a list of 0 and 1, thus can feed to BooleanNode.from_bit_lut()
 
     Args:
         statenum (int) : the state number
