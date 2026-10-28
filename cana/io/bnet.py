@@ -2,41 +2,53 @@
 """BoolNet / PyBoolNet ``*.bnet`` (``targets,factors``) import and export."""
 from __future__ import annotations
 
-from typing import Dict, List, Sequence
+from typing import Dict, List, Optional, Sequence, Tuple
 
 from cana.boolean_node import BooleanNode
 from cana.function_outputs.expression import (
     expression_identifiers,
-    function_outputs_to_expression,
+    function_outputs_to_named_expression,
     normalize_operators,
 )
-from cana.nodes_builder import expressions_to_nodes, input_names
+from cana.nodes_builder import input_names, update_rules_to_nodes
+
+
+def parse_bnet_update_rule(line: str) -> Optional[Tuple[str, str]]:
+    """Parse one ``target, named_expression`` line, or ``None`` if not a rule.
+
+    Skips blanks, comments, and the ``targets,factors`` header.
+    """
+    raw = line.strip()
+    if not raw or raw.startswith("#"):
+        return None
+    if raw.lower().startswith("targets") and "," in raw:
+        return None
+    if "," not in raw:
+        return None
+    name, expr = raw.split(",", 1)
+    name = name.strip()
+    expr = expr.strip()
+    if not name:
+        return None
+    return name, expr
 
 
 def parse_bnet(text: str) -> List[BooleanNode]:
     """Parse BoolNet / PyBoolNet ``*.bnet`` into a node list."""
-    expressions: Dict[str, str] = {}
+    update_rules: Dict[str, str] = {}
     extras: List[str] = []
     for raw in text.splitlines():
-        line = raw.strip()
-        if not line or line.startswith("#"):
+        rule = parse_bnet_update_rule(raw)
+        if rule is None:
             continue
-        if line.lower().startswith("targets") and "," in line:
-            continue
-        if "," not in line:
-            continue
-        name, expr = line.split(",", 1)
-        name = name.strip()
-        expr = expr.strip()
-        if not name:
-            continue
-        expressions[name] = expr
+        name, expr = rule
+        update_rules[name] = expr
         extras.extend(
             expression_identifiers(normalize_operators(expr, "python"))
         )
-    if not expressions:
+    if not update_rules:
         raise ValueError("No bnet rules found")
-    return expressions_to_nodes(expressions, extras)
+    return update_rules_to_nodes(update_rules, extras)
 
 
 def nodes_to_bnet(
@@ -52,7 +64,7 @@ def nodes_to_bnet(
     lines = ["targets,factors"]
     for i, node in enumerate(nodes):
         names = input_names(nodes, i)
-        expr = function_outputs_to_expression(
+        expr = function_outputs_to_named_expression(
             node.outputs,
             names,
             style="symbolic",

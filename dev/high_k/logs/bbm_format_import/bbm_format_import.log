@@ -6,7 +6,7 @@ model_dir=/home/kyuhyongpark/CANA/BBM/models/[id-023]__[var-9]__[in-1]__[MAMMALI
   loaded aeon          N=10  names=['v_Cdc20', 'v_Cdh1', 'v_CycA', 'v_CycB', 'v_CycD', 'v_CycE', 'v_E2F', 'v_Rb', 'v_UbcH10', 'v_p27']
   loaded sbml          N=10  names=['v_Cdc20', 'v_Cdh1', 'v_CycA', 'v_CycB', 'v_CycD', 'v_CycE', 'v_E2F', 'v_Rb', 'v_UbcH10', 'v_p27']
 Example node entry (first node of booleannet load):
-  nodes[0] = BooleanNode(id=0, name='v_Cdc20', inputs=[3], outputs=FunctionOutputs(expression='x0'))
+  nodes[0] = BooleanNode(id=0, name='v_Cdc20', inputs=[3], outputs=FunctionOutputs(positional_expression='x0'))
   (inputs are node ids; LUT row s uses inputs[0] as MSB — see BooleanNetwork docstring)
 Pairwise equivalent_networks vs booleannet:
   booleannet    True

@@ -567,9 +567,9 @@ def test_from_output_list_deprecated_alias():
     assert n.k == 2
     assert list(n.outputs) == [0, 0, 0, 1]
 
-def test_from_expression_factory():
-    n = BooleanNode.from_expression("x0 and x1", k=2, name="AND", inputs=[0, 1])
-    assert n.outputs.expression == "x0 and x1"
+def test_from_positional_expression_factory():
+    n = BooleanNode.from_positional_expression("x0 and x1", k=2, name="AND", inputs=[0, 1])
+    assert n.outputs.positional_expression == "x0 and x1"
     assert list(n.outputs.get_bit_lut()) == [0, 0, 0, 1]
 
 def test_from_one_symbol_schemata_factory():

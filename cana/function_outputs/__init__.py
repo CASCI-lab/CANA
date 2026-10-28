@@ -4,10 +4,10 @@
 ``FunctionOutputs`` is what :attr:`cana.boolean_node.BooleanNode.outputs`
 stores.  Peer representation slots may hold a dense
 :class:`~cana.bit_lut.BitLut`, one-symbol (prime-implicant) schemata,
-two-symbol schemata, and/or an expression.  Multiple representations may
+two-symbol schemata, and/or a positional expression.  Multiple representations may
 coexist; named converters document each derivation, and lazy getters
 (:meth:`get_bit_lut`, :meth:`get_one_symbol_schemata`,
-:meth:`get_two_symbol_schemata`, :meth:`get_expression`) try every peer
+:meth:`get_two_symbol_schemata`, :meth:`get_positional_expression`) try every peer
 slot, cache intermediates computed along the way, and raise
 ``ValueError`` when none can produce the requested representation.
 
@@ -67,7 +67,7 @@ class FunctionOutputs(object):
     two_symbol_schemata :
         Two-symbol schemata as ``(ts0, ts1)``, if known.  Each list holds
         ``[schema_str, perm_groups, same_groups]`` entries.
-    expression :
+    positional_expression :
         Positional python IR (``and``/``or``/``not`` over ``x0``…``x{k-1}``),
         if known.  Network names are rebound at the
         :class:`~cana.boolean_node.BooleanNode` / I/O boundary.
@@ -83,7 +83,7 @@ class FunctionOutputs(object):
         "bit_lut",
         "one_symbol_schemata",
         "two_symbol_schemata",
-        "expression",
+        "positional_expression",
         "one_symbol_is_prime_implicant",
         "representations_consistent",
         "_k",
@@ -94,13 +94,13 @@ class FunctionOutputs(object):
         bit_lut: Optional[BitLut] = None,
         one_symbol_schemata: Optional[OneSymbolSchemata] = None,
         two_symbol_schemata: Optional[TwoSymbolSchemata] = None,
-        expression: Optional[Any] = None,
+        positional_expression: Optional[Any] = None,
         k: Optional[int] = None,
     ) -> None:
         self.bit_lut = bit_lut
         self.one_symbol_schemata = one_symbol_schemata
         self.two_symbol_schemata = two_symbol_schemata
-        self.expression = expression
+        self.positional_expression = positional_expression
         self.one_symbol_is_prime_implicant = None  # type: Optional[bool]
         self.representations_consistent = None  # type: Optional[bool]
         if bit_lut is not None:
@@ -172,10 +172,10 @@ class FunctionOutputs(object):
         """
         if self.bit_lut is not None:
             return self.bit_lut.is_constant()
-        if self.expression is not None and self._k == 0:
-            if self.expression in ("True", "true", "1"):
+        if self.positional_expression is not None and self._k == 0:
+            if self.positional_expression in ("True", "true", "1"):
                 return 1
-            if self.expression in ("False", "false", "0"):
+            if self.positional_expression in ("False", "false", "0"):
                 return 0
         return None
 
@@ -184,7 +184,7 @@ class FunctionOutputs(object):
     def get_bit_lut(self) -> BitLut:
         """Return the dense LUT, building from schemata or expression if needed.
 
-        Tries stored ``bit_lut``, then one-symbol, then expression, then
+        Tries stored ``bit_lut``, then one-symbol, then positional_expression, then
         two-symbol (expand to one-symbol, then build the LUT).  Intermediates
         are cached.  Raises ``ValueError`` if no peer can produce a LUT.
         """
@@ -192,14 +192,14 @@ class FunctionOutputs(object):
             return self.bit_lut
         if self.one_symbol_schemata is not None:
             return self.build_bit_lut_from_one_symbol_schemata()
-        if self.expression is not None:
-            return self.build_bit_lut_from_expression()
+        if self.positional_expression is not None:
+            return self.build_bit_lut_from_positional_expression()
         if self.two_symbol_schemata is not None:
             self.get_one_symbol_schemata()
             return self.build_bit_lut_from_one_symbol_schemata()
         raise ValueError(
             "Cannot get bit_lut: neither bit_lut, one_symbol_schemata, "
-            "two_symbol_schemata, nor expression is available"
+            "two_symbol_schemata, nor positional_expression is available"
         )
 
     def get_one_symbol_schemata(self) -> OneSymbolSchemata:
@@ -207,7 +207,7 @@ class FunctionOutputs(object):
 
         Prefer stored one-symbol; else expand ``two_symbol_schemata`` (does not
         set :attr:`one_symbol_is_prime_implicant`); else Quine–McCluskey from
-        ``bit_lut``; else build ``bit_lut`` from ``expression`` then QM.
+        ``bit_lut``; else build ``bit_lut`` from ``positional_expression`` then QM.
         Intermediates (e.g. ``bit_lut`` from expression) are cached.
         Raises ``ValueError`` if no peer can produce one-symbol schemata.
         """
@@ -220,12 +220,12 @@ class FunctionOutputs(object):
             return self.one_symbol_schemata
         if self.bit_lut is not None:
             return self.compute_one_symbol_schemata_from_bit_lut()
-        if self.expression is not None:
-            self.build_bit_lut_from_expression()
+        if self.positional_expression is not None:
+            self.build_bit_lut_from_positional_expression()
             return self.compute_one_symbol_schemata_from_bit_lut()
         raise ValueError(
             "Cannot get one_symbol_schemata: neither one_symbol_schemata, "
-            "two_symbol_schemata, bit_lut, nor expression is available"
+            "two_symbol_schemata, bit_lut, nor positional_expression is available"
         )
 
     def get_two_symbol_schemata(self) -> TwoSymbolSchemata:
@@ -234,7 +234,7 @@ class FunctionOutputs(object):
         Prefer stored two-symbol; else derive from ``one_symbol_schemata``
         (soft-warns unless :attr:`one_symbol_is_prime_implicant` is ``True``);
         else Quine–McCluskey from ``bit_lut`` then derive; else build LUT from
-        ``expression``, QM, then derive.  Intermediates are cached.  Does not
+        ``positional_expression``, QM, then derive.  Intermediates are cached.  Does not
         re-run QM over a stored cover; call :meth:`verify_one_symbol_schemata`
         to check explicitly.  Raises ``ValueError`` if no peer can produce
         two-symbol schemata.
@@ -260,56 +260,59 @@ class FunctionOutputs(object):
             one_symbol = self.compute_one_symbol_schemata_from_bit_lut()
             return self._two_symbol_from_one_symbol(one_symbol)
 
-        if self.expression is not None:
-            self.build_bit_lut_from_expression()
+        if self.positional_expression is not None:
+            self.build_bit_lut_from_positional_expression()
             one_symbol = self.compute_one_symbol_schemata_from_bit_lut()
             return self._two_symbol_from_one_symbol(one_symbol)
 
         raise ValueError(
             "Cannot get two_symbol_schemata: neither two_symbol_schemata, "
-            "one_symbol_schemata, bit_lut, nor expression is available"
+            "one_symbol_schemata, bit_lut, nor positional_expression is available"
         )
 
-    def get_expression(self) -> Any:
+    def get_positional_expression(self) -> Any:
         """Return positional expression IR, deriving from any available peer.
 
-        Prefer stored ``expression``; else build from ``two_symbol_schemata``,
+        Prefer stored ``positional_expression``; else build from ``two_symbol_schemata``,
         then ``one_symbol_schemata``, then ``bit_lut`` (positional ``x0``…
         ``x{k-1}`` python IR).  Does not call :meth:`get_bit_lut` so an empty
         container fails here rather than via a side-effect materialization.
         Raises ``ValueError`` if no peer can produce an expression.
 
         Named / styled export stays in
-        :func:`~cana.function_outputs.expression.function_outputs_to_expression`.
+        :func:`~cana.function_outputs.expression.function_outputs_to_named_expression`.
         """
-        if self.expression is not None:
-            return self.expression
+        if self.positional_expression is not None:
+            return self.positional_expression
         names = positional_names(self.k)
         if self.two_symbol_schemata is not None:
-            self.expression = two_symbol_to_expression(
+            self.positional_expression = two_symbol_to_expression(
                 names, self.two_symbol_schemata
             )
-            return self.expression
+            return self.positional_expression
         if self.one_symbol_schemata is not None:
-            self.expression = one_symbol_to_expression(
+            self.positional_expression = one_symbol_to_expression(
                 names, self.one_symbol_schemata
             )
-            return self.expression
+            return self.positional_expression
         if self.bit_lut is not None:
-            self.expression = lut_to_expression(names, self.bit_lut)
-            return self.expression
+            self.positional_expression = lut_to_expression(names, self.bit_lut)
+            return self.positional_expression
         raise ValueError(
-            "Cannot get expression: neither expression, two_symbol_schemata, "
+            "Cannot get positional_expression: neither positional_expression, two_symbol_schemata, "
             "one_symbol_schemata, nor bit_lut is available"
         )
 
     # --- named converters (fill / derive a peer slot) ---
 
-    def build_bit_lut_from_expression(self) -> BitLut:
-        """Build and store ``bit_lut`` from positional ``expression``."""
-        if self.expression is None:
-            raise ValueError("build_bit_lut_from_expression requires expression")
-        self.bit_lut = bit_lut_from_expression(self.expression, self.k)
+    def build_bit_lut_from_positional_expression(self) -> BitLut:
+        """Build and store ``bit_lut`` from ``positional_expression``."""
+        if self.positional_expression is None:
+            raise ValueError(
+                "build_bit_lut_from_positional_expression requires "
+                "positional_expression"
+            )
+        self.bit_lut = bit_lut_from_expression(self.positional_expression, self.k)
         self._k = self.bit_lut.k
         return self.bit_lut
 
@@ -403,7 +406,7 @@ class FunctionOutputs(object):
 
         Derives a LUT from each populated slot that can produce one (stored
         ``bit_lut``, ``one_symbol_schemata``, ``two_symbol_schemata``, and
-        positional ``expression``) and checks they agree.  Sets
+        positional ``positional_expression``) and checks they agree.  Sets
         :attr:`representations_consistent`.  Never called by normal
         canalization paths.
         """
@@ -418,10 +421,10 @@ class FunctionOutputs(object):
             except ValueError:
                 self.representations_consistent = False
                 return False
-        if self.expression is not None:
+        if self.positional_expression is not None:
             try:
                 candidates.append(
-                    bit_lut_from_expression(self.expression, self.k)
+                    bit_lut_from_expression(self.positional_expression, self.k)
                 )
             except ValueError:
                 self.representations_consistent = False
@@ -447,7 +450,7 @@ class FunctionOutputs(object):
         """Return a copy with input order remapped across filled peer reps.
 
         Remaps ``bit_lut``, ``one_symbol_schemata``, ``two_symbol_schemata``,
-        and positional ``expression`` when present (no QM).  Preserves
+        and positional ``positional_expression`` when present (no QM).  Preserves
         ``one_symbol_is_prime_implicant``.  If orders already match, returns
         ``self`` unchanged.
         """
@@ -471,10 +474,10 @@ class FunctionOutputs(object):
             )
 
         new_expression = None
-        if self.expression is not None:
+        if self.positional_expression is not None:
             try:
                 new_expression = reorder_positional(
-                    self.expression, old_labels, new_labels
+                    self.positional_expression, old_labels, new_labels
                 )
             except (ValueError, KeyError):
                 new_expression = None
@@ -483,7 +486,7 @@ class FunctionOutputs(object):
             bit_lut=new_bit_lut,
             one_symbol_schemata=new_one_symbol,
             two_symbol_schemata=new_two_symbol,
-            expression=new_expression,
+            positional_expression=new_expression,
             k=self.k,
         )
         out.one_symbol_is_prime_implicant = self.one_symbol_is_prime_implicant
@@ -511,7 +514,7 @@ class FunctionOutputs(object):
                 self.bit_lut == other.bit_lut
                 and self.one_symbol_schemata == other.one_symbol_schemata
                 and self.two_symbol_schemata == other.two_symbol_schemata
-                and self.expression == other.expression
+                and self.positional_expression == other.positional_expression
             )
         if self.bit_lut is not None and isinstance(other, Sequence) and not isinstance(
             other, (str, bytes, bytearray)
@@ -527,8 +530,8 @@ class FunctionOutputs(object):
             parts.append("one_symbol_schemata=...")
         if self.two_symbol_schemata is not None:
             parts.append("two_symbol_schemata=...")
-        if self.expression is not None:
-            parts.append("expression={0!r}".format(self.expression))
+        if self.positional_expression is not None:
+            parts.append("positional_expression={0!r}".format(self.positional_expression))
         if self.one_symbol_is_prime_implicant is not None:
             parts.append(
                 "one_symbol_is_prime_implicant={0!r}".format(

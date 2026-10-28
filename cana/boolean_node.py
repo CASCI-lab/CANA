@@ -180,7 +180,7 @@ class BooleanNode(object):
         return cls.from_bit_lut(outputs, *args, **kwargs)
 
     @classmethod
-    def from_expression(cls, expression, *args, **kwargs):
+    def from_positional_expression(cls, expression, *args, **kwargs):
         """Instantiate from a positional python expression (``x0``…``x{k-1}``).
 
         Args:
@@ -189,11 +189,14 @@ class BooleanNode(object):
             k (int) : Number of inputs (required keyword-only).
 
         Example:
-            >>> BooleanNode.from_expression("x0 and x1", k=2, name="AND")
+            >>> BooleanNode.from_positional_expression(
+            ...     "x0 and x1", k=2, name="AND"
+            ... )
         """
         if "k" not in kwargs:
             raise TypeError(
-                "from_expression() missing required keyword-only argument: 'k'"
+                "from_positional_expression() missing required "
+                "keyword-only argument: 'k'"
             )
         k = int(kwargs.pop("k"))
         node_id, name, inputs, state = cls._factory_common_kwargs(k, kwargs)
@@ -203,7 +206,7 @@ class BooleanNode(object):
             k=k,
             inputs=inputs,
             state=state,
-            outputs=FunctionOutputs(expression=expression, k=k),
+            outputs=FunctionOutputs(positional_expression=expression, k=k),
             *args,
             **kwargs
         )
@@ -273,14 +276,20 @@ class BooleanNode(object):
                 )
             else:
                 outputs = "[" + ",".join(map(str, self.outputs)) + "]"
-        elif self.outputs.expression is not None:
+        elif self.outputs.positional_expression is not None:
             if self.network is not None:
                 try:
-                    outputs = "expression={0!r}".format(self.expression())
+                    outputs = "named_expression={0!r}".format(
+                        self.named_expression()
+                    )
                 except ValueError:
-                    outputs = "expression={0!r}".format(self.outputs.expression)
+                    outputs = "positional_expression={0!r}".format(
+                        self.outputs.positional_expression
+                    )
             else:
-                outputs = "expression={0!r}".format(self.outputs.expression)
+                outputs = "positional_expression={0!r}".format(
+                    self.outputs.positional_expression
+                )
         elif self.outputs.one_symbol_schemata is not None:
             outputs = "one_symbol_schemata"
         else:
@@ -307,23 +316,23 @@ class BooleanNode(object):
             )
         return [self.network.nodes[j].name for j in self.inputs]
 
-    def expression(self, style="python", warn=True):
+    def named_expression(self, style="python", warn=True):
         """Return a named boolean expression for this node's update rule.
 
-        Uses :func:`~cana.function_outputs.expression.function_outputs_to_expression`:
-        stored expression, else two-symbol, else one-symbol ON cover, else
-        dense LUT DNF. Soft-warns when verification flags are not ``True``
-        for the chosen non-LUT source (never blocks).
+        Uses :func:`~cana.function_outputs.expression.function_outputs_to_named_expression`:
+        stored positional expression, else two-symbol, else one-symbol ON
+        cover, else dense LUT DNF. Soft-warns when verification flags are not
+        ``True`` for the chosen non-LUT source (never blocks).
 
         Args:
             style (str) : ``"python"`` or ``"symbolic"``.
             warn (bool) : If False, suppress verification soft-warnings.
         """
         from cana.function_outputs.expression import (
-            function_outputs_to_expression,
+            function_outputs_to_named_expression,
         )
 
-        return function_outputs_to_expression(
+        return function_outputs_to_named_expression(
             self.outputs,
             self.input_names(),
             style=style,
@@ -336,7 +345,7 @@ class BooleanNode(object):
 
         Args:
             representation (str) : ``"bit_lut"``, ``"one_symbol_schemata"``,
-                ``"two_symbol_schemata"``, or ``"expression"``.
+                ``"two_symbol_schemata"``, or ``"positional_expression"``.
 
         Returns:
             (FunctionOutputs) : This node's ``outputs`` (mutated in place).
@@ -347,13 +356,13 @@ class BooleanNode(object):
             self.outputs.get_one_symbol_schemata()
         elif representation == "two_symbol_schemata":
             self.outputs.get_two_symbol_schemata()
-        elif representation == "expression":
-            self.outputs.get_expression()
+        elif representation == "positional_expression":
+            self.outputs.get_positional_expression()
         else:
             raise ValueError(
                 "Unknown representation {0!r}; expected 'bit_lut', "
                 "'one_symbol_schemata', 'two_symbol_schemata', or "
-                "'expression'".format(representation)
+                "'positional_expression'".format(representation)
             )
         return self.outputs
 

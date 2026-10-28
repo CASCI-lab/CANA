@@ -9,18 +9,24 @@ from cana.function_outputs import FunctionOutputs
 from cana.io import (
     convert,
     export_string,
+    import_detached_rule,
     infer_format,
     nodes_to_cnet,
     parse_aeon,
+    parse_aeon_update_rule,
     parse_bnet,
+    parse_bnet_update_rule,
     parse_booleannet,
+    parse_booleannet_update_rule,
     parse_cnet,
     parse_string,
 )
 from cana.nodes_builder import (
+    DetachedRule,
     equivalent_networks,
-    expressions_to_nodes,
     name_keyed_luts,
+    named_expression_to_detached_rule,
+    update_rules_to_nodes,
 )
 
 # Tiny network shared across formats:
@@ -70,8 +76,8 @@ def test_parse_tiny_bnet_booleannet_aeon():
     _assert_tiny(parse_aeon(TINY_AEON))
 
 
-def test_expressions_to_nodes_adds_free_input_identity():
-    nodes = expressions_to_nodes({"A": "B", "B": "A and C"})
+def test_update_rules_to_nodes_adds_free_input_identity():
+    nodes = update_rules_to_nodes({"A": "B", "B": "A and C"})
     _assert_tiny(nodes)
 
 
@@ -83,23 +89,23 @@ def test_import_stores_positional_expression_only():
     by_name = {n.name: n for n in nodes}
     for node in by_name.values():
         assert node.outputs.bit_lut is None
-        assert node.outputs.expression is not None
-    assert by_name["A"].outputs.expression == "x0"
-    assert by_name["B"].outputs.expression == "x0 and x1"
-    assert by_name["C"].outputs.expression == "x0"
+        assert node.outputs.positional_expression is not None
+    assert by_name["A"].outputs.positional_expression == "x0"
+    assert by_name["B"].outputs.positional_expression == "x0 and x1"
+    assert by_name["C"].outputs.positional_expression == "x0"
     # Symbolic operators normalize to python positional IR
     aeon = parse_aeon(TINY_AEON)
-    assert {n.name: n.outputs.expression for n in aeon}["B"] == "x0 and x1"
+    assert {n.name: n.outputs.positional_expression for n in aeon}["B"] == "x0 and x1"
 
 
 def test_boolean_node_named_expression():
     network = BooleanNetwork.from_nodes(parse_booleannet(TINY_BOOLEANNET))
     by_name = {n.name: n for n in network.nodes}
-    assert by_name["A"].expression() == "B"
-    assert by_name["B"].expression() == "A and C"
-    assert by_name["C"].expression() == "C"
+    assert by_name["A"].named_expression() == "B"
+    assert by_name["B"].named_expression() == "A and C"
+    assert by_name["C"].named_expression() == "C"
     assert by_name["B"].input_names() == ["A", "C"]
-    assert by_name["B"].expression(style="symbolic") == "A & C"
+    assert by_name["B"].named_expression(style="symbolic") == "A & C"
 
 
 def test_export_preserves_imported_expression_strings():
@@ -365,3 +371,33 @@ def test_bbm_023_all_formats_equivalent():
             text = N.to_string(type=dst_fmt)
             N2 = BooleanNetwork.from_string(text, type=dst_fmt)
             assert ref.equivalent_to(N2), (src_fmt, dst_fmt)
+
+
+def test_parse_update_rule_helpers():
+    assert parse_bnet_update_rule("targets,factors") is None
+    assert parse_bnet_update_rule("A, B & C") == ("A", "B & C")
+    assert parse_booleannet_update_rule("A* = B and C") == ("A", "B and C")
+    assert parse_aeon_update_rule("B -? A") is None
+    assert parse_aeon_update_rule("$A: B & C") == ("A", "B & C")
+
+
+def test_detached_rule_no_free_input_siblings():
+    rule = named_expression_to_detached_rule("Y", "a0 & a1 & a2")
+    assert isinstance(rule, DetachedRule)
+    assert rule.name == "Y"
+    assert rule.input_names == ("a0", "a1", "a2")
+    assert rule.k == 3
+    assert rule.outputs.positional_expression == "x0 and x1 and x2"
+    assert rule.to_named_expression(style="symbolic") == "a0 & a1 & a2"
+    assert rule.as_update_rule(style="python") == ("Y", "a0 and a1 and a2")
+
+    # import_detached_rule likewise does not invent free-input nodes
+    det = import_detached_rule(
+        "targets,factors\nY, a0 & a1\n", fmt="bnet", target="Y"
+    )
+    assert det.input_names == ("a0", "a1")
+    assert det.k == 2
+
+    # Full hub parse still adds free inputs
+    nodes = update_rules_to_nodes({"Y": "a0 & a1"})
+    assert {n.name for n in nodes} == {"Y", "a0", "a1"}

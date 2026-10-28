@@ -5,8 +5,8 @@
 #
 # For each Boolean rule (as a one-rule ``.bnet`` string):
 #
-# 1. **import** — ``parse_bnet`` → expression-only ``FunctionOutputs``
-#    (timed; same path as ``expr_lut_one_symbol_timing``)
+# 1. **import** — ``import_detached_rule`` → positional ``FunctionOutputs``
+#    (timed; no free-input siblings; same path as ``expr_lut_one_symbol_timing``)
 # 2. **ROF check** — every identifier occurs exactly once
 #    (timed; result stored as ``is_rof``)
 #

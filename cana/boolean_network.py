@@ -376,7 +376,7 @@ class BooleanNetwork:
 
         Args:
             representation (str) : ``"bit_lut"``, ``"one_symbol_schemata"``,
-                ``"two_symbol_schemata"``, or ``"expression"``.
+                ``"two_symbol_schemata"``, or ``"positional_expression"``.
 
         Returns:
             (BooleanNetwork) : ``self``.

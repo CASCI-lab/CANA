@@ -5,21 +5,21 @@ SYNTHETIC_FNS=['and', 'or', 'random']  BBM_MODELS=/home/kyuhyongpark/CANA/BBM/mo
 INCLUDE_KEYWORDS=[]  EXCLUDE_KEYWORDS=[]
 === synthetic (AST-style ROFs) ===
 fn                 k      import         rof  is_rof    n_occ   n_uniq
-and                8    711.2 µs     32.2 µs    True        8        8
-and               16     1.06 ms     35.1 µs    True       16       16
-and               32     4.42 ms     67.0 µs    True       32       32
-and               64    11.41 ms    197.3 µs    True       64       64
-and              128    55.13 ms    303.4 µs    True      128      128
-or                 8    695.5 µs    145.2 µs    True        8        8
-or                16     1.45 ms     50.5 µs    True       16       16
-or                32     3.86 ms     90.7 µs    True       32       32
-or                64    12.16 ms    187.6 µs    True       64       64
-or               128    52.73 ms    306.7 µs    True      128      128
-random             8    507.0 µs     32.6 µs    True        8        8
-random            16     1.69 ms     59.6 µs    True       16       16
-random            32     4.23 ms     86.8 µs    True       32       32
-random            64    11.53 ms    258.4 µs    True       64       64
-random           128    52.81 ms    412.6 µs    True      128      128
+and                8    191.4 µs    177.9 µs    True        8        8
+and               16    241.6 µs    106.6 µs    True       16       16
+and               32    619.6 µs    206.6 µs    True       32       32
+and               64     2.49 ms    661.5 µs    True       64       64
+and              128     1.65 ms    765.0 µs    True      128      128
+or                 8    154.3 µs     69.8 µs    True        8        8
+or                16    410.7 µs    122.3 µs    True       16       16
+or                32    766.5 µs    329.6 µs    True       32       32
+or                64    782.8 µs    397.8 µs    True       64       64
+or               128     1.70 ms    843.8 µs    True      128      128
+random             8    176.2 µs     99.1 µs    True        8        8
+random            16    569.0 µs    132.1 µs    True       16       16
+random            32    544.3 µs    110.0 µs    True       32       32
+random            64    892.2 µs    497.5 µs    True       64       64
+random           128     2.67 ms    556.2 µs    True      128      128
 
 === BBM (all rules) ===
   … 2,000 rules
@@ -73,8 +73,8 @@ Extra variable occurrences among >15-unique functions:
     +19: 0.00% (0 / 216)
    rest: 78.70% (170 / 216)
 
-import time: mean=   1.57 ms  min=   58.8 µs  max=  1.392 s
-ROF check time: mean=  290.9 µs  min=   10.2 µs  max= 373.62 ms
+import time: mean=  497.2 µs  min=   19.9 µs  max= 497.14 ms
+ROF check time: mean=  288.9 µs  min=    9.8 µs  max= 393.61 ms
 
 synthetic rows=15  bbm rows=18237  |  SOURCE=both
 wrote /home/kyuhyongpark/CANA/CANA/dev/high_k/logs/rof_check/rof_check.log

@@ -4,9 +4,10 @@
 # Benchmark the three CANA stages for Boolean functions given in **bnet**
 # form (``target, expr`` with ``&`` / ``|`` / ``!``):
 #
-# 1. **import** — parse into positional ``FunctionOutputs.expression``
-#    (no dense LUT yet; same path as ``parse_bnet`` / ``expressions_to_nodes``)
-# 2. **build LUT** — ``build_bit_lut_from_expression()`` (``2**k`` evals)
+# 1. **import** — ``import_detached_rule`` → positional
+#    ``FunctionOutputs.positional_expression`` (no dense LUT; no free-input
+#    siblings)
+# 2. **build LUT** — ``build_bit_lut_from_positional_expression()`` (``2**k`` evals)
 # 3. **one-symbol** — Quine–McCluskey prime implicants via
 #    ``compute_one_symbol_schemata_from_bit_lut()``
 #

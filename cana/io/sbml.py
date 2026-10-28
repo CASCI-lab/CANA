@@ -8,10 +8,10 @@ from typing import Any, Dict, List, Optional, Sequence
 
 from cana.boolean_node import BooleanNode
 from cana.function_outputs.expression import (
-    function_outputs_to_expression,
+    function_outputs_to_named_expression,
     lut_to_expression,
 )
-from cana.nodes_builder import expressions_to_nodes, input_names
+from cana.nodes_builder import input_names, update_rules_to_nodes
 
 
 def xml_local_name(tag: str) -> str:
@@ -260,7 +260,7 @@ def parse_sbml(text: str) -> List[BooleanNode]:
             if sid:
                 species.append(sid)
 
-    expressions: Dict[str, str] = {}
+    update_rules: Dict[str, str] = {}
     for elem in root.iter():
         if xml_local_name(elem.tag) != "transition":
             continue
@@ -302,17 +302,17 @@ def parse_sbml(text: str) -> List[BooleanNode]:
         if not has_terms and not on_exprs:
             continue
         if not on_exprs:
-            expressions[target] = "False"
+            update_rules[target] = "False"
         elif len(on_exprs) == 1:
-            expressions[target] = on_exprs[0]
+            update_rules[target] = on_exprs[0]
         else:
-            expressions[target] = (
+            update_rules[target] = (
                 "(" + " or ".join("({0})".format(e) for e in on_exprs) + ")"
             )
 
-    if not species and not expressions:
+    if not species and not update_rules:
         raise ValueError("No SBML-qual species or transitions found")
-    return expressions_to_nodes(expressions, species)
+    return update_rules_to_nodes(update_rules, species)
 
 
 def nodes_to_sbml(
@@ -398,7 +398,7 @@ def nodes_to_sbml(
         )
         math = ET.SubElement(ft, "{%s}math" % MATH)
         math.set("xmlns", MATH)
-        expr = function_outputs_to_expression(
+        expr = function_outputs_to_named_expression(
             node.outputs,
             src_names,
             style="python",

@@ -29,7 +29,7 @@ __all__ = [
     "bit_lut_from_expression",
     "lut_to_expression",
     "one_symbol_to_expression",
-    "function_outputs_to_expression",
+    "function_outputs_to_named_expression",
 ]
 
 BOOL_KEYWORDS = frozenset({"and", "or", "not", "true", "false", "xor"})
@@ -294,7 +294,7 @@ def one_symbol_to_expression(
     return or_op.join(terms)
 
 
-def function_outputs_to_expression(
+def function_outputs_to_named_expression(
     outputs: Any,
     input_names: Sequence[str],
     style: str = "python",
@@ -302,9 +302,9 @@ def function_outputs_to_expression(
     node_label: Optional[str] = None,
     warn: bool = True,
 ) -> str:
-    """Named expression from ``FunctionOutputs``.
+    """Build a named expression from ``FunctionOutputs`` peers.
 
-    Priority: stored expression → two-symbol → one-symbol → LUT.
+    Priority: stored positional expression → two-symbol → one-symbol → LUT.
 
     Never runs ``verify_*``; only reads
     ``representations_consistent`` / ``one_symbol_is_prime_implicant``.
@@ -329,7 +329,7 @@ def function_outputs_to_expression(
 
     def _multi_slot() -> bool:
         n = 0
-        if getattr(outputs, "expression", None) is not None:
+        if getattr(outputs, "positional_expression", None) is not None:
             n += 1
         if getattr(outputs, "one_symbol_schemata", None) is not None:
             n += 1
@@ -369,9 +369,9 @@ def function_outputs_to_expression(
             stacklevel=3,
         )
 
-    expr = getattr(outputs, "expression", None)
+    expr = getattr(outputs, "positional_expression", None)
     if expr is not None:
-        _warn_consistency("expression")
+        _warn_consistency("positional_expression")
         named = from_positional(expr, input_names)
         if style == "python":
             return named
@@ -401,8 +401,8 @@ def function_outputs_to_expression(
         lut = getattr(outputs, "bit_lut", None)
         if lut is None:
             raise ValueError(
-                "Cannot build named expression: neither expression, "
-                "one_symbol_schemata, two_symbol_schemata, nor bit_lut "
-                "is available on outputs"
+                "Cannot build named expression: neither "
+                "positional_expression, one_symbol_schemata, "
+                "two_symbol_schemata, nor bit_lut is available on outputs"
             )
     return lut_to_expression(input_names, lut, style=style)

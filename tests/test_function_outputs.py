@@ -13,7 +13,7 @@ import pytest
 from cana.function_outputs.expression import (
     bit_lut_from_expression,
     from_positional,
-    function_outputs_to_expression,
+    function_outputs_to_named_expression,
     one_symbol_to_expression,
     to_positional,
 )
@@ -41,7 +41,7 @@ def test_wraps_bit_lut_same_object():
 
 
 def test_expression_only_sequence_materializes():
-    fo = FunctionOutputs(expression="x0 and x1", k=2)
+    fo = FunctionOutputs(positional_expression="x0 and x1", k=2)
     assert fo.bit_lut is None
     assert fo.k == 2
     assert len(fo) == 4
@@ -78,19 +78,19 @@ def test_one_symbol_to_expression_concise():
     )
 
 
-def test_function_outputs_to_expression_ladder():
+def test_function_outputs_to_named_expression_ladder():
     names = ["A", "B"]
     # Expression wins over schemata / LUT.
     fo = FunctionOutputs(
         bit_lut=BitLut.from_sequence([0, 0, 0, 1]),
         one_symbol_schemata={1: {"11"}},
-        expression="x0 or x1",
+        positional_expression="x0 or x1",
         k=2,
     )
     fo.representations_consistent = True
     fo.one_symbol_is_prime_implicant = True
     assert (
-        function_outputs_to_expression(fo, names, warn=False) == "A or B"
+        function_outputs_to_named_expression(fo, names, warn=False) == "A or B"
     )
 
     # Two-symbol wins over one-symbol / LUT when no expression.
@@ -106,7 +106,7 @@ def test_function_outputs_to_expression_ladder():
     fo2.one_symbol_is_prime_implicant = True
     fo2.representations_consistent = True
     assert (
-        function_outputs_to_expression(fo2, names, warn=False) == "(A or B)"
+        function_outputs_to_named_expression(fo2, names, warn=False) == "(A or B)"
     )
 
     # One-symbol wins over LUT when no expression / two-symbol.
@@ -117,17 +117,17 @@ def test_function_outputs_to_expression_ladder():
     )
     fo2b.one_symbol_is_prime_implicant = True
     fo2b.representations_consistent = True
-    assert function_outputs_to_expression(fo2b, names, warn=False) == "A"
+    assert function_outputs_to_named_expression(fo2b, names, warn=False) == "A"
 
     # LUT fallback.
     fo3 = FunctionOutputs.from_sequence([0, 0, 0, 1])
     assert (
-        function_outputs_to_expression(fo3, names, warn=False)
+        function_outputs_to_named_expression(fo3, names, warn=False)
         == "(A and B)"
     )
 
 
-def test_function_outputs_to_expression_warnings():
+def test_function_outputs_to_named_expression_warnings():
     names = ["A", "B"]
     schemata_only = FunctionOutputs(
         one_symbol_schemata={1: {"12"}}, k=2
@@ -135,21 +135,21 @@ def test_function_outputs_to_expression_warnings():
     assert schemata_only.one_symbol_is_prime_implicant is None
     with pytest.warns(UserWarning, match="one_symbol_schemata"):
         assert (
-            function_outputs_to_expression(
+            function_outputs_to_named_expression(
                 schemata_only, names, node_label="X"
             )
             == "A"
         )
     with warnings.catch_warnings(record=True) as caught:
         warnings.simplefilter("always")
-        function_outputs_to_expression(schemata_only, names, warn=False)
+        function_outputs_to_named_expression(schemata_only, names, warn=False)
         assert caught == []
 
     # Expression-only: no consistency warn (single slot).
-    expr_only = FunctionOutputs(expression="x0 and x1", k=2)
+    expr_only = FunctionOutputs(positional_expression="x0 and x1", k=2)
     with warnings.catch_warnings(record=True) as caught:
         warnings.simplefilter("always")
-        function_outputs_to_expression(
+        function_outputs_to_named_expression(
             expr_only, names, node_label="B", warn=True
         )
         assert caught == []
@@ -157,17 +157,17 @@ def test_function_outputs_to_expression_warnings():
     # Multi-slot expression with known mismatch → warn.
     multi = FunctionOutputs(
         bit_lut=BitLut.from_sequence([0, 0, 0, 1]),
-        expression="x0 and x1",
+        positional_expression="x0 and x1",
         k=2,
     )
     multi.representations_consistent = False
     with pytest.warns(UserWarning, match="representations_consistent"):
-        function_outputs_to_expression(multi, names, node_label="B")
+        function_outputs_to_named_expression(multi, names, node_label="B")
     # Unchecked (None) multi-slot does not warn on expression path.
     multi.representations_consistent = None
     with warnings.catch_warnings(record=True) as caught:
         warnings.simplefilter("always")
-        function_outputs_to_expression(multi, names, node_label="B")
+        function_outputs_to_named_expression(multi, names, node_label="B")
         assert caught == []
 
 
@@ -189,15 +189,15 @@ def test_boolean_node_expression_from_schemata():
 
     n.network = _Net()
     with pytest.warns(UserWarning, match="one_symbol"):
-        assert n.expression() == "(A and B)"
-    assert n.expression(warn=False) == "(A and B)"
-    assert n.expression(style="symbolic", warn=False) == "(A & B)"
+        assert n.named_expression() == "(A and B)"
+    assert n.named_expression(warn=False) == "(A and B)"
+    assert n.named_expression(style="symbolic", warn=False) == "(A & B)"
 
 
 def test_bit_lut_from_expression_and_get_bit_lut():
     lut = bit_lut_from_expression("x0 and x1", 2)
     assert list(lut) == [0, 0, 0, 1]
-    fo = FunctionOutputs(expression="x0 or x1", k=2)
+    fo = FunctionOutputs(positional_expression="x0 or x1", k=2)
     assert fo.bit_lut is None
     built = fo.get_bit_lut()
     assert list(built) == [0, 1, 1, 1]
@@ -205,11 +205,11 @@ def test_bit_lut_from_expression_and_get_bit_lut():
 
 
 def test_function_outputs_reorder_expression():
-    fo = FunctionOutputs(expression="x0 and not x1", k=2)
+    fo = FunctionOutputs(positional_expression="x0 and not x1", k=2)
     fo.get_bit_lut()
     expected_lut = list(fo.bit_lut.reorder(["A", "B"], ["B", "A"]))
     out = fo.reorder(["A", "B"], ["B", "A"])
-    assert out.expression == "x1 and not x0"
+    assert out.positional_expression == "x1 and not x0"
     assert list(out.bit_lut) == expected_lut
     assert out.verify_representations_consistent() is True
 
@@ -241,7 +241,7 @@ def test_network_shares_function_outputs():
         assert node.id == i
         assert isinstance(node.outputs, FunctionOutputs)
         # Expression formats store positional IR; LUT is lazy.
-        assert node.outputs.expression is not None
+        assert node.outputs.positional_expression is not None
         assert node.outputs.bit_lut is None
         assert isinstance(node.outputs.get_bit_lut(), BitLut)
 
@@ -265,12 +265,12 @@ def test_empty_function_outputs_getters_raise():
         fo.get_one_symbol_schemata()
     with pytest.raises(ValueError, match=r"Cannot get two_symbol_schemata"):
         fo.get_two_symbol_schemata()
-    with pytest.raises(ValueError, match=r"Cannot get expression"):
-        fo.get_expression()
+    with pytest.raises(ValueError, match=r"Cannot get positional_expression"):
+        fo.get_positional_expression()
 
 
-def test_get_one_symbol_schemata_from_expression_caches_lut():
-    fo = FunctionOutputs(expression="x0 and x1", k=2)
+def test_get_one_symbol_schemata_from_positional_expression_caches_lut():
+    fo = FunctionOutputs(positional_expression="x0 and x1", k=2)
     assert fo.bit_lut is None
     schemata = fo.get_one_symbol_schemata()
     assert schemata[1] == {"11"}
@@ -278,8 +278,8 @@ def test_get_one_symbol_schemata_from_expression_caches_lut():
     assert list(fo.bit_lut) == [0, 0, 0, 1]
 
 
-def test_get_two_symbol_schemata_from_expression():
-    fo = FunctionOutputs(expression="x0 or x1", k=2)
+def test_get_two_symbol_schemata_from_positional_expression():
+    fo = FunctionOutputs(positional_expression="x0 or x1", k=2)
     assert fo.two_symbol_schemata is None
     assert fo.bit_lut is None
     ts = fo.get_two_symbol_schemata()
@@ -289,20 +289,20 @@ def test_get_two_symbol_schemata_from_expression():
     assert list(fo.bit_lut) == [0, 1, 1, 1]
 
 
-def test_get_expression_caches_from_peers():
+def test_get_positional_expression_caches_from_peers():
     # From bit_lut.
     fo_lut = FunctionOutputs.from_sequence([0, 0, 0, 1])  # AND
-    assert fo_lut.expression is None
-    expr_lut = fo_lut.get_expression()
-    assert fo_lut.expression is expr_lut
-    assert fo_lut.get_expression() is expr_lut
+    assert fo_lut.positional_expression is None
+    expr_lut = fo_lut.get_positional_expression()
+    assert fo_lut.positional_expression is expr_lut
+    assert fo_lut.get_positional_expression() is expr_lut
     assert list(fo_lut.get_bit_lut()) == [0, 0, 0, 1]
 
     # From one-symbol.
     schemata = {0: {"02", "20"}, 1: {"11"}}
     fo_one = FunctionOutputs(one_symbol_schemata=schemata, k=2)
-    expr_one = fo_one.get_expression()
-    assert fo_one.expression == expr_one
+    expr_one = fo_one.get_positional_expression()
+    assert fo_one.positional_expression == expr_one
     assert expr_one == one_symbol_to_expression(["x0", "x1"], schemata)
 
     # From two-symbol (OR).
@@ -311,8 +311,8 @@ def test_get_expression_caches_from_peers():
         [["12", [[0, 1]], []]],
     )
     fo_two = FunctionOutputs(two_symbol_schemata=ts, k=2)
-    expr_two = fo_two.get_expression()
-    assert fo_two.expression == expr_two
+    expr_two = fo_two.get_positional_expression()
+    assert fo_two.positional_expression == expr_two
     assert expr_two == "(x0 or x1)"
 
 
@@ -495,9 +495,9 @@ def test_fill_function_outputs_node_and_network():
     assert n3.outputs.two_symbol_schemata is None
     n3.fill_function_outputs("two_symbol_schemata")
     assert n3.outputs.two_symbol_schemata is not None
-    assert n3.outputs.expression is None
-    n3.fill_function_outputs("expression")
-    assert n3.outputs.expression is not None
+    assert n3.outputs.positional_expression is None
+    n3.fill_function_outputs("positional_expression")
+    assert n3.outputs.positional_expression is not None
 
 
 def test_one_symbol_reorder_identity_returns_same():
@@ -664,20 +664,20 @@ def test_two_symbol_to_expression_unit_cases():
     ) == "(x0 | x1)"
 
 
-def test_function_outputs_to_expression_from_two_symbol_only():
+def test_function_outputs_to_named_expression_from_two_symbol_only():
     ts = (
         [["00", [], []]],
         [["12", [[0, 1]], []]],
     )
     fo = FunctionOutputs(two_symbol_schemata=ts, k=2)
     assert (
-        function_outputs_to_expression(fo, ["A", "B"], warn=False)
+        function_outputs_to_named_expression(fo, ["A", "B"], warn=False)
         == "(A or B)"
     )
     # Two-symbol alone: no prime warn (no stored one-symbol).
     with warnings.catch_warnings(record=True) as caught:
         warnings.simplefilter("always")
-        function_outputs_to_expression(fo, ["A", "B"], warn=True)
+        function_outputs_to_named_expression(fo, ["A", "B"], warn=True)
         assert caught == []
 
     # Two-symbol + one-symbol: warn prime when flag is not True.
@@ -688,7 +688,7 @@ def test_function_outputs_to_expression_from_two_symbol_only():
     )
     with pytest.warns(UserWarning, match="two_symbol_schemata"):
         assert (
-            function_outputs_to_expression(
+            function_outputs_to_named_expression(
                 fo_both, ["A", "B"], node_label="X"
             )
             == "(A or B)"
@@ -696,7 +696,7 @@ def test_function_outputs_to_expression_from_two_symbol_only():
     fo_both.one_symbol_is_prime_implicant = True
     with warnings.catch_warnings(record=True) as caught:
         warnings.simplefilter("always")
-        function_outputs_to_expression(fo_both, ["A", "B"], warn=True)
+        function_outputs_to_named_expression(fo_both, ["A", "B"], warn=True)
         assert caught == []
 
 

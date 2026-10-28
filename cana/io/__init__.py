@@ -4,10 +4,11 @@ Import / export Boolean networks via a ``list[BooleanNode]`` hub.
 
 File formats (booleannet, bnet, aeon, sbml, cnet) convert to/from a dense
 list of :class:`~cana.boolean_node.BooleanNode` (invariant: ``nodes[i].id == i``).
-Expression formats store positional IR on
+Expression formats store a positional expression peer on
 :class:`~cana.function_outputs.FunctionOutputs` at import; exporters may
 materialize dense LUTs. Name-keyed LUT equivalence is the round-trip
-authority across formats.
+authority across formats. Single-rule import without hub wiring uses
+:func:`import_detached_rule`.
 
 Modules:
     booleannet, bnet, aeon, sbml, cnet: per-format parse / export
@@ -39,10 +40,16 @@ FORMAT_ALIASES = {
 _LAZY_EXPORTS = {
     "nodes_to_aeon": ("cana.io.aeon", "nodes_to_aeon"),
     "parse_aeon": ("cana.io.aeon", "parse_aeon"),
+    "parse_aeon_update_rule": ("cana.io.aeon", "parse_aeon_update_rule"),
     "nodes_to_bnet": ("cana.io.bnet", "nodes_to_bnet"),
     "parse_bnet": ("cana.io.bnet", "parse_bnet"),
+    "parse_bnet_update_rule": ("cana.io.bnet", "parse_bnet_update_rule"),
     "nodes_to_booleannet": ("cana.io.booleannet", "nodes_to_booleannet"),
     "parse_booleannet": ("cana.io.booleannet", "parse_booleannet"),
+    "parse_booleannet_update_rule": (
+        "cana.io.booleannet",
+        "parse_booleannet_update_rule",
+    ),
     "nodes_to_cnet": ("cana.io.cnet", "nodes_to_cnet"),
     "parse_cnet": ("cana.io.cnet", "parse_cnet"),
     "lut_to_expression": (
@@ -103,6 +110,74 @@ def infer_format(path: PathLike) -> Optional[str]:
     if name.endswith(".cnet"):
         return "cnet"
     return None
+
+
+def import_detached_rule(
+    text: str,
+    *,
+    fmt: str = "bnet",
+    target: Optional[str] = None,
+):
+    """Parse a one-rule (or multi-rule) snippet into a :class:`~cana.nodes_builder.DetachedRule`.
+
+    Uses first-appearance regulator order and does **not** invent free-input
+    identity siblings.  When *text* has multiple update rules, *target*
+    selects which one (required if more than one rule is present).
+    """
+    from cana.nodes_builder import named_expression_to_detached_rule
+
+    fmt = normalize_format(fmt)
+    rules = {}  # type: dict
+    if fmt == "bnet":
+        from cana.io.bnet import parse_bnet_update_rule
+
+        for raw in text.splitlines():
+            rule = parse_bnet_update_rule(raw)
+            if rule is not None:
+                rules[rule[0]] = rule[1]
+        # Allow a bare ``target, expr`` without header / newlines.
+        if not rules:
+            rule = parse_bnet_update_rule(text.strip())
+            if rule is not None:
+                rules[rule[0]] = rule[1]
+    elif fmt == "booleannet":
+        from cana.io.booleannet import parse_booleannet_update_rule
+
+        for raw in text.splitlines():
+            rule = parse_booleannet_update_rule(raw)
+            if rule is not None:
+                rules[rule[0]] = rule[1]
+    elif fmt == "aeon":
+        from cana.io.aeon import parse_aeon_update_rule
+
+        for raw in text.splitlines():
+            rule = parse_aeon_update_rule(raw)
+            if rule is not None:
+                rules[rule[0]] = rule[1]
+    else:
+        raise ValueError(
+            "import_detached_rule supports bnet, booleannet, aeon; "
+            "got {0!r}".format(fmt)
+        )
+
+    if not rules:
+        raise ValueError("No update rule found in text")
+    if target is None:
+        if len(rules) != 1:
+            raise ValueError(
+                "Multiple update rules found; pass target= to select one "
+                "(targets={0})".format(sorted(rules))
+            )
+        name, named = next(iter(rules.items()))
+    else:
+        if target not in rules:
+            raise KeyError(
+                "target {0!r} not in parsed rules {1}".format(
+                    target, sorted(rules)
+                )
+            )
+        name, named = target, rules[target]
+    return named_expression_to_detached_rule(name, named)
 
 
 def parse_string(text: str, fmt: str):
@@ -183,6 +258,7 @@ __all__ = [
     "FORMAT_ALIASES",
     "convert",
     "export_string",
+    "import_detached_rule",
     "infer_format",
     "nodes_to_aeon",
     "nodes_to_bnet",
@@ -193,8 +269,11 @@ __all__ = [
     "normalize_format",
     "normalize_operators",
     "parse_aeon",
+    "parse_aeon_update_rule",
     "parse_bnet",
+    "parse_bnet_update_rule",
     "parse_booleannet",
+    "parse_booleannet_update_rule",
     "parse_cnet",
     "parse_sbml",
     "parse_string",

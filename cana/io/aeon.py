@@ -3,15 +3,15 @@
 from __future__ import annotations
 
 import re
-from typing import Dict, List, Sequence
+from typing import Dict, List, Optional, Sequence, Tuple
 
 from cana.boolean_node import BooleanNode
 from cana.function_outputs.expression import (
     expression_identifiers,
-    function_outputs_to_expression,
+    function_outputs_to_named_expression,
     normalize_operators,
 )
-from cana.nodes_builder import expressions_to_nodes, input_names
+from cana.nodes_builder import input_names, update_rules_to_nodes
 
 AEON_EDGE_RE = re.compile(
     r"^\s*([A-Za-z_][A-Za-z0-9_]*)\s*(-[>|?]?|\|)\s*([A-Za-z_][A-Za-z0-9_]*)\s*$"
@@ -21,18 +21,32 @@ AEON_UPDATE_RE = re.compile(
 )
 
 
+def parse_aeon_update_rule(line: str) -> Optional[Tuple[str, str]]:
+    """Parse one ``$var: named_expression`` line, or ``None`` if not an update.
+
+    Regulation edge lines are ignored here (handled only in full-file parse).
+    """
+    raw = line.strip()
+    if not raw or raw.startswith("#"):
+        return None
+    m_upd = AEON_UPDATE_RE.match(raw)
+    if not m_upd:
+        return None
+    return m_upd.group(1), m_upd.group(2)
+
+
 def parse_aeon(text: str) -> List[BooleanNode]:
     """Parse AEON ``*.aeon`` into a node list."""
-    expressions: Dict[str, str] = {}
+    update_rules: Dict[str, str] = {}
     names: set = set()
     for raw in text.splitlines():
         line = raw.strip()
         if not line or line.startswith("#"):
             continue
-        m_upd = AEON_UPDATE_RE.match(line)
-        if m_upd:
-            name, expr = m_upd.group(1), m_upd.group(2)
-            expressions[name] = expr
+        rule = parse_aeon_update_rule(line)
+        if rule is not None:
+            name, expr = rule
+            update_rules[name] = expr
             names.add(name)
             names.update(
                 expression_identifiers(normalize_operators(expr, "python"))
@@ -43,9 +57,9 @@ def parse_aeon(text: str) -> List[BooleanNode]:
             names.add(m_edge.group(1))
             names.add(m_edge.group(3))
             continue
-    if not expressions and not names:
+    if not update_rules and not names:
         raise ValueError("No aeon rules or regulations found")
-    return expressions_to_nodes(expressions, names)
+    return update_rules_to_nodes(update_rules, names)
 
 
 def nodes_to_aeon(
@@ -65,7 +79,7 @@ def nodes_to_aeon(
             lines.append("{0} -? {1}".format(src, node.name))
     for i, node in enumerate(nodes):
         names = input_names(nodes, i)
-        expr = function_outputs_to_expression(
+        expr = function_outputs_to_named_expression(
             node.outputs,
             names,
             style="symbolic",
