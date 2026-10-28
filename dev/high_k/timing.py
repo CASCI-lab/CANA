@@ -120,10 +120,11 @@ def time_import_and_rof(
     *,
     repeats: int = 3,
 ) -> Dict[str, object]:
-    """Median times for detached import and a syntactic ROF check on *expr*.
+    """Median times for expression import and a syntactic ROF check on *expr*.
 
-    Import uses :func:`import_detached_rule`.  The ROF check runs on the
-    original named *expr* string via :func:`~high_k.rof.check_syntactic_rof`.
+    Import is :func:`import_detached_rule` only (no LUT / one-symbol).
+    The ROF check runs on the original named *expr* string via
+    :func:`~high_k.rof.check_syntactic_rof`.
     """
     from high_k.rof import check_syntactic_rof
 

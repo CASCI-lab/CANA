@@ -5,15 +5,15 @@
 #
 # For each Boolean rule (as a one-rule ``.bnet`` string):
 #
-# 1. **import** — ``import_detached_rule`` → positional ``FunctionOutputs``
-#    (timed; no free-input siblings; same path as ``expr_lut_one_symbol_timing``)
+# 1. **import** — ``import_detached_rule`` only (expression → positional
+#    ``FunctionOutputs``; no LUT / one-symbol; timed)
 # 2. **ROF check** — every identifier occurs exactly once
 #    (timed; result stored as ``is_rof``)
 #
 # Sources (toggle below):
 #
 # - **synthetic** — AST-style ROFs (``and`` / ``or`` / ``pairwise_*`` /
-#   ``random``); import is skipped above ``MAX_IMPORT_K``
+#   ``random``) at each ``K_VALUES`` size
 # - **bbm** — every rule in ``BBM/models/*/model.bnet``, then corpus stats
 #
 # Shared helpers: ``high_k.rof``, ``high_k.timing.time_import_and_rof``,
@@ -40,10 +40,9 @@ from high_k.bbm_rules import (
     iter_bnet_rules,
     model_id_from_dirname,
 )
-from high_k.rof import check_syntactic_rof
 from high_k.run_log import start_run_log
 from high_k.synthetic import EVEN_K_BUILDERS, SYNTHETIC_BUILDERS
-from high_k.timing import fmt_s, median_time, time_import_and_rof
+from high_k.timing import fmt_s, time_import_and_rof
 
 # ---------------------------------------------------------------------------
 # Config
@@ -52,15 +51,14 @@ from high_k.timing import fmt_s, median_time, time_import_and_rof
 # "synthetic" | "bbm" | "both"
 SOURCE = "both"
 
-# Synthetic sizes. Import is skipped when k > MAX_IMPORT_K.
-K_VALUES = [8, 16, 32, 64, 128]
-MAX_IMPORT_K = 128  # all default sizes import; raise to skip import at large k
-IMPORT_REPEATS = 3
-ROF_ONLY_REPEATS = 10  # used only when k > MAX_IMPORT_K
+# Synthetic input sizes (k). Each size gets expression-import + ROF timing.
+K_VALUES = [8, 16, 32, 64, 128, 256, 512, 1024]
+# Median over this many runs for import and for the ROF check.
+REPEATS = 3
 RANDOM_SEED = 12345
 
 # Which synthetic builders to run (subset of SYNTHETIC_BUILDERS keys).
-SYNTHETIC_FNS = ["and", "or", "random"]
+SYNTHETIC_FNS = ["and", "or", "half_or_half_and", "pairwise_and_or", "pairwise_or_and", "random"]
 
 # BBM keyword filters (same as deprecated BBM_ROF.ipynb)
 INCLUDE_KEYWORDS: List[str] = []  # e.g. ["curated"]
@@ -71,7 +69,7 @@ LARGE_K = 15
 
 log, LOG_PATH = start_run_log("rof_check")
 log.info(f"SOURCE={SOURCE}")
-log.info(f"K_VALUES={K_VALUES}  MAX_IMPORT_K={MAX_IMPORT_K}")
+log.info(f"K_VALUES={K_VALUES}  REPEATS={REPEATS}")
 log.info(f"SYNTHETIC_FNS={SYNTHETIC_FNS}  BBM_MODELS={BBM_MODELS}")
 log.info(
     f"INCLUDE_KEYWORDS={INCLUDE_KEYWORDS}  EXCLUDE_KEYWORDS={EXCLUDE_KEYWORDS}"
@@ -101,50 +99,27 @@ if SOURCE in ("synthetic", "both"):
             else:
                 expr = builder(k)
             bnet = as_bnet(expr, target="Y")
-            do_import = k <= MAX_IMPORT_K
-
-            t_import: Optional[float] = None
-            k_imported: Optional[int] = None
-            if do_import:
-                try:
-                    r = time_import_and_rof(
-                        bnet, "Y", expr, repeats=IMPORT_REPEATS
-                    )
-                except Exception as exc:  # noqa: BLE001
-                    log.info(f"{fname:10s} {k:9,d}  FAILED: {exc}")
-                    continue
-                t_import = float(r["t_import"])  # type: ignore[arg-type]
-                t_rof = float(r["t_rof"])  # type: ignore[arg-type]
-                is_rof = bool(r["is_rof"])
-                n_occ = int(r["n_variables"])  # type: ignore[arg-type]
-                n_uniq = int(r["n_unique_variables"])  # type: ignore[arg-type]
-                k_imported = int(r["k"])  # type: ignore[arg-type]
-            else:
-                # ROF-only timing (import skipped for very high k)
-                t_rof, rof = median_time(
-                    lambda e=expr: check_syntactic_rof(e),
-                    repeats=ROF_ONLY_REPEATS,
-                )
-                assert isinstance(rof, dict)
-                is_rof = bool(rof["is_rof"])
-                n_occ = int(rof["n_variables"])  # type: ignore[arg-type]
-                n_uniq = int(rof["n_unique_variables"])  # type: ignore[arg-type]
+            try:
+                r = time_import_and_rof(bnet, "Y", expr, repeats=REPEATS)
+            except Exception as exc:  # noqa: BLE001
+                log.info(f"{fname:10s} {k:9,d}  FAILED: {exc}")
+                continue
 
             row = {
                 "source": "synthetic",
                 "label": fname,
-                "k": k_imported if k_imported is not None else k,
-                "t_import": t_import,
-                "t_rof": t_rof,
-                "is_rof": is_rof,
-                "n_variables": n_occ,
-                "n_unique_variables": n_uniq,
+                "k": int(r["k"]),  # type: ignore[arg-type]
+                "t_import": float(r["t_import"]),  # type: ignore[arg-type]
+                "t_rof": float(r["t_rof"]),  # type: ignore[arg-type]
+                "is_rof": bool(r["is_rof"]),
+                "n_variables": int(r["n_variables"]),  # type: ignore[arg-type]
+                "n_unique_variables": int(r["n_unique_variables"]),  # type: ignore[arg-type]
             }
             synth_rows.append(row)
             log.info(
-                f"{fname:10s} {k:9,d}  {fmt_s(t_import):>10s}  "
-                f"{fmt_s(t_rof):>10s}  {str(is_rof):>6s}  "
-                f"{n_occ:7,d}  {n_uniq:7,d}"
+                f"{fname:10s} {k:9,d}  {fmt_s(row['t_import']):>10s}  "
+                f"{fmt_s(row['t_rof']):>10s}  {str(row['is_rof']):>6s}  "
+                f"{row['n_variables']:7,d}  {row['n_unique_variables']:7,d}"
             )
 
 # %% [markdown]
