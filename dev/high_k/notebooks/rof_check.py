@@ -1,0 +1,328 @@
+# %% [markdown]
+# Import + syntactic ROF check
+#
+# Replaces the deprecated ``ROF.ipynb`` / ``BBM_ROF.ipynb`` workflows.
+#
+# For each Boolean rule (as a one-rule ``.bnet`` string):
+#
+# 1. **import** — ``parse_bnet`` → expression-only ``FunctionOutputs``
+#    (timed; same path as ``expr_lut_one_symbol_timing``)
+# 2. **ROF check** — every identifier occurs exactly once
+#    (timed; result stored as ``is_rof``)
+#
+# Sources (toggle below):
+#
+# - **synthetic** — AST-style ROFs (``and`` / ``or`` / ``pairwise_*`` /
+#   ``random``); import is skipped above ``MAX_IMPORT_K``
+# - **bbm** — every rule in ``BBM/models/*/model.bnet``, then corpus stats
+#
+# Shared helpers: ``high_k.rof``, ``high_k.timing.time_import_and_rof``,
+# ``high_k.synthetic``, ``high_k.bbm_rules``.
+#
+# Output is teed to ``high_k/logs/rof_check/``.
+
+# %%
+from __future__ import annotations
+
+import sys
+from collections import defaultdict
+from pathlib import Path
+from typing import Dict, List, Optional
+
+# notebooks/ → high_k/ → dev/
+_DEV_DIR = Path(__file__).resolve().parents[2]
+if str(_DEV_DIR) not in sys.path:
+    sys.path.insert(0, str(_DEV_DIR))
+
+from high_k.bbm_rules import (
+    BBM_MODELS,
+    as_bnet,
+    iter_bnet_rules,
+    model_id_from_dirname,
+)
+from high_k.rof import check_syntactic_rof
+from high_k.run_log import start_run_log
+from high_k.synthetic import EVEN_K_BUILDERS, SYNTHETIC_BUILDERS
+from high_k.timing import fmt_s, median_time, time_import_and_rof
+
+# ---------------------------------------------------------------------------
+# Config
+# ---------------------------------------------------------------------------
+
+# "synthetic" | "bbm" | "both"
+SOURCE = "both"
+
+# Synthetic sizes. Import is skipped when k > MAX_IMPORT_K.
+K_VALUES = [8, 16, 32, 64, 128]
+MAX_IMPORT_K = 128  # all default sizes import; raise to skip import at large k
+IMPORT_REPEATS = 3
+ROF_ONLY_REPEATS = 10  # used only when k > MAX_IMPORT_K
+RANDOM_SEED = 12345
+
+# Which synthetic builders to run (subset of SYNTHETIC_BUILDERS keys).
+SYNTHETIC_FNS = ["and", "or", "random"]
+
+# BBM keyword filters (same as deprecated BBM_ROF.ipynb)
+INCLUDE_KEYWORDS: List[str] = []  # e.g. ["curated"]
+EXCLUDE_KEYWORDS: List[str] = []  # e.g. ["multi-valued"]
+
+# Stats threshold for "large" functions (unique variables)
+LARGE_K = 15
+
+log, LOG_PATH = start_run_log("rof_check")
+log.info(f"SOURCE={SOURCE}")
+log.info(f"K_VALUES={K_VALUES}  MAX_IMPORT_K={MAX_IMPORT_K}")
+log.info(f"SYNTHETIC_FNS={SYNTHETIC_FNS}  BBM_MODELS={BBM_MODELS}")
+log.info(
+    f"INCLUDE_KEYWORDS={INCLUDE_KEYWORDS}  EXCLUDE_KEYWORDS={EXCLUDE_KEYWORDS}"
+)
+
+
+# %% [markdown]
+# ## Synthetic: import + ROF vs *k*
+
+
+# %%
+synth_rows: List[Dict[str, object]] = []
+
+if SOURCE in ("synthetic", "both"):
+    log.info("=== synthetic (AST-style ROFs) ===")
+    log.info(
+        f"{'fn':10s} {'k':>9s}  {'import':>10s}  {'rof':>10s}  "
+        f"{'is_rof':>6s}  {'n_occ':>7s}  {'n_uniq':>7s}"
+    )
+    for fname in SYNTHETIC_FNS:
+        builder = SYNTHETIC_BUILDERS[fname]
+        for k in K_VALUES:
+            if fname in EVEN_K_BUILDERS and k % 2 != 0:
+                continue
+            if fname == "random":
+                expr = builder(k, seed=RANDOM_SEED + k)
+            else:
+                expr = builder(k)
+            bnet = as_bnet(expr, target="Y")
+            do_import = k <= MAX_IMPORT_K
+
+            t_import: Optional[float] = None
+            k_imported: Optional[int] = None
+            if do_import:
+                try:
+                    r = time_import_and_rof(
+                        bnet, "Y", expr, repeats=IMPORT_REPEATS
+                    )
+                except Exception as exc:  # noqa: BLE001
+                    log.info(f"{fname:10s} {k:9,d}  FAILED: {exc}")
+                    continue
+                t_import = float(r["t_import"])  # type: ignore[arg-type]
+                t_rof = float(r["t_rof"])  # type: ignore[arg-type]
+                is_rof = bool(r["is_rof"])
+                n_occ = int(r["n_variables"])  # type: ignore[arg-type]
+                n_uniq = int(r["n_unique_variables"])  # type: ignore[arg-type]
+                k_imported = int(r["k"])  # type: ignore[arg-type]
+            else:
+                # ROF-only timing (import skipped for very high k)
+                t_rof, rof = median_time(
+                    lambda e=expr: check_syntactic_rof(e),
+                    repeats=ROF_ONLY_REPEATS,
+                )
+                assert isinstance(rof, dict)
+                is_rof = bool(rof["is_rof"])
+                n_occ = int(rof["n_variables"])  # type: ignore[arg-type]
+                n_uniq = int(rof["n_unique_variables"])  # type: ignore[arg-type]
+
+            row = {
+                "source": "synthetic",
+                "label": fname,
+                "k": k_imported if k_imported is not None else k,
+                "t_import": t_import,
+                "t_rof": t_rof,
+                "is_rof": is_rof,
+                "n_variables": n_occ,
+                "n_unique_variables": n_uniq,
+            }
+            synth_rows.append(row)
+            log.info(
+                f"{fname:10s} {k:9,d}  {fmt_s(t_import):>10s}  "
+                f"{fmt_s(t_rof):>10s}  {str(is_rof):>6s}  "
+                f"{n_occ:7,d}  {n_uniq:7,d}"
+            )
+
+# %% [markdown]
+# ## BBM: import + ROF for every rule
+
+
+# %%
+bbm_rows: List[Dict[str, object]] = []
+
+if SOURCE in ("bbm", "both"):
+    log.info("")
+    log.info("=== BBM (all rules) ===")
+    if not BBM_MODELS.is_dir():
+        log.info(f"BBM models not found at {BBM_MODELS}")
+    else:
+        n_done = 0
+        for model_name, target, expr in iter_bnet_rules(
+            BBM_MODELS,
+            include_keywords=INCLUDE_KEYWORDS,
+            exclude_keywords=EXCLUDE_KEYWORDS,
+        ):
+            model_id = model_id_from_dirname(model_name) or model_name
+            bnet = as_bnet(expr, target=target)
+            try:
+                r = time_import_and_rof(bnet, target, expr, repeats=1)
+            except Exception as exc:  # noqa: BLE001
+                log.info(f"FAILED {model_id} {target}: {exc}")
+                continue
+            bbm_rows.append(
+                {
+                    "source": "bbm",
+                    "model_id": model_id,
+                    "model_directory": model_name,
+                    "target": target,
+                    "function": expr,
+                    "k": r["k"],
+                    "t_import": r["t_import"],
+                    "t_rof": r["t_rof"],
+                    "is_rof": r["is_rof"],
+                    "n_variables": r["n_variables"],
+                    "n_unique_variables": r["n_unique_variables"],
+                }
+            )
+            n_done += 1
+            if n_done % 2000 == 0:
+                log.info(f"  … {n_done:,} rules")
+
+        log.info(f"timed {len(bbm_rows):,} BBM rules")
+
+# %% [markdown]
+# ## BBM corpus stats
+
+
+# %%
+def _mean(vals: List[float]) -> Optional[float]:
+    return sum(vals) / len(vals) if vals else None
+
+
+if bbm_rows:
+    n_models = len({r["model_id"] for r in bbm_rows})
+    n_fn = len(bbm_rows)
+    n_rof = sum(1 for r in bbm_rows if r["is_rof"])
+    rof_rate = n_rof / n_fn
+
+    by_model: Dict[object, List[bool]] = defaultdict(list)
+    for r in bbm_rows:
+        by_model[r["model_id"]].append(bool(r["is_rof"]))
+    n_all_rof_models = sum(1 for flags in by_model.values() if all(flags))
+    model_rof_rate = n_all_rof_models / len(by_model)
+
+    large = [r for r in bbm_rows if int(r["n_unique_variables"]) > LARGE_K]  # type: ignore[arg-type]
+    large_frac = len(large) / n_fn
+    large_rof = sum(1 for r in large if r["is_rof"])
+    large_rof_rate = (large_rof / len(large)) if large else None
+
+    models_with_large = {
+        r["model_id"]
+        for r in bbm_rows
+        if int(r["n_unique_variables"]) > LARGE_K  # type: ignore[arg-type]
+    }
+    large_model_frac = len(models_with_large) / n_models
+
+    large_by_model: Dict[object, List[bool]] = defaultdict(list)
+    for r in large:
+        large_by_model[r["model_id"]].append(bool(r["is_rof"]))
+    n_large_all_rof = sum(1 for flags in large_by_model.values() if all(flags))
+    large_model_all_rof_frac = (
+        n_large_all_rof / len(large_by_model) if large_by_model else None
+    )
+
+    t_imports = [float(r["t_import"]) for r in bbm_rows]  # type: ignore[arg-type]
+    t_rofs = [float(r["t_rof"]) for r in bbm_rows]  # type: ignore[arg-type]
+
+    log.info("")
+    log.info("=== BBM stats ===")
+    log.info(f"Models:    {n_models:,}")
+    log.info(f"Functions: {n_fn:,}")
+    log.info(f"ROFs:      {n_rof:,}")
+    log.info(f"ROF rate:  {rof_rate:.2%}")
+    log.info(f"Fraction of models with only ROFs: {model_rof_rate:.2%}")
+    log.info(
+        f"Fraction of functions with >{LARGE_K} unique variables: "
+        f"{large_frac:.2%}"
+    )
+    if large_rof_rate is not None:
+        log.info(
+            f"ROF rate for functions with >{LARGE_K} unique variables: "
+            f"{large_rof_rate:.2%}"
+        )
+    log.info(
+        f"Fraction of models with ≥1 function with >{LARGE_K} variables: "
+        f"{large_model_frac:.2%}"
+    )
+    if large_model_all_rof_frac is not None:
+        log.info(
+            f"Among those, fraction where all >{LARGE_K}-var functions "
+            f"are ROFs: {large_model_all_rof_frac:.2%}"
+        )
+    log.info("")
+    log.info(
+        f"Models with only ROFs: {n_all_rof_models:,} / {n_models:,}"
+    )
+    log.info(
+        f"Functions with >{LARGE_K} variables: "
+        f"{len(large):,} / {n_fn:,}"
+    )
+    log.info(
+        f"ROFs with >{LARGE_K} variables: "
+        f"{large_rof:,} / {len(large):,}"
+    )
+    log.info(
+        f"Models with >{LARGE_K}-variable function: "
+        f"{len(models_with_large):,} / {n_models:,}"
+    )
+    log.info(
+        f"Models where all >{LARGE_K}-variable functions are ROFs: "
+        f"{n_large_all_rof:,} / {len(large_by_model):,}"
+    )
+
+    # Extra-variable histogram for large functions (n_occ - n_unique)
+    if large:
+        log.info("")
+        log.info(
+            f"Extra variable occurrences among >{LARGE_K}-unique functions:"
+        )
+        extras = [
+            int(r["n_variables"]) - int(r["n_unique_variables"])  # type: ignore[arg-type]
+            for r in large
+        ]
+        total = len(extras)
+        for n in range(20):
+            count = sum(1 for e in extras if e == n)
+            label = "ROFs" if n == 0 else f"+{n}"
+            log.info(
+                f"  {label:>5}: {count / total:.2%} ({count:,} / {total:,})"
+            )
+        rest = sum(1 for e in extras if e >= 20)
+        log.info(f"  {'rest':>5}: {rest / total:.2%} ({rest:,} / {total:,})")
+
+    log.info("")
+    log.info(
+        f"import time: mean={fmt_s(_mean(t_imports))}  "
+        f"min={fmt_s(min(t_imports))}  max={fmt_s(max(t_imports))}"
+    )
+    log.info(
+        f"ROF check time: mean={fmt_s(_mean(t_rofs))}  "
+        f"min={fmt_s(min(t_rofs))}  max={fmt_s(max(t_rofs))}"
+    )
+
+# %% [markdown]
+# ## Summary
+
+
+# %%
+log.info("")
+log.info(
+    f"synthetic rows={len(synth_rows)}  bbm rows={len(bbm_rows)}  "
+    f"|  SOURCE={SOURCE}"
+)
+log.info(f"wrote {LOG_PATH}")
+log.close()

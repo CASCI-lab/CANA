@@ -1,0 +1,80 @@
+log_path=/home/kyuhyongpark/CANA/CANA/dev/high_k/logs/rof_check/rof_check.log
+SOURCE=both
+K_VALUES=[8, 16, 32, 64, 128]  MAX_IMPORT_K=128
+SYNTHETIC_FNS=['and', 'or', 'random']  BBM_MODELS=/home/kyuhyongpark/CANA/BBM/models
+INCLUDE_KEYWORDS=[]  EXCLUDE_KEYWORDS=[]
+=== synthetic (AST-style ROFs) ===
+fn                 k      import         rof  is_rof    n_occ   n_uniq
+and                8    711.2 µs     32.2 µs    True        8        8
+and               16     1.06 ms     35.1 µs    True       16       16
+and               32     4.42 ms     67.0 µs    True       32       32
+and               64    11.41 ms    197.3 µs    True       64       64
+and              128    55.13 ms    303.4 µs    True      128      128
+or                 8    695.5 µs    145.2 µs    True        8        8
+or                16     1.45 ms     50.5 µs    True       16       16
+or                32     3.86 ms     90.7 µs    True       32       32
+or                64    12.16 ms    187.6 µs    True       64       64
+or               128    52.73 ms    306.7 µs    True      128      128
+random             8    507.0 µs     32.6 µs    True        8        8
+random            16     1.69 ms     59.6 µs    True       16       16
+random            32     4.23 ms     86.8 µs    True       32       32
+random            64    11.53 ms    258.4 µs    True       64       64
+random           128    52.81 ms    412.6 µs    True      128      128
+
+=== BBM (all rules) ===
+  … 2,000 rules
+  … 4,000 rules
+  … 6,000 rules
+  … 8,000 rules
+  … 10,000 rules
+  … 12,000 rules
+  … 14,000 rules
+  … 16,000 rules
+  … 18,000 rules
+timed 18,237 BBM rules
+
+=== BBM stats ===
+Models:    285
+Functions: 18,237
+ROFs:      13,549
+ROF rate:  74.29%
+Fraction of models with only ROFs: 13.33%
+Fraction of functions with >15 unique variables: 1.18%
+ROF rate for functions with >15 unique variables: 11.57%
+Fraction of models with ≥1 function with >15 variables: 9.82%
+Among those, fraction where all >15-var functions are ROFs: 14.29%
+
+Models with only ROFs: 38 / 285
+Functions with >15 variables: 216 / 18,237
+ROFs with >15 variables: 25 / 216
+Models with >15-variable function: 28 / 285
+Models where all >15-variable functions are ROFs: 4 / 28
+
+Extra variable occurrences among >15-unique functions:
+   ROFs: 11.57% (25 / 216)
+     +1: 1.39% (3 / 216)
+     +2: 0.00% (0 / 216)
+     +3: 0.93% (2 / 216)
+     +4: 0.46% (1 / 216)
+     +5: 0.46% (1 / 216)
+     +6: 0.00% (0 / 216)
+     +7: 0.46% (1 / 216)
+     +8: 1.39% (3 / 216)
+     +9: 0.00% (0 / 216)
+    +10: 1.85% (4 / 216)
+    +11: 0.00% (0 / 216)
+    +12: 0.00% (0 / 216)
+    +13: 0.00% (0 / 216)
+    +14: 0.00% (0 / 216)
+    +15: 0.93% (2 / 216)
+    +16: 0.93% (2 / 216)
+    +17: 0.00% (0 / 216)
+    +18: 0.93% (2 / 216)
+    +19: 0.00% (0 / 216)
+   rest: 78.70% (170 / 216)
+
+import time: mean=   1.57 ms  min=   58.8 µs  max=  1.392 s
+ROF check time: mean=  290.9 µs  min=   10.2 µs  max= 373.62 ms
+
+synthetic rows=15  bbm rows=18237  |  SOURCE=both
+wrote /home/kyuhyongpark/CANA/CANA/dev/high_k/logs/rof_check/rof_check.log

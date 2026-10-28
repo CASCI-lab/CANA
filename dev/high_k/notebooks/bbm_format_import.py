@@ -19,6 +19,8 @@
 # BBM's ``model.booleannet.txt`` representation.
 #
 # Edit ``MODEL_ID`` below to switch models.
+#
+# Output is teed to ``high_k/logs/bbm_format_import/``.
 
 # %%
 from __future__ import annotations
@@ -27,11 +29,16 @@ import sys
 from pathlib import Path
 from typing import Dict, List, Tuple
 
-_DEV_DIR = Path(__file__).resolve().parent.parent
-_PKG_ROOT = _DEV_DIR.parent  # .../CANA/CANA (contains the cana package)
-for _p in (_DEV_DIR, _PKG_ROOT):
-    if str(_p) not in sys.path:
-        sys.path.insert(0, str(_p))
+# notebooks/ → high_k/ → dev/
+_DEV_DIR = Path(__file__).resolve().parents[2]
+if str(_DEV_DIR) not in sys.path:
+    sys.path.insert(0, str(_DEV_DIR))
+
+from high_k.bbm_rules import BBM_MODELS, resolve_model_dir
+from high_k.paths import ensure_cana_on_path
+from high_k.run_log import start_run_log
+
+ensure_cana_on_path()
 
 from cana.boolean_network import BooleanNetwork
 from cana.nodes_builder import equivalent_networks, name_keyed_luts
@@ -42,9 +49,6 @@ from cana.nodes_builder import equivalent_networks, name_keyed_luts
 
 MODEL_ID = "023"  # any BBM summary ID, e.g. "001", "023", "100"
 
-# .../CANA/CANA/dev → parents[1] = workspace root (.../CANA) containing BBM/
-BBM_MODELS = _DEV_DIR.resolve().parents[1] / "BBM" / "models"
-
 FORMATS: Tuple[str, ...] = ("booleannet", "bnet", "aeon", "sbml")
 FILE_NAMES = {
     "booleannet": "model.booleannet.txt",
@@ -53,39 +57,25 @@ FILE_NAMES = {
     "sbml": "model.sbml",
 }
 
+log, LOG_PATH = start_run_log("bbm_format_import")
+log.info(f"MODEL_ID={MODEL_ID}")
+
 # %% [markdown]
 # ## Resolve model directory and load all formats
 
 
 # %%
-def resolve_model_dir(models_root: Path, model_id: str) -> Path:
-    """Match ``[id-{ID}]__*`` under *models_root* (ID zero-padded to 3).
-
-    Uses a string prefix (not ``Path.glob``) because ``[`` / ``]`` are
-    character-class metacharacters in glob patterns.
-    """
-    pad = f"{int(model_id):03d}"
-    prefix = f"[id-{pad}]__"
-    matches = sorted(
-        p for p in models_root.iterdir() if p.is_dir() and p.name.startswith(prefix)
-    )
-    if not matches:
-        raise FileNotFoundError(
-            f"No BBM model for id={model_id!r} under {models_root}"
-        )
-    return matches[0]
-
-
 model_dir = resolve_model_dir(BBM_MODELS, MODEL_ID)
-print(f"MODEL_ID={MODEL_ID}")
-print(f"model_dir={model_dir}")
+log.info(f"model_dir={model_dir}")
 
 networks: Dict[str, BooleanNetwork] = {}
 for fmt in FORMATS:
     path = model_dir / FILE_NAMES[fmt]
     N = BooleanNetwork.from_file(str(path))  # type inferred from suffix
     networks[fmt] = N
-    print(f"  loaded {fmt:12s}  N={N.Nnodes}  names={sorted(n.name for n in N.nodes)}")
+    log.info(
+        f"  loaded {fmt:12s}  N={N.Nnodes}  names={sorted(n.name for n in N.nodes)}"
+    )
 
 # %% [markdown]
 # ## What ``nodes`` looks like
@@ -99,16 +89,16 @@ for fmt in FORMATS:
 
 # %%
 ref = networks["booleannet"]
-print("Example node entry (first node of booleannet load):")
+log.info("Example node entry (first node of booleannet load):")
 i0 = 0
 node = ref.nodes[i0]
-print(
+log.info(
     f"  nodes[{i0}] = BooleanNode("
     f"id={node.id}, name={node.name!r}, "
     f"inputs={node.inputs}, "
     f"outputs={node.outputs})"
 )
-print(
+log.info(
     "  (inputs are node ids; LUT row s uses inputs[0] as MSB — "
     "see BooleanNetwork docstring)"
 )
@@ -118,24 +108,25 @@ print(
 
 
 # %%
-print("Pairwise equivalent_networks vs booleannet:")
+log.info("Pairwise equivalent_networks vs booleannet:")
 all_ok = True
 for fmt, N in networks.items():
     ok = equivalent_networks(ref, N)
     all_ok = all_ok and ok
-    print(f"  {fmt:12s}  {ok}")
+    log.info(f"  {fmt:12s}  {ok}")
 assert all_ok, "Formats disagree on name-keyed LUTs"
 
 # Per-node LUT agreement table (canonical sorted inputs)
 ref_luts = name_keyed_luts(ref)
-print("\nPer-node LUT check (inputs sorted by name):")
-print(f"{'node':12s}  {'k':>3s}  {'ok':>3s}  inputs")
+log.info("")
+log.info("Per-node LUT check (inputs sorted by name):")
+log.info(f"{'node':12s}  {'k':>3s}  {'ok':>3s}  inputs")
 for name in sorted(ref_luts):
     inputs, lut = ref_luts[name]
     oks = [
         name_keyed_luts(networks[fmt]).get(name) == ref_luts[name] for fmt in FORMATS
     ]
-    print(
+    log.info(
         f"{name:12s}  {len(inputs):3d}  {str(all(oks)):>3s}  {list(inputs)}"
     )
 
@@ -144,9 +135,9 @@ for name in sorted(ref_luts):
 
 
 # %%
-print("Conversion matrix (row=src, col=dst); '.' = equivalent to ref:")
+log.info("Conversion matrix (row=src, col=dst); '.' = equivalent to ref:")
 header = " ".join(f"{d:>12s}" for d in FORMATS)
-print(f"{'':12s} {header}")
+log.info(f"{'':12s} {header}")
 for src in FORMATS:
     cells: List[str] = []
     for dst in FORMATS:
@@ -154,21 +145,21 @@ for src in FORMATS:
         N2 = BooleanNetwork.from_string(text, type=dst)
         cells.append(f"{'.':>12s}" if ref.equivalent_to(N2) else f"{'FAIL':>12s}")
         assert ref.equivalent_to(N2), (src, dst)
-    print(f"{src:12s} " + " ".join(cells))
+    log.info(f"{src:12s} " + " ".join(cells))
 
 # %% [markdown]
 # ## Full round-trips ``src → dst → src``
 
 
 # %%
-print("Round-trips src → dst → src:")
+log.info("Round-trips src → dst → src:")
 for src in FORMATS:
     for dst in FORMATS:
         mid = networks[src].to_string(type=dst)
         back = BooleanNetwork.convert_string(mid, dst, src)
         N2 = BooleanNetwork.from_string(back, type=src)
         ok = ref.equivalent_to(N2)
-        print(f"  {src:12s} → {dst:12s} → {src:12s}  {ok}")
+        log.info(f"  {src:12s} → {dst:12s} → {src:12s}  {ok}")
         assert ok, (src, dst)
 
 # %% [markdown]
@@ -180,23 +171,24 @@ for src in FORMATS:
 
 
 # %%
-print("cnet dense LUT: src → cnet → network (~= ref):")
+log.info("cnet dense LUT: src → cnet → network (~= ref):")
 cnet_lut_texts: Dict[str, str] = {}
 for src in FORMATS:
     cnet = networks[src].to_cnet()  # one_symbol_schemata=False (default)
     cnet_lut_texts[src] = cnet
     N2 = BooleanNetwork.from_string(cnet, type="cnet")
     ok = ref.equivalent_to(N2)
-    print(f"  {src:12s} → cnet (lut)               {ok}")
+    log.info(f"  {src:12s} → cnet (lut)               {ok}")
     assert ok, ("cnet lut import", src)
 
-print("\ncnet dense LUT round-trips src → cnet → src:")
+log.info("")
+log.info("cnet dense LUT round-trips src → cnet → src:")
 for src in FORMATS:
     mid = cnet_lut_texts[src]
     back = BooleanNetwork.convert_string(mid, "cnet", src)
     N2 = BooleanNetwork.from_string(back, type=src)
     ok = ref.equivalent_to(N2)
-    print(f"  {src:12s} → cnet (lut) → {src:12s}  {ok}")
+    log.info(f"  {src:12s} → cnet (lut) → {src:12s}  {ok}")
     assert ok, ("cnet lut round-trip", src)
 
 # %% [markdown]
@@ -209,7 +201,7 @@ for src in FORMATS:
 
 
 # %%
-print("cnet one-symbol schemata: src → fill → cnet → network (~= ref):")
+log.info("cnet one-symbol schemata: src → fill → cnet → network (~= ref):")
 cnet_schema_texts: Dict[str, str] = {}
 for src in FORMATS:
     networks[src].fill_function_outputs("one_symbol_schemata")
@@ -222,22 +214,25 @@ for src in FORMATS:
         for line in cnet.splitlines()
         if line and line[0] not in ".#" and " " in line
     )
-    print(
+    log.info(
         f"  {src:12s} → cnet (schemata)  wildcard={has_wildcard}  {ok}"
     )
     assert ok, ("cnet schemata import", src)
 
-print("\ncnet one-symbol schemata round-trips src → cnet → src:")
+log.info("")
+log.info("cnet one-symbol schemata round-trips src → cnet → src:")
 for src in FORMATS:
     mid = cnet_schema_texts[src]
-    back = BooleanNetwork.convert_string(mid, "cnet", src)
+    # Schemata-only import has one_symbol_is_prime_implicant=None; soft-warn is expected.
+    back = BooleanNetwork.convert_string(mid, "cnet", src, warn=False)
     N2 = BooleanNetwork.from_string(back, type=src)
     ok = ref.equivalent_to(N2)
-    print(f"  {src:12s} → cnet (schemata) → {src:12s}  {ok}")
+    log.info(f"  {src:12s} → cnet (schemata) → {src:12s}  {ok}")
     assert ok, ("cnet schemata round-trip", src)
 
 # Sample schemata cover for the first non-trivial node (k>=2)
-print("\nSample one-symbol schemata cnet lines (first k>=2 node):")
+log.info("")
+log.info("Sample one-symbol schemata cnet lines (first k>=2 node):")
 sample = cnet_schema_texts["booleannet"]
 sample_lines = sample.splitlines()
 printed = False
@@ -248,15 +243,21 @@ while i < len(sample_lines):
         parts = line.split()
         k = int(parts[2]) if len(parts) >= 3 else 0
         if k >= 2:
-            print(f"  {line}")
+            log.info(f"  {line}")
             i += 1
             while i < len(sample_lines) and sample_lines[i] and not sample_lines[i].startswith("."):
-                print(f"  {sample_lines[i]}")
+                log.info(f"  {sample_lines[i]}")
                 i += 1
             printed = True
             break
     i += 1
 if not printed:
-    print("  (no k>=2 node — model may be all identity/constants)")
+    log.info("  (no k>=2 node — model may be all identity/constants)")
 
-print("\nAll format loads, conversions, and round-trips passed (incl. cnet lut + schemata).")
+log.info("")
+log.info(
+    "All format loads, conversions, and round-trips passed "
+    "(incl. cnet lut + schemata)."
+)
+log.info(f"wrote {LOG_PATH}")
+log.close()
