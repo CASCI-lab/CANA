@@ -13,9 +13,7 @@ Prime count / generate use the syntactic-ROF product-over-AND / sum-over-OR
 rules (AST is only the evaluation vehicle).  :func:`count_rof_primes` and
 :func:`generate_rof_primes` assert syntactic ROF on every call.
 
-Migrated from the deprecated ``ROF.ipynb`` / ``AST.ipynb`` / ``AST_2.ipynb``
-engines.  Generation follows the streaming AST_2 variant (no intermediate
-product lists).
+AND prime generation streams recursively (no intermediate product lists).
 
 Reuses:
     - :mod:`high_k.ast` for parse / invert / leaf walks
@@ -147,8 +145,8 @@ def generate_rof_primes(
     variable sets).  Formulas that are only semantic ROF after simplification
     are rejected.  The AST is only the evaluation vehicle.
 
-    Streaming form from ``AST_2.ipynb``: AND children are combined recursively
-    without materializing full child lists via ``itertools.product``.
+    AND children are combined recursively without materializing full child
+    lists via ``itertools.product``.
     """
     require_syntactic_rof_ast(node)
     yield from _generate_rof_primes(node)
@@ -202,7 +200,7 @@ def _constant_ast(
     if expr in ("1", "True", "true"):
         return LogicNode("LITERAL", f"CONSTANT_{expr}"), 1, None, 0
     if expr in ("0", "False", "false"):
-        # Match notebook: treat as a single ON literal, no OFF dual.
+        # Treat as a single ON literal, no OFF dual.
         return LogicNode("LITERAL", f"CONSTANT_{expr}"), 1, None, 0
     return None
 
@@ -248,8 +246,8 @@ def iter_on_off_primes(
 class SafeNetworkPrimes:
     """Parse a ``.bnet`` string/path and expose per-node PI counts / generators.
 
-    Same role as the notebook ``SafeNetworkPrimes`` helper: count ON/OFF primes
-    eagerly; expose lazy generators so callers can skip huge enumerations.
+    Count ON/OFF primes eagerly; expose lazy generators so callers can skip
+    huge enumerations.
 
     Each update rule must be a syntactic ROF; enforced by
     :func:`count_rof_primes` / :func:`generate_rof_primes`.

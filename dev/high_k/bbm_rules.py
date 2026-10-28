@@ -92,7 +92,7 @@ def iter_bnet_rules(
 
     Optional keyword filters match ``metadata.json`` ``keywords``:
     keep models that contain *all* ``include_keywords`` and *none* of
-    ``exclude_keywords`` (same convention as the deprecated ``BBM_ROF.ipynb``).
+    ``exclude_keywords``.
     """
     include = list(include_keywords or ())
     exclude = list(exclude_keywords or ())

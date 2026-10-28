@@ -13,9 +13,8 @@
 #
 # Sources (toggle below):
 #
-# - **synthetic** — same ROFs as the deprecated ``AST.ipynb`` / ``AST_2.ipynb``
-#   generators (``and``, ``or``, ``pairwise_*``, ``random``), wrapped as
-#   single-rule ``.bnet`` strings
+# - **synthetic** — ``high_k.synthetic`` ROFs (``and``, ``or``,
+#   ``pairwise_*``, ``random``), wrapped as single-rule ``.bnet`` strings
 # - **bbm** — ``REPEATS`` real rules per *k* drawn from
 #   ``BBM/models/*/model.bnet`` (reported separately, then averaged)
 #
@@ -52,7 +51,7 @@ from high_k.timing import fmt_s, time_expr_lut_one_symbol
 # "synthetic" | "bbm" | "both"
 SOURCE = "both"
 
-# Dense LUT + QM: stay well below the AST notebooks' k=64+ regime.
+# Dense LUT + QM: keep k modest (``2**k`` rows).
 K_VALUES = [4, 6, 8, 10, 12]
 
 REPEATS = 3
@@ -73,7 +72,7 @@ log.info(f"MAX_QM_ROWS={MAX_QM_ROWS}  BBM_MODELS={BBM_MODELS}")
 rows: List[Dict[str, object]] = []
 
 if SOURCE in ("synthetic", "both"):
-    log.info("=== synthetic (AST-style ROFs as one-rule bnet) ===")
+    log.info("=== synthetic ROFs (one-rule bnet) ===")
     log.info(
         f"{'fn':18s} {'k':>3s}  {'import':>10s}  {'lut':>10s}  "
         f"{'one-sym':>10s}  {'#PI on':>6s}  {'#PI off':>7s}"

@@ -85,7 +85,7 @@ def test_check_syntactic_rof_ast_matches_string():
 
 
 # ---------------------------------------------------------------------------
-# Notebook regressions (AST.ipynb / AST_2.ipynb)
+# SafeNetworkPrimes / multi-node bnet regressions
 # ---------------------------------------------------------------------------
 
 

@@ -1,9 +1,9 @@
 # -*- coding: utf-8 -*-
 """Synthetic Boolean expressions for high-*k* experiments.
 
-Builders mirror the deprecated ``AST.ipynb`` / ``AST_2.ipynb`` generators:
-variables ``a0…a{k-1}``, symbolic ``&`` / ``|`` / ``!``.  Wrap with
-:func:`~high_k.bbm_rules.as_bnet` when a one-rule ``.bnet`` string is needed.
+Builders produce variables ``a0…a{k-1}`` with symbolic ``&`` / ``|`` / ``!``.
+Wrap with :func:`~high_k.bbm_rules.as_bnet` when a one-rule ``.bnet`` string
+is needed.
 """
 from __future__ import annotations
 

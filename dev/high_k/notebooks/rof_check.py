@@ -1,8 +1,6 @@
 # %% [markdown]
 # Import + syntactic ROF check
 #
-# Replaces the deprecated ``ROF.ipynb`` / ``BBM_ROF.ipynb`` workflows.
-#
 # For each Boolean rule (as a one-rule ``.bnet`` string):
 #
 # 1. **import** — ``import_detached_rule`` only (expression → positional
@@ -12,8 +10,8 @@
 #
 # Sources (toggle below):
 #
-# - **synthetic** — AST-style ROFs (``and`` / ``or`` / ``pairwise_*`` /
-#   ``random``) at each ``K_VALUES`` size
+# - **synthetic** — ``high_k.synthetic`` ROFs (``and`` / ``or`` /
+#   ``pairwise_*`` / ``random``) at each ``K_VALUES`` size
 # - **bbm** — every rule in ``BBM/models/*/model.bnet``, then corpus stats
 #
 # Shared helpers: ``high_k.rof``, ``high_k.timing.time_import_and_rof``,
@@ -60,7 +58,7 @@ RANDOM_SEED = 12345
 # Which synthetic builders to run (subset of SYNTHETIC_BUILDERS keys).
 SYNTHETIC_FNS = ["and", "or", "half_or_half_and", "pairwise_and_or", "pairwise_or_and", "random"]
 
-# BBM keyword filters (same as deprecated BBM_ROF.ipynb)
+# BBM keyword filters (see ``high_k.bbm_rules.iter_bnet_rules``)
 INCLUDE_KEYWORDS: List[str] = []  # e.g. ["curated"]
 EXCLUDE_KEYWORDS: List[str] = []  # e.g. ["multi-valued"]
 
@@ -84,7 +82,7 @@ log.info(
 synth_rows: List[Dict[str, object]] = []
 
 if SOURCE in ("synthetic", "both"):
-    log.info("=== synthetic (AST-style ROFs) ===")
+    log.info("=== synthetic ROFs ===")
     log.info(
         f"{'fn':10s} {'k':>9s}  {'import':>10s}  {'rof':>10s}  "
         f"{'is_rof':>6s}  {'n_occ':>7s}  {'n_uniq':>7s}"
