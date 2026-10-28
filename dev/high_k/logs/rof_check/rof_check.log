@@ -5,54 +5,54 @@ SYNTHETIC_FNS=['and', 'or', 'half_or_half_and', 'pairwise_and_or', 'pairwise_or_
 INCLUDE_KEYWORDS=[]  EXCLUDE_KEYWORDS=[]
 === synthetic (AST-style ROFs) ===
 fn                 k      import         rof  is_rof    n_occ   n_uniq
-and                8    101.8 µs     51.4 µs    True        8        8
-and               16    127.8 µs     54.2 µs    True       16       16
-and               32    249.1 µs    102.3 µs    True       32       32
-and               64    559.1 µs    195.4 µs    True       64       64
-and              128    905.2 µs    331.5 µs    True      128      128
-and              256     2.59 ms     1.44 ms    True      256      256
-and              512     4.95 ms     1.40 ms    True      512      512
-and            1,024    15.23 ms     6.48 ms    True    1,024    1,024
-or                 8    261.6 µs     36.1 µs    True        8        8
-or                16    403.1 µs    127.0 µs    True       16       16
-or                32    589.2 µs    249.9 µs    True       32       32
-or                64    737.9 µs    331.4 µs    True       64       64
-or               128     1.45 ms    695.5 µs    True      128      128
-or               256     3.08 ms    862.8 µs    True      256      256
-or               512     6.50 ms     1.90 ms    True      512      512
-or             1,024    10.88 ms     3.36 ms    True    1,024    1,024
-half_or_half_and         8    149.3 µs     35.1 µs    True        8        8
-half_or_half_and        16    321.8 µs     54.6 µs    True       16       16
-half_or_half_and        32    234.9 µs     88.9 µs    True       32       32
-half_or_half_and        64    396.7 µs    187.8 µs    True       64       64
-half_or_half_and       128     1.23 ms    724.7 µs    True      128      128
-half_or_half_and       256     4.22 ms     1.00 ms    True      256      256
-half_or_half_and       512     5.57 ms     2.37 ms    True      512      512
-half_or_half_and     1,024    13.65 ms     3.38 ms    True    1,024    1,024
-pairwise_and_or         8     88.1 µs     36.6 µs    True        8        8
-pairwise_and_or        16    123.3 µs     57.4 µs    True       16       16
-pairwise_and_or        32    261.4 µs     95.7 µs    True       32       32
-pairwise_and_or        64    504.7 µs    197.5 µs    True       64       64
-pairwise_and_or       128     2.01 ms    902.8 µs    True      128      128
-pairwise_and_or       256     3.28 ms     1.21 ms    True      256      256
-pairwise_and_or       512     4.61 ms     1.67 ms    True      512      512
-pairwise_and_or     1,024    10.15 ms     2.61 ms    True    1,024    1,024
-pairwise_or_and         8     78.8 µs     33.7 µs    True        8        8
-pairwise_or_and        16    176.2 µs     73.0 µs    True       16       16
-pairwise_or_and        32    284.1 µs     95.4 µs    True       32       32
-pairwise_or_and        64    437.8 µs    174.3 µs    True       64       64
-pairwise_or_and       128    950.0 µs    415.0 µs    True      128      128
-pairwise_or_and       256     1.78 ms    740.6 µs    True      256      256
-pairwise_or_and       512     4.46 ms     1.73 ms    True      512      512
-pairwise_or_and     1,024     9.91 ms     2.94 ms    True    1,024    1,024
-random             8     89.3 µs     31.7 µs    True        8        8
-random            16     93.4 µs     45.6 µs    True       16       16
-random            32    188.3 µs     90.9 µs    True       32       32
-random            64    341.2 µs    181.2 µs    True       64       64
-random           128    676.6 µs    461.7 µs    True      128      128
-random           256     1.99 ms     1.26 ms    True      256      256
-random           512     4.74 ms     1.32 ms    True      512      512
-random         1,024    10.50 ms     2.89 ms    True    1,024    1,024
+and                8    118.3 µs     49.9 µs    True        8        8
+and               16    129.1 µs     55.6 µs    True       16       16
+and               32    378.8 µs    117.5 µs    True       32       32
+and               64    465.5 µs    181.9 µs    True       64       64
+and              128    952.1 µs    687.9 µs    True      128      128
+and              256     3.67 ms     1.54 ms    True      256      256
+and              512     4.70 ms     2.03 ms    True      512      512
+and            1,024    34.45 ms     7.37 ms    True    1,024    1,024
+or                 8    230.4 µs    109.8 µs    True        8        8
+or                16    208.6 µs    115.4 µs    True       16       16
+or                32    265.1 µs     93.8 µs    True       32       32
+or                64    476.9 µs    242.4 µs    True       64       64
+or               128    861.0 µs    383.8 µs    True      128      128
+or               256     3.90 ms     1.38 ms    True      256      256
+or               512    10.61 ms     2.18 ms    True      512      512
+or             1,024    12.11 ms     2.87 ms    True    1,024    1,024
+half_or_half_and         8     81.4 µs     35.0 µs    True        8        8
+half_or_half_and        16    214.2 µs    139.3 µs    True       16       16
+half_or_half_and        32    436.0 µs    190.0 µs    True       32       32
+half_or_half_and        64    791.6 µs    340.8 µs    True       64       64
+half_or_half_and       128     1.59 ms    748.8 µs    True      128      128
+half_or_half_and       256     1.78 ms    976.4 µs    True      256      256
+half_or_half_and       512     4.36 ms     1.37 ms    True      512      512
+half_or_half_and     1,024    10.53 ms     4.61 ms    True    1,024    1,024
+pairwise_and_or         8    146.9 µs     66.6 µs    True        8        8
+pairwise_and_or        16    232.4 µs    119.9 µs    True       16       16
+pairwise_and_or        32    393.7 µs    179.9 µs    True       32       32
+pairwise_and_or        64    749.8 µs    410.3 µs    True       64       64
+pairwise_and_or       128     1.37 ms    610.4 µs    True      128      128
+pairwise_and_or       256     2.07 ms     1.17 ms    True      256      256
+pairwise_and_or       512     5.30 ms     2.47 ms    True      512      512
+pairwise_and_or     1,024    10.30 ms     2.89 ms    True    1,024    1,024
+pairwise_or_and         8     75.9 µs     32.6 µs    True        8        8
+pairwise_or_and        16    128.1 µs     51.0 µs    True       16       16
+pairwise_or_and        32    398.7 µs    122.8 µs    True       32       32
+pairwise_or_and        64    564.1 µs    198.1 µs    True       64       64
+pairwise_or_and       128    932.6 µs    749.5 µs    True      128      128
+pairwise_or_and       256     2.25 ms    825.1 µs    True      256      256
+pairwise_or_and       512     3.86 ms     1.80 ms    True      512      512
+pairwise_or_and     1,024     8.98 ms     2.60 ms    True    1,024    1,024
+random             8     78.2 µs     28.2 µs    True        8        8
+random            16    136.7 µs     52.3 µs    True       16       16
+random            32    179.2 µs     94.8 µs    True       32       32
+random            64    317.8 µs    168.6 µs    True       64       64
+random           128     1.13 ms    453.2 µs    True      128      128
+random           256     1.60 ms    896.9 µs    True      256      256
+random           512     4.13 ms     1.74 ms    True      512      512
+random         1,024     9.77 ms     2.84 ms    True    1,024    1,024
 
 === BBM (all rules) ===
   … 2,000 rules
@@ -72,42 +72,42 @@ Functions: 18,237
 ROFs:      13,549
 ROF rate:  74.29%
 Fraction of models with only ROFs: 13.33%
-Fraction of functions with >15 unique variables: 1.18%
-ROF rate for functions with >15 unique variables: 11.57%
-Fraction of models with ≥1 function with >15 variables: 9.82%
-Among those, fraction where all >15-var functions are ROFs: 14.29%
+Fraction of functions with >12 unique variables: 2.20%
+ROF rate for functions with >12 unique variables: 9.45%
+Fraction of models with ≥1 function with >12 variables: 16.14%
+Among those, fraction where all >12-var functions are ROFs: 10.87%
 
 Models with only ROFs: 38 / 285
-Functions with >15 variables: 216 / 18,237
-ROFs with >15 variables: 25 / 216
-Models with >15-variable function: 28 / 285
-Models where all >15-variable functions are ROFs: 4 / 28
+Functions with >12 variables: 402 / 18,237
+ROFs with >12 variables: 38 / 402
+Models with >12-variable function: 46 / 285
+Models where all >12-variable functions are ROFs: 5 / 46
 
-Extra variable occurrences among >15-unique functions:
-   ROFs: 11.57% (25 / 216)
-     +1: 1.39% (3 / 216)
-     +2: 0.00% (0 / 216)
-     +3: 0.93% (2 / 216)
-     +4: 0.46% (1 / 216)
-     +5: 0.46% (1 / 216)
-     +6: 0.00% (0 / 216)
-     +7: 0.46% (1 / 216)
-     +8: 1.39% (3 / 216)
-     +9: 0.00% (0 / 216)
-    +10: 1.85% (4 / 216)
-    +11: 0.00% (0 / 216)
-    +12: 0.00% (0 / 216)
-    +13: 0.00% (0 / 216)
-    +14: 0.00% (0 / 216)
-    +15: 0.93% (2 / 216)
-    +16: 0.93% (2 / 216)
-    +17: 0.00% (0 / 216)
-    +18: 0.93% (2 / 216)
-    +19: 0.00% (0 / 216)
-   rest: 78.70% (170 / 216)
+Extra variable occurrences among >12-unique functions:
+   ROFs: 9.45% (38 / 402)
+     +1: 1.74% (7 / 402)
+     +2: 0.25% (1 / 402)
+     +3: 2.99% (12 / 402)
+     +4: 0.50% (2 / 402)
+     +5: 2.99% (12 / 402)
+     +6: 0.75% (3 / 402)
+     +7: 0.25% (1 / 402)
+     +8: 0.75% (3 / 402)
+     +9: 2.24% (9 / 402)
+    +10: 1.49% (6 / 402)
+    +11: 0.00% (0 / 402)
+    +12: 0.25% (1 / 402)
+    +13: 0.25% (1 / 402)
+    +14: 0.50% (2 / 402)
+    +15: 0.50% (2 / 402)
+    +16: 0.50% (2 / 402)
+    +17: 0.00% (0 / 402)
+    +18: 0.50% (2 / 402)
+    +19: 0.25% (1 / 402)
+   rest: 73.88% (297 / 402)
 
-import time: mean=  463.6 µs  min=   19.1 µs  max= 543.84 ms
-ROF check time: mean=  266.9 µs  min=    9.4 µs  max= 324.84 ms
+import time: mean=  461.3 µs  min=   19.8 µs  max= 534.55 ms
+ROF check time: mean=  279.5 µs  min=    9.9 µs  max= 446.30 ms
 
 synthetic rows=48  bbm rows=18237  |  SOURCE=both
 wrote /home/kyuhyongpark/CANA/CANA/dev/high_k/logs/rof_check/rof_check.log

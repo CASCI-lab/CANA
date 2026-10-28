@@ -65,7 +65,7 @@ INCLUDE_KEYWORDS: List[str] = []  # e.g. ["curated"]
 EXCLUDE_KEYWORDS: List[str] = []  # e.g. ["multi-valued"]
 
 # Stats threshold for "large" functions (unique variables)
-LARGE_K = 15
+LARGE_K = 12
 
 log, LOG_PATH = start_run_log("rof_check")
 log.info(f"SOURCE={SOURCE}")
