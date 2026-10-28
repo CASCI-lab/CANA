@@ -3,92 +3,92 @@ SOURCE=both  K_VALUES=[4, 6, 8, 10, 12]  REPEATS=3
 MAX_QM_ROWS=4096  BBM_MODELS=/home/kyuhyongpark/CANA/BBM/models
 === synthetic (AST-style ROFs as one-rule bnet) ===
 fn                   k      import         lut     one-sym  #PI on  #PI off
-and                  4     80.7 µs    186.5 µs    447.3 µs       1        4
-and                  6    232.2 µs    375.8 µs     3.36 ms       1        6
-and                  8    114.4 µs     1.02 ms    46.80 ms       1        8
-and                 10    128.2 µs     7.65 ms   306.60 ms       1       10
-and                 12    109.5 µs    15.77 ms     3.563 s       1       12
-or                   4    181.7 µs     99.0 µs    205.7 µs       4        1
-or                   6    110.0 µs    376.6 µs     2.88 ms       6        1
-or                   8    127.6 µs     1.02 ms    26.17 ms       8        1
-or                  10     85.9 µs     3.79 ms   252.63 ms      10        1
-or                  12    190.9 µs    15.14 ms     3.333 s      12        1
-half_or_half_and     4    111.8 µs    120.2 µs    214.5 µs       2        3
-half_or_half_and     6     80.0 µs    310.5 µs     1.67 ms       3        4
-half_or_half_and     8     95.3 µs    975.3 µs    20.83 ms       4        5
-half_or_half_and    10    235.1 µs     4.58 ms   237.37 ms       5        6
-half_or_half_and    12    126.6 µs    13.72 ms     3.114 s       6        7
-pairwise_and_or      4     71.1 µs    147.0 µs    227.4 µs       2        4
-pairwise_and_or      6    130.0 µs    196.6 µs     1.34 ms       3        8
-pairwise_and_or      8    103.3 µs     1.19 ms    14.59 ms       4       16
-pairwise_and_or     10     88.5 µs     2.86 ms   101.82 ms       5       32
-pairwise_and_or     12     96.6 µs    15.12 ms     1.406 s       6       64
-pairwise_or_and      4    153.3 µs    333.2 µs    205.5 µs       4        2
-pairwise_or_and      6     93.2 µs    194.4 µs     1.09 ms       8        3
-pairwise_or_and      8    113.0 µs     1.10 ms    13.54 ms      16        4
-pairwise_or_and     10    101.8 µs     3.62 ms   116.23 ms      32        5
-pairwise_or_and     12    121.2 µs    16.15 ms     1.619 s      64        6
-random               4     93.4 µs    167.9 µs    213.7 µs       2        3
-random               6     56.0 µs    240.4 µs     2.11 ms       4        4
-random               8     73.9 µs    985.0 µs    19.15 ms       4        6
-random              10    115.4 µs     4.94 ms   109.44 ms       8        9
-random              12     71.3 µs    15.61 ms     1.584 s      14       11
+and                  4    168.2 µs    222.8 µs    395.8 µs       1        4
+and                  6    149.6 µs    327.2 µs     4.31 ms       1        6
+and                  8    144.1 µs    995.0 µs    39.88 ms       1        8
+and                 10     93.9 µs     5.86 ms   350.96 ms       1       10
+and                 12    121.4 µs    18.36 ms     3.285 s       1       12
+or                   4    137.8 µs    127.5 µs    194.1 µs       4        1
+or                   6     87.9 µs    197.1 µs     1.84 ms       6        1
+or                   8     98.7 µs    951.4 µs    29.29 ms       8        1
+or                  10    162.2 µs     2.95 ms   248.52 ms      10        1
+or                  12    137.5 µs    14.82 ms     3.207 s      12        1
+half_or_half_and     4     65.7 µs    135.3 µs    196.9 µs       2        3
+half_or_half_and     6     87.0 µs    185.4 µs     1.46 ms       3        4
+half_or_half_and     8    111.6 µs     1.51 ms    18.62 ms       4        5
+half_or_half_and    10    356.1 µs     4.23 ms   210.39 ms       5        6
+half_or_half_and    12    114.1 µs    15.63 ms     2.829 s       6        7
+pairwise_and_or      4    128.5 µs    113.4 µs    194.2 µs       2        4
+pairwise_and_or      6     82.9 µs    249.6 µs    844.0 µs       3        8
+pairwise_and_or      8     96.9 µs    871.0 µs    11.04 ms       4       16
+pairwise_and_or     10     73.6 µs     2.84 ms   107.92 ms       5       32
+pairwise_and_or     12    105.2 µs    13.44 ms     1.475 s       6       64
+pairwise_or_and      4    102.3 µs    128.8 µs    237.6 µs       4        2
+pairwise_or_and      6    163.8 µs    303.1 µs     1.22 ms       8        3
+pairwise_or_and      8    116.0 µs    926.7 µs    12.96 ms      16        4
+pairwise_or_and     10    135.4 µs     2.79 ms   117.57 ms      32        5
+pairwise_or_and     12    206.3 µs    13.94 ms     1.652 s      64        6
+random               4    108.5 µs    206.7 µs    329.7 µs       2        3
+random               6     72.4 µs    334.1 µs     2.17 ms       4        4
+random               8    195.0 µs     1.92 ms    22.09 ms       4        6
+random              10    161.0 µs     3.41 ms   107.50 ms       8        9
+random              12     99.5 µs    14.02 ms     1.645 s      14       11
 
 === BBM (3 matching rules per k; each reported) ===
   k rep      import         lut     one-sym  #PI on  #PI off  target / model
-  4   1    384.5 µs    365.5 µs    410.7 µs       4        1  v_Apoptosis  [[SIGNALING-IN-MACROPHAGE-ACT]
-  4   2    449.4 µs    299.1 µs    460.7 µs       3        2  v_CASP3cytoplasm  [[SIGNALING-IN-MACROPHAGE-ACT]
-  4   3    438.7 µs    308.3 µs    659.0 µs       3        2  v_CASP7cytoplasm  [[SIGNALING-IN-MACROPHAGE-ACT]
-  6   1    255.6 µs    399.7 µs     2.83 ms       2        5  v_IFNAR  [[SIGNALING-IN-MACROPHAGE-ACT]
-  6   2    426.5 µs    541.7 µs     2.69 ms       1        6  v_TLR1_TLR2_TIRAP_MYD88_IRAK2_IRAK1_IRAK  [[SIGNALING-IN-MACROPHAGE-ACT]
-  6   3    369.7 µs    281.5 µs     1.64 ms       3        6  v_DGK  [[SIGNAL-TRANSDUCTION-IN-FIBR]
-  8   1     1.12 ms     1.44 ms    27.25 ms       8        1  v_IFNAgene  [[SIGNALING-IN-MACROPHAGE-ACT]
-  8   2    735.5 µs     1.60 ms    16.69 ms       9        9  v_Akt  [[SIGNAL-TRANSDUCTION-IN-FIBR]
-  8   3    520.3 µs     1.02 ms    16.32 ms       5        2  v_Csk  [[SIGNAL-TRANSDUCTION-IN-FIBR]
- 10   1    690.9 µs     5.59 ms   186.11 ms       7        4  v_MAP3K7IP1_MAP3K7IP2_MAP3K7  [[SIGNALING-IN-MACROPHAGE-ACT]
- 10   2    542.2 µs     2.74 ms   153.82 ms       9        2  v_Sek1  [[SIGNAL-TRANSDUCTION-IN-FIBR]
- 10   3     1.04 ms     4.13 ms   157.06 ms       4        7  v_EGFR_EGFR_EGF_CCP  [[ERBB-RECEPTOR-SIGNALING]]
- 12   1    287.0 µs    14.93 ms     3.176 s      11        3  v_ROS_CYT  [[YEAST-APOPTOSIS]]
- 12   2    867.9 µs    20.75 ms     2.417 s       8        5  v_erbb13  [[EGFR-ERBB-SIGNALING]]
- 12   3    829.5 µs    19.26 ms     2.691 s       8        5  v_erbb14  [[EGFR-ERBB-SIGNALING]]
+  4   1    252.4 µs    147.4 µs    225.4 µs       4        1  v_Apoptosis  [[SIGNALING-IN-MACROPHAGE-ACT]
+  4   2    272.9 µs    240.6 µs    254.5 µs       3        2  v_CASP3cytoplasm  [[SIGNALING-IN-MACROPHAGE-ACT]
+  4   3    438.8 µs    166.8 µs    320.6 µs       3        2  v_CASP7cytoplasm  [[SIGNALING-IN-MACROPHAGE-ACT]
+  6   1    336.2 µs    302.2 µs     2.75 ms       2        5  v_IFNAR  [[SIGNALING-IN-MACROPHAGE-ACT]
+  6   2    428.1 µs    352.9 µs     4.87 ms       1        6  v_TLR1_TLR2_TIRAP_MYD88_IRAK2_IRAK1_IRAK  [[SIGNALING-IN-MACROPHAGE-ACT]
+  6   3    773.6 µs    941.1 µs     3.85 ms       3        6  v_DGK  [[SIGNAL-TRANSDUCTION-IN-FIBR]
+  8   1    592.7 µs    886.2 µs    24.48 ms       8        1  v_IFNAgene  [[SIGNALING-IN-MACROPHAGE-ACT]
+  8   2    440.8 µs     1.11 ms    16.48 ms       9        9  v_Akt  [[SIGNAL-TRANSDUCTION-IN-FIBR]
+  8   3    536.7 µs     1.39 ms    16.64 ms       5        2  v_Csk  [[SIGNAL-TRANSDUCTION-IN-FIBR]
+ 10   1    577.9 µs     5.68 ms   207.29 ms       7        4  v_MAP3K7IP1_MAP3K7IP2_MAP3K7  [[SIGNALING-IN-MACROPHAGE-ACT]
+ 10   2    438.3 µs     2.83 ms   154.32 ms       9        2  v_Sek1  [[SIGNAL-TRANSDUCTION-IN-FIBR]
+ 10   3    595.6 µs     2.68 ms   160.17 ms       4        7  v_EGFR_EGFR_EGF_CCP  [[ERBB-RECEPTOR-SIGNALING]]
+ 12   1    554.8 µs    13.05 ms     3.040 s      11        3  v_ROS_CYT  [[YEAST-APOPTOSIS]]
+ 12   2    712.0 µs    24.37 ms     2.285 s       8        5  v_erbb13  [[EGFR-ERBB-SIGNALING]]
+ 12   3    698.9 µs    20.14 ms     2.501 s       8        5  v_erbb14  [[EGFR-ERBB-SIGNALING]]
 
 === collected rows (averages) ===
 source     label                                      k   n    t_import      t_lut      t_one
-synthetic  and                                        4   1     80.7 µs   186.5 µs   447.3 µs
-synthetic  and                                        6   1    232.2 µs   375.8 µs    3.36 ms
-synthetic  and                                        8   1    114.4 µs    1.02 ms   46.80 ms
-synthetic  and                                       10   1    128.2 µs    7.65 ms  306.60 ms
-synthetic  and                                       12   1    109.5 µs   15.77 ms    3.563 s
-synthetic  or                                         4   1    181.7 µs    99.0 µs   205.7 µs
-synthetic  or                                         6   1    110.0 µs   376.6 µs    2.88 ms
-synthetic  or                                         8   1    127.6 µs    1.02 ms   26.17 ms
-synthetic  or                                        10   1     85.9 µs    3.79 ms  252.63 ms
-synthetic  or                                        12   1    190.9 µs   15.14 ms    3.333 s
-synthetic  half_or_half_and                           4   1    111.8 µs   120.2 µs   214.5 µs
-synthetic  half_or_half_and                           6   1     80.0 µs   310.5 µs    1.67 ms
-synthetic  half_or_half_and                           8   1     95.3 µs   975.3 µs   20.83 ms
-synthetic  half_or_half_and                          10   1    235.1 µs    4.58 ms  237.37 ms
-synthetic  half_or_half_and                          12   1    126.6 µs   13.72 ms    3.114 s
-synthetic  pairwise_and_or                            4   1     71.1 µs   147.0 µs   227.4 µs
-synthetic  pairwise_and_or                            6   1    130.0 µs   196.6 µs    1.34 ms
-synthetic  pairwise_and_or                            8   1    103.3 µs    1.19 ms   14.59 ms
-synthetic  pairwise_and_or                           10   1     88.5 µs    2.86 ms  101.82 ms
-synthetic  pairwise_and_or                           12   1     96.6 µs   15.12 ms    1.406 s
-synthetic  pairwise_or_and                            4   1    153.3 µs   333.2 µs   205.5 µs
-synthetic  pairwise_or_and                            6   1     93.2 µs   194.4 µs    1.09 ms
-synthetic  pairwise_or_and                            8   1    113.0 µs    1.10 ms   13.54 ms
-synthetic  pairwise_or_and                           10   1    101.8 µs    3.62 ms  116.23 ms
-synthetic  pairwise_or_and                           12   1    121.2 µs   16.15 ms    1.619 s
-synthetic  random                                     4   1     93.4 µs   167.9 µs   213.7 µs
-synthetic  random                                     6   1     56.0 µs   240.4 µs    2.11 ms
-synthetic  random                                     8   1     73.9 µs   985.0 µs   19.15 ms
-synthetic  random                                    10   1    115.4 µs    4.94 ms  109.44 ms
-synthetic  random                                    12   1     71.3 µs   15.61 ms    1.584 s
-bbm        avg of 3 rules                             4   3    424.2 µs   324.3 µs   510.1 µs
-bbm        avg of 3 rules                             6   3    350.6 µs   407.6 µs    2.39 ms
-bbm        avg of 3 rules                             8   3    792.2 µs    1.35 ms   20.09 ms
-bbm        avg of 3 rules                            10   3    758.6 µs    4.15 ms  165.66 ms
-bbm        avg of 3 rules                            12   3    661.5 µs   18.31 ms    2.761 s
+synthetic  and                                        4   1    168.2 µs   222.8 µs   395.8 µs
+synthetic  and                                        6   1    149.6 µs   327.2 µs    4.31 ms
+synthetic  and                                        8   1    144.1 µs   995.0 µs   39.88 ms
+synthetic  and                                       10   1     93.9 µs    5.86 ms  350.96 ms
+synthetic  and                                       12   1    121.4 µs   18.36 ms    3.285 s
+synthetic  or                                         4   1    137.8 µs   127.5 µs   194.1 µs
+synthetic  or                                         6   1     87.9 µs   197.1 µs    1.84 ms
+synthetic  or                                         8   1     98.7 µs   951.4 µs   29.29 ms
+synthetic  or                                        10   1    162.2 µs    2.95 ms  248.52 ms
+synthetic  or                                        12   1    137.5 µs   14.82 ms    3.207 s
+synthetic  half_or_half_and                           4   1     65.7 µs   135.3 µs   196.9 µs
+synthetic  half_or_half_and                           6   1     87.0 µs   185.4 µs    1.46 ms
+synthetic  half_or_half_and                           8   1    111.6 µs    1.51 ms   18.62 ms
+synthetic  half_or_half_and                          10   1    356.1 µs    4.23 ms  210.39 ms
+synthetic  half_or_half_and                          12   1    114.1 µs   15.63 ms    2.829 s
+synthetic  pairwise_and_or                            4   1    128.5 µs   113.4 µs   194.2 µs
+synthetic  pairwise_and_or                            6   1     82.9 µs   249.6 µs   844.0 µs
+synthetic  pairwise_and_or                            8   1     96.9 µs   871.0 µs   11.04 ms
+synthetic  pairwise_and_or                           10   1     73.6 µs    2.84 ms  107.92 ms
+synthetic  pairwise_and_or                           12   1    105.2 µs   13.44 ms    1.475 s
+synthetic  pairwise_or_and                            4   1    102.3 µs   128.8 µs   237.6 µs
+synthetic  pairwise_or_and                            6   1    163.8 µs   303.1 µs    1.22 ms
+synthetic  pairwise_or_and                            8   1    116.0 µs   926.7 µs   12.96 ms
+synthetic  pairwise_or_and                           10   1    135.4 µs    2.79 ms  117.57 ms
+synthetic  pairwise_or_and                           12   1    206.3 µs   13.94 ms    1.652 s
+synthetic  random                                     4   1    108.5 µs   206.7 µs   329.7 µs
+synthetic  random                                     6   1     72.4 µs   334.1 µs    2.17 ms
+synthetic  random                                     8   1    195.0 µs    1.92 ms   22.09 ms
+synthetic  random                                    10   1    161.0 µs    3.41 ms  107.50 ms
+synthetic  random                                    12   1     99.5 µs   14.02 ms    1.645 s
+bbm        avg of 3 rules                             4   3    321.4 µs   184.9 µs   266.8 µs
+bbm        avg of 3 rules                             6   3    512.6 µs   532.1 µs    3.82 ms
+bbm        avg of 3 rules                             8   3    523.4 µs    1.13 ms   19.20 ms
+bbm        avg of 3 rules                            10   3    537.3 µs    3.73 ms  173.93 ms
+bbm        avg of 3 rules                            12   3    655.2 µs   19.19 ms    2.609 s
 
 35 averaged rows from 45 timings  |  K_VALUES=[4, 6, 8, 10, 12]  |  MAX_QM_ROWS=4096
 wrote /home/kyuhyongpark/CANA/CANA/dev/high_k/logs/expr_lut_one_symbol_timing/expr_lut_one_symbol_timing.log

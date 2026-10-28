@@ -1,5 +1,5 @@
 # %% [markdown]
-# QM vs AST primes timing
+# QM vs ROF primes timing
 #
 # Compare three ways to get (or count) prime implicants for Boolean
 # expressions, and plot wall time vs *k* on log–log axes.
@@ -7,10 +7,10 @@
 # 1. **Traditional** — import → dense LUT → Quine–McCluskey one-symbol
 #    (``compute_one_symbol_schemata_from_bit_lut``). Lowest cutoff:
 #    skip when ``2**k > MAX_QM_ROWS``.
-# 2. **AST generate** — enumerate all ON+OFF primes via
+# 2. **ROF generate** — enumerate all ON+OFF primes via
 #    ``iter_on_off_primes``. Only when method 3 reports a manageable
-#    total (``n_on + n_off <= MAX_AST_GENERATE``).
-# 3. **AST count** — ``count_on_off_primes`` (no enumeration). Extends
+#    total (``n_on + n_off <= MAX_ROF_GENERATE``).
+# 3. **ROF count** — ``count_on_off_primes`` (no enumeration). Extends
 #    furthest in *k*.
 #
 # When both 1 and 2 run, their ON/OFF prime covers are compared as sets
@@ -21,7 +21,7 @@
 # - **synthetic** — every builder in ``SYNTHETIC_BUILDERS``
 # - **bbm** — every syntactic-ROF rule in ``BBM/models/*/model.bnet``
 #
-# Output is teed to ``high_k/logs/qm_vs_ast_primes_timing/``.
+# Output is teed to ``high_k/logs/qm_vs_rof_primes_timing/``.
 
 # %%
 from __future__ import annotations
@@ -42,14 +42,17 @@ _DEV_DIR = Path(__file__).resolve().parents[2]
 if str(_DEV_DIR) not in sys.path:
     sys.path.insert(0, str(_DEV_DIR))
 
-from high_k.ast_primes import count_on_off_primes, iter_on_off_primes
 from high_k.bbm_rules import (
     BBM_MODELS,
     as_bnet,
     iter_bnet_rules,
     unique_regulators,
 )
-from high_k.rof import check_syntactic_rof
+from high_k.rof import (
+    check_syntactic_rof,
+    count_on_off_primes,
+    iter_on_off_primes,
+)
 from high_k.run_log import run_log_dir, start_run_log
 from high_k.synthetic import EVEN_K_BUILDERS, SYNTHETIC_BUILDERS
 from high_k.timing import fmt_s, import_detached_outputs, median_time
@@ -66,36 +69,36 @@ RANDOM_SEED = 12345
 # Skip QM when the dense LUT would exceed this many rows.
 MAX_QM_ROWS = 2**12  # k <= 12
 
-# Skip AST full enumeration when total ON+OFF primes exceed this.
-MAX_AST_GENERATE = 100_000
+# Skip ROF full enumeration when total ON+OFF primes exceed this.
+MAX_ROF_GENERATE = 100_000
 
-FIG_DIR = run_log_dir("qm_vs_ast_primes_timing")
+FIG_DIR = run_log_dir("qm_vs_rof_primes_timing")
 
-log, LOG_PATH = start_run_log("qm_vs_ast_primes_timing")
+log, LOG_PATH = start_run_log("qm_vs_rof_primes_timing")
 log.info(
     f"K_VALUES={K_VALUES}  REPEATS={REPEATS}  "
-    f"MAX_QM_ROWS={MAX_QM_ROWS}  MAX_AST_GENERATE={MAX_AST_GENERATE}"
+    f"MAX_QM_ROWS={MAX_QM_ROWS}  MAX_ROF_GENERATE={MAX_ROF_GENERATE}"
 )
 log.info(f"BBM_MODELS={BBM_MODELS}  FIG_DIR={FIG_DIR}")
 
 # %% [markdown]
-# ## Helpers: runners + QM ↔ AST equality
+# ## Helpers: runners + QM ↔ ROF equality
 
 
 # %%
-def ast_prime_to_schema(
+def rof_prime_to_schema(
     prime: Dict[str, bool], names: Sequence[str]
 ) -> str:
-    """Map an AST ``{var: bool}`` prime to a positional ``{0,1,2}`` schema."""
+    """Map a ROF ``{var: bool}`` prime to a positional ``{0,1,2}`` schema."""
     return "".join(
         "2" if n not in prime else ("1" if prime[n] else "0") for n in names
     )
 
 
-def ast_primes_to_schemata(
+def rof_primes_to_schemata(
     primes: Iterable[Dict[str, bool]], names: Sequence[str]
 ) -> Set[str]:
-    return {ast_prime_to_schema(p, names) for p in primes}
+    return {rof_prime_to_schema(p, names) for p in primes}
 
 
 def run_qm(expr: str, target: str = "Y") -> Dict[int, Set[str]]:
@@ -109,10 +112,10 @@ def run_qm(expr: str, target: str = "Y") -> Dict[int, Set[str]]:
     }
 
 
-def run_ast_generate(
+def run_rof_generate(
     expr: str,
 ) -> Tuple[List[Dict[str, bool]], List[Dict[str, bool]]]:
-    """Enumerate all ON and OFF AST primes."""
+    """Enumerate all ON and OFF ROF primes."""
     on = list(iter_on_off_primes(expr, "on"))
     off = list(iter_on_off_primes(expr, "off"))
     return on, off
@@ -120,14 +123,14 @@ def run_ast_generate(
 
 def primes_match(
     qm: Dict[int, Set[str]],
-    ast_on: Iterable[Dict[str, bool]],
-    ast_off: Iterable[Dict[str, bool]],
+    rof_on: Iterable[Dict[str, bool]],
+    rof_off: Iterable[Dict[str, bool]],
     names: Sequence[str],
 ) -> bool:
-    """True iff QM and AST produce the same ON and OFF schema covers."""
+    """True iff QM and ROF produce the same ON and OFF schema covers."""
     return (
-        qm[1] == ast_primes_to_schemata(ast_on, names)
-        and qm[0] == ast_primes_to_schemata(ast_off, names)
+        qm[1] == rof_primes_to_schemata(rof_on, names)
+        and qm[0] == rof_primes_to_schemata(rof_off, names)
     )
 
 
@@ -150,14 +153,14 @@ def time_all_methods(
     n_total = n_on + n_off
 
     t_gen: Optional[float] = None
-    ast_on: Optional[List[Dict[str, bool]]] = None
-    ast_off: Optional[List[Dict[str, bool]]] = None
-    do_gen = n_total <= MAX_AST_GENERATE
+    rof_on: Optional[List[Dict[str, bool]]] = None
+    rof_off: Optional[List[Dict[str, bool]]] = None
+    do_gen = n_total <= MAX_ROF_GENERATE
     if do_gen:
         t_gen, gen_result = median_time(
-            lambda: run_ast_generate(expr), repeats=repeats
+            lambda: run_rof_generate(expr), repeats=repeats
         )
-        ast_on, ast_off = gen_result  # type: ignore[misc]
+        rof_on, rof_off = gen_result  # type: ignore[misc]
 
     t_qm: Optional[float] = None
     qm_schemata: Optional[Dict[int, Set[str]]] = None
@@ -168,15 +171,15 @@ def time_all_methods(
         )
 
     match: Optional[bool] = None
-    if qm_schemata is not None and ast_on is not None and ast_off is not None:
-        match = primes_match(qm_schemata, ast_on, ast_off, names)
+    if qm_schemata is not None and rof_on is not None and rof_off is not None:
+        match = primes_match(qm_schemata, rof_on, rof_off, names)
 
     return {
         "k": k,
         "n_pi_on": n_on,
         "n_pi_off": n_off,
-        "t_ast_count": t_count,
-        "t_ast_gen": t_gen,
+        "t_rof_count": t_count,
+        "t_rof_gen": t_gen,
         "t_qm": t_qm,
         "match": match,
         "do_gen": do_gen,
@@ -193,7 +196,7 @@ rows: List[Dict[str, object]] = []
 
 log.info("=== synthetic ===")
 log.info(
-    f"{'label':18s} {'k':>3s}  {'count':>10s}  {'ast-gen':>10s}  "
+    f"{'label':18s} {'k':>3s}  {'count':>10s}  {'rof-gen':>10s}  "
     f"{'qm':>10s}  {'#on':>6s}  {'#off':>6s}  match"
 )
 
@@ -215,8 +218,8 @@ for fname, builder in SYNTHETIC_BUILDERS.items():
         r["expr"] = expr
         rows.append(r)
         log.info(
-            f"{fname:18s} {k:3d}  {fmt_s(r['t_ast_count']):>10s}  "
-            f"{fmt_s(r['t_ast_gen']):>10s}  {fmt_s(r['t_qm']):>10s}  "
+            f"{fname:18s} {k:3d}  {fmt_s(r['t_rof_count']):>10s}  "
+            f"{fmt_s(r['t_rof_gen']):>10s}  {fmt_s(r['t_qm']):>10s}  "
             f"{r['n_pi_on']:6d}  {r['n_pi_off']:6d}  {r['match']!s}"
         )
 
@@ -235,7 +238,7 @@ if not BBM_MODELS.is_dir():
     log.info(f"BBM models not found at {BBM_MODELS}")
 else:
     log.info(
-        f"{'k':>3s}  {'count':>10s}  {'ast-gen':>10s}  {'qm':>10s}  "
+        f"{'k':>3s}  {'count':>10s}  {'rof-gen':>10s}  {'qm':>10s}  "
         f"{'#on':>6s}  {'#off':>6s}  match  target / model"
     )
     for model_name, target, expr in iter_bnet_rules(BBM_MODELS):
@@ -262,8 +265,8 @@ else:
         rows.append(r)
         short_model = model_name.split("__")[-1][:28]
         log.info(
-            f"{k:3d}  {fmt_s(r['t_ast_count']):>10s}  "
-            f"{fmt_s(r['t_ast_gen']):>10s}  {fmt_s(r['t_qm']):>10s}  "
+            f"{k:3d}  {fmt_s(r['t_rof_count']):>10s}  "
+            f"{fmt_s(r['t_rof_gen']):>10s}  {fmt_s(r['t_qm']):>10s}  "
             f"{r['n_pi_on']:6d}  {r['n_pi_off']:6d}  "
             f"{r['match']!s:5s}  {target[:40]}  [{short_model}]"
         )
@@ -282,7 +285,7 @@ compared = [r for r in rows if r["match"] is not None]
 mismatches = [r for r in compared if r["match"] is False]
 log.info("")
 log.info(
-    f"=== equality (QM vs AST gen): "
+    f"=== equality (QM vs ROF gen): "
     f"{len(compared)} compared, {len(mismatches)} mismatches ==="
 )
 if mismatches:
@@ -333,8 +336,8 @@ for key in sorted(grouped.keys(), key=lambda x: (str(x[0]), str(x[1]) if len(x) 
         label = str(group[0]["label"])
     log.info(
         f"{source:10s} {label[:40]:40s} {k:3d} {len(group):3d}  "
-        f"{fmt_s(_mean_or_none([g['t_ast_count'] for g in group])):>10s} "
-        f"{fmt_s(_mean_or_none([g['t_ast_gen'] for g in group])):>10s} "
+        f"{fmt_s(_mean_or_none([g['t_rof_count'] for g in group])):>10s} "
+        f"{fmt_s(_mean_or_none([g['t_rof_gen'] for g in group])):>10s} "
         f"{fmt_s(_mean_or_none([g['t_qm'] for g in group])):>10s}"
     )
 
@@ -347,8 +350,8 @@ log.info(f"\n{len(rows)} timing rows  |  wrote {LOG_PATH}")
 # %%
 METHOD_KEYS = (
     ("t_qm", "QM (LUT+one-symbol)", "o"),
-    ("t_ast_gen", "AST generate", "s"),
-    ("t_ast_count", "AST count", "^"),
+    ("t_rof_gen", "ROF generate", "s"),
+    ("t_rof_count", "ROF count", "^"),
 )
 
 
