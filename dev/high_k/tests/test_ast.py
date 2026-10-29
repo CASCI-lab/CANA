@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 from high_k.ast import (
+    ast_leaf_polarities,
     ast_variable_names,
     invert_ast,
     parse_to_ast,
@@ -51,3 +52,30 @@ def test_ast_variable_names_with_multiplicity():
     node = parse_to_ast("a & a")
     assert node is not None
     assert ast_variable_names(node) == ["a", "a"]
+
+
+def test_ast_leaf_polarities():
+    node = parse_to_ast("a & !b | a")
+    assert node is not None
+    assert ast_leaf_polarities(node) == [
+        ("a", "pos"),
+        ("b", "neg"),
+        ("a", "pos"),
+    ]
+    assert ast_leaf_polarities(None) == []
+    assert ast_leaf_polarities(parse_to_ast("!(A & B)")) == [
+        ("A", "neg"),
+        ("B", "neg"),
+    ]
+
+
+def test_parse_stacked_negation_cancels():
+    pos = parse_to_ast("!!GeneA")
+    assert pos is not None and pos.op == "LITERAL" and pos.children == "GeneA"
+    neg = parse_to_ast("!!!GeneA")
+    assert neg is not None and neg.op == "NEGATED_LITERAL"
+    assert neg.children == "GeneA"
+    group = parse_to_ast("!!(A & B)")
+    assert group is not None and group.op == "AND"
+    assert ast_variable_names(group) == ["A", "B"]
+    assert ast_leaf_polarities(group) == [("A", "pos"), ("B", "pos")]

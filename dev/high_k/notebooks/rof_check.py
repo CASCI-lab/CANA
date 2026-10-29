@@ -1,21 +1,28 @@
 # %% [markdown]
-# Import + syntactic ROF check
+# Import + **syntactic** ROF check
+#
+# This notebook checks **syntactic** read-once formulas only: every
+# identifier occurs exactly once in the written expression
+# (``n_variables == n_unique_variables``).  It does **not** test semantic
+# read-once-ness (algebraic rewriting that might make a formula read-once).
+# ``is_rof`` in results / logs means syntactic ROF.
 #
 # For each Boolean rule (as a one-rule ``.bnet`` string):
 #
 # 1. **import** — ``import_detached_rule`` only (expression → positional
 #    ``FunctionOutputs``; no LUT / one-symbol; timed)
-# 2. **ROF check** — every identifier occurs exactly once
+# 2. **syntactic ROF check** — single-occurrence test above
 #    (timed; result stored as ``is_rof``)
 #
 # Sources (toggle below):
 #
-# - **synthetic** — ``high_k.synthetic`` ROFs (``and`` / ``or`` /
+# - **synthetic** — ``high_k.synthetic`` syntactic ROFs (``and`` / ``or`` /
 #   ``pairwise_*`` / ``random``) at each ``K_VALUES`` size
 # - **bbm** — every rule in ``BBM/models/*/model.bnet``, then corpus stats
 #
-# Shared helpers: ``high_k.rof``, ``high_k.timing.time_import_and_rof``,
-# ``high_k.synthetic``, ``high_k.bbm_rules``.
+# Shared helpers: ``high_k.rof`` (``check_syntactic_rof``),
+# ``high_k.timing.time_import_and_rof``, ``high_k.synthetic``,
+# ``high_k.bbm_rules``.
 #
 # Output is teed to ``high_k/logs/rof_check/``.
 
@@ -49,9 +56,9 @@ from high_k.timing import fmt_s, time_import_and_rof
 # "synthetic" | "bbm" | "both"
 SOURCE = "both"
 
-# Synthetic input sizes (k). Each size gets expression-import + ROF timing.
+# Synthetic input sizes (k). Each size gets expression-import + syntactic-ROF timing.
 K_VALUES = [8, 16, 32, 64, 128, 256, 512, 1024]
-# Median over this many runs for import and for the ROF check.
+# Median over this many runs for import and for the syntactic ROF check.
 REPEATS = 3
 RANDOM_SEED = 12345
 
@@ -75,16 +82,16 @@ log.info(
 
 
 # %% [markdown]
-# ## Synthetic: import + ROF vs *k*
+# ## Synthetic: import + syntactic ROF vs *k*
 
 
 # %%
 synth_rows: List[Dict[str, object]] = []
 
 if SOURCE in ("synthetic", "both"):
-    log.info("=== synthetic ROFs ===")
+    log.info("=== synthetic (syntactic ROF check) ===")
     log.info(
-        f"{'fn':10s} {'k':>9s}  {'import':>10s}  {'rof':>10s}  "
+        f"{'fn':10s} {'k':>9s}  {'import':>10s}  {'syn_rof':>10s}  "
         f"{'is_rof':>6s}  {'n_occ':>7s}  {'n_uniq':>7s}"
     )
     for fname in SYNTHETIC_FNS:
@@ -121,7 +128,7 @@ if SOURCE in ("synthetic", "both"):
             )
 
 # %% [markdown]
-# ## BBM: import + ROF for every rule
+# ## BBM: import + syntactic ROF for every rule
 
 
 # %%
@@ -129,7 +136,7 @@ bbm_rows: List[Dict[str, object]] = []
 
 if SOURCE in ("bbm", "both"):
     log.info("")
-    log.info("=== BBM (all rules) ===")
+    log.info("=== BBM (all rules; syntactic ROF check) ===")
     if not BBM_MODELS.is_dir():
         log.info(f"BBM models not found at {BBM_MODELS}")
     else:
@@ -212,20 +219,22 @@ if bbm_rows:
     t_rofs = [float(r["t_rof"]) for r in bbm_rows]  # type: ignore[arg-type]
 
     log.info("")
-    log.info("=== BBM stats ===")
+    log.info("=== BBM stats (syntactic ROF) ===")
     log.info(f"Models:    {n_models:,}")
     log.info(f"Functions: {n_fn:,}")
-    log.info(f"ROFs:      {n_rof:,}")
-    log.info(f"ROF rate:  {rof_rate:.2%}")
-    log.info(f"Fraction of models with only ROFs: {model_rof_rate:.2%}")
+    log.info(f"Syntactic ROFs:      {n_rof:,}")
+    log.info(f"Syntactic ROF rate:  {rof_rate:.2%}")
+    log.info(
+        f"Fraction of models with only syntactic ROFs: {model_rof_rate:.2%}"
+    )
     log.info(
         f"Fraction of functions with >{LARGE_K} unique variables: "
         f"{large_frac:.2%}"
     )
     if large_rof_rate is not None:
         log.info(
-            f"ROF rate for functions with >{LARGE_K} unique variables: "
-            f"{large_rof_rate:.2%}"
+            f"Syntactic ROF rate for functions with >{LARGE_K} unique "
+            f"variables: {large_rof_rate:.2%}"
         )
     log.info(
         f"Fraction of models with ≥1 function with >{LARGE_K} variables: "
@@ -234,18 +243,19 @@ if bbm_rows:
     if large_model_all_rof_frac is not None:
         log.info(
             f"Among those, fraction where all >{LARGE_K}-var functions "
-            f"are ROFs: {large_model_all_rof_frac:.2%}"
+            f"are syntactic ROFs: {large_model_all_rof_frac:.2%}"
         )
     log.info("")
     log.info(
-        f"Models with only ROFs: {n_all_rof_models:,} / {n_models:,}"
+        f"Models with only syntactic ROFs: "
+        f"{n_all_rof_models:,} / {n_models:,}"
     )
     log.info(
         f"Functions with >{LARGE_K} variables: "
         f"{len(large):,} / {n_fn:,}"
     )
     log.info(
-        f"ROFs with >{LARGE_K} variables: "
+        f"Syntactic ROFs with >{LARGE_K} variables: "
         f"{large_rof:,} / {len(large):,}"
     )
     log.info(
@@ -253,8 +263,8 @@ if bbm_rows:
         f"{len(models_with_large):,} / {n_models:,}"
     )
     log.info(
-        f"Models where all >{LARGE_K}-variable functions are ROFs: "
-        f"{n_large_all_rof:,} / {len(large_by_model):,}"
+        f"Models where all >{LARGE_K}-variable functions are syntactic "
+        f"ROFs: {n_large_all_rof:,} / {len(large_by_model):,}"
     )
 
     # Extra-variable histogram for large functions (n_occ - n_unique)
@@ -270,12 +280,12 @@ if bbm_rows:
         total = len(extras)
         for n in range(20):
             count = sum(1 for e in extras if e == n)
-            label = "ROFs" if n == 0 else f"+{n}"
+            label = "synROF" if n == 0 else f"+{n}"
             log.info(
-                f"  {label:>5}: {count / total:.2%} ({count:,} / {total:,})"
+                f"  {label:>6}: {count / total:.2%} ({count:,} / {total:,})"
             )
         rest = sum(1 for e in extras if e >= 20)
-        log.info(f"  {'rest':>5}: {rest / total:.2%} ({rest:,} / {total:,})")
+        log.info(f"  {'rest':>6}: {rest / total:.2%} ({rest:,} / {total:,})")
 
     log.info("")
     log.info(
@@ -283,7 +293,7 @@ if bbm_rows:
         f"min={fmt_s(min(t_imports))}  max={fmt_s(max(t_imports))}"
     )
     log.info(
-        f"ROF check time: mean={fmt_s(_mean(t_rofs))}  "
+        f"syntactic ROF check time: mean={fmt_s(_mean(t_rofs))}  "
         f"min={fmt_s(min(t_rofs))}  max={fmt_s(max(t_rofs))}"
     )
 

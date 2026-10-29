@@ -2,9 +2,10 @@
 """Timing helpers for high-*k* CANA benchmarks."""
 from __future__ import annotations
 
+import signal
 import statistics
 import time
-from typing import Callable, Dict, List, Optional, Tuple
+from typing import Callable, Dict, List, Optional, Tuple, TypeVar
 
 from high_k.paths import ensure_cana_on_path
 
@@ -17,10 +18,18 @@ from cana.nodes_builder import DetachedRule
 __all__ = [
     "median_time",
     "fmt_s",
+    "call_with_timeout",
     "import_detached_outputs",
     "time_expr_lut_one_symbol",
     "time_import_and_rof",
+    "time_import_and_unate",
 ]
+
+_T = TypeVar("_T")
+
+
+class _Timeout(Exception):
+    """Raised internally by :func:`call_with_timeout` via ``SIGALRM``."""
 
 
 def median_time(
@@ -45,6 +54,34 @@ def fmt_s(t: Optional[float]) -> str:
     if t < 1.0:
         return f"{t * 1e3:7.2f} ms"
     return f"{t:7.3f} s"
+
+
+def call_with_timeout(
+    seconds: float, fn: Callable[[], _T]
+) -> _T:
+    """Run *fn* on the main thread; raise ``TimeoutError`` after *seconds*.
+
+    Uses ``signal.setitimer`` / ``SIGALRM`` (Unix, main thread only).  Pure
+    Python work (e.g. AST parse) is interruptible; C extensions that block
+    signals may overrun the limit until they return to Python.
+    """
+    if seconds <= 0:
+        return fn()
+
+    def _handler(signum, frame):  # noqa: ARG001
+        raise _Timeout()
+
+    prev = signal.signal(signal.SIGALRM, _handler)
+    signal.setitimer(signal.ITIMER_REAL, seconds)
+    try:
+        return fn()
+    except _Timeout as exc:
+        raise TimeoutError(
+            f"exceeded {seconds:g}s timeout"
+        ) from exc
+    finally:
+        signal.setitimer(signal.ITIMER_REAL, 0.0)
+        signal.signal(signal.SIGALRM, prev)
 
 
 def import_detached_outputs(
@@ -145,6 +182,53 @@ def time_import_and_rof(
         "k": k,
         "t_import": t_import,
         "t_rof": t_rof,
+        "is_rof": bool(rof["is_rof"]),
+        "n_variables": int(rof["n_variables"]),  # type: ignore[arg-type]
+        "n_unique_variables": int(rof["n_unique_variables"]),  # type: ignore[arg-type]
+    }
+
+
+def time_import_and_unate(
+    bnet_text: str,
+    target: str,
+    expr: str,
+    *,
+    repeats: int = 3,
+) -> Dict[str, object]:
+    """Median times for expression import and a syntactic unate check on *expr*.
+
+    Import is :func:`import_detached_rule` only (no LUT / one-symbol).
+    The unate check runs on the original named *expr* string via
+    :func:`~high_k.unate.check_syntactic_unate` (stops at the first
+    binate for polarity; ``n_unique_variables`` is still a full count).
+
+    Also runs an untimed :func:`~high_k.rof.check_syntactic_rof` for
+    cross-classification (``is_rof``, ``n_variables``). Occurrence
+    counts come from the ROF pass so they match ``rof_check`` logs.
+    """
+    from high_k.rof import check_syntactic_rof
+    from high_k.unate import check_syntactic_unate
+
+    def _import():
+        return import_detached_rule(bnet_text, fmt="bnet", target=target)
+
+    t_import, rule = median_time(_import, repeats=repeats)
+    assert isinstance(rule, DetachedRule)
+    k = rule.k
+
+    def _unate():
+        return check_syntactic_unate(expr)
+
+    t_unate, unate = median_time(_unate, repeats=repeats)
+    assert isinstance(unate, dict)
+
+    rof = check_syntactic_rof(expr)
+
+    return {
+        "k": k,
+        "t_import": t_import,
+        "t_unate": t_unate,
+        "is_unate": bool(unate["is_unate"]),
         "is_rof": bool(rof["is_rof"]),
         "n_variables": int(rof["n_variables"]),  # type: ignore[arg-type]
         "n_unique_variables": int(rof["n_unique_variables"]),  # type: ignore[arg-type]

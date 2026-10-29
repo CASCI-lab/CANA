@@ -7,7 +7,7 @@ Callers that need syntactic ROF (single occurrence) should use
 """
 from __future__ import annotations
 
-from typing import List, Optional, Union
+from typing import List, Literal, Optional, Tuple, Union
 
 from high_k.paths import ensure_cana_on_path
 
@@ -15,12 +15,16 @@ ensure_cana_on_path()
 
 from cana.function_outputs.expression import normalize_operators
 
+LeafPolarity = Literal["pos", "neg"]
+
 __all__ = [
+    "LeafPolarity",
     "LogicNode",
     "to_symbolic_expr",
     "parse_to_ast",
     "invert_ast",
     "ast_variable_names",
+    "ast_leaf_polarities",
 ]
 
 
@@ -55,8 +59,8 @@ def parse_to_ast(expr_str: str) -> Optional[LogicNode]:
 
     Accepts python (``and``/``or``/``not``) or symbolic (``&``/``|``/``!``)
     operators.  Splits on top-level ``|`` then ``&``, unwraps outer
-    parentheses, and treats ``!`` as a prefix (with De Morgan for
-    ``!(…)`` groups).
+    parentheses, and treats ``!`` as a prefix pushed via :func:`invert_ast`
+    (NNF; stacked ``!!a`` cancels).
     """
     expr_str = to_symbolic_expr(expr_str).strip()
     if not expr_str:
@@ -104,12 +108,9 @@ def parse_to_ast(expr_str: str) -> Optional[LogicNode]:
         return parse_to_ast(expr_str[1:-1])
 
     if expr_str.startswith("!"):
-        inner_content = expr_str[1:].strip()
-        if inner_content.startswith("(") and inner_content.endswith(")"):
-            inner = parse_to_ast(inner_content)
-            assert inner is not None
-            return invert_ast(inner)
-        return LogicNode("NEGATED_LITERAL", inner_content)
+        inner = parse_to_ast(expr_str[1:].strip())
+        assert inner is not None
+        return invert_ast(inner)
 
     return LogicNode("LITERAL", expr_str)
 
@@ -141,3 +142,25 @@ def ast_variable_names(node: Optional[LogicNode]) -> List[str]:
     for child in node.children:
         names.extend(ast_variable_names(child))
     return names
+
+
+def ast_leaf_polarities(
+    node: Optional[LogicNode],
+) -> List[Tuple[str, LeafPolarity]]:
+    """Collect ``(name, polarity)`` for each leaf (preorder, with multiplicity).
+
+    ``LITERAL`` → ``(name, "pos")``; ``NEGATED_LITERAL`` → ``(name, "neg")``.
+    """
+    if node is None:
+        return []
+    if node.op == "LITERAL":
+        assert isinstance(node.children, str)
+        return [(node.children, "pos")]
+    if node.op == "NEGATED_LITERAL":
+        assert isinstance(node.children, str)
+        return [(node.children, "neg")]
+    assert isinstance(node.children, list)
+    leaves: List[Tuple[str, LeafPolarity]] = []
+    for child in node.children:
+        leaves.extend(ast_leaf_polarities(child))
+    return leaves
