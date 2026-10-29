@@ -54,7 +54,11 @@ from high_k.rof import (
     iter_on_off_primes,
 )
 from high_k.run_log import run_log_dir, start_run_log
-from high_k.synthetic import EVEN_K_BUILDERS, SYNTHETIC_BUILDERS
+from high_k.synthetic import (
+    MULTI_OCCURRENCE_BUILDERS,
+    SYNTHETIC_BUILDERS,
+    builder_accepts_k,
+)
 from high_k.timing import fmt_s, import_detached_outputs, median_time
 
 # ---------------------------------------------------------------------------
@@ -201,8 +205,11 @@ log.info(
 )
 
 for fname, builder in SYNTHETIC_BUILDERS.items():
+    # Majority etc. reuse variables — ROF prime paths do not apply.
+    if fname in MULTI_OCCURRENCE_BUILDERS:
+        continue
     for k in K_VALUES:
-        if fname in EVEN_K_BUILDERS and k % 2 != 0:
+        if not builder_accepts_k(fname, k):
             continue
         if fname == "random":
             expr = builder(k, seed=RANDOM_SEED + k)

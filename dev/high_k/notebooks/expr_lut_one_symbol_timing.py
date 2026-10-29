@@ -41,7 +41,7 @@ if str(_DEV_DIR) not in sys.path:
 
 from high_k.bbm_rules import BBM_MODELS, as_bnet, bbm_rules_for_k
 from high_k.run_log import start_run_log
-from high_k.synthetic import EVEN_K_BUILDERS, SYNTHETIC_BUILDERS
+from high_k.synthetic import SYNTHETIC_BUILDERS, builder_accepts_k
 from high_k.timing import fmt_s, time_expr_lut_one_symbol
 
 # ---------------------------------------------------------------------------
@@ -79,7 +79,7 @@ if SOURCE in ("synthetic", "both"):
     )
     for fname, builder in SYNTHETIC_BUILDERS.items():
         for k in K_VALUES:
-            if fname in EVEN_K_BUILDERS and k % 2 != 0:
+            if not builder_accepts_k(fname, k):
                 continue
             if fname == "random":
                 expr = builder(k, seed=RANDOM_SEED + k)
