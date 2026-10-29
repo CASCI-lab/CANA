@@ -2,10 +2,11 @@
 """Timing helpers for high-*k* CANA benchmarks."""
 from __future__ import annotations
 
+import multiprocessing as mp
 import signal
 import statistics
 import time
-from typing import Callable, Dict, List, Optional, Tuple, TypeVar
+from typing import Any, Callable, Dict, List, Optional, Tuple, TypeVar
 
 from high_k.paths import ensure_cana_on_path
 
@@ -19,6 +20,7 @@ __all__ = [
     "median_time",
     "fmt_s",
     "call_with_timeout",
+    "call_in_subprocess",
     "import_detached_outputs",
     "time_expr_lut_one_symbol",
     "time_import_and_rof",
@@ -82,6 +84,52 @@ def call_with_timeout(
     finally:
         signal.setitimer(signal.ITIMER_REAL, 0.0)
         signal.signal(signal.SIGALRM, prev)
+
+
+def call_in_subprocess(
+    worker: Callable[..., None],
+    args: Tuple[Any, ...],
+    *,
+    timeout_s: float,
+) -> Any:
+    """Run ``worker(*args, conn)`` in a child process; kill on timeout.
+
+    *worker* must ``conn.send(("ok", result))`` or
+    ``conn.send(("err", message))`` then close *conn*.  Raises
+    ``TimeoutError`` if the child exceeds *timeout_s* wall-clock seconds
+    (``terminate`` / ``kill``).  Raises ``RuntimeError`` on worker error
+    or a missing result.  Used when C extensions (e.g. Espresso) ignore
+    ``SIGALRM``.
+    """
+    if timeout_s <= 0:
+        raise ValueError("call_in_subprocess requires timeout_s > 0")
+
+    ctx = mp.get_context("fork")
+    parent_conn, child_conn = ctx.Pipe(duplex=False)
+    proc = ctx.Process(target=worker, args=args + (child_conn,))
+    proc.start()
+    child_conn.close()
+    proc.join(float(timeout_s))
+    if proc.is_alive():
+        proc.terminate()
+        proc.join(5.0)
+        if proc.is_alive():
+            proc.kill()
+            proc.join(1.0)
+        parent_conn.close()
+        raise TimeoutError(
+            f"exceeded {timeout_s:g}s timeout (subprocess killed)"
+        )
+    if not parent_conn.poll():
+        parent_conn.close()
+        raise RuntimeError(
+            f"worker exited without result (exitcode={proc.exitcode})"
+        )
+    status, payload = parent_conn.recv()
+    parent_conn.close()
+    if status == "ok":
+        return payload
+    raise RuntimeError(str(payload))
 
 
 def import_detached_outputs(
