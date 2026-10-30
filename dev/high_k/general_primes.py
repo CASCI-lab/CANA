@@ -10,13 +10,13 @@ Backends (separate APIs; no cascade):
 
 1. CANA Quine–McCluskey over a dense LUT
 2. PyEDA :meth:`~pyeda.boolalg.expr.Expression.complete_sum`
-3. PyBoolNet ``bnet2primes``
-4. BDD onset enumeration (``dd``) + Quine–McCluskey
+3. PySAT Primer-B (non-clausal Formula → all implicants)
 
 All wall-clock limits use :func:`~high_k.timing.call_in_subprocess` so
 Cython / C / external tools (and their grandchildren) can be killed via
-process-group signals.  Dense LUT / onset→QM paths also refuse
-``k > MAX_DENSE_LUT_K`` up front.
+process-group signals.  The dense LUT / QM path also refuses
+``k > MAX_DENSE_LUT_K`` up front.  Primer-B refuses when either polarity
+exceeds :data:`MAX_PRIMER_PRIMES` (enumeration stops; no partial return).
 """
 from __future__ import annotations
 
@@ -25,8 +25,11 @@ from typing import Callable, List, Optional, Tuple
 from high_k.bbm_rules import as_bnet, unique_regulators
 from high_k.paths import ensure_cana_on_path
 from high_k.primes_util import (
+    MAX_PRIMER_PAREN_DEPTH,
+    MAX_PYEDA_PAREN_DEPTH,
     PrimeDict,
     dnf_terms_to_primes,
+    expr_to_pysat_formula,
     refuse_extreme_nesting,
     to_pyeda_expr_str,
     to_symbolic_expr,
@@ -38,10 +41,12 @@ __all__ = [
     "DEFAULT_TIMEOUT_S",
     "EXPLORATION_TIMEOUT_S",
     "MAX_DENSE_LUT_K",
+    "MAX_PRIMER_PRIMES",
+    "MAX_PRIMER_PAREN_DEPTH",
+    "MAX_PYEDA_PAREN_DEPTH",
     "qm_on_off_primes",
     "complete_sum_on_off_primes",
-    "pyboolnet_on_off_primes",
-    "bdd_on_off_primes",
+    "primer_on_off_primes",
 ]
 
 DEFAULT_TIMEOUT_S = 10.0
@@ -49,6 +54,9 @@ EXPLORATION_TIMEOUT_S = 1.0
 # Dense LUT / onset→QM paths allocate Θ(2^k) memory.  Refuse above this *k*
 # rather than relying on a wall-clock kill after the allocation attempt.
 MAX_DENSE_LUT_K = 20
+# Primer-B may emit exponentially many primes.  Stop and refuse (no partial
+# result) once either polarity exceeds this count.
+MAX_PRIMER_PRIMES = 1_000_000
 
 OnOffPrimes = Tuple[List[PrimeDict], List[PrimeDict]]
 
@@ -59,12 +67,13 @@ def _run_timed(
     expr: str,
     *,
     timeout_s: float,
+    nesting_limit: Optional[int] = None,
 ) -> OnOffPrimes:
     """Run *inprocess* directly or *worker* under a wall-clock kill."""
     raw = expr.strip()
     # Parent-side: fail before spawn so a short TIMEOUT_S cannot mis-label
     # extreme nesting as ``timeout`` (kill during parse).
-    refuse_extreme_nesting(raw)
+    refuse_extreme_nesting(raw, limit=nesting_limit)
     if timeout_s <= 0:
         return inprocess(raw)
     from high_k.timing import call_in_subprocess
@@ -180,7 +189,7 @@ def _complete_sum_on_off_primes_inprocess(expr: str) -> OnOffPrimes:
     if const is not None:
         return const
 
-    refuse_extreme_nesting(expr)
+    refuse_extreme_nesting(expr, limit=MAX_PYEDA_PAREN_DEPTH)
     f = pyeda_expr(to_pyeda_expr_str(expr))
     on_cs = f.complete_sum()
     off_cs = (~f).complete_sum()
@@ -205,6 +214,8 @@ def complete_sum_on_off_primes(
 
     Raises:
         ImportError: if pyeda is not installed.
+        RecursionError: if parenthesis nesting exceeds
+            :data:`~high_k.primes_util.MAX_PYEDA_PAREN_DEPTH`.
         TimeoutError: if wall-clock time exceeds *timeout_s*.
     """
     import pyeda  # noqa: F401
@@ -214,209 +225,135 @@ def complete_sum_on_off_primes(
         _complete_sum_worker,
         expr,
         timeout_s=timeout_s,
+        nesting_limit=MAX_PYEDA_PAREN_DEPTH,
     )
 
 
 # ---------------------------------------------------------------------------
-# 3. PyBoolNet
+# 3. PySAT Primer-B (all implicants)
 # ---------------------------------------------------------------------------
 
 
-def _pyboolnet_cube_to_prime(cube: dict) -> PrimeDict:
-    """Convert PyBoolNet ``{var: 0|1}`` cube to ``PrimeDict``."""
-    out: PrimeDict = {}
-    for var, bit in cube.items():
-        if bit in (1, True, "1"):
-            out[str(var)] = True
-        elif bit in (0, False, "0"):
-            out[str(var)] = False
+def _pysat_forms_to_prime(forms) -> PrimeDict:
+    """Map ``Formula.formulas(..., atoms_only=True)`` to a ``PrimeDict``."""
+    from pysat.formula import Atom, Neg
+
+    prime: PrimeDict = {}
+    for form in forms:
+        if isinstance(form, Atom):
+            obj = form.object
+            if isinstance(obj, bool):
+                # Constant atoms should not appear in a proper prime cube.
+                continue
+            prime[str(obj)] = True
+        elif isinstance(form, Neg):
+            sub = form.subformula
+            if isinstance(sub, Atom):
+                obj = sub.object
+                if isinstance(obj, bool):
+                    continue
+                prime[str(obj)] = False
+            else:
+                raise ValueError(
+                    f"unexpected Neg subformula in prime: {form!r}"
+                )
         else:
-            raise ValueError(
-                f"unexpected PyBoolNet literal {var!r}={bit!r}"
-            )
-    return out
+            raise ValueError(f"unexpected formula in prime: {form!r}")
+    return prime
 
 
-def _pyboolnet_on_off_primes_inprocess(expr: str) -> OnOffPrimes:
-    from pyboolnet.file_exchange import bnet2primes
-
-    const = _constant_on_off(expr)
-    if const is not None:
-        return const
-
-    # PyBoolNet .bnet uses ``!`` for negation (not ``~``).
-    primes = bnet2primes(as_bnet(_for_cana_eval(expr), target="Y"))
-    if "Y" not in primes:
-        raise RuntimeError(
-            f"PyBoolNet primes missing target Y; keys={list(primes)}"
-        )
-    node = primes["Y"]
-    # PyBoolNet 3.x: ``[off_cubes, on_cubes]``. Older docs used ``{0: …, 1: …}``.
-    if isinstance(node, dict):
-        on_raw = node.get(1, node.get("1", []))
-        off_raw = node.get(0, node.get("0", []))
-    elif isinstance(node, (list, tuple)) and len(node) >= 2:
-        off_raw, on_raw = node[0], node[1]
-    else:
-        raise RuntimeError(
-            f"unexpected PyBoolNet primes shape for Y: {type(node)!r}"
-        )
-    return (
-        [_pyboolnet_cube_to_prime(c) for c in on_raw],
-        [_pyboolnet_cube_to_prime(c) for c in off_raw],
-    )
-
-
-def _pyboolnet_worker(expr: str, conn) -> None:
-    try:
-        conn.send(("ok", _pyboolnet_on_off_primes_inprocess(expr)))
-    except Exception as exc:  # noqa: BLE001
-        conn.send(("err", f"{type(exc).__name__}: {exc}"))
-    finally:
-        conn.close()
-
-
-def pyboolnet_on_off_primes(
-    expr: str,
-    *,
-    timeout_s: float = DEFAULT_TIMEOUT_S,
-) -> OnOffPrimes:
-    """Exact ON/OFF primes via PyBoolNet ``bnet2primes``.
-
-    PyBoolNet shells out to ``BNetToPrime``; the timed worker runs in a new
-    process group so a timeout kills that binary too (not only the Python
-    wrapper).
-
-    Raises:
-        ImportError: if pyboolnet is not installed.
-        TimeoutError: if wall-clock time exceeds *timeout_s*.
-    """
-    import pyboolnet  # noqa: F401
-
-    return _run_timed(
-        _pyboolnet_on_off_primes_inprocess,
-        _pyboolnet_worker,
-        expr,
-        timeout_s=timeout_s,
-    )
-
-
-# ---------------------------------------------------------------------------
-# 4. BDD onset → Quine–McCluskey (dd)
-# ---------------------------------------------------------------------------
-
-
-def _bdd_to_dd_expr(expr: str) -> str:
-    """Symbolic ``&`` / ``|`` / ``!`` → dd ``add_expr`` syntax (``~``)."""
-    return to_symbolic_expr(expr).replace("!", "~")
-
-
-def _assignment_to_bitstring(assignment: dict, names: List[str]) -> str:
-    """Map a full ``{var: bool}`` assignment to a ``0``/``1`` string."""
-    return "".join("1" if assignment[n] else "0" for n in names)
-
-
-def _bitstring_primes_to_dicts(
-    implicants: set, names: List[str]
+def _primer_polarity_primes(
+    formula, *, max_primes: int, polarity: str
 ) -> List[PrimeDict]:
-    """Convert QM bitstrings (``0``/``1``/``2``) to ``PrimeDict`` list."""
+    """Enumerate all prime implicants of *formula* via Primer-B.
+
+    Raises:
+        ValueError: if more than *max_primes* implicants are found.  Enumeration
+        stops immediately; no partial list is returned.
+    """
+    from pysat.examples.primer import Primer
+    from pysat.formula import Formula
+
     out: List[PrimeDict] = []
-    for s in implicants:
-        d: PrimeDict = {}
-        for i, ch in enumerate(s):
-            if ch == "1":
-                d[names[i]] = True
-            elif ch == "0":
-                d[names[i]] = False
-        out.append(d)
+    with Primer(formula, implicates=False) as primer:
+        for lits in primer.enumerate():
+            if len(out) >= max_primes:
+                raise ValueError(
+                    f"refusing Primer-B: {polarity} prime count exceeded "
+                    f"MAX_PRIMER_PRIMES={max_primes} "
+                    f"(stopped enumeration; partial result discarded)"
+                )
+            if not lits:
+                out.append({})
+                continue
+            forms = Formula.formulas(lits, atoms_only=True)
+            out.append(_pysat_forms_to_prime(forms))
     return out
 
 
-def _bdd_polarity_primes(bdd, node, names: List[str]) -> List[PrimeDict]:
-    """Exact primes for one polarity: BDD onset minterms → Cython QM."""
-    from cana.canalization.cboolean_canalization import find_implicants_qm
-
-    if node == bdd.false:
-        return []
-    if node == bdd.true:
-        return [{}]
-
-    # ``pick_iter`` yields assignments over the node's *support* only.  Running
-    # QM in that subspace avoids KeyError on don't-care inputs and avoids
-    # exploding 2^k enumerations via ``care_vars=all``.  Primes only mention
-    # support literals; absent inputs are implicit don't-cares.
-    support = set(bdd.support(node))
-    support_names = [n for n in names if n in support]
-    if not support_names:
-        return [{}]
-    minterms = {
-        _assignment_to_bitstring(a, support_names)
-        for a in bdd.pick_iter(node)
-    }
-    if not minterms:
-        return []
-    if len(minterms) == (1 << len(support_names)):
-        return [{}]
-    return _bitstring_primes_to_dicts(
-        find_implicants_qm(minterms), support_names
-    )
-
-
-def _bdd_on_off_primes_inprocess(expr: str) -> OnOffPrimes:
-    from dd.autoref import BDD
+def _primer_on_off_primes_inprocess(
+    expr: str, max_primes: int = MAX_PRIMER_PRIMES
+) -> OnOffPrimes:
+    from pysat.formula import Formula, Neg
 
     const = _constant_on_off(expr)
     if const is not None:
         return const
 
-    refuse_extreme_nesting(expr)
-    # Onset enumeration + QM is Θ(2^k) in the worst case; same guard as LUT QM.
-    _refuse_huge_dense_lut(expr)
-    names = unique_regulators(_for_cana_eval(expr))
-    manager = BDD()
-    for name in names:
-        manager.declare(name)
-
-    f = manager.add_expr(_bdd_to_dd_expr(expr))
-    return (
-        _bdd_polarity_primes(manager, f, names),
-        _bdd_polarity_primes(manager, ~f, names),
-    )
-
-
-def _bdd_worker(expr: str, conn) -> None:
+    refuse_extreme_nesting(expr, limit=MAX_PRIMER_PAREN_DEPTH)
     try:
-        conn.send(("ok", _bdd_on_off_primes_inprocess(expr)))
+        f = expr_to_pysat_formula(expr)
+        on_p = _primer_polarity_primes(
+            f, max_primes=max_primes, polarity="ON"
+        )
+        off_p = _primer_polarity_primes(
+            Neg(f), max_primes=max_primes, polarity="OFF"
+        )
+        return on_p, off_p
+    finally:
+        Formula.cleanup()
+
+
+def _primer_worker(expr: str, max_primes: int, conn) -> None:
+    try:
+        conn.send(
+            ("ok", _primer_on_off_primes_inprocess(expr, max_primes=max_primes))
+        )
     except Exception as exc:  # noqa: BLE001
         conn.send(("err", f"{type(exc).__name__}: {exc}"))
     finally:
         conn.close()
 
 
-def bdd_on_off_primes(
+def primer_on_off_primes(
     expr: str,
     *,
     timeout_s: float = DEFAULT_TIMEOUT_S,
+    max_primes: int = MAX_PRIMER_PRIMES,
 ) -> OnOffPrimes:
-    """Exact ON/OFF primes via BDD onset enumeration + Quine–McCluskey.
+    """Exact ON/OFF primes via PySAT Primer-B on ``f`` and ``~f``.
 
-    Compiles *expr* with ``dd``, enumerates satisfying assignments, then
-    runs CANA's Cython QM.  (Textbook Morreale recursion on BDDs does not
-    produce the full prime set without extra machinery.)
-
-    Refuses expressions with more than :data:`MAX_DENSE_LUT_K` inputs
-    (worst-case onset size ``2**k``).
+    Builds a non-clausal ``pysat.formula`` tree, enumerates all prime
+    implicants with :class:`~pysat.examples.primer.Primer`
+    (``implicates=False``), and maps clausification IDs back to variable
+    names.  If either polarity would exceed *max_primes*, enumeration
+    stops and :class:`ValueError` is raised (no partial result).
 
     Raises:
-        ImportError: if dd is not installed.
-        ValueError: if *k* exceeds :data:`MAX_DENSE_LUT_K`.
+        ImportError: if pysat (``python-sat``) is not installed.
+        ValueError: if ON or OFF prime count exceeds *max_primes*.
+        RecursionError: if parenthesis nesting exceeds
+            :data:`~high_k.primes_util.MAX_PRIMER_PAREN_DEPTH`.
         TimeoutError: if wall-clock time exceeds *timeout_s*.
     """
-    import dd  # noqa: F401
+    import pysat  # noqa: F401
 
-    return _run_timed(
-        _bdd_on_off_primes_inprocess,
-        _bdd_worker,
-        expr,
-        timeout_s=timeout_s,
+    raw = expr.strip()
+    refuse_extreme_nesting(raw, limit=MAX_PRIMER_PAREN_DEPTH)
+    if timeout_s <= 0:
+        return _primer_on_off_primes_inprocess(raw, max_primes=max_primes)
+    from high_k.timing import call_in_subprocess
+
+    return call_in_subprocess(
+        _primer_worker, (raw, max_primes), timeout_s=timeout_s
     )

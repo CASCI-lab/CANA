@@ -14,9 +14,11 @@ from high_k.general_primes import (
     DEFAULT_TIMEOUT_S,
     EXPLORATION_TIMEOUT_S,
     MAX_DENSE_LUT_K,
-    bdd_on_off_primes,
+    MAX_PRIMER_PAREN_DEPTH,
+    MAX_PRIMER_PRIMES,
+    MAX_PYEDA_PAREN_DEPTH,
     complete_sum_on_off_primes,
-    pyboolnet_on_off_primes,
+    primer_on_off_primes,
     qm_on_off_primes,
 )
 from high_k.timing import call_in_subprocess
@@ -46,6 +48,9 @@ def test_timeout_constants():
     assert DEFAULT_TIMEOUT_S == 10.0
     assert EXPLORATION_TIMEOUT_S == 1.0
     assert MAX_DENSE_LUT_K == 20
+    assert MAX_PRIMER_PRIMES == 1_000_000
+    assert MAX_PYEDA_PAREN_DEPTH == 120
+    assert MAX_PRIMER_PAREN_DEPTH == 220
 
 
 def test_qm_refuses_huge_k():
@@ -56,22 +61,28 @@ def test_qm_refuses_huge_k():
         qm_on_off_primes(expr, timeout_s=0)
 
 
-def test_refuses_extreme_paren_nesting_even_with_short_timeout():
-    """Deep nesting must be ``error``, not a wall-clock ``timeout``."""
-    # Right-nested depth 250 — above MAX_SAFE_PAREN_DEPTH.
+def _right_nested(depth: int) -> str:
     expr = "a"
-    for _ in range(250):
+    for _ in range(depth):
         expr = f"({expr} & a)"
+    return expr
+
+
+def test_pyeda_refuses_extreme_paren_nesting_even_with_short_timeout():
+    """Deep nesting must be ``error``, not a wall-clock ``timeout``."""
+    # Just above MAX_PYEDA_PAREN_DEPTH (hard fail ≈ 140).
+    expr = _right_nested(MAX_PYEDA_PAREN_DEPTH + 1)
     with pytest.raises(RecursionError, match="parenthesis depth"):
         complete_sum_on_off_primes(expr, timeout_s=0.05)
 
 
-def test_bdd_refuses_huge_k():
-    pytest.importorskip("dd")
-    names = [f"a{i}" for i in range(MAX_DENSE_LUT_K + 1)]
-    expr = " & ".join(names)
-    with pytest.raises(ValueError, match="MAX_DENSE_LUT_K"):
-        bdd_on_off_primes(expr, timeout_s=0)
+def test_primer_refuses_extreme_paren_nesting_even_with_short_timeout():
+    """Primer nesting refuse must be ``error``, not a wall-clock ``timeout``."""
+    pytest.importorskip("pysat")
+    # Just above MAX_PRIMER_PAREN_DEPTH (hard fail ≈ 246).
+    expr = _right_nested(MAX_PRIMER_PAREN_DEPTH + 1)
+    with pytest.raises(RecursionError, match="parenthesis depth"):
+        primer_on_off_primes(expr, timeout_s=0.05)
 
 
 @pytest.mark.parametrize("expr", _CASES)
@@ -98,29 +109,22 @@ def test_complete_sum_matches_qm(expr: str):
 
 
 @pytest.mark.parametrize("expr", _CASES)
-def test_bdd_matches_qm(expr: str):
-    pytest.importorskip("dd")
+def test_primer_matches_qm(expr: str):
+    pytest.importorskip("pysat")
     qm = qm_on_off_primes(expr, timeout_s=0)
-    bd = bdd_on_off_primes(expr, timeout_s=0)
-    assert _match(bd, qm)
+    pr = primer_on_off_primes(expr, timeout_s=0)
+    assert _match(pr, qm)
 
 
-def test_bdd_support_smaller_than_declared_names():
-    """Variables absorbed by the BDD must not KeyError in bitstring conversion."""
-    pytest.importorskip("dd")
-    # Equivalent to ``a & b``; ``c`` is don't-care after simplification.
-    expr = "(a & b & c) | (a & b & ~c)"
-    qm = qm_on_off_primes(expr, timeout_s=0)
-    bd = bdd_on_off_primes(expr, timeout_s=0)
-    assert _match(bd, qm)
-
-
-@pytest.mark.parametrize("expr", _CASES)
-def test_pyboolnet_matches_qm(expr: str):
-    pytest.importorskip("pyboolnet")
-    qm = qm_on_off_primes(expr, timeout_s=0)
-    pb = pyboolnet_on_off_primes(expr, timeout_s=0)
-    assert _match(pb, qm)
+def test_primer_refuses_when_prime_count_exceeds_cap():
+    """Partial enumeration must not be returned once the cap is hit."""
+    pytest.importorskip("pysat")
+    # Full ON primes for this expr: a&b, ~a&c, b&c (3 primes).
+    expr = "a & b | !a & c"
+    with pytest.raises(
+        ValueError, match="prime count exceeded MAX_PRIMER_PRIMES=2"
+    ):
+        primer_on_off_primes(expr, timeout_s=0, max_primes=2)
 
 
 def test_qm_subprocess_timeout(monkeypatch):
@@ -150,18 +154,18 @@ def test_complete_sum_subprocess_timeout(monkeypatch):
         complete_sum_on_off_primes("a & b", timeout_s=0.2)
 
 
-def test_bdd_subprocess_timeout(monkeypatch):
-    pytest.importorskip("dd")
+def test_primer_subprocess_timeout(monkeypatch):
+    pytest.importorskip("pysat")
 
-    def _slow(_expr):
+    def _slow(_expr, max_primes=None):  # noqa: ARG001
         time.sleep(5.0)
         return [], []
 
     monkeypatch.setattr(
-        "high_k.general_primes._bdd_on_off_primes_inprocess", _slow
+        "high_k.general_primes._primer_on_off_primes_inprocess", _slow
     )
     with pytest.raises(TimeoutError, match="timeout"):
-        bdd_on_off_primes("a & b", timeout_s=0.2)
+        primer_on_off_primes("a & b", timeout_s=0.2)
 
 
 def test_call_in_subprocess_still_works():

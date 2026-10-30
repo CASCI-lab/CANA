@@ -1,28 +1,29 @@
 # %% [markdown]
 # BBM high-*k* multi-method primes compare
 #
-# For every BBM update rule with ``k > 12``, time six ON/OFF prime-implicant
+# For every BBM update rule with ``k > 12``, time three ON/OFF prime-implicant
 # backends (``TIMEOUT_S`` wall-clock kill each, process-group) and check that
 # successful results match exactly.
 #
 # Methods (timed; all still logged):
 #
 # 1. **ROF** — syntactic ROF check + ``iter_on_off_primes`` (ON and OFF)
-# 2. **Unate Espresso** — syntactic unate check + ``on_off_primes``
-# 3. **CANA LUT + QM** — ``qm_on_off_primes`` (skipped when ``k > MAX_DENSE_LUT_K``)
-# 4. **pyeda** — ``complete_sum_on_off_primes``
-# 5. **pyboolnet** — ``pyboolnet_on_off_primes``
-# 6. **BDD** — ``bdd_on_off_primes`` (skipped when ``k > MAX_DENSE_LUT_K``)
+# 2. **pyeda** — ``complete_sum_on_off_primes``
+# 3. **Primer-B** — ``primer_on_off_primes`` (PySAT)
 #
-# Cohorts (disjoint); **plots** only show ROF / Unate Espresso / pyeda:
+# Syntactic unate / ROF are still classified for cohorts (Unate Espresso and
+# CANA LUT+QM are **not** timed).
 #
-# - **rof** — syntactic ROF → plot ROF, Unate, pyeda
-# - **unate** — syntactic unate but not ROF → plot Unate, pyeda
-# - **rest** — not unate → plot pyeda
+# Plot slices (methods = ROF / pyeda / Primer-B where applicable):
+#
+# - **rof** — syntactic ROF only (ROF + pyeda + Primer-B)
+# - **unate** — all syntactically unate rules (**includes** ROF cohort;
+#   methods = pyeda + Primer-B only — ROF is ROF-cohort-only)
+# - **all** — rof + unate + rest (entire kept set; pyeda + Primer-B only)
 #
 # Timing plots / cohort summaries treat ``timeout`` as ``TIMEOUT_S``.  Each
-# cohort figure stacks **median** time with Q1–Q3 shading (top) and success
-# rate (bottom) on a shared *k* axis; method color/marker are fixed.
+# figure stacks **median** time with Q1–Q3 shading (top) and success rate
+# (bottom) on a shared *k* axis; method color/marker are fixed.
 #
 # Set ``REGENERATE_FROM_LOG_ONLY = True`` to rebuild figures from the existing
 # timing log without re-running the BBM sweep (does not overwrite that log).
@@ -52,24 +53,23 @@ if str(_DEV_DIR) not in sys.path:
 
 from high_k.bbm_rules import BBM_MODELS, iter_bnet_rules, unique_regulators
 from high_k.general_primes import (
-    MAX_DENSE_LUT_K,
-    bdd_on_off_primes,
     complete_sum_on_off_primes,
-    pyboolnet_on_off_primes,
-    qm_on_off_primes,
+    primer_on_off_primes,
 )
 from high_k.rof import check_syntactic_rof, iter_on_off_primes
 from high_k.run_log import TeeLogger, run_log_dir, start_run_log
 from high_k.timing import call_in_subprocess, fmt_s
-from high_k.unate import check_syntactic_unate, on_off_primes
+from high_k.unate import check_syntactic_unate
 
 # ---------------------------------------------------------------------------
 # Config
 # ---------------------------------------------------------------------------
 
 MIN_K = 13  # keep rules with k > 12
-TIMEOUT_S = 4.0  # 1.0
+TIMEOUT_S = 1.0  # 1.0
 REPEATS = 1  # single wall-clock run (timeout kill)
+# Extra progress banner every N completed kept rows (also every row is numbered).
+PROGRESS_EVERY = 25
 
 # True → rebuild figures from the existing timing log (no re-timing; keeps log).
 # False → full BBM sweep (overwrites the timing log).
@@ -80,24 +80,23 @@ FIG_DIR = run_log_dir(NOTEBOOK_NAME)
 TIMING_LOG_PATH = FIG_DIR / f"{NOTEBOOK_NAME}.log"
 
 # Method id → (time key, status key, plot label, marker, color).
-# Color/marker are fixed so every cohort figure uses the same style per method.
+# Color/marker are fixed so every figure uses the same style per method.
 METHOD_META: Tuple[Tuple[str, str, str, str, str, str], ...] = (
     ("rof", "t_rof", "st_rof", "ROF generate", "o", "#1f77b4"),
-    ("unate", "t_unate", "st_unate", "Unate Espresso", "s", "#ff7f0e"),
-    ("qm", "t_qm", "st_qm", "CANA LUT+QM", "^", "#2ca02c"),
     ("pyeda", "t_pyeda", "st_pyeda", "pyeda complete_sum", "D", "#d62728"),
-    ("pyboolnet", "t_pyboolnet", "st_pyboolnet", "pyboolnet", "v", "#9467bd"),
-    ("bdd", "t_bdd", "st_bdd", "BDD+QM", "P", "#8c564b"),
+    ("primer", "t_primer", "st_primer", "Primer-B", "v", "#9467bd"),
 )
 
-# Plots omit QM / pyboolnet / BDD (still timed and logged on a full run).
-PLOT_METHOD_IDS = ("rof", "unate", "pyeda")
+PLOT_METHOD_IDS = ("rof", "pyeda", "primer")
 
-COHORT_METHODS = {
-    "rof": ("rof", "unate", "pyeda"),
-    "unate": ("unate", "pyeda"),
-    "rest": ("pyeda",),
-}
+# Plot slice id → (row filter label, method ids).  ``unate`` includes the ROF
+# cohort in the row filter; ROF timing is only plotted on the ``rof`` slice.
+# ``all`` is rof ∪ unate ∪ rest.
+PLOT_SLICES: Tuple[Tuple[str, str, Tuple[str, ...]], ...] = (
+    ("rof", "syntactic ROF", ("rof", "pyeda", "primer")),
+    ("unate", "syntactic unate (incl. ROF)", ("pyeda", "primer")),
+    ("all", "all kept rules", ("pyeda", "primer")),
+)
 
 META_BY_ID = {m[0]: m for m in METHOD_META}
 
@@ -113,11 +112,12 @@ _TIME_CELL = r"(?:skip|timeout|error|\d+(?:\.\d+)?\s*(?:µs|ms|s))"
 _TIME_RE = re.compile(
     r"^(?:skip|timeout|error|(?P<num>\d+(?:\.\d+)?)\s*(?P<unit>µs|ms|s))$"
 )
+# Rows are logged as ``#{bbm_kept:4d} ...`` → ``#   1 rest ...``.
 _ROW_RE = re.compile(
-    rf"^(?P<cohort>rof|unate|rest)\s+(?P<k>\d+)\s+"
-    rf"(?P<rof>{_TIME_CELL})\s+(?P<unate>{_TIME_CELL})\s+"
-    rf"(?P<qm>{_TIME_CELL})\s+(?P<pyeda>{_TIME_CELL})\s+"
-    rf"(?P<pbn>{_TIME_CELL})\s+(?P<bdd>{_TIME_CELL})\s+"
+    rf"^(?:#\s*(?P<idx>\d+)\s+)?"
+    rf"(?P<cohort>rof|unate|rest)\s+(?P<k>\d+)\s+"
+    rf"(?P<rof>{_TIME_CELL})\s+(?P<pyeda>{_TIME_CELL})\s+"
+    rf"(?P<primer>{_TIME_CELL})\s+"
     rf"(?P<n_on>\d+)\s+(?P<n_off>\d+)\s+(?P<match>\S+)\s+"
     rf"(?P<target>\S+)\s+/\s+(?P<model>.+?)\s*$"
 )
@@ -211,11 +211,8 @@ def parse_timing_log(
         }
         cell_by_mid = {
             "rof": m.group("rof"),
-            "unate": m.group("unate"),
-            "qm": m.group("qm"),
             "pyeda": m.group("pyeda"),
-            "pyboolnet": m.group("pbn"),
-            "bdd": m.group("bdd"),
+            "primer": m.group("primer"),
         }
         n_ok = 0
         for mid, _t_key, _st_key, _lab, _mk, _col in METHOD_META:
@@ -294,9 +291,7 @@ def cohort_of(*, is_rof: bool, is_unate: bool) -> str:
 def time_all_methods(
     expr: str,
     *,
-    k: int,
     is_rof: bool,
-    is_unate: bool,
 ) -> Dict[str, Any]:
     """Run applicable methods once each; return timing + equality fields."""
     results: Dict[str, Optional[OnOffPrimes]] = {}
@@ -304,35 +299,17 @@ def time_all_methods(
     statuses: Dict[str, str] = {}
     errors: Dict[str, Optional[str]] = {}
 
-    # Predictable Θ(2^k) RAM: skip dense LUT QM and onset→QM BDD entirely.
-    dense_ok = k <= MAX_DENSE_LUT_K
-
     runners: Dict[str, Optional[Callable[[], OnOffPrimes]]] = {
         "rof": (
             (lambda: run_rof_path(expr, timeout_s=TIMEOUT_S))
             if is_rof
             else None
         ),
-        "unate": (
-            (lambda: on_off_primes(expr, timeout_s=TIMEOUT_S))
-            if is_unate
-            else None
-        ),
-        "qm": (
-            (lambda: qm_on_off_primes(expr, timeout_s=TIMEOUT_S))
-            if dense_ok
-            else None
-        ),
         "pyeda": lambda: complete_sum_on_off_primes(
             expr, timeout_s=TIMEOUT_S
         ),
-        "pyboolnet": lambda: pyboolnet_on_off_primes(
+        "primer": lambda: primer_on_off_primes(
             expr, timeout_s=TIMEOUT_S
-        ),
-        "bdd": (
-            (lambda: bdd_on_off_primes(expr, timeout_s=TIMEOUT_S))
-            if dense_ok
-            else None
         ),
     }
 
@@ -411,12 +388,12 @@ else:
     log, LOG_PATH = start_run_log(NOTEBOOK_NAME)
     log.info(
         f"MIN_K={MIN_K}  TIMEOUT_S={TIMEOUT_S}  REPEATS={REPEATS}  "
-        f"MAX_DENSE_LUT_K={MAX_DENSE_LUT_K}"
+        f"PROGRESS_EVERY={PROGRESS_EVERY}"
     )
     log.info(f"BBM_MODELS={BBM_MODELS}  FIG_DIR={FIG_DIR}")
     log.info(f"plot_methods={PLOT_METHOD_IDS}")
 
-    for _mod in ("pyeda", "pyboolnet", "dd"):
+    for _mod in ("pyeda", "pysat"):
         try:
             __import__(_mod)
             log.info(f"optional dep {_mod}: available")
@@ -435,9 +412,8 @@ else:
         log.info(f"BBM models not found at {BBM_MODELS}")
     else:
         header = (
-            f"{'cohort':7s} {'k':>3s}  "
-            f"{'rof':>10s} {'unate':>10s} {'qm':>10s} "
-            f"{'pyeda':>10s} {'pbn':>10s} {'bdd':>10s}  "
+            f"{'#':>5s} {'cohort':7s} {'k':>3s}  "
+            f"{'rof':>10s} {'pyeda':>10s} {'primer':>10s}  "
             f"{'#on':>5s} {'#off':>5s}  match  target / model"
         )
         log.info(header)
@@ -458,13 +434,11 @@ else:
                 short_model = short_model[:37] + "..."
 
             try:
-                r = time_all_methods(
-                    expr, k=k, is_rof=is_rof, is_unate=is_unate
-                )
+                r = time_all_methods(expr, is_rof=is_rof)
             except Exception as exc:  # noqa: BLE001
                 bbm_failed += 1
                 log.info(
-                    f"{cohort:7s} {k:3d}  FAILED: {exc}  "
+                    f"#{bbm_kept:4d} {cohort:7s} {k:3d}  FAILED: {exc}  "
                     f"{target} / {short_model}"
                 )
                 continue
@@ -491,12 +465,19 @@ else:
                 return f"{fmt_s(r[f't_{mid}']):>10s}"
 
             log.info(
-                f"{cohort:7s} {k:3d}  "
-                f"{_cell('rof')} {_cell('unate')} {_cell('qm')} "
-                f"{_cell('pyeda')} {_cell('pyboolnet')} {_cell('bdd')}  "
+                f"#{bbm_kept:4d} {cohort:7s} {k:3d}  "
+                f"{_cell('rof')} {_cell('pyeda')} {_cell('primer')}  "
                 f"{r['n_pi_on']:5d} {r['n_pi_off']:5d}  "
                 f"{r['match']!s:5s}  {target} / {short_model}"
             )
+            if bbm_kept % PROGRESS_EVERY == 0:
+                log.info(
+                    f"--- progress: {bbm_kept}th kept row  "
+                    f"(timed={len(rows)}  failed={bbm_failed}  "
+                    f"rof={cohort_counts['rof']}  "
+                    f"unate={cohort_counts['unate']}  "
+                    f"rest={cohort_counts['rest']}) ---"
+                )
             err_parts: List[str] = []
             for mid, _t, _st, label, _m, _c in METHOD_META:
                 msg = r.get(f"err_{mid}")
@@ -563,6 +544,8 @@ if not REGENERATE_FROM_LOG_ONLY:
                 kind = "MemoryError: parser stack overflow"
             elif "refusing dense LUT" in msg:
                 kind = "ValueError: MAX_DENSE_LUT_K"
+            elif "prime count exceeded MAX_PRIMER_PRIMES" in msg:
+                kind = "ValueError: MAX_PRIMER_PRIMES"
             elif "killed by signal" in msg:
                 kind = "TimeoutError-like: killed by signal"
             elif "exited without result" in msg:
@@ -629,7 +612,7 @@ log.info(
 )
 log.info(
     f"{'cohort':7s} {'k':>3s} {'n':>4s}  "
-    f"{'rof':>10s} {'unate':>10s} {'pyeda':>10s}"
+    f"{'rof':>10s} {'pyeda':>10s} {'primer':>10s}"
 )
 
 grouped: Dict[Tuple[str, int], List[Dict[str, Any]]] = defaultdict(list)
@@ -642,8 +625,8 @@ for key in sorted(grouped.keys(), key=lambda x: (x[0], x[1])):
     log.info(
         f"{cohort:7s} {k:3d} {len(group):4d}  "
         f"{fmt_s(_median_or_none([_censored_time(g, 'rof') for g in group])):>10s} "
-        f"{fmt_s(_median_or_none([_censored_time(g, 'unate') for g in group])):>10s} "
-        f"{fmt_s(_median_or_none([_censored_time(g, 'pyeda') for g in group])):>10s}"
+        f"{fmt_s(_median_or_none([_censored_time(g, 'pyeda') for g in group])):>10s} "
+        f"{fmt_s(_median_or_none([_censored_time(g, 'primer') for g in group])):>10s}"
     )
 
 log.info(f"\n{len(rows)} timing rows  |  wrote {LOG_PATH}")
@@ -747,19 +730,30 @@ def plot_time_and_success_vs_k(
     log.info(f"wrote {outfile}")
 
 
-for cohort, method_ids in COHORT_METHODS.items():
-    subset = [r for r in rows if r["cohort"] == cohort]
+def _rows_for_plot_slice(slice_id: str) -> List[Dict[str, Any]]:
+    """Select rows for a plot slice (unate includes ROF; all = everything)."""
+    if slice_id == "rof":
+        return [r for r in rows if r["cohort"] == "rof"]
+    if slice_id == "unate":
+        return [r for r in rows if r["cohort"] in ("rof", "unate")]
+    if slice_id == "all":
+        return list(rows)
+    raise ValueError(f"unknown plot slice {slice_id!r}")
+
+
+for slice_id, slice_label, method_ids in PLOT_SLICES:
+    subset = _rows_for_plot_slice(slice_id)
     if not subset:
-        log.info(f"no rows for cohort={cohort}; skipping plot")
+        log.info(f"no rows for slice={slice_id}; skipping plot")
         continue
     plot_time_and_success_vs_k(
         subset,
         method_ids,
         title=(
             f"Prime implicants — BBM k>{MIN_K - 1} "
-            f"/ {cohort} (n={len(subset)})"
+            f"/ {slice_id}: {slice_label} (n={len(subset)})"
         ),
-        outfile=FIG_DIR / f"time_success_vs_k__{cohort}.png",
+        outfile=FIG_DIR / f"time_success_vs_k__{slice_id}.png",
     )
 
 log.info(
