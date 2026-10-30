@@ -31,12 +31,12 @@ from cana.function_outputs.expression import (
 )
 from cana.function_outputs.one_symbol import (
     OneSymbolSchemata,
-    bit_lut_from_one_symbol_schemata,
-    one_symbol_schemata_from_bit_lut,
+    one_symbol_to_bit_lut,
+    bit_lut_to_one_symbol,
     reorder as reorder_one_symbol,
 )
 from cana.function_outputs.two_symbol import (
-    one_symbol_from_two_symbol,
+    two_symbol_to_one_symbol,
     reorder as reorder_two_symbol,
     two_symbol_to_expression,
 )
@@ -45,7 +45,7 @@ __all__ = [
     "FunctionOutputs",
     "OneSymbolSchemata",
     "TwoSymbolSchemata",
-    "one_symbol_from_two_symbol",
+    "two_symbol_to_one_symbol",
     "two_symbol_to_expression",
 ]
 
@@ -221,7 +221,7 @@ class FunctionOutputs(object):
         if self.one_symbol_schemata is not None:
             return self.one_symbol_schemata
         if self.two_symbol_schemata is not None:
-            self.one_symbol_schemata = one_symbol_from_two_symbol(
+            self.one_symbol_schemata = two_symbol_to_one_symbol(
                 self.two_symbol_schemata
             )
             return self.one_symbol_schemata
@@ -230,7 +230,7 @@ class FunctionOutputs(object):
         if self.positional_expression is not None:
             from cana.primes.cascade import on_off_primes_from_expression
             from cana.function_outputs.one_symbol import (
-                primes_to_one_symbol_schemata,
+                primes_to_one_symbol,
             )
 
             result = on_off_primes_from_expression(self.positional_expression)
@@ -239,7 +239,7 @@ class FunctionOutputs(object):
                 and result.on_primes is not None
                 and result.off_primes is not None
             ):
-                self.one_symbol_schemata = primes_to_one_symbol_schemata(
+                self.one_symbol_schemata = primes_to_one_symbol(
                     result.on_primes,
                     result.off_primes,
                     input_names=positional_names(self.k),
@@ -251,7 +251,7 @@ class FunctionOutputs(object):
             return self.compute_one_symbol_schemata_from_bit_lut()
 
         if self.positional_expression is not None:
-            # Same QM fallback as one_symbol_schemata_from_positional_expression,
+            # Same QM fallback as positional_expression_to_one_symbol,
             # but cache the dense LUT on this container.
             from cana.primes.util import MAX_DENSE_LUT_K
 
@@ -355,15 +355,15 @@ class FunctionOutputs(object):
                 "build_bit_lut_from_one_symbol_schemata requires "
                 "one_symbol_schemata"
             )
-        self.bit_lut = bit_lut_from_one_symbol_schemata(
+        self.bit_lut = one_symbol_to_bit_lut(
             self.one_symbol_schemata, self.k
         )
         self._k = self.bit_lut.k
         return self.bit_lut
 
     # Module-level converter; kept as a static for callers that used FO.
-    bit_lut_from_one_symbol_schemata = staticmethod(
-        bit_lut_from_one_symbol_schemata
+    one_symbol_to_bit_lut = staticmethod(
+        one_symbol_to_bit_lut
     )
 
     def compute_one_symbol_schemata_from_bit_lut(self) -> OneSymbolSchemata:
@@ -372,16 +372,16 @@ class FunctionOutputs(object):
             raise ValueError(
                 "compute_one_symbol_schemata_from_bit_lut requires bit_lut"
             )
-        schemata = one_symbol_schemata_from_bit_lut(self.bit_lut)
+        schemata = bit_lut_to_one_symbol(self.bit_lut)
         self.one_symbol_schemata = schemata
         self.one_symbol_is_prime_implicant = True
         self._k = self.bit_lut.k
         return self.one_symbol_schemata
 
     @staticmethod
-    def _one_symbol_schemata_from_bit_lut(bit_lut: BitLut) -> OneSymbolSchemata:
+    def _bit_lut_to_one_symbol(bit_lut: BitLut) -> OneSymbolSchemata:
         """Run Quine-McCluskey on ``bit_lut`` without mutating a container."""
-        return one_symbol_schemata_from_bit_lut(bit_lut)
+        return bit_lut_to_one_symbol(bit_lut)
 
     def _two_symbol_from_one_symbol(
         self, one_symbol: OneSymbolSchemata
@@ -415,11 +415,11 @@ class FunctionOutputs(object):
             )
         schemata = self.one_symbol_schemata
         try:
-            lut = bit_lut_from_one_symbol_schemata(schemata, self.k)
+            lut = one_symbol_to_bit_lut(schemata, self.k)
         except ValueError:
             self.one_symbol_is_prime_implicant = False
             return False
-        recomputed = one_symbol_schemata_from_bit_lut(lut)
+        recomputed = bit_lut_to_one_symbol(lut)
         ok = (
             set(schemata.get(0, ())) == set(recomputed.get(0, ()))
             and set(schemata.get(1, ())) == set(recomputed.get(1, ()))
@@ -442,7 +442,7 @@ class FunctionOutputs(object):
         if self.one_symbol_schemata is not None:
             try:
                 candidates.append(
-                    bit_lut_from_one_symbol_schemata(
+                    one_symbol_to_bit_lut(
                         self.one_symbol_schemata, self.k
                     )
                 )
@@ -459,9 +459,9 @@ class FunctionOutputs(object):
                 return False
         if self.two_symbol_schemata is not None:
             try:
-                expanded = one_symbol_from_two_symbol(self.two_symbol_schemata)
+                expanded = two_symbol_to_one_symbol(self.two_symbol_schemata)
                 candidates.append(
-                    bit_lut_from_one_symbol_schemata(expanded, self.k)
+                    one_symbol_to_bit_lut(expanded, self.k)
                 )
             except ValueError:
                 self.representations_consistent = False

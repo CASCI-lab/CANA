@@ -317,7 +317,7 @@ def nodes_to_cnet(
                 if outputs.bit_lut is not None:
                     parts.append(str(outputs.bit_lut[0]))
                 else:
-                    lut = FunctionOutputs.bit_lut_from_one_symbol_schemata(
+                    lut = FunctionOutputs.one_symbol_to_bit_lut(
                         outputs.one_symbol_schemata, 0
                     )
                     parts.append(str(lut[0]))

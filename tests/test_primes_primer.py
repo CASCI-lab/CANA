@@ -10,7 +10,7 @@ from cana.primes.primer import (
     MAX_PRIMER_PRIMES,
     primer_on_off_primes,
 )
-from cana.primes.util import MAX_DENSE_LUT_K, one_symbol_schemata_to_primes
+from cana.primes.util import MAX_DENSE_LUT_K, one_symbol_to_primes
 
 
 def _freeze(prime_list) -> frozenset:
@@ -26,7 +26,7 @@ def _qm_on_off(expr: str):
     fo = rule.outputs
     fo.build_bit_lut_from_positional_expression()
     schemata = fo.compute_one_symbol_schemata_from_bit_lut()
-    return one_symbol_schemata_to_primes(schemata, rule.input_names)
+    return one_symbol_to_primes(schemata, rule.input_names)
 
 
 _CASES = [

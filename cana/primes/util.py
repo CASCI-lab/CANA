@@ -13,8 +13,8 @@ from typing import Dict, List, Optional, Tuple
 
 from cana.function_outputs.expression import normalize_operators
 from cana.function_outputs.one_symbol import (
-    one_symbol_schemata_to_primes,
-    primes_to_one_symbol_schemata,
+    one_symbol_to_primes,
+    primes_to_one_symbol,
 )
 
 __all__ = [
@@ -28,8 +28,8 @@ __all__ = [
     "refuse_extreme_nesting",
     "to_symbolic_expr",
     "expr_to_pysat_formula",
-    "primes_to_one_symbol_schemata",
-    "one_symbol_schemata_to_primes",
+    "primes_to_one_symbol",
+    "one_symbol_to_primes",
 ]
 
 PrimeDict = Dict[str, bool]

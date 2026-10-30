@@ -16,7 +16,7 @@ from cana.function_outputs.one_symbol import OneSymbolSchemata
 
 __all__ = [
     "reorder",
-    "one_symbol_from_two_symbol",
+    "two_symbol_to_one_symbol",
     "two_symbol_to_expression",
 ]
 
@@ -119,7 +119,7 @@ def _expand_entry(schema_str: str, perm_groups: Optional[Iterable]) -> Set[str]:
     return results
 
 
-def one_symbol_from_two_symbol(ts: TwoSymbolSchemata) -> OneSymbolSchemata:
+def two_symbol_to_one_symbol(ts: TwoSymbolSchemata) -> OneSymbolSchemata:
     """Expand two-symbol schemata to one-symbol (F') covers.
 
     For each polarity and each ``[schema, perm_groups, _]``, permute values

@@ -7,8 +7,8 @@ strings over ``{0,1,2}`` (``2`` = don't-care).  No wrapper class.
 This is the public representation of prime covers for
 :class:`~cana.function_outputs.FunctionOutputs`.  Named ``PrimeDict`` cubes
 remain algorithm-internal inside :mod:`cana.primes`; convert at the boundary
-with :func:`primes_to_one_symbol_schemata` /
-:func:`one_symbol_schemata_to_primes`.
+with :func:`primes_to_one_symbol` /
+:func:`one_symbol_to_primes`.
 """
 from __future__ import annotations
 
@@ -21,11 +21,11 @@ from cana.cutils import binstate_to_statenum, outputs_to_binstates_of_given_type
 __all__ = [
     "OneSymbolSchemata",
     "reorder",
-    "bit_lut_from_one_symbol_schemata",
-    "one_symbol_schemata_from_bit_lut",
-    "primes_to_one_symbol_schemata",
-    "one_symbol_schemata_to_primes",
-    "one_symbol_schemata_from_positional_expression",
+    "one_symbol_to_bit_lut",
+    "bit_lut_to_one_symbol",
+    "primes_to_one_symbol",
+    "one_symbol_to_primes",
+    "positional_expression_to_one_symbol",
 ]
 
 # Polarity -> set of length-k strings over {0,1,2} (2 = don't-care).
@@ -77,7 +77,7 @@ def reorder(
     return remapped
 
 
-def bit_lut_from_one_symbol_schemata(
+def one_symbol_to_bit_lut(
     schemata: OneSymbolSchemata, k: int
 ) -> BitLut:
     """Build a :class:`~cana.bit_lut.BitLut` from one-symbol schemata.
@@ -115,7 +115,7 @@ def bit_lut_from_one_symbol_schemata(
     return lut
 
 
-def one_symbol_schemata_from_bit_lut(bit_lut: BitLut) -> OneSymbolSchemata:
+def bit_lut_to_one_symbol(bit_lut: BitLut) -> OneSymbolSchemata:
     """Run Quine-McCluskey on ``bit_lut``; return one-symbol schemata."""
     import cana.canalization.cboolean_canalization as cBCanalization
 
@@ -143,7 +143,7 @@ def _prime_to_schema(prime: _PrimeCube, names: Sequence[str]) -> str:
     return "".join(chars)
 
 
-def primes_to_one_symbol_schemata(
+def primes_to_one_symbol(
     on_primes: List[_PrimeCube],
     off_primes: List[_PrimeCube],
     *,
@@ -181,7 +181,7 @@ def primes_to_one_symbol_schemata(
     }
 
 
-def one_symbol_schemata_to_primes(
+def one_symbol_to_primes(
     schemata: OneSymbolSchemata,
     input_names: Sequence[str],
 ) -> _OnOffCubes:
@@ -206,7 +206,7 @@ def one_symbol_schemata_to_primes(
     )
 
 
-def one_symbol_schemata_from_positional_expression(
+def positional_expression_to_one_symbol(
     expr: str, k: int
 ) -> OneSymbolSchemata:
     """Derive one-symbol schemata from a positional boolean expression.
@@ -225,7 +225,7 @@ def one_symbol_schemata_from_positional_expression(
 
     result = on_off_primes_from_expression(expr)
     if result.ok and result.on_primes is not None and result.off_primes is not None:
-        return primes_to_one_symbol_schemata(
+        return primes_to_one_symbol(
             result.on_primes,
             result.off_primes,
             input_names=positional_names(k),
@@ -239,4 +239,4 @@ def one_symbol_schemata_from_positional_expression(
                 k, MAX_DENSE_LUT_K
             )
         )
-    return one_symbol_schemata_from_bit_lut(positional_expression_to_bit_lut(expr, k))
+    return bit_lut_to_one_symbol(positional_expression_to_bit_lut(expr, k))

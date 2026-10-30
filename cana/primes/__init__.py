@@ -40,9 +40,9 @@ from cana.primes.util import (
     OnOffPrimes,
     PrimeDict,
     expr_to_pysat_formula,
-    one_symbol_schemata_to_primes,
+    one_symbol_to_primes,
     paren_nesting_depth,
-    primes_to_one_symbol_schemata,
+    primes_to_one_symbol,
     refuse_extreme_nesting,
 )
 
@@ -77,8 +77,8 @@ __all__ = [
     "OnOffPrimes",
     "PrimeDict",
     "expr_to_pysat_formula",
-    "one_symbol_schemata_to_primes",
+    "one_symbol_to_primes",
     "paren_nesting_depth",
-    "primes_to_one_symbol_schemata",
+    "primes_to_one_symbol",
     "refuse_extreme_nesting",
 ]
