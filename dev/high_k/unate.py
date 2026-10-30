@@ -43,6 +43,12 @@ from cana.function_outputs.expression import (
     expression_identifiers,
     normalize_operators,
 )
+from high_k.primes_util import (
+    PrimeDict,
+    dnf_terms_to_primes,
+    to_pyeda_expr_str,
+    to_symbolic_expr,
+)
 
 __all__ = [
     "check_syntactic_unate",
@@ -53,16 +59,13 @@ __all__ = [
 
 UnateInfo = Dict[str, Union[bool, int, List[str]]]
 Polarity = Literal["on", "off"]
-PrimeDict = Dict[str, bool]
 
 DEFAULT_PRIMES_TIMEOUT_S = 10.0
 
 
 def _to_symbolic_expr(expr: str) -> str:
     """Normalize *expr* to symbolic ``&`` / ``|`` / ``!`` form."""
-    return normalize_operators(
-        normalize_operators(expr, "python"), "symbolic"
-    )
+    return to_symbolic_expr(expr)
 
 
 def _n_unique_from_expr(expr: str) -> int:
@@ -208,43 +211,12 @@ def require_syntactic_unate(expr: str) -> None:
 
 def _to_pyeda_expr_str(expr: str) -> str:
     """Normalize *expr* to a form ``pyeda.inter.expr`` accepts (``~`` not ``!``)."""
-    s = _to_symbolic_expr(expr)
-    return s.replace("!", "~")
+    return to_pyeda_expr_str(expr)
 
 
 def _dnf_terms_to_primes(dnf) -> List[PrimeDict]:
     """Convert a pyeda DNF expression cover to ``[{var: True/False}, ...]``."""
-    from pyeda.boolalg.expr import Complement, Variable
-
-    if dnf is True or (hasattr(dnf, "is_one") and dnf.is_one()):
-        return [{}]
-    if dnf is False or (hasattr(dnf, "is_zero") and dnf.is_zero()):
-        return []
-
-    cover = getattr(dnf, "cover", None)
-    if cover is None:
-        if isinstance(dnf, Variable):
-            return [{str(dnf.name): True}]
-        if isinstance(dnf, Complement):
-            return [{str(dnf.inputs[0].name): False}]
-        return [{}] if bool(dnf) else []
-
-    primes: List[PrimeDict] = []
-    for cube in cover:
-        prime: PrimeDict = {}
-        for lit in cube:
-            if isinstance(lit, Variable):
-                prime[str(lit.name)] = True
-            elif isinstance(lit, Complement):
-                prime[str(lit.inputs[0].name)] = False
-            else:
-                s = str(lit)
-                if s.startswith("~"):
-                    prime[s[1:]] = False
-                else:
-                    prime[s] = True
-        primes.append(prime)
-    return primes
+    return dnf_terms_to_primes(dnf)
 
 
 def _espresso_on_off_primes_inprocess(expr: str) -> Tuple[List[PrimeDict], List[PrimeDict]]:
@@ -263,7 +235,7 @@ def _espresso_on_off_primes_inprocess(expr: str) -> Tuple[List[PrimeDict], List[
     if raw in ("0", "False", "false"):
         return [], [{}]
 
-    f = pyeda_expr(_to_pyeda_expr_str(raw))
+    f = pyeda_expr(to_pyeda_expr_str(raw))
     f_dnf = f.to_dnf()
     # Constant folding after to_dnf.
     if f_dnf is True or (hasattr(f_dnf, "is_one") and f_dnf.is_one()):
@@ -279,9 +251,9 @@ def _espresso_on_off_primes_inprocess(expr: str) -> Tuple[List[PrimeDict], List[
         off_primes = []
     else:
         off_min, = espresso_exprs(off_dnf)
-        off_primes = _dnf_terms_to_primes(off_min)
+        off_primes = dnf_terms_to_primes(off_min)
 
-    return _dnf_terms_to_primes(on_min), off_primes
+    return dnf_terms_to_primes(on_min), off_primes
 
 
 def _espresso_worker(expr: str, conn) -> None:
