@@ -23,7 +23,9 @@
 #
 # Timing plots / cohort summaries treat ``timeout`` as ``TIMEOUT_S``.  Each
 # figure stacks **median** time with Q1–Q3 shading (top) and success rate
-# (bottom) on a shared *k* axis; method color/marker are fixed.
+# (bottom) on a shared *k* axis; method color/marker are fixed.  Legend
+# labels also show overall slice success as ``ok/attempted`` (e.g. ROF
+# figure: total ok / total ROF rows per method).
 #
 # Set ``REGENERATE_FROM_LOG_ONLY = True`` to rebuild figures from the existing
 # timing log without re-running the BBM sweep (does not overwrite that log).
@@ -672,13 +674,38 @@ def _success_series_by_k(
     return ks, [sum(by_k[k]) / len(by_k[k]) for k in ks]
 
 
+def _overall_success(
+    subset: List[Dict[str, Any]], mid: str
+) -> Tuple[int, int, Optional[float]]:
+    """Overall ``(n_ok, n_attempted, rate)`` for a method on a slice.
+
+    ``skip`` is excluded from attempted.  Rate is ``None`` if nothing attempted.
+    """
+    st_key = META_BY_ID[mid][2]
+    n_ok = 0
+    n_att = 0
+    for r in subset:
+        st = str(r[st_key])
+        if st == "skip":
+            continue
+        n_att += 1
+        if st == "ok":
+            n_ok += 1
+    if n_att == 0:
+        return 0, 0, None
+    return n_ok, n_att, n_ok / n_att
+
+
 def plot_time_and_success_vs_k(
     subset: List[Dict[str, Any]],
     method_ids: Tuple[str, ...],
     title: str,
     outfile: Path,
 ) -> None:
-    """Stacked panels: median±IQR time (top) and success rate (bottom)."""
+    """Stacked panels: median±IQR time (top) and success rate (bottom).
+
+    Legend labels include overall slice success ``ok/attempted (pct%)``.
+    """
     fig, (ax_t, ax_s) = plt.subplots(
         2,
         1,
@@ -688,8 +715,17 @@ def plot_time_and_success_vs_k(
         gridspec_kw={"height_ratios": [1.15, 1.0]},
     )
     any_series = False
+    overall_parts: List[str] = []
     for mid in method_ids:
         _mid, _t_key, _st, label, marker, color = META_BY_ID[mid]
+        n_ok, n_att, rate = _overall_success(subset, mid)
+        if rate is None:
+            overall_label = f"{label} (n/a)"
+            overall_parts.append(f"{label}: n/a")
+        else:
+            pct = 100.0 * rate
+            overall_label = f"{label} ({n_ok}/{n_att} = {pct:.0f}%)"
+            overall_parts.append(f"{label}: {n_ok}/{n_att} ({pct:.0f}%)")
         style = dict(marker=marker, linestyle="-", color=color)
         ks_t, meds, q1s, q3s = _time_series_by_k(subset, mid)
         if ks_t:
@@ -697,7 +733,7 @@ def plot_time_and_success_vs_k(
             ax_t.fill_between(
                 ks_t, q1s, q3s, color=color, alpha=0.22, linewidth=0
             )
-            ax_t.plot(ks_t, meds, label=label, **style)
+            ax_t.plot(ks_t, meds, label=overall_label, **style)
         ks_s, rates = _success_series_by_k(subset, mid)
         if ks_s:
             any_series = True
@@ -722,12 +758,20 @@ def plot_time_and_success_vs_k(
     ax_s.set_ylim(-0.05, 1.05)
     ax_s.set_xlabel("k (inputs)")
     ax_s.set_ylabel("success rate (ok / attempted)")
+    if overall_parts:
+        ax_s.set_title(
+            "overall:  " + "  |  ".join(overall_parts),
+            fontsize=8,
+            loc="left",
+        )
     ax_s.grid(True, which="both", alpha=0.3)
 
     outfile.parent.mkdir(parents=True, exist_ok=True)
     fig.savefig(outfile, dpi=150)
     plt.close(fig)
     log.info(f"wrote {outfile}")
+    if overall_parts:
+        log.info(f"  overall success: {' | '.join(overall_parts)}")
 
 
 def _rows_for_plot_slice(slice_id: str) -> List[Dict[str, Any]]:

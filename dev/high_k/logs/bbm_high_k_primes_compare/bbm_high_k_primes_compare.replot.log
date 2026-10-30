@@ -60,6 +60,9 @@ unate    57    1        skip    1.000 s    1.000 s
 
 402 timing rows  |  wrote /home/kyuhyongpark/CANA/CANA/dev/high_k/logs/bbm_high_k_primes_compare/bbm_high_k_primes_compare.replot.log
 wrote /home/kyuhyongpark/CANA/CANA/dev/high_k/logs/bbm_high_k_primes_compare/time_success_vs_k__rof.png
+  overall success: ROF generate: 38/38 (100%) | pyeda complete_sum: 38/38 (100%) | Primer-B: 38/38 (100%)
 wrote /home/kyuhyongpark/CANA/CANA/dev/high_k/logs/bbm_high_k_primes_compare/time_success_vs_k__unate.png
+  overall success: pyeda complete_sum: 107/329 (33%) | Primer-B: 241/329 (73%)
 wrote /home/kyuhyongpark/CANA/CANA/dev/high_k/logs/bbm_high_k_primes_compare/time_success_vs_k__all.png
+  overall success: pyeda complete_sum: 124/402 (31%) | Primer-B: 301/402 (75%)
 done  |  402 rows  |  mismatches=0  REGENERATE_FROM_LOG_ONLY=True
