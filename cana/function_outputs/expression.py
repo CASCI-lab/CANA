@@ -4,6 +4,13 @@
 In-memory peer IR uses python ``and``/``or``/``not`` over ``x0``…``x{k-1}``
 (MSB = ``x0`` = ``inputs[0]``).  Named source strings are translated at the
 I/O / :class:`~cana.boolean_node.BooleanNode` boundary.
+
+Naming:
+- ``*_positional*`` / ``named_to_positional`` / ``positional_to_named`` —
+  fixed IR kind (positional ``x_i`` or named regulators).
+- ``lut_to_expression`` / ``one_symbol_to_expression`` — emit whatever names
+  are in ``input_names`` (pass :func:`positional_names` for positional IR).
+- :func:`normalize_operators` / :func:`expression_identifiers` — either kind.
 """
 from __future__ import annotations
 
@@ -23,10 +30,10 @@ __all__ = [
     "expression_identifiers",
     "regulator_names_in_expression",
     "positional_names",
-    "to_positional",
-    "from_positional",
+    "named_to_positional",
+    "positional_to_named",
     "reorder_positional",
-    "bit_lut_from_expression",
+    "positional_expression_to_bit_lut",
     "lut_to_expression",
     "one_symbol_to_expression",
     "function_outputs_to_named_expression",
@@ -39,6 +46,8 @@ POSITIONAL_RE = re.compile(r"\bx(\d+)\b")
 
 def normalize_operators(expr: str, style: str = "python") -> str:
     """Normalize boolean operators to ``and``/``or``/``not`` or ``&``/``|``/``!``.
+
+    Works on positional or named expressions (operators only).
 
     Args:
         expr: Boolean expression string.
@@ -65,7 +74,10 @@ def normalize_operators(expr: str, style: str = "python") -> str:
 
 
 def expression_identifiers(expr: str) -> List[str]:
-    """Return identifier tokens in ``expr``, excluding boolean keywords."""
+    """Return identifier tokens in ``expr``, excluding boolean keywords.
+
+    Works on positional (``x0``…) or named expressions.
+    """
     return [
         tok
         for tok in IDENTIFIER_RE.findall(expr)
@@ -76,7 +88,11 @@ def expression_identifiers(expr: str) -> List[str]:
 def regulator_names_in_expression(
     expr: str, known_names: Sequence[str]
 ) -> List[str]:
-    """Select known node names that appear as tokens in ``expr`` (stable order)."""
+    """Select known node names that appear as tokens in a named expression.
+
+    ``known_names`` order is preserved.  Intended for named (regulator)
+    expressions, not positional ``x_i`` IR.
+    """
     padded = "*" + expr + "*"
     found: List[str] = []
     for name in known_names:
@@ -108,14 +124,14 @@ def _replace_identifiers(expr: str, mapping: dict) -> str:
     return pattern.sub(repl, expr)
 
 
-def to_positional(expr: str, input_names: Sequence[str]) -> str:
+def named_to_positional(expr: str, input_names: Sequence[str]) -> str:
     """Rewrite a named expression to positional ``x0``…``x{k-1}`` IR."""
     mapping = {name: "x{0}".format(i) for i, name in enumerate(input_names)}
     return _replace_identifiers(expr, mapping)
 
 
-def from_positional(expr: str, input_names: Sequence[str]) -> str:
-    """Rewrite positional ``x_i`` IR to ``input_names[i]``."""
+def positional_to_named(expr: str, input_names: Sequence[str]) -> str:
+    """Rewrite positional ``x_i`` IR to a named expression over ``input_names``."""
     mapping = {"x{0}".format(i): name for i, name in enumerate(input_names)}
     return _replace_identifiers(expr, mapping)
 
@@ -123,7 +139,7 @@ def from_positional(expr: str, input_names: Sequence[str]) -> str:
 def reorder_positional(
     expr: str, old_labels: Sequence[object], new_labels: Sequence[object]
 ) -> str:
-    """Rewrite ``x_i`` indices when input order changes.
+    """Rewrite positional ``x_i`` indices when input order changes.
 
     ``old_labels`` / ``new_labels`` identify the same inputs in old vs new
     bit order (any hashable labels).  Token ``x{i}`` referred to
@@ -153,8 +169,8 @@ def reorder_positional(
     return _replace_identifiers(mid, phase2)
 
 
-def bit_lut_from_expression(expr: str, k: int) -> BitLut:
-    """Evaluate positional (or already-bound) IR to a dense :class:`BitLut`."""
+def positional_expression_to_bit_lut(expr: str, k: int) -> BitLut:
+    """Evaluate positional ``x0``…``x{k-1}`` IR to a dense :class:`BitLut`."""
     k = int(k)
     if expr in ("True", "true", "1"):
         if k != 0:
@@ -171,11 +187,14 @@ def bit_lut_from_expression(expr: str, k: int) -> BitLut:
 def lut_to_expression(
     input_names: Sequence[str], lut: Sequence[Any], style: str = "python"
 ) -> str:
-    """Build a DNF expression for a LUT.
+    """Build a DNF expression for a LUT using ``input_names`` as literals.
+
+    Positional vs named is chosen by ``input_names``: pass
+    :func:`positional_names` ``(k)`` for positional IR, or regulator names for
+    a named expression.
 
     Args:
         input_names: Input variable names in LUT bit order (MSB first).
-            Pass ``positional_names(k)`` for positional IR.
         lut: Truth table of length ``2**k``.
         style: ``"python"`` (``and``/``or``/``not``) or ``"symbolic"`` (``&``/``|``/``!``).
     """
@@ -246,6 +265,10 @@ def one_symbol_to_expression(
     Schema characters: ``1`` → literal, ``0`` → negated literal, ``2`` →
     don't-care (omitted).  Incomplete covers are still exported as the
     positive DNF of whatever ON schemas are present (no LUT materialization).
+
+    Positional vs named is chosen by ``input_names``: pass
+    :func:`positional_names` ``(k)`` for positional IR, or regulator names for
+    a named expression.
 
     Args:
         input_names: Variable names in schema bit order (MSB first).
@@ -372,7 +395,7 @@ def function_outputs_to_named_expression(
     expr = getattr(outputs, "positional_expression", None)
     if expr is not None:
         _warn_consistency("positional_expression")
-        named = from_positional(expr, input_names)
+        named = positional_to_named(expr, input_names)
         if style == "python":
             return named
         return normalize_operators(named, style)

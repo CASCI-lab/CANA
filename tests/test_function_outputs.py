@@ -11,11 +11,11 @@ import warnings
 import pytest
 
 from cana.function_outputs.expression import (
-    bit_lut_from_expression,
-    from_positional,
+    positional_expression_to_bit_lut,
+    positional_to_named,
     function_outputs_to_named_expression,
     one_symbol_to_expression,
-    to_positional,
+    named_to_positional,
 )
 from cana.function_outputs.one_symbol import (
     bit_lut_from_one_symbol_schemata,
@@ -55,12 +55,12 @@ def test_expression_only_sequence_materializes():
     assert fo.eval(3) == 1
 
 
-def test_positional_to_from_roundtrip():
+def test_named_positional_roundtrip():
     named = "(A and not B) or C"
     names = ["A", "B", "C"]
-    positional = to_positional(named, names)
+    positional = named_to_positional(named, names)
     assert positional == "(x0 and not x1) or x2"
-    assert from_positional(positional, names) == named
+    assert positional_to_named(positional, names) == named
 
 
 def test_one_symbol_to_expression_concise():
@@ -198,8 +198,8 @@ def test_boolean_node_expression_from_schemata():
     assert n.named_expression(style="symbolic", warn=False) == "(A & B)"
 
 
-def test_bit_lut_from_expression_and_get_bit_lut():
-    lut = bit_lut_from_expression("x0 and x1", 2)
+def test_positional_expression_to_bit_lut_and_get_bit_lut():
+    lut = positional_expression_to_bit_lut("x0 and x1", 2)
     assert list(lut) == [0, 0, 0, 1]
     fo = FunctionOutputs(positional_expression="x0 or x1", k=2)
     assert fo.bit_lut is None

@@ -27,10 +27,10 @@ from cana.boolean_node import BooleanNode
 from cana.function_outputs import FunctionOutputs
 from cana.function_outputs.expression import (
     expression_identifiers,
-    from_positional,
+    positional_to_named,
     normalize_operators,
     regulator_names_in_expression,
-    to_positional,
+    named_to_positional,
 )
 
 __all__ = [
@@ -66,7 +66,7 @@ class DetachedRule:
         expr = self.outputs.positional_expression
         if expr is None:
             raise ValueError("DetachedRule.outputs has no positional_expression")
-        named = from_positional(expr, self.input_names)
+        named = positional_to_named(expr, self.input_names)
         if style == "python":
             return named
         return normalize_operators(named, style)
@@ -119,7 +119,7 @@ def named_expression_to_detached_rule(
         if expr.strip() == name and name not in regs:
             regs = [name]
 
-    positional = to_positional(expr, regs)
+    positional = named_to_positional(expr, regs)
     return DetachedRule(
         name=name,
         input_names=tuple(regs),

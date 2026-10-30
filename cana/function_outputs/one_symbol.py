@@ -217,7 +217,7 @@ def one_symbol_schemata_from_positional_expression(
     raises ``ValueError``.
     """
     from cana.function_outputs.expression import (
-        bit_lut_from_expression,
+        positional_expression_to_bit_lut,
         positional_names,
     )
     from cana.primes.cascade import on_off_primes_from_expression
@@ -239,4 +239,4 @@ def one_symbol_schemata_from_positional_expression(
                 k, MAX_DENSE_LUT_K
             )
         )
-    return one_symbol_schemata_from_bit_lut(bit_lut_from_expression(expr, k))
+    return one_symbol_schemata_from_bit_lut(positional_expression_to_bit_lut(expr, k))

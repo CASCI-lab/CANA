@@ -23,7 +23,7 @@ from typing import Any, Iterator, List, Optional, Sequence, Tuple, Union
 
 from cana.bit_lut import BitLut
 from cana.function_outputs.expression import (
-    bit_lut_from_expression,
+    positional_expression_to_bit_lut,
     lut_to_expression,
     one_symbol_to_expression,
     positional_names,
@@ -344,7 +344,7 @@ class FunctionOutputs(object):
                 "build_bit_lut_from_positional_expression requires "
                 "positional_expression"
             )
-        self.bit_lut = bit_lut_from_expression(self.positional_expression, self.k)
+        self.bit_lut = positional_expression_to_bit_lut(self.positional_expression, self.k)
         self._k = self.bit_lut.k
         return self.bit_lut
 
@@ -452,7 +452,7 @@ class FunctionOutputs(object):
         if self.positional_expression is not None:
             try:
                 candidates.append(
-                    bit_lut_from_expression(self.positional_expression, self.k)
+                    positional_expression_to_bit_lut(self.positional_expression, self.k)
                 )
             except ValueError:
                 self.representations_consistent = False
