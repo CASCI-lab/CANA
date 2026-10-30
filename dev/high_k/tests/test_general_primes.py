@@ -13,6 +13,7 @@ import pytest
 from high_k.general_primes import (
     DEFAULT_TIMEOUT_S,
     EXPLORATION_TIMEOUT_S,
+    MAX_DENSE_LUT_K,
     bdd_on_off_primes,
     complete_sum_on_off_primes,
     pyboolnet_on_off_primes,
@@ -44,6 +45,33 @@ _CASES = [
 def test_timeout_constants():
     assert DEFAULT_TIMEOUT_S == 10.0
     assert EXPLORATION_TIMEOUT_S == 1.0
+    assert MAX_DENSE_LUT_K == 20
+
+
+def test_qm_refuses_huge_k():
+    # k = 21 > MAX_DENSE_LUT_K; predictable Θ(2^k) RAM.
+    names = [f"a{i}" for i in range(MAX_DENSE_LUT_K + 1)]
+    expr = " & ".join(names)
+    with pytest.raises(ValueError, match="MAX_DENSE_LUT_K"):
+        qm_on_off_primes(expr, timeout_s=0)
+
+
+def test_refuses_extreme_paren_nesting_even_with_short_timeout():
+    """Deep nesting must be ``error``, not a wall-clock ``timeout``."""
+    # Right-nested depth 250 — above MAX_SAFE_PAREN_DEPTH.
+    expr = "a"
+    for _ in range(250):
+        expr = f"({expr} & a)"
+    with pytest.raises(RecursionError, match="parenthesis depth"):
+        complete_sum_on_off_primes(expr, timeout_s=0.05)
+
+
+def test_bdd_refuses_huge_k():
+    pytest.importorskip("dd")
+    names = [f"a{i}" for i in range(MAX_DENSE_LUT_K + 1)]
+    expr = " & ".join(names)
+    with pytest.raises(ValueError, match="MAX_DENSE_LUT_K"):
+        bdd_on_off_primes(expr, timeout_s=0)
 
 
 @pytest.mark.parametrize("expr", _CASES)
@@ -72,6 +100,16 @@ def test_complete_sum_matches_qm(expr: str):
 @pytest.mark.parametrize("expr", _CASES)
 def test_bdd_matches_qm(expr: str):
     pytest.importorskip("dd")
+    qm = qm_on_off_primes(expr, timeout_s=0)
+    bd = bdd_on_off_primes(expr, timeout_s=0)
+    assert _match(bd, qm)
+
+
+def test_bdd_support_smaller_than_declared_names():
+    """Variables absorbed by the BDD must not KeyError in bitstring conversion."""
+    pytest.importorskip("dd")
+    # Equivalent to ``a & b``; ``c`` is don't-care after simplification.
+    expr = "(a & b & c) | (a & b & ~c)"
     qm = qm_on_off_primes(expr, timeout_s=0)
     bd = bdd_on_off_primes(expr, timeout_s=0)
     assert _match(bd, qm)
@@ -134,3 +172,57 @@ def test_call_in_subprocess_still_works():
 
     with pytest.raises(TimeoutError, match="timeout"):
         call_in_subprocess(_slow, (), timeout_s=0.2)
+
+
+def test_call_in_subprocess_signal_death_is_timeout():
+    """OOM/SIGKILL mid-run must count as timeout, not ``exited without result``."""
+    import os
+    import signal as signal_mod
+
+    def _suicide(conn) -> None:
+        # Die by signal without sending a result (simulates OOM killer).
+        os.kill(os.getpid(), signal_mod.SIGKILL)
+        conn.send(("ok", None))
+        conn.close()
+
+    with pytest.raises(TimeoutError, match="killed by signal"):
+        call_in_subprocess(_suicide, (), timeout_s=2.0)
+
+
+def test_call_in_subprocess_kills_grandchild(tmp_path):
+    """Process-group kill must reap subprocess.Popen grandchildren."""
+    import os
+    import subprocess
+    import sys
+    from pathlib import Path
+
+    pidfile = tmp_path / "grandchild.pid"
+
+    def _worker(path: str, conn) -> None:
+        child = subprocess.Popen(
+            [sys.executable, "-c", "import time; time.sleep(120)"]
+        )
+        Path(path).write_text(str(child.pid), encoding="utf-8")
+        time.sleep(120.0)
+        conn.send(("ok", None))
+        conn.close()
+
+    with pytest.raises(TimeoutError, match="timeout"):
+        call_in_subprocess(_worker, (str(pidfile),), timeout_s=0.3)
+
+    # Allow the kernel a moment to reap the grandchild.
+    deadline = time.perf_counter() + 2.0
+    gp_pid = int(pidfile.read_text(encoding="utf-8"))
+    while time.perf_counter() < deadline:
+        try:
+            os.kill(gp_pid, 0)
+        except ProcessLookupError:
+            return
+        time.sleep(0.05)
+    # Still alive → fail.
+    try:
+        os.kill(gp_pid, 0)
+        alive = True
+    except ProcessLookupError:
+        alive = False
+    assert not alive, f"grandchild pid={gp_pid} survived process-group kill"

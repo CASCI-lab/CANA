@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import multiprocessing as mp
+import os
 import signal
 import statistics
 import time
@@ -86,6 +87,21 @@ def call_with_timeout(
         signal.signal(signal.SIGALRM, prev)
 
 
+def _kill_process_group(pid: int, sig: int) -> None:
+    """Send *sig* to the process group led by *pid*; ignore if already gone."""
+    try:
+        os.killpg(pid, sig)
+    except ProcessLookupError:
+        return
+    except PermissionError:
+        # Fall back to the single process if we are not allowed to signal the
+        # whole group (should not happen for a session we created).
+        try:
+            os.kill(pid, sig)
+        except ProcessLookupError:
+            return
+
+
 def call_in_subprocess(
     worker: Callable[..., None],
     args: Tuple[Any, ...],
@@ -96,36 +112,86 @@ def call_in_subprocess(
 
     *worker* must ``conn.send(("ok", result))`` or
     ``conn.send(("err", message))`` then close *conn*.  Raises
-    ``TimeoutError`` if the child exceeds *timeout_s* wall-clock seconds
-    (``terminate`` / ``kill``).  Raises ``RuntimeError`` on worker error
-    or a missing result.  Used when C extensions (e.g. Espresso) ignore
-    ``SIGALRM``.
+    ``TimeoutError`` if the child exceeds *timeout_s* wall-clock seconds.
+    Raises ``RuntimeError`` on worker error or a missing result.
+
+    The child calls ``os.setsid()`` before running *worker*, so it becomes a
+    new session / process-group leader.  On timeout the whole group is
+    signaled (``SIGTERM`` then ``SIGKILL``), which also reaps grandchildren
+    such as PyBoolNet's ``BNetToPrime`` binary.  Used when C extensions
+    (e.g. Espresso) ignore ``SIGALRM``.
     """
     if timeout_s <= 0:
         raise ValueError("call_in_subprocess requires timeout_s > 0")
 
     ctx = mp.get_context("fork")
     parent_conn, child_conn = ctx.Pipe(duplex=False)
-    proc = ctx.Process(target=worker, args=args + (child_conn,))
+    ready = ctx.Event()
+
+    def _entry() -> None:
+        # New session ⇒ pgid == pid; grandchildren inherit this group.
+        os.setsid()
+        ready.set()
+        try:
+            worker(*args, child_conn)
+        finally:
+            try:
+                child_conn.close()
+            except Exception:  # noqa: BLE001
+                pass
+
+    proc = ctx.Process(target=_entry)
     proc.start()
     child_conn.close()
+    # Wait until setsid() has run so killpg(proc.pid) cannot hit our group.
+    if not ready.wait(timeout=5.0):
+        if proc.pid is not None:
+            _kill_process_group(proc.pid, signal.SIGKILL)
+        proc.join(1.0)
+        parent_conn.close()
+        raise RuntimeError("worker failed to enter new session")
+
     proc.join(float(timeout_s))
     if proc.is_alive():
-        proc.terminate()
+        assert proc.pid is not None
+        _kill_process_group(proc.pid, signal.SIGTERM)
         proc.join(5.0)
         if proc.is_alive():
-            proc.kill()
+            _kill_process_group(proc.pid, signal.SIGKILL)
             proc.join(1.0)
         parent_conn.close()
         raise TimeoutError(
             f"exceeded {timeout_s:g}s timeout (subprocess killed)"
         )
+    # Child exited before the join deadline.  A negative exitcode means it
+    # died from a signal (e.g. SIGKILL/-9 from the OOM killer, or SIGTERM
+    # from a racing kill) without sending a result — treat that as a
+    # timeout/resource kill, not an application error.  Otherwise a short
+    # TIMEOUT_S can inflate the ``error`` count when heavy C allocators are
+    # SIGKILL'd mid-run.
+    exitcode = proc.exitcode
+
+    def _missing_result() -> None:
+        """Raise TimeoutError for signal death, else RuntimeError."""
+        if isinstance(exitcode, int) and exitcode < 0:
+            sig = -exitcode
+            raise TimeoutError(
+                f"exceeded {timeout_s:g}s timeout "
+                f"(worker killed by signal {sig}, exitcode={exitcode})"
+            )
+        raise RuntimeError(
+            f"worker exited without result (exitcode={exitcode})"
+        )
+
     if not parent_conn.poll():
         parent_conn.close()
-        raise RuntimeError(
-            f"worker exited without result (exitcode={proc.exitcode})"
-        )
-    status, payload = parent_conn.recv()
+        _missing_result()
+    try:
+        status, payload = parent_conn.recv()
+    except EOFError:
+        # Pipe closed mid-frame after a signal kill (e.g. SIGKILL/OOM).
+        parent_conn.close()
+        _missing_result()
     parent_conn.close()
     if status == "ok":
         return payload

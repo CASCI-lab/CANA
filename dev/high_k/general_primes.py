@@ -14,7 +14,9 @@ Backends (separate APIs; no cascade):
 4. BDD onset enumeration (``dd``) + Quine–McCluskey
 
 All wall-clock limits use :func:`~high_k.timing.call_in_subprocess` so
-Cython / C / external tools can be killed and child memory freed.
+Cython / C / external tools (and their grandchildren) can be killed via
+process-group signals.  Dense LUT / onset→QM paths also refuse
+``k > MAX_DENSE_LUT_K`` up front.
 """
 from __future__ import annotations
 
@@ -25,6 +27,7 @@ from high_k.paths import ensure_cana_on_path
 from high_k.primes_util import (
     PrimeDict,
     dnf_terms_to_primes,
+    refuse_extreme_nesting,
     to_pyeda_expr_str,
     to_symbolic_expr,
 )
@@ -34,6 +37,7 @@ ensure_cana_on_path()
 __all__ = [
     "DEFAULT_TIMEOUT_S",
     "EXPLORATION_TIMEOUT_S",
+    "MAX_DENSE_LUT_K",
     "qm_on_off_primes",
     "complete_sum_on_off_primes",
     "pyboolnet_on_off_primes",
@@ -42,6 +46,9 @@ __all__ = [
 
 DEFAULT_TIMEOUT_S = 10.0
 EXPLORATION_TIMEOUT_S = 1.0
+# Dense LUT / onset→QM paths allocate Θ(2^k) memory.  Refuse above this *k*
+# rather than relying on a wall-clock kill after the allocation attempt.
+MAX_DENSE_LUT_K = 20
 
 OnOffPrimes = Tuple[List[PrimeDict], List[PrimeDict]]
 
@@ -55,6 +62,9 @@ def _run_timed(
 ) -> OnOffPrimes:
     """Run *inprocess* directly or *worker* under a wall-clock kill."""
     raw = expr.strip()
+    # Parent-side: fail before spawn so a short TIMEOUT_S cannot mis-label
+    # extreme nesting as ``timeout`` (kill during parse).
+    refuse_extreme_nesting(raw)
     if timeout_s <= 0:
         return inprocess(raw)
     from high_k.timing import call_in_subprocess
@@ -76,6 +86,16 @@ def _constant_on_off(raw: str) -> Optional[OnOffPrimes]:
 def _for_cana_eval(expr: str) -> str:
     """Rewrite ``~`` to ``!`` so CANA LUT eval uses logical (not bitwise) NOT."""
     return to_symbolic_expr(expr).replace("~", "!")
+
+
+def _refuse_huge_dense_lut(expr: str) -> None:
+    """Raise ``ValueError`` when dense ``2**k`` materialization is unsafe."""
+    names = unique_regulators(_for_cana_eval(expr))
+    k = len(names)
+    if k > MAX_DENSE_LUT_K:
+        raise ValueError(
+            f"refusing dense LUT/QM for k={k} > MAX_DENSE_LUT_K={MAX_DENSE_LUT_K}"
+        )
 
 
 # ---------------------------------------------------------------------------
@@ -106,6 +126,8 @@ def _qm_on_off_primes_inprocess(expr: str) -> OnOffPrimes:
     if const is not None:
         return const
 
+    refuse_extreme_nesting(expr)
+    _refuse_huge_dense_lut(expr)
     cana_expr = _for_cana_eval(expr)
     names = unique_regulators(cana_expr)
     fo = import_detached_outputs(as_bnet(cana_expr), "Y")
@@ -133,8 +155,10 @@ def qm_on_off_primes(
 ) -> OnOffPrimes:
     """Exact ON/OFF primes via dense LUT + CANA Quine–McCluskey.
 
-    No *k* pre-skip: rely on *timeout_s* and subprocess kill to bound
-    memory / time.  *timeout_s* ``<= 0`` runs in-process (tests / debug).
+    Refuses expressions with more than :data:`MAX_DENSE_LUT_K` inputs
+    (predictable ``2**k`` RAM).  Otherwise *timeout_s* and subprocess kill
+    bound wall-clock time.  *timeout_s* ``<= 0`` runs in-process
+    (tests / debug).
     """
     return _run_timed(
         _qm_on_off_primes_inprocess,
@@ -156,6 +180,7 @@ def _complete_sum_on_off_primes_inprocess(expr: str) -> OnOffPrimes:
     if const is not None:
         return const
 
+    refuse_extreme_nesting(expr)
     f = pyeda_expr(to_pyeda_expr_str(expr))
     on_cs = f.complete_sum()
     off_cs = (~f).complete_sum()
@@ -258,8 +283,9 @@ def pyboolnet_on_off_primes(
 ) -> OnOffPrimes:
     """Exact ON/OFF primes via PyBoolNet ``bnet2primes``.
 
-    Outer subprocess kill still applies: PyBoolNet's own external call has
-    no wall-clock limit aligned with *timeout_s*.
+    PyBoolNet shells out to ``BNetToPrime``; the timed worker runs in a new
+    process group so a timeout kills that binary too (not only the Python
+    wrapper).
 
     Raises:
         ImportError: if pyboolnet is not installed.
@@ -315,17 +341,24 @@ def _bdd_polarity_primes(bdd, node, names: List[str]) -> List[PrimeDict]:
     if node == bdd.true:
         return [{}]
 
-    # Naive Morreale-on-BDD does not yield the full prime set; enumerate the
-    # onset via the BDD, then run Quine–McCluskey (same engine as CANA QM).
+    # ``pick_iter`` yields assignments over the node's *support* only.  Running
+    # QM in that subspace avoids KeyError on don't-care inputs and avoids
+    # exploding 2^k enumerations via ``care_vars=all``.  Primes only mention
+    # support literals; absent inputs are implicit don't-cares.
+    support = set(bdd.support(node))
+    support_names = [n for n in names if n in support]
+    if not support_names:
+        return [{}]
     minterms = {
-        _assignment_to_bitstring(a, names) for a in bdd.pick_iter(node)
+        _assignment_to_bitstring(a, support_names)
+        for a in bdd.pick_iter(node)
     }
     if not minterms:
         return []
-    if len(minterms) == (1 << len(names)):
+    if len(minterms) == (1 << len(support_names)):
         return [{}]
     return _bitstring_primes_to_dicts(
-        find_implicants_qm(minterms), names
+        find_implicants_qm(minterms), support_names
     )
 
 
@@ -336,6 +369,9 @@ def _bdd_on_off_primes_inprocess(expr: str) -> OnOffPrimes:
     if const is not None:
         return const
 
+    refuse_extreme_nesting(expr)
+    # Onset enumeration + QM is Θ(2^k) in the worst case; same guard as LUT QM.
+    _refuse_huge_dense_lut(expr)
     names = unique_regulators(_for_cana_eval(expr))
     manager = BDD()
     for name in names:
@@ -368,8 +404,12 @@ def bdd_on_off_primes(
     runs CANA's Cython QM.  (Textbook Morreale recursion on BDDs does not
     produce the full prime set without extra machinery.)
 
+    Refuses expressions with more than :data:`MAX_DENSE_LUT_K` inputs
+    (worst-case onset size ``2**k``).
+
     Raises:
         ImportError: if dd is not installed.
+        ValueError: if *k* exceeds :data:`MAX_DENSE_LUT_K`.
         TimeoutError: if wall-clock time exceeds *timeout_s*.
     """
     import dd  # noqa: F401

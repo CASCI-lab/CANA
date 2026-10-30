@@ -2,7 +2,8 @@
 """Shared helpers for prime-implicant conversion (pyeda DNF covers)."""
 from __future__ import annotations
 
-from typing import Dict, List
+import sys
+from typing import Dict, List, Optional
 
 from high_k.paths import ensure_cana_on_path
 
@@ -12,12 +13,50 @@ from cana.function_outputs.expression import normalize_operators
 
 __all__ = [
     "PrimeDict",
+    "MAX_SAFE_PAREN_DEPTH",
+    "paren_nesting_depth",
+    "refuse_extreme_nesting",
     "to_symbolic_expr",
     "to_pyeda_expr_str",
     "dnf_terms_to_primes",
 ]
 
 PrimeDict = Dict[str, bool]
+
+# CPython / pyeda recurse on the paren tree; depths near ``sys.getrecursionlimit``
+# raise ``RecursionError`` or ``SyntaxError: too many nested parentheses``.
+# Refuse early so a short wall-clock kill cannot mis-label these as ``timeout``.
+MAX_SAFE_PAREN_DEPTH = 200
+
+
+def paren_nesting_depth(expr: str) -> int:
+    """Return the maximum ``()`` nesting depth in *expr*."""
+    depth = max_depth = 0
+    for ch in expr:
+        if ch == "(":
+            depth += 1
+            if depth > max_depth:
+                max_depth = depth
+        elif ch == ")":
+            depth -= 1
+    return max_depth
+
+
+def refuse_extreme_nesting(
+    expr: str, *, limit: Optional[int] = None
+) -> None:
+    """Raise ``RecursionError`` if parenthesis nesting exceeds *limit*.
+
+    Default *limit* is ``min(MAX_SAFE_PAREN_DEPTH, getrecursionlimit() - 50)``.
+    """
+    if limit is None:
+        limit = min(MAX_SAFE_PAREN_DEPTH, sys.getrecursionlimit() - 50)
+    depth = paren_nesting_depth(expr)
+    if depth > limit:
+        raise RecursionError(
+            f"expression parenthesis depth {depth} > {limit} "
+            f"(refusing parse; would hit RecursionError/parser limits)"
+        )
 
 
 def to_symbolic_expr(expr: str) -> str:

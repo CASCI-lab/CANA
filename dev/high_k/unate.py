@@ -46,6 +46,7 @@ from cana.function_outputs.expression import (
 from high_k.primes_util import (
     PrimeDict,
     dnf_terms_to_primes,
+    refuse_extreme_nesting,
     to_pyeda_expr_str,
     to_symbolic_expr,
 )
@@ -235,6 +236,7 @@ def _espresso_on_off_primes_inprocess(expr: str) -> Tuple[List[PrimeDict], List[
     if raw in ("0", "False", "false"):
         return [], [{}]
 
+    refuse_extreme_nesting(raw)
     f = pyeda_expr(to_pyeda_expr_str(raw))
     f_dnf = f.to_dnf()
     # Constant folding after to_dnf.
@@ -289,14 +291,18 @@ def on_off_primes(
     # Import early so missing pyeda fails in the parent, not a dead worker.
     import pyeda  # noqa: F401
 
+    raw = expr.strip()
+    # Parent-side nesting guard (see ``refuse_extreme_nesting``).
+    refuse_extreme_nesting(raw)
+
     if timeout_s <= 0:
-        return _espresso_on_off_primes_inprocess(expr)
+        return _espresso_on_off_primes_inprocess(raw)
 
     from high_k.timing import call_in_subprocess
 
     return call_in_subprocess(
         _espresso_worker,
-        (expr.strip(),),
+        (raw,),
         timeout_s=timeout_s,
     )
 
