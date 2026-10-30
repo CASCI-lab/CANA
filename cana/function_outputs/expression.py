@@ -8,7 +8,7 @@ I/O / :class:`~cana.boolean_node.BooleanNode` boundary.
 Naming:
 - ``*_positional*`` / ``named_to_positional`` / ``positional_to_named`` —
   fixed IR kind (positional ``x_i`` or named regulators).
-- ``lut_to_expression`` — emit whatever names are in ``input_names``
+- ``bit_lut_to_expression`` — emit whatever names are in ``input_names``
   (pass :func:`positional_names` for positional IR).
 - :func:`normalize_operators` / :func:`expression_identifiers` — either kind.
 """
@@ -34,7 +34,7 @@ __all__ = [
     "positional_to_named",
     "reorder_positional",
     "positional_expression_to_bit_lut",
-    "lut_to_expression",
+    "bit_lut_to_expression",
     "function_outputs_to_named_expression",
 ]
 
@@ -183,60 +183,6 @@ def positional_expression_to_bit_lut(expr: str, k: int) -> BitLut:
     return BitLut.from_sequence(output_transitions(expr, names))
 
 
-def lut_to_expression(
-    input_names: Sequence[str], lut: Sequence[Any], style: str = "python"
-) -> str:
-    """Build a DNF expression for a LUT using ``input_names`` as literals.
-
-    Positional vs named is chosen by ``input_names``: pass
-    :func:`positional_names` ``(k)`` for positional IR, or regulator names for
-    a named expression.
-
-    Args:
-        input_names: Input variable names in LUT bit order (MSB first).
-        lut: Truth table of length ``2**k``.
-        style: ``"python"`` (``and``/``or``/``not``) or ``"symbolic"`` (``&``/``|``/``!``).
-    """
-    k = len(input_names)
-    if k == 0:
-        val = int(lut[0]) if lut else 0
-        return "True" if val else "False"
-
-    and_op = " and " if style == "python" else " & "
-    or_op = " or " if style == "python" else " | "
-    not_prefix = "not " if style == "python" else "!"
-
-    terms: List[str] = []
-    for state in range(2**k):
-        if int(lut[state]) != 1:
-            continue
-        bits = statenum_to_binstate(state, k)
-        lits: List[str] = []
-        for name, bit in zip(input_names, bits):
-            if bit == "1":
-                lits.append(name)
-            else:
-                lits.append(not_prefix + name)
-        if len(lits) == 1:
-            terms.append(lits[0])
-        else:
-            terms.append("(" + and_op.join(lits) + ")")
-
-    if not terms:
-        x = input_names[0]
-        if style == "python":
-            return "({x} and not {x})".format(x=x)
-        return "({x} & !{x})".format(x=x)
-
-    if len(lut) == 2**k and all(int(v) == 1 for v in lut):
-        x = input_names[0]
-        if style == "python":
-            return "({x} or not {x})".format(x=x)
-        return "({x} | !{x})".format(x=x)
-
-    return or_op.join(terms)
-
-
 def _style_ops(style: str):
     """Return ``(and_op, or_op, not_prefix)`` for ``style``."""
     if style == "python":
@@ -252,6 +198,69 @@ def _contradiction_expr(input_names: Sequence[str], style: str) -> str:
     if style == "python":
         return "({x} and not {x})".format(x=x)
     return "({x} & !{x})".format(x=x)
+
+
+def _tautology_expr(input_names: Sequence[str], style: str) -> str:
+    """Return a constant-True expression over ``input_names``."""
+    x = input_names[0]
+    if style == "python":
+        return "({x} or not {x})".format(x=x)
+    return "({x} | !{x})".format(x=x)
+
+
+def bit_lut_to_expression(
+    input_names: Sequence[str], lut: BitLut, style: str = "python"
+) -> str:
+    """Build a DNF expression for a :class:`BitLut` using ``input_names``.
+
+    Positional vs named is chosen by ``input_names``: pass
+    :func:`positional_names` ``(k)`` for positional IR, or regulator names for
+    a named expression.  Callers with a plain 0/1 sequence should convert via
+    :meth:`BitLut.from_sequence` first.
+
+    Args:
+        input_names: Input variable names in LUT bit order (MSB first).
+        lut: Dense truth table (``lut.k`` must equal ``len(input_names)``).
+        style: ``"python"`` (``and``/``or``/``not``) or ``"symbolic"`` (``&``/``|``/``!``).
+    """
+    k = len(input_names)
+    if k != lut.k:
+        raise ValueError(
+            "len(input_names)={0:d} does not match BitLut.k={1:d}".format(
+                k, lut.k
+            )
+        )
+    if k == 0:
+        return "True" if lut[0] else "False"
+
+    and_op, or_op, not_prefix = _style_ops(style)
+
+    const = lut.is_constant()
+    if const == 0:
+        return _contradiction_expr(input_names, style)
+    if const == 1:
+        return _tautology_expr(input_names, style)
+
+    terms: List[str] = []
+    for state in range(len(lut)):
+        if lut[state] != 1:
+            continue
+        bits = statenum_to_binstate(state, k)
+        lits: List[str] = []
+        for name, bit in zip(input_names, bits):
+            if bit == "1":
+                lits.append(name)
+            else:
+                lits.append(not_prefix + name)
+        if len(lits) == 1:
+            terms.append(lits[0])
+        else:
+            terms.append("(" + and_op.join(lits) + ")")
+
+    if not terms:
+        return _contradiction_expr(input_names, style)
+
+    return or_op.join(terms)
 
 
 def function_outputs_to_named_expression(
@@ -367,4 +376,4 @@ def function_outputs_to_named_expression(
                 "positional_expression, one_symbol_schemata, "
                 "two_symbol_schemata, nor bit_lut is available on outputs"
             )
-    return lut_to_expression(input_names, lut, style=style)
+    return bit_lut_to_expression(input_names, lut, style=style)

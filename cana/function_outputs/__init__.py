@@ -24,7 +24,7 @@ from typing import Any, Iterator, List, Optional, Sequence, Tuple, Union
 from cana.function_outputs.bit_lut import BitLut
 from cana.function_outputs.expression import (
     positional_expression_to_bit_lut,
-    lut_to_expression,
+    bit_lut_to_expression,
     positional_names,
     reorder_positional,
 )
@@ -329,7 +329,7 @@ class FunctionOutputs(object):
             )
             return self.positional_expression
         if self.bit_lut is not None:
-            self.positional_expression = lut_to_expression(names, self.bit_lut)
+            self.positional_expression = bit_lut_to_expression(names, self.bit_lut)
             return self.positional_expression
         raise ValueError(
             "Cannot get positional_expression: neither positional_expression, two_symbol_schemata, "

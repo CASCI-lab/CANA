@@ -7,9 +7,10 @@ import xml.etree.ElementTree as ET
 from typing import Any, Dict, List, Optional, Sequence
 
 from cana.boolean_node import BooleanNode
+from cana.function_outputs.bit_lut import BitLut
 from cana.function_outputs.expression import (
+    bit_lut_to_expression,
     function_outputs_to_named_expression,
-    lut_to_expression,
 )
 from cana.nodes_builder import input_names, update_rules_to_nodes
 
@@ -124,7 +125,7 @@ def mathml_to_python_expr(node: ET.Element) -> str:
 def python_expr_to_mathml(expr: str) -> ET.Element:
     """Parse a restricted python boolean expression into MathML ``apply`` trees.
 
-    Supports the small DNF language produced by :func:`~cana.function_outputs.expression.lut_to_expression`.
+    Supports the small DNF language produced by :func:`~cana.function_outputs.expression.bit_lut_to_expression`.
     """
 
     def math_ci(name: str) -> ET.Element:
@@ -246,7 +247,8 @@ def python_expr_to_mathml(expr: str) -> ET.Element:
 
 def lut_to_mathml(input_names: Sequence[str], lut: Sequence[Any]) -> ET.Element:
     """MathML for the ON condition of a Boolean LUT (resultLevel 1)."""
-    expr = lut_to_expression(input_names, lut, style="python")
+    bit_lut = lut if isinstance(lut, BitLut) else BitLut.from_sequence(lut)
+    expr = bit_lut_to_expression(input_names, bit_lut, style="python")
     return python_expr_to_mathml(expr)
 
 

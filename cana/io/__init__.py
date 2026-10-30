@@ -52,9 +52,9 @@ _LAZY_EXPORTS = {
     ),
     "nodes_to_cnet": ("cana.io.cnet", "nodes_to_cnet"),
     "parse_cnet": ("cana.io.cnet", "parse_cnet"),
-    "lut_to_expression": (
+    "bit_lut_to_expression": (
         "cana.function_outputs.expression",
-        "lut_to_expression",
+        "bit_lut_to_expression",
     ),
     "normalize_operators": (
         "cana.function_outputs.expression",
@@ -265,7 +265,7 @@ __all__ = [
     "nodes_to_booleannet",
     "nodes_to_cnet",
     "nodes_to_sbml",
-    "lut_to_expression",
+    "bit_lut_to_expression",
     "normalize_format",
     "normalize_operators",
     "parse_aeon",
