@@ -22,7 +22,7 @@ from __future__ import annotations
 from dataclasses import dataclass
 from typing import Any, Dict, Iterable, List, Mapping, Optional, Sequence, Tuple
 
-from cana.bit_lut import BitLut
+from cana.function_outputs.bit_lut import BitLut
 from cana.boolean_node import BooleanNode
 from cana.function_outputs import FunctionOutputs
 from cana.function_outputs.expression import (

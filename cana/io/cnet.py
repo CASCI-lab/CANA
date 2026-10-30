@@ -4,7 +4,7 @@ from __future__ import annotations
 
 from typing import Any, Dict, List, Sequence, Tuple
 
-from cana.bit_lut import BitLut
+from cana.function_outputs.bit_lut import BitLut
 from cana.boolean_node import BooleanNode
 from cana.cutils import binstate_to_statenum, expand_logic_line, statenum_to_binstate
 from cana.function_outputs import FunctionOutputs, OneSymbolSchemata

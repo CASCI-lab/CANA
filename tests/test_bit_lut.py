@@ -1,10 +1,10 @@
 # -*- coding: utf-8 -*-
-"""Tests for :class:`cana.bit_lut.BitLut`."""
+"""Tests for :class:`cana.function_outputs.bit_lut.BitLut`."""
 from copy import copy, deepcopy
 
 import pytest
 
-from cana.bit_lut import BitLut
+from cana.function_outputs.bit_lut import BitLut
 
 
 def test_from_sequence_roundtrip():

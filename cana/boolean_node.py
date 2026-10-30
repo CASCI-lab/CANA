@@ -116,7 +116,7 @@ class BooleanNode(object):
 
         Args:
             lut : Transition outputs of length :math:`2^k`, or a
-                :class:`~cana.bit_lut.BitLut`.  (Also accepted as the legacy
+                :class:`~cana.function_outputs.bit_lut.BitLut`.  (Also accepted as the legacy
                 keyword ``outputs=``.)
 
         Returns:
@@ -129,7 +129,7 @@ class BooleanNode(object):
         Example:
             >>> BooleanNode.from_bit_lut([0, 0, 0, 1], name="AND")
         """
-        from cana.bit_lut import BitLut
+        from cana.function_outputs.bit_lut import BitLut
 
         if lut is None and "outputs" in kwargs:
             lut = kwargs.pop("outputs")

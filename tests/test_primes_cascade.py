@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import pytest
 
-from cana.bit_lut import BitLut
+from cana.function_outputs.bit_lut import BitLut
 from cana.function_outputs import FunctionOutputs
 from cana.primes.cascade import on_off_primes_from_expression
 from cana.primes.util import MAX_DENSE_LUT_K, MAX_PRIMES

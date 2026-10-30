@@ -15,7 +15,7 @@ from __future__ import annotations
 import re
 from typing import Dict, List, Optional, Sequence, Set, Tuple
 
-from cana.bit_lut import BitLut
+from cana.function_outputs.bit_lut import BitLut
 from cana.cutils import binstate_to_statenum, outputs_to_binstates_of_given_type
 from cana.function_outputs.expression import _contradiction_expr, _style_ops
 
@@ -53,7 +53,7 @@ def reorder(
     """Return a copy with schema character positions remapped to ``new_labels``.
 
     Labels identify the ``k`` input variables in MSB-first bit order (same
-    convention as :meth:`~cana.bit_lut.BitLut.reorder`).  ``new_labels`` must
+    convention as :meth:`~cana.function_outputs.bit_lut.BitLut.reorder`).  ``new_labels`` must
     be a permutation of ``old_labels``.  If the orders already match, returns
     ``schemata`` unchanged.
     """
@@ -82,7 +82,7 @@ def reorder(
 def one_symbol_to_bit_lut(
     schemata: OneSymbolSchemata, k: int
 ) -> BitLut:
-    """Build a :class:`~cana.bit_lut.BitLut` from one-symbol schemata.
+    """Build a :class:`~cana.function_outputs.bit_lut.BitLut` from one-symbol schemata.
 
     Raises
     ------

@@ -18,7 +18,7 @@ import re
 import warnings
 from typing import Any, List, Optional, Sequence
 
-from cana.bit_lut import BitLut
+from cana.function_outputs.bit_lut import BitLut
 from cana.cutils import statenum_to_binstate
 from cana.utils import output_transitions
 

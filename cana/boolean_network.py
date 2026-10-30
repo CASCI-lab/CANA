@@ -22,7 +22,7 @@ import networkx as nx
 import numpy as np
 
 import cana.bns as bns
-from cana.bit_lut import BitLut
+from cana.function_outputs.bit_lut import BitLut
 from cana.boolean_node import BooleanNode
 from cana.control import fvs, mds, sc
 from cana.cutils import (
@@ -59,7 +59,7 @@ class BooleanNetwork:
         list.  CANA does not delete BN nodes after construction; constants
         stay in the list and are only pinned / flagged.
 
-        When a dense :class:`~cana.bit_lut.BitLut` is present on a node, row
+        When a dense :class:`~cana.function_outputs.bit_lut.BitLut` is present on a node, row
         ``s`` is the next value when the input state — interpreted in the
         ``inputs`` order with ``inputs[0]`` as the most significant bit —
         equals ``s``.  This matches :func:`~cana.utils.output_transitions` /

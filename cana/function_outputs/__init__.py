@@ -3,7 +3,7 @@
 
 ``FunctionOutputs`` is what :attr:`cana.boolean_node.BooleanNode.outputs`
 stores.  Peer representation slots may hold a dense
-:class:`~cana.bit_lut.BitLut`, one-symbol (prime-implicant) schemata,
+:class:`~cana.function_outputs.bit_lut.BitLut`, one-symbol (prime-implicant) schemata,
 two-symbol schemata, and/or a positional expression.  Multiple representations may
 coexist; named converters document each derivation, and lazy getters
 (:meth:`get_bit_lut`, :meth:`get_one_symbol_schemata`,
@@ -21,7 +21,7 @@ from __future__ import annotations
 import warnings
 from typing import Any, Iterator, List, Optional, Sequence, Tuple, Union
 
-from cana.bit_lut import BitLut
+from cana.function_outputs.bit_lut import BitLut
 from cana.function_outputs.expression import (
     positional_expression_to_bit_lut,
     lut_to_expression,
@@ -42,6 +42,7 @@ from cana.function_outputs.two_symbol import (
 )
 
 __all__ = [
+    "BitLut",
     "FunctionOutputs",
     "OneSymbolSchemata",
     "TwoSymbolSchemata",

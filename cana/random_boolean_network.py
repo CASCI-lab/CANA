@@ -20,7 +20,7 @@ from io import StringIO
 
 import networkx as nx
 
-from cana.bit_lut import BitLut
+from cana.function_outputs.bit_lut import BitLut
 from cana.boolean_network import BooleanNetwork
 from cana.boolean_node import BooleanNode
 from cana.utils import output_transitions
