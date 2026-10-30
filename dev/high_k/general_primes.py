@@ -10,13 +10,9 @@ Backends (separate APIs; no cascade):
 
 1. CANA Quine–McCluskey over a dense LUT
 2. PyEDA :meth:`~pyeda.boolalg.expr.Expression.complete_sum`
-3. PySAT Primer-B (non-clausal Formula → all implicants)
+3. PySAT Primer-B (re-exported from :mod:`cana.primes.primer`)
 
-All wall-clock limits use :func:`~high_k.timing.call_in_subprocess` so
-Cython / C / external tools (and their grandchildren) can be killed via
-process-group signals.  The dense LUT / QM path also refuses
-``k > MAX_DENSE_LUT_K`` up front.  Primer-B refuses when either polarity
-exceeds :data:`MAX_PRIMER_PRIMES` (enumeration stops; no partial return).
+Wall-clock limits use :func:`~cana.primes.timeout.call_in_subprocess`.
 """
 from __future__ import annotations
 
@@ -29,13 +25,22 @@ from high_k.primes_util import (
     MAX_PYEDA_PAREN_DEPTH,
     PrimeDict,
     dnf_terms_to_primes,
-    expr_to_pysat_formula,
     refuse_extreme_nesting,
     to_pyeda_expr_str,
     to_symbolic_expr,
 )
 
 ensure_cana_on_path()
+
+from cana.primes.primer import (  # noqa: E402
+    _primer_on_off_primes_inprocess,
+    primer_on_off_primes,
+)
+from cana.primes.util import (  # noqa: E402
+    DEFAULT_TIMEOUT_S,
+    MAX_DENSE_LUT_K,
+    MAX_PRIMES as MAX_PRIMER_PRIMES,
+)
 
 __all__ = [
     "DEFAULT_TIMEOUT_S",
@@ -49,14 +54,7 @@ __all__ = [
     "primer_on_off_primes",
 ]
 
-DEFAULT_TIMEOUT_S = 10.0
 EXPLORATION_TIMEOUT_S = 1.0
-# Dense LUT / onset→QM paths allocate Θ(2^k) memory.  Refuse above this *k*
-# rather than relying on a wall-clock kill after the allocation attempt.
-MAX_DENSE_LUT_K = 20
-# Primer-B may emit exponentially many primes.  Stop and refuse (no partial
-# result) once either polarity exceeds this count.
-MAX_PRIMER_PRIMES = 1_000_000
 
 OnOffPrimes = Tuple[List[PrimeDict], List[PrimeDict]]
 
@@ -71,8 +69,6 @@ def _run_timed(
 ) -> OnOffPrimes:
     """Run *inprocess* directly or *worker* under a wall-clock kill."""
     raw = expr.strip()
-    # Parent-side: fail before spawn so a short TIMEOUT_S cannot mis-label
-    # extreme nesting as ``timeout`` (kill during parse).
     refuse_extreme_nesting(raw, limit=nesting_limit)
     if timeout_s <= 0:
         return inprocess(raw)
@@ -105,11 +101,6 @@ def _refuse_huge_dense_lut(expr: str) -> None:
         raise ValueError(
             f"refusing dense LUT/QM for k={k} > MAX_DENSE_LUT_K={MAX_DENSE_LUT_K}"
         )
-
-
-# ---------------------------------------------------------------------------
-# 1. CANA Quine–McCluskey
-# ---------------------------------------------------------------------------
 
 
 def _schemata_to_primes(
@@ -177,11 +168,6 @@ def qm_on_off_primes(
     )
 
 
-# ---------------------------------------------------------------------------
-# 2. PyEDA complete_sum (all primes)
-# ---------------------------------------------------------------------------
-
-
 def _complete_sum_on_off_primes_inprocess(expr: str) -> OnOffPrimes:
     from pyeda.inter import expr as pyeda_expr
 
@@ -229,131 +215,6 @@ def complete_sum_on_off_primes(
     )
 
 
-# ---------------------------------------------------------------------------
-# 3. PySAT Primer-B (all implicants)
-# ---------------------------------------------------------------------------
-
-
-def _pysat_forms_to_prime(forms) -> PrimeDict:
-    """Map ``Formula.formulas(..., atoms_only=True)`` to a ``PrimeDict``."""
-    from pysat.formula import Atom, Neg
-
-    prime: PrimeDict = {}
-    for form in forms:
-        if isinstance(form, Atom):
-            obj = form.object
-            if isinstance(obj, bool):
-                # Constant atoms should not appear in a proper prime cube.
-                continue
-            prime[str(obj)] = True
-        elif isinstance(form, Neg):
-            sub = form.subformula
-            if isinstance(sub, Atom):
-                obj = sub.object
-                if isinstance(obj, bool):
-                    continue
-                prime[str(obj)] = False
-            else:
-                raise ValueError(
-                    f"unexpected Neg subformula in prime: {form!r}"
-                )
-        else:
-            raise ValueError(f"unexpected formula in prime: {form!r}")
-    return prime
-
-
-def _primer_polarity_primes(
-    formula, *, max_primes: int, polarity: str
-) -> List[PrimeDict]:
-    """Enumerate all prime implicants of *formula* via Primer-B.
-
-    Raises:
-        ValueError: if more than *max_primes* implicants are found.  Enumeration
-        stops immediately; no partial list is returned.
-    """
-    from pysat.examples.primer import Primer
-    from pysat.formula import Formula
-
-    out: List[PrimeDict] = []
-    with Primer(formula, implicates=False) as primer:
-        for lits in primer.enumerate():
-            if len(out) >= max_primes:
-                raise ValueError(
-                    f"refusing Primer-B: {polarity} prime count exceeded "
-                    f"MAX_PRIMER_PRIMES={max_primes} "
-                    f"(stopped enumeration; partial result discarded)"
-                )
-            if not lits:
-                out.append({})
-                continue
-            forms = Formula.formulas(lits, atoms_only=True)
-            out.append(_pysat_forms_to_prime(forms))
-    return out
-
-
-def _primer_on_off_primes_inprocess(
-    expr: str, max_primes: int = MAX_PRIMER_PRIMES
-) -> OnOffPrimes:
-    from pysat.formula import Formula, Neg
-
-    const = _constant_on_off(expr)
-    if const is not None:
-        return const
-
-    refuse_extreme_nesting(expr, limit=MAX_PRIMER_PAREN_DEPTH)
-    try:
-        f = expr_to_pysat_formula(expr)
-        on_p = _primer_polarity_primes(
-            f, max_primes=max_primes, polarity="ON"
-        )
-        off_p = _primer_polarity_primes(
-            Neg(f), max_primes=max_primes, polarity="OFF"
-        )
-        return on_p, off_p
-    finally:
-        Formula.cleanup()
-
-
-def _primer_worker(expr: str, max_primes: int, conn) -> None:
-    try:
-        conn.send(
-            ("ok", _primer_on_off_primes_inprocess(expr, max_primes=max_primes))
-        )
-    except Exception as exc:  # noqa: BLE001
-        conn.send(("err", f"{type(exc).__name__}: {exc}"))
-    finally:
-        conn.close()
-
-
-def primer_on_off_primes(
-    expr: str,
-    *,
-    timeout_s: float = DEFAULT_TIMEOUT_S,
-    max_primes: int = MAX_PRIMER_PRIMES,
-) -> OnOffPrimes:
-    """Exact ON/OFF primes via PySAT Primer-B on ``f`` and ``~f``.
-
-    Builds a non-clausal ``pysat.formula`` tree, enumerates all prime
-    implicants with :class:`~pysat.examples.primer.Primer`
-    (``implicates=False``), and maps clausification IDs back to variable
-    names.  If either polarity would exceed *max_primes*, enumeration
-    stops and :class:`ValueError` is raised (no partial result).
-
-    Raises:
-        ImportError: if pysat (``python-sat``) is not installed.
-        ValueError: if ON or OFF prime count exceeds *max_primes*.
-        RecursionError: if parenthesis nesting exceeds
-            :data:`~high_k.primes_util.MAX_PRIMER_PAREN_DEPTH`.
-        TimeoutError: if wall-clock time exceeds *timeout_s*.
-    """
-    import pysat  # noqa: F401
-
-    raw = expr.strip()
-    refuse_extreme_nesting(raw, limit=MAX_PRIMER_PAREN_DEPTH)
-    if timeout_s <= 0:
-        return _primer_on_off_primes_inprocess(raw, max_primes=max_primes)
-    from high_k.timing import call_in_subprocess
-
-    return call_in_subprocess(
-        _primer_worker, (raw, max_primes), timeout_s=timeout_s
-    )
+# ``_primer_on_off_primes_inprocess`` is re-exported for monkeypatch tests that
+# historically patched ``high_k.general_primes._primer_on_off_primes_inprocess``.
+# Prefer patching ``cana.primes.primer._primer_on_off_primes_inprocess``.

@@ -263,19 +263,23 @@ def test_empty_function_outputs_getters_raise():
         fo.get_bit_lut()
     with pytest.raises(ValueError, match=r"Cannot get one_symbol_schemata"):
         fo.get_one_symbol_schemata()
-    with pytest.raises(ValueError, match=r"Cannot get two_symbol_schemata"):
+    # two-symbol falls through to get_one_symbol_schemata when empty
+    with pytest.raises(ValueError, match=r"Cannot get one_symbol_schemata"):
         fo.get_two_symbol_schemata()
     with pytest.raises(ValueError, match=r"Cannot get positional_expression"):
         fo.get_positional_expression()
 
 
-def test_get_one_symbol_schemata_from_positional_expression_caches_lut():
+def test_get_one_symbol_schemata_from_positional_expression_via_cascade():
+    # Syntactic ROF: cascade stores schemata without building a dense LUT.
     fo = FunctionOutputs(positional_expression="x0 and x1", k=2)
     assert fo.bit_lut is None
     schemata = fo.get_one_symbol_schemata()
     assert schemata[1] == {"11"}
-    assert fo.bit_lut is not None
-    assert list(fo.bit_lut) == [0, 0, 0, 1]
+    assert fo.bit_lut is None
+    assert fo.one_symbol_is_prime_implicant is True
+    # LUT is still available on demand via get_bit_lut.
+    assert list(fo.get_bit_lut()) == [0, 0, 0, 1]
 
 
 def test_get_two_symbol_schemata_from_positional_expression():
@@ -284,9 +288,11 @@ def test_get_two_symbol_schemata_from_positional_expression():
     assert fo.bit_lut is None
     ts = fo.get_two_symbol_schemata()
     assert fo.two_symbol_schemata is ts
-    assert fo.bit_lut is not None
     assert fo.one_symbol_schemata is not None
-    assert list(fo.bit_lut) == [0, 1, 1, 1]
+    assert fo.one_symbol_is_prime_implicant is True
+    # ROF cascade does not force a LUT; build on demand.
+    assert fo.bit_lut is None or list(fo.bit_lut) == [0, 1, 1, 1]
+    assert list(fo.get_bit_lut()) == [0, 1, 1, 1]
 
 
 def test_get_positional_expression_caches_from_peers():

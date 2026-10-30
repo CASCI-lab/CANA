@@ -205,11 +205,18 @@ class FunctionOutputs(object):
     def get_one_symbol_schemata(self) -> OneSymbolSchemata:
         """Return one-symbol schemata, deriving from any available peer slot.
 
-        Prefer stored one-symbol; else expand ``two_symbol_schemata`` (does not
-        set :attr:`one_symbol_is_prime_implicant`); else Quine–McCluskey from
-        ``bit_lut``; else build ``bit_lut`` from ``positional_expression`` then QM.
-        Intermediates (e.g. ``bit_lut`` from expression) are cached.
-        Raises ``ValueError`` if no peer can produce one-symbol schemata.
+        Preference order:
+
+        1. stored ``one_symbol_schemata``
+        2. expand ``two_symbol_schemata`` (does not set
+           :attr:`one_symbol_is_prime_implicant`)
+        3. expression cascade (syntactic ROF, then Primer-B) when
+           ``positional_expression`` is set — stores schemata only, not a LUT
+        4. Quine–McCluskey from stored ``bit_lut``, or build+store ``bit_lut``
+           from ``positional_expression`` when ``k`` is small enough, then QM
+
+        Intermediates are cached.  Raises ``ValueError`` if no peer can produce
+        one-symbol schemata.
         """
         if self.one_symbol_schemata is not None:
             return self.one_symbol_schemata
@@ -218,11 +225,40 @@ class FunctionOutputs(object):
                 self.two_symbol_schemata
             )
             return self.one_symbol_schemata
+
+        # Expression cascade before any LUT/QM (high-k friendly).
+        if self.positional_expression is not None:
+            from cana.primes.cascade import on_off_primes_from_expression
+            from cana.primes.util import primes_to_one_symbol_schemata
+
+            result = on_off_primes_from_expression(self.positional_expression)
+            if result.ok and result.on_primes is not None and result.off_primes is not None:
+                names = positional_names(self.k)
+                self.one_symbol_schemata = primes_to_one_symbol_schemata(
+                    result.on_primes,
+                    result.off_primes,
+                    input_names=names,
+                )
+                self.one_symbol_is_prime_implicant = True
+                return self.one_symbol_schemata
+
         if self.bit_lut is not None:
             return self.compute_one_symbol_schemata_from_bit_lut()
+
         if self.positional_expression is not None:
+            from cana.primes.util import MAX_DENSE_LUT_K
+
+            if self.k > MAX_DENSE_LUT_K:
+                raise ValueError(
+                    "Cannot get one_symbol_schemata from positional_expression: "
+                    "expression cascade unsuccessful and k={0:d} > "
+                    "MAX_DENSE_LUT_K={1:d} (refusing dense LUT/QM)".format(
+                        self.k, MAX_DENSE_LUT_K
+                    )
+                )
             self.build_bit_lut_from_positional_expression()
             return self.compute_one_symbol_schemata_from_bit_lut()
+
         raise ValueError(
             "Cannot get one_symbol_schemata: neither one_symbol_schemata, "
             "two_symbol_schemata, bit_lut, nor positional_expression is available"
@@ -233,11 +269,11 @@ class FunctionOutputs(object):
 
         Prefer stored two-symbol; else derive from ``one_symbol_schemata``
         (soft-warns unless :attr:`one_symbol_is_prime_implicant` is ``True``);
-        else Quine–McCluskey from ``bit_lut`` then derive; else build LUT from
-        ``positional_expression``, QM, then derive.  Intermediates are cached.  Does not
-        re-run QM over a stored cover; call :meth:`verify_one_symbol_schemata`
-        to check explicitly.  Raises ``ValueError`` if no peer can produce
-        two-symbol schemata.
+        else obtain primes via :meth:`get_one_symbol_schemata` (expression
+        cascade, then bit_lut/QM) and derive.  Intermediates are cached.  Does
+        not re-run QM over a stored cover; call
+        :meth:`verify_one_symbol_schemata` to check explicitly.  Raises
+        ``ValueError`` if no peer can produce two-symbol schemata.
         """
         if self.two_symbol_schemata is not None:
             return self.two_symbol_schemata
@@ -256,19 +292,8 @@ class FunctionOutputs(object):
                 )
             return self._two_symbol_from_one_symbol(self.one_symbol_schemata)
 
-        if self.bit_lut is not None:
-            one_symbol = self.compute_one_symbol_schemata_from_bit_lut()
-            return self._two_symbol_from_one_symbol(one_symbol)
-
-        if self.positional_expression is not None:
-            self.build_bit_lut_from_positional_expression()
-            one_symbol = self.compute_one_symbol_schemata_from_bit_lut()
-            return self._two_symbol_from_one_symbol(one_symbol)
-
-        raise ValueError(
-            "Cannot get two_symbol_schemata: neither two_symbol_schemata, "
-            "one_symbol_schemata, bit_lut, nor positional_expression is available"
-        )
+        one_symbol = self.get_one_symbol_schemata()
+        return self._two_symbol_from_one_symbol(one_symbol)
 
     def get_positional_expression(self) -> Any:
         """Return positional expression IR, deriving from any available peer.

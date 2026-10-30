@@ -162,7 +162,7 @@ def test_primer_subprocess_timeout(monkeypatch):
         return [], []
 
     monkeypatch.setattr(
-        "high_k.general_primes._primer_on_off_primes_inprocess", _slow
+        "cana.primes.primer._primer_on_off_primes_inprocess", _slow
     )
     with pytest.raises(TimeoutError, match="timeout"):
         primer_on_off_primes("a & b", timeout_s=0.2)

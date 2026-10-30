@@ -47,6 +47,9 @@ dependencies = [
 test = [
     "pytest",
 ]
+primes = [
+    "python-sat",
+]
 docs = [
     "sphinx",
     "sphinxcontrib-bibtex",
