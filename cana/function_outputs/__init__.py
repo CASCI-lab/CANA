@@ -25,13 +25,13 @@ from cana.bit_lut import BitLut
 from cana.function_outputs.expression import (
     positional_expression_to_bit_lut,
     lut_to_expression,
-    one_symbol_to_expression,
     positional_names,
     reorder_positional,
 )
 from cana.function_outputs.one_symbol import (
     OneSymbolSchemata,
     one_symbol_to_bit_lut,
+    one_symbol_to_expression,
     bit_lut_to_one_symbol,
     reorder as reorder_one_symbol,
 )

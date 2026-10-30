@@ -8,15 +8,15 @@ I/O / :class:`~cana.boolean_node.BooleanNode` boundary.
 Naming:
 - ``*_positional*`` / ``named_to_positional`` / ``positional_to_named`` —
   fixed IR kind (positional ``x_i`` or named regulators).
-- ``lut_to_expression`` / ``one_symbol_to_expression`` — emit whatever names
-  are in ``input_names`` (pass :func:`positional_names` for positional IR).
+- ``lut_to_expression`` — emit whatever names are in ``input_names``
+  (pass :func:`positional_names` for positional IR).
 - :func:`normalize_operators` / :func:`expression_identifiers` — either kind.
 """
 from __future__ import annotations
 
 import re
 import warnings
-from typing import Any, List, Mapping, Optional, Sequence, Set
+from typing import Any, List, Optional, Sequence
 
 from cana.bit_lut import BitLut
 from cana.cutils import statenum_to_binstate
@@ -35,7 +35,6 @@ __all__ = [
     "reorder_positional",
     "positional_expression_to_bit_lut",
     "lut_to_expression",
-    "one_symbol_to_expression",
     "function_outputs_to_named_expression",
 ]
 
@@ -255,68 +254,6 @@ def _contradiction_expr(input_names: Sequence[str], style: str) -> str:
     return "({x} & !{x})".format(x=x)
 
 
-def one_symbol_to_expression(
-    input_names: Sequence[str],
-    schemata: Mapping[int, Set[str]],
-    style: str = "python",
-) -> str:
-    """Build a DNF expression from a one-symbol ON cover (polarity ``1``).
-
-    Schema characters: ``1`` → literal, ``0`` → negated literal, ``2`` →
-    don't-care (omitted).  Incomplete covers are still exported as the
-    positive DNF of whatever ON schemas are present (no LUT materialization).
-
-    Positional vs named is chosen by ``input_names``: pass
-    :func:`positional_names` ``(k)`` for positional IR, or regulator names for
-    a named expression.
-
-    Args:
-        input_names: Variable names in schema bit order (MSB first).
-        schemata: One-symbol map polarity → set of length-``k`` schemas.
-        style: ``"python"`` or ``"symbolic"``.
-    """
-    k = len(input_names)
-    and_op, or_op, not_prefix = _style_ops(style)
-    on_cover = schemata.get(1, set()) if schemata else set()
-
-    if k == 0:
-        return "True" if on_cover else "False"
-
-    terms: List[str] = []
-    for schema in sorted(on_cover):
-        if len(schema) != k:
-            raise ValueError(
-                "schema length {0:d} does not match k={1:d}".format(
-                    len(schema), k
-                )
-            )
-        lits: List[str] = []
-        for name, bit in zip(input_names, schema):
-            if bit == "1":
-                lits.append(name)
-            elif bit == "0":
-                lits.append(not_prefix + name)
-            elif bit == "2":
-                continue
-            else:
-                raise ValueError(
-                    "invalid schema character {0!r} in {1!r}".format(
-                        bit, schema
-                    )
-                )
-        if not lits:
-            # All don't-cares: covers the full cube → constant True.
-            return "True"
-        if len(lits) == 1:
-            terms.append(lits[0])
-        else:
-            terms.append("(" + and_op.join(lits) + ")")
-
-    if not terms:
-        return _contradiction_expr(input_names, style)
-    return or_op.join(terms)
-
-
 def function_outputs_to_named_expression(
     outputs: Any,
     input_names: Sequence[str],
@@ -345,7 +282,9 @@ def function_outputs_to_named_expression(
         node_label: Optional node name for warning text.
         warn: If False, suppress verification soft-warnings.
     """
-    # Local import avoids a cycle with two_symbol importing style helpers.
+    # Local imports avoid cycles with one_symbol / two_symbol importing
+    # style helpers from this module.
+    from cana.function_outputs.one_symbol import one_symbol_to_expression
     from cana.function_outputs.two_symbol import two_symbol_to_expression
 
     label = "Node {0!r}".format(node_label) if node_label is not None else "Node"

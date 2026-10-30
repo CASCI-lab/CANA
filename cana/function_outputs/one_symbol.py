@@ -17,6 +17,7 @@ from typing import Dict, List, Optional, Sequence, Set, Tuple
 
 from cana.bit_lut import BitLut
 from cana.cutils import binstate_to_statenum, outputs_to_binstates_of_given_type
+from cana.function_outputs.expression import _contradiction_expr, _style_ops
 
 __all__ = [
     "OneSymbolSchemata",
@@ -26,6 +27,7 @@ __all__ = [
     "primes_to_one_symbol",
     "one_symbol_to_primes",
     "positional_expression_to_one_symbol",
+    "one_symbol_to_expression",
 ]
 
 # Polarity -> set of length-k strings over {0,1,2} (2 = don't-care).
@@ -240,3 +242,65 @@ def positional_expression_to_one_symbol(
             )
         )
     return bit_lut_to_one_symbol(positional_expression_to_bit_lut(expr, k))
+
+
+def one_symbol_to_expression(
+    input_names: Sequence[str],
+    schemata: OneSymbolSchemata,
+    style: str = "python",
+) -> str:
+    """Build a DNF expression from a one-symbol ON cover (polarity ``1``).
+
+    Schema characters: ``1`` → literal, ``0`` → negated literal, ``2`` →
+    don't-care (omitted).  Incomplete covers are still exported as the
+    positive DNF of whatever ON schemas are present (no LUT materialization).
+
+    Positional vs named is chosen by ``input_names``: pass
+    :func:`~cana.function_outputs.expression.positional_names` ``(k)`` for
+    positional IR, or regulator names for a named expression.
+
+    Args:
+        input_names: Variable names in schema bit order (MSB first).
+        schemata: One-symbol map polarity → set of length-``k`` schemas.
+        style: ``"python"`` or ``"symbolic"``.
+    """
+    k = len(input_names)
+    and_op, or_op, not_prefix = _style_ops(style)
+    on_cover = schemata.get(1, set()) if schemata else set()
+
+    if k == 0:
+        return "True" if on_cover else "False"
+
+    terms: List[str] = []
+    for schema in sorted(on_cover):
+        if len(schema) != k:
+            raise ValueError(
+                "schema length {0:d} does not match k={1:d}".format(
+                    len(schema), k
+                )
+            )
+        lits: List[str] = []
+        for name, bit in zip(input_names, schema):
+            if bit == "1":
+                lits.append(name)
+            elif bit == "0":
+                lits.append(not_prefix + name)
+            elif bit == "2":
+                continue
+            else:
+                raise ValueError(
+                    "invalid schema character {0!r} in {1!r}".format(
+                        bit, schema
+                    )
+                )
+        if not lits:
+            # All don't-cares: covers the full cube → constant True.
+            return "True"
+        if len(lits) == 1:
+            terms.append(lits[0])
+        else:
+            terms.append("(" + and_op.join(lits) + ")")
+
+    if not terms:
+        return _contradiction_expr(input_names, style)
+    return or_op.join(terms)

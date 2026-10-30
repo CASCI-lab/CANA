@@ -14,11 +14,11 @@ from cana.function_outputs.expression import (
     positional_expression_to_bit_lut,
     positional_to_named,
     function_outputs_to_named_expression,
-    one_symbol_to_expression,
     named_to_positional,
 )
 from cana.function_outputs.one_symbol import (
     one_symbol_to_bit_lut,
+    one_symbol_to_expression,
     positional_expression_to_one_symbol,
     reorder as reorder_one_symbol,
 )
