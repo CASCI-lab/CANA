@@ -32,7 +32,7 @@ def test_cascade_rof_too_many():
 
 def test_cascade_non_rof_primer_or_unsuccessful():
     expr = "a & b | !a & c"
-    result = on_off_primes_from_expression(expr, timeout_s=0)
+    result = on_off_primes_from_expression(expr)
     if result.ok:
         assert result.method == "primer"
         assert result.n_on == 3
@@ -40,7 +40,6 @@ def test_cascade_non_rof_primer_or_unsuccessful():
         # Missing pysat / other soft failure — not a hard crash.
         assert result.status in (
             "unsuccessful",
-            "timeout",
             "refused",
             "error",
         )

@@ -1,12 +1,14 @@
 # -*- coding: utf-8 -*-
-"""Exact ON/OFF prime implicants via PySAT Primer-B."""
+"""Exact ON/OFF prime implicants via PySAT Primer-B.
+
+Runs in-process.  Wall-clock limits belong to callers (e.g.
+:func:`high_k.timing.call_in_subprocess` in ``dev/high_k`` benches).
+"""
 from __future__ import annotations
 
 from typing import List, Optional
 
-from cana.primes.timeout import call_in_subprocess
 from cana.primes.util import (
-    DEFAULT_TIMEOUT_S,
     MAX_PRIMES,
     MAX_PRIMER_PAREN_DEPTH,
     OnOffPrimes,
@@ -16,7 +18,6 @@ from cana.primes.util import (
 )
 
 __all__ = [
-    "DEFAULT_TIMEOUT_S",
     "MAX_PRIMES",
     "MAX_PRIMER_PRIMES",
     "MAX_PRIMER_PAREN_DEPTH",
@@ -94,44 +95,9 @@ def _primer_polarity_primes(
     return out
 
 
-def _primer_on_off_primes_inprocess(
-    expr: str, max_primes: int = MAX_PRIMER_PRIMES
-) -> OnOffPrimes:
-    from pysat.formula import Formula, Neg
-
-    const = _constant_on_off(expr)
-    if const is not None:
-        return const
-
-    refuse_extreme_nesting(expr, limit=MAX_PRIMER_PAREN_DEPTH)
-    try:
-        f = expr_to_pysat_formula(expr)
-        on_p = _primer_polarity_primes(
-            f, max_primes=max_primes, polarity="ON"
-        )
-        off_p = _primer_polarity_primes(
-            Neg(f), max_primes=max_primes, polarity="OFF"
-        )
-        return on_p, off_p
-    finally:
-        Formula.cleanup()
-
-
-def _primer_worker(expr: str, max_primes: int, conn) -> None:
-    try:
-        conn.send(
-            ("ok", _primer_on_off_primes_inprocess(expr, max_primes=max_primes))
-        )
-    except Exception as exc:  # noqa: BLE001
-        conn.send(("err", f"{type(exc).__name__}: {exc}"))
-    finally:
-        conn.close()
-
-
 def primer_on_off_primes(
     expr: str,
     *,
-    timeout_s: float = DEFAULT_TIMEOUT_S,
     max_primes: int = MAX_PRIMER_PRIMES,
 ) -> OnOffPrimes:
     """Exact ON/OFF primes via PySAT Primer-B on ``f`` and ``~f``.
@@ -142,19 +108,31 @@ def primer_on_off_primes(
     names.  If either polarity would exceed *max_primes*, enumeration
     stops and :class:`ValueError` is raised (no partial result).
 
+    Runs in-process with no wall-clock limit; wrap externally if needed.
+
     Raises:
         ImportError: if pysat (``python-sat``) is not installed.
         ValueError: if ON or OFF prime count exceeds *max_primes*.
         RecursionError: if parenthesis nesting exceeds
             :data:`~cana.primes.util.MAX_PRIMER_PAREN_DEPTH`.
-        TimeoutError: if wall-clock time exceeds *timeout_s*.
     """
     import pysat  # noqa: F401
+    from pysat.formula import Formula, Neg
 
     raw = expr.strip()
+    const = _constant_on_off(raw)
+    if const is not None:
+        return const
+
     refuse_extreme_nesting(raw, limit=MAX_PRIMER_PAREN_DEPTH)
-    if timeout_s <= 0:
-        return _primer_on_off_primes_inprocess(raw, max_primes=max_primes)
-    return call_in_subprocess(
-        _primer_worker, (raw, max_primes), timeout_s=timeout_s
-    )
+    try:
+        f = expr_to_pysat_formula(raw)
+        on_p = _primer_polarity_primes(
+            f, max_primes=max_primes, polarity="ON"
+        )
+        off_p = _primer_polarity_primes(
+            Neg(f), max_primes=max_primes, polarity="OFF"
+        )
+        return on_p, off_p
+    finally:
+        Formula.cleanup()

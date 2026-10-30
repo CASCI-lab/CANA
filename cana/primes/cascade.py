@@ -4,6 +4,8 @@
 Does **not** build a dense LUT or run Quine–McCluskey; callers that need a
 LUT/QM fallback (e.g. :meth:`~cana.function_outputs.FunctionOutputs.get_one_symbol_schemata`)
 handle that separately after an unsuccessful cascade.
+
+No wall-clock timeout — structural caps only (``max_primes``, nesting).
 """
 from __future__ import annotations
 
@@ -16,7 +18,6 @@ from cana.primes.rof import (
     iter_on_off_primes,
 )
 from cana.primes.util import (
-    DEFAULT_TIMEOUT_S,
     MAX_PRIMES,
     OnOffPrimes,
     PrimeDict,
@@ -32,7 +33,6 @@ __all__ = [
 CascadeStatus = Literal[
     "ok",
     "too_many",
-    "timeout",
     "refused",
     "error",
     "unsuccessful",
@@ -67,7 +67,6 @@ class PrimesResult:
 def on_off_primes_from_expression(
     expr: str,
     *,
-    timeout_s: float = DEFAULT_TIMEOUT_S,
     max_primes: int = MAX_PRIMES,
 ) -> PrimesResult:
     """Try syntactic ROF, then Primer-B; never builds a LUT or runs QM.
@@ -76,8 +75,6 @@ def on_off_primes_from_expression(
     ----------
     expr :
         Boolean expression (python or symbolic operators).
-    timeout_s :
-        Wall-clock limit for Primer-B (``<= 0`` runs in-process).
     max_primes :
         Cap on ON+OFF (ROF) or per-polarity (Primer) prime counts.
 
@@ -143,20 +140,12 @@ def on_off_primes_from_expression(
         )
 
     try:
-        on_p, off_p = primer_on_off_primes(
-            raw, timeout_s=timeout_s, max_primes=max_primes
-        )
+        on_p, off_p = primer_on_off_primes(raw, max_primes=max_primes)
     except ImportError as exc:
         return PrimesResult(
             status="unsuccessful",
             method="primer",
             message=f"pysat not installed: {exc}",
-        )
-    except TimeoutError as exc:
-        return PrimesResult(
-            status="timeout",
-            method="primer",
-            message=str(exc),
         )
     except RecursionError as exc:
         return PrimesResult(

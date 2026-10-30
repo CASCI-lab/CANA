@@ -15,7 +15,6 @@ __all__ = [
     "MAX_SAFE_PAREN_DEPTH",
     "MAX_PRIMER_PAREN_DEPTH",
     "MAX_PRIMES",
-    "DEFAULT_TIMEOUT_S",
     "MAX_DENSE_LUT_K",
     "paren_nesting_depth",
     "refuse_extreme_nesting",
@@ -29,8 +28,8 @@ PrimeDict = Dict[str, bool]
 OnOffPrimes = Tuple[List[PrimeDict], List[PrimeDict]]
 
 # Backend-specific parenthesis-depth refuses (measured under default
-# ``sys.getrecursionlimit() == 1000``).  Refuse early so a short wall-clock
-# kill cannot mis-label parse ``RecursionError`` as ``timeout``.
+# ``sys.getrecursionlimit() == 1000``).  Refuse early so parsers fail
+# predictably instead of overflowing the call stack mid-run.
 #
 # - Primer ``expr_to_pysat_formula``: ~4 stack frames/level; hard fail ≈ 246
 # - generic / QM: conservative shared default
@@ -39,7 +38,6 @@ MAX_SAFE_PAREN_DEPTH = 200
 
 # Shared PI enumeration / ROF-generate cap used by cascade and Primer-B.
 MAX_PRIMES = 1_000_000
-DEFAULT_TIMEOUT_S = 10.0
 # Dense LUT / onset→QM paths allocate Θ(2^k) memory.
 MAX_DENSE_LUT_K = 20
 

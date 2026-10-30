@@ -4,6 +4,8 @@
 LUT / Quine–McCluskey remain on
 :class:`~cana.function_outputs.FunctionOutputs` and are tried *after* the
 expression cascade when deriving one-symbol schemata.
+
+Wall-clock timeouts are not part of this package; see ``dev/high_k.timing``.
 """
 from cana.primes.ast import (
     LogicNode,
@@ -30,9 +32,7 @@ from cana.primes.rof import (
     iter_on_off_primes,
     require_syntactic_rof_ast,
 )
-from cana.primes.timeout import call_in_subprocess
 from cana.primes.util import (
-    DEFAULT_TIMEOUT_S,
     MAX_DENSE_LUT_K,
     MAX_PRIMES,
     MAX_PRIMER_PAREN_DEPTH,
@@ -69,8 +69,6 @@ __all__ = [
     "generate_rof_primes",
     "iter_on_off_primes",
     "require_syntactic_rof_ast",
-    "call_in_subprocess",
-    "DEFAULT_TIMEOUT_S",
     "MAX_DENSE_LUT_K",
     "MAX_PRIMES",
     "MAX_PRIMER_PRIMES",

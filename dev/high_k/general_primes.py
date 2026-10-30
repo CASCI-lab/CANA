@@ -10,9 +10,9 @@ Backends (separate APIs; no cascade):
 
 1. CANA Quine–McCluskey over a dense LUT
 2. PyEDA :meth:`~pyeda.boolalg.expr.Expression.complete_sum`
-3. PySAT Primer-B (re-exported from :mod:`cana.primes.primer`)
+3. PySAT Primer-B (core in :mod:`cana.primes.primer`; timed wrapper here)
 
-Wall-clock limits use :func:`~cana.primes.timeout.call_in_subprocess`.
+Wall-clock limits use :func:`~high_k.timing.call_in_subprocess` (dev only).
 """
 from __future__ import annotations
 
@@ -32,12 +32,8 @@ from high_k.primes_util import (
 
 ensure_cana_on_path()
 
-from cana.primes.primer import (  # noqa: E402
-    _primer_on_off_primes_inprocess,
-    primer_on_off_primes,
-)
+from cana.primes.primer import primer_on_off_primes as _primer_core  # noqa: E402
 from cana.primes.util import (  # noqa: E402
-    DEFAULT_TIMEOUT_S,
     MAX_DENSE_LUT_K,
     MAX_PRIMES as MAX_PRIMER_PRIMES,
 )
@@ -54,6 +50,7 @@ __all__ = [
     "primer_on_off_primes",
 ]
 
+DEFAULT_TIMEOUT_S = 10.0
 EXPLORATION_TIMEOUT_S = 1.0
 
 OnOffPrimes = Tuple[List[PrimeDict], List[PrimeDict]]
@@ -215,6 +212,44 @@ def complete_sum_on_off_primes(
     )
 
 
-# ``_primer_on_off_primes_inprocess`` is re-exported for monkeypatch tests that
-# historically patched ``high_k.general_primes._primer_on_off_primes_inprocess``.
-# Prefer patching ``cana.primes.primer._primer_on_off_primes_inprocess``.
+def _primer_on_off_primes_inprocess(
+    expr: str, max_primes: int = MAX_PRIMER_PRIMES
+) -> OnOffPrimes:
+    """In-process Primer-B via :func:`cana.primes.primer.primer_on_off_primes`."""
+    return _primer_core(expr, max_primes=max_primes)
+
+
+def _primer_worker(expr: str, max_primes: int, conn) -> None:
+    try:
+        conn.send(
+            ("ok", _primer_on_off_primes_inprocess(expr, max_primes=max_primes))
+        )
+    except Exception as exc:  # noqa: BLE001
+        conn.send(("err", f"{type(exc).__name__}: {exc}"))
+    finally:
+        conn.close()
+
+
+def primer_on_off_primes(
+    expr: str,
+    *,
+    timeout_s: float = DEFAULT_TIMEOUT_S,
+    max_primes: int = MAX_PRIMER_PRIMES,
+) -> OnOffPrimes:
+    """Exact ON/OFF primes via PySAT Primer-B, with optional wall-clock kill.
+
+    Core algorithm is :func:`cana.primes.primer.primer_on_off_primes`.
+    *timeout_s* ``<= 0`` runs in-process; otherwise uses
+    :func:`~high_k.timing.call_in_subprocess`.
+    """
+    import pysat  # noqa: F401
+
+    raw = expr.strip()
+    refuse_extreme_nesting(raw, limit=MAX_PRIMER_PAREN_DEPTH)
+    if timeout_s <= 0:
+        return _primer_on_off_primes_inprocess(raw, max_primes=max_primes)
+    from high_k.timing import call_in_subprocess
+
+    return call_in_subprocess(
+        _primer_worker, (raw, max_primes), timeout_s=timeout_s
+    )
