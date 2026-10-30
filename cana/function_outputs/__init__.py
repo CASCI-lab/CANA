@@ -31,9 +31,9 @@ from cana.function_outputs.expression import (
 )
 from cana.function_outputs.one_symbol import (
     OneSymbolSchemata,
-    bit_lut_from_schemata,
+    bit_lut_from_one_symbol_schemata,
+    one_symbol_schemata_from_bit_lut,
     reorder as reorder_one_symbol,
-    schemata_from_bit_lut,
 )
 from cana.function_outputs.two_symbol import (
     one_symbol_from_two_symbol,
@@ -229,15 +229,20 @@ class FunctionOutputs(object):
         # Expression cascade before any LUT/QM (high-k friendly).
         if self.positional_expression is not None:
             from cana.primes.cascade import on_off_primes_from_expression
-            from cana.primes.util import primes_to_one_symbol_schemata
+            from cana.function_outputs.one_symbol import (
+                primes_to_one_symbol_schemata,
+            )
 
             result = on_off_primes_from_expression(self.positional_expression)
-            if result.ok and result.on_primes is not None and result.off_primes is not None:
-                names = positional_names(self.k)
+            if (
+                result.ok
+                and result.on_primes is not None
+                and result.off_primes is not None
+            ):
                 self.one_symbol_schemata = primes_to_one_symbol_schemata(
                     result.on_primes,
                     result.off_primes,
-                    input_names=names,
+                    input_names=positional_names(self.k),
                 )
                 self.one_symbol_is_prime_implicant = True
                 return self.one_symbol_schemata
@@ -246,6 +251,8 @@ class FunctionOutputs(object):
             return self.compute_one_symbol_schemata_from_bit_lut()
 
         if self.positional_expression is not None:
+            # Same QM fallback as one_symbol_schemata_from_positional_expression,
+            # but cache the dense LUT on this container.
             from cana.primes.util import MAX_DENSE_LUT_K
 
             if self.k > MAX_DENSE_LUT_K:
@@ -348,22 +355,16 @@ class FunctionOutputs(object):
                 "build_bit_lut_from_one_symbol_schemata requires "
                 "one_symbol_schemata"
             )
-        self.bit_lut = bit_lut_from_schemata(self.one_symbol_schemata, self.k)
+        self.bit_lut = bit_lut_from_one_symbol_schemata(
+            self.one_symbol_schemata, self.k
+        )
         self._k = self.bit_lut.k
         return self.bit_lut
 
-    @staticmethod
-    def bit_lut_from_one_symbol_schemata(
-        schemata: OneSymbolSchemata, k: int
-    ) -> BitLut:
-        """Build a :class:`BitLut` from one-symbol schemata without mutating self.
-
-        Raises
-        ------
-        ValueError
-            On polarity conflicts or incomplete coverage of the ``2**k`` rows.
-        """
-        return bit_lut_from_schemata(schemata, k)
+    # Module-level converter; kept as a static for callers that used FO.
+    bit_lut_from_one_symbol_schemata = staticmethod(
+        bit_lut_from_one_symbol_schemata
+    )
 
     def compute_one_symbol_schemata_from_bit_lut(self) -> OneSymbolSchemata:
         """Compute and store one-symbol schemata from ``bit_lut`` via Quine-McCluskey."""
@@ -371,7 +372,7 @@ class FunctionOutputs(object):
             raise ValueError(
                 "compute_one_symbol_schemata_from_bit_lut requires bit_lut"
             )
-        schemata = schemata_from_bit_lut(self.bit_lut)
+        schemata = one_symbol_schemata_from_bit_lut(self.bit_lut)
         self.one_symbol_schemata = schemata
         self.one_symbol_is_prime_implicant = True
         self._k = self.bit_lut.k
@@ -380,7 +381,7 @@ class FunctionOutputs(object):
     @staticmethod
     def _one_symbol_schemata_from_bit_lut(bit_lut: BitLut) -> OneSymbolSchemata:
         """Run Quine-McCluskey on ``bit_lut`` without mutating a container."""
-        return schemata_from_bit_lut(bit_lut)
+        return one_symbol_schemata_from_bit_lut(bit_lut)
 
     def _two_symbol_from_one_symbol(
         self, one_symbol: OneSymbolSchemata
@@ -414,11 +415,11 @@ class FunctionOutputs(object):
             )
         schemata = self.one_symbol_schemata
         try:
-            lut = bit_lut_from_schemata(schemata, self.k)
+            lut = bit_lut_from_one_symbol_schemata(schemata, self.k)
         except ValueError:
             self.one_symbol_is_prime_implicant = False
             return False
-        recomputed = schemata_from_bit_lut(lut)
+        recomputed = one_symbol_schemata_from_bit_lut(lut)
         ok = (
             set(schemata.get(0, ())) == set(recomputed.get(0, ()))
             and set(schemata.get(1, ())) == set(recomputed.get(1, ()))
@@ -441,7 +442,9 @@ class FunctionOutputs(object):
         if self.one_symbol_schemata is not None:
             try:
                 candidates.append(
-                    bit_lut_from_schemata(self.one_symbol_schemata, self.k)
+                    bit_lut_from_one_symbol_schemata(
+                        self.one_symbol_schemata, self.k
+                    )
                 )
             except ValueError:
                 self.representations_consistent = False
@@ -457,7 +460,9 @@ class FunctionOutputs(object):
         if self.two_symbol_schemata is not None:
             try:
                 expanded = one_symbol_from_two_symbol(self.two_symbol_schemata)
-                candidates.append(bit_lut_from_schemata(expanded, self.k))
+                candidates.append(
+                    bit_lut_from_one_symbol_schemata(expanded, self.k)
+                )
             except ValueError:
                 self.representations_consistent = False
                 return False

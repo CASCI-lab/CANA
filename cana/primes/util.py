@@ -1,13 +1,21 @@
 # -*- coding: utf-8 -*-
-"""Shared helpers for expression→prime conversion (nesting, pysat, schemata)."""
+"""Shared helpers for expression→prime conversion (nesting, pysat).
+
+Named-cube ↔ one-symbol adapters live on
+:mod:`cana.function_outputs.one_symbol` and are re-exported here for
+backward compatibility.
+"""
 from __future__ import annotations
 
 import re
 import sys
-from typing import Dict, List, Optional, Sequence, Set, Tuple
+from typing import Dict, List, Optional, Tuple
 
-from cana.function_outputs.expression import normalize_operators, positional_names
-from cana.function_outputs.one_symbol import OneSymbolSchemata
+from cana.function_outputs.expression import normalize_operators
+from cana.function_outputs.one_symbol import (
+    one_symbol_schemata_to_primes,
+    primes_to_one_symbol_schemata,
+)
 
 __all__ = [
     "PrimeDict",
@@ -183,76 +191,3 @@ def expr_to_pysat_formula(expr: str):
     if i != n:
         raise ValueError(f"trailing junk {text[i:]!r} in {text!r}")
     return formula
-
-
-def _prime_to_schema(prime: PrimeDict, names: Sequence[str]) -> str:
-    chars: List[str] = []
-    for name in names:
-        if name not in prime:
-            chars.append("2")
-        elif prime[name]:
-            chars.append("1")
-        else:
-            chars.append("0")
-    return "".join(chars)
-
-
-def primes_to_one_symbol_schemata(
-    on_primes: List[PrimeDict],
-    off_primes: List[PrimeDict],
-    *,
-    input_names: Optional[Sequence[str]] = None,
-    k: Optional[int] = None,
-) -> OneSymbolSchemata:
-    """Convert named ON/OFF prime cubes to positional one-symbol schemata.
-
-    *input_names* defaults to ``positional_names(k)``.  When *k* is omitted it
-    is inferred from *input_names*, else from the union of prime keys (sorted).
-    """
-    if input_names is None:
-        if k is None:
-            keys: Set[str] = set()
-            for p in on_primes:
-                keys.update(p)
-            for p in off_primes:
-                keys.update(p)
-            # Prefer positional x0.. order when present; else sorted names.
-            if keys and all(re.fullmatch(r"x\d+", n) for n in keys):
-                idxs = sorted(int(n[1:]) for n in keys)
-                k = (max(idxs) + 1) if idxs else 0
-                input_names = positional_names(k)
-            else:
-                input_names = sorted(keys)
-                k = len(input_names)
-        else:
-            input_names = positional_names(int(k))
-    names = list(input_names)
-    return {
-        1: {_prime_to_schema(p, names) for p in on_primes},
-        0: {_prime_to_schema(p, names) for p in off_primes},
-    }
-
-
-def one_symbol_schemata_to_primes(
-    schemata: OneSymbolSchemata,
-    input_names: Sequence[str],
-) -> OnOffPrimes:
-    """Convert one-symbol schemata to named ON/OFF ``PrimeDict`` lists."""
-    names = list(input_names)
-
-    def _from_set(sset) -> List[PrimeDict]:
-        out: List[PrimeDict] = []
-        for s in sset:
-            d: PrimeDict = {}
-            for i, ch in enumerate(s):
-                if ch == "1":
-                    d[names[i]] = True
-                elif ch == "0":
-                    d[names[i]] = False
-            out.append(d)
-        return out
-
-    return (
-        _from_set(schemata.get(1, ())),
-        _from_set(schemata.get(0, ())),
-    )

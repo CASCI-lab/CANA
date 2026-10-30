@@ -17,7 +17,11 @@ from cana.function_outputs.expression import (
     one_symbol_to_expression,
     to_positional,
 )
-from cana.function_outputs.one_symbol import bit_lut_from_schemata, reorder as reorder_one_symbol
+from cana.function_outputs.one_symbol import (
+    bit_lut_from_one_symbol_schemata,
+    one_symbol_schemata_from_positional_expression,
+    reorder as reorder_one_symbol,
+)
 from cana.function_outputs.two_symbol import (
     one_symbol_from_two_symbol,
     reorder as reorder_two_symbol,
@@ -282,6 +286,13 @@ def test_get_one_symbol_schemata_from_positional_expression_via_cascade():
     assert list(fo.get_bit_lut()) == [0, 0, 0, 1]
 
 
+def test_one_symbol_schemata_from_positional_expression_rof():
+    # Free function: ROF cascade → schemata; no FO / no LUT required.
+    schemata = one_symbol_schemata_from_positional_expression("x0 and x1", 2)
+    assert schemata[1] == {"11"}
+    assert schemata[0] == {"02", "20"}
+
+
 def test_get_two_symbol_schemata_from_positional_expression():
     fo = FunctionOutputs(positional_expression="x0 or x1", k=2)
     assert fo.two_symbol_schemata is None
@@ -517,13 +528,13 @@ def test_one_symbol_reorder_swaps_and_implies():
     swapped_and = reorder_one_symbol(and_schemata, ["A", "B"], ["B", "A"])
     assert swapped_and[1] == {"11"}
     assert swapped_and[0] == {"02", "20"}
-    assert list(bit_lut_from_schemata(swapped_and, 2)) == [0, 0, 0, 1]
+    assert list(bit_lut_from_one_symbol_schemata(swapped_and, 2)) == [0, 0, 0, 1]
 
     # Implies A->B on (A, B): [1,1,0,1]; after swap to (B, A): [1,0,1,1].
     implies = FunctionOutputs.from_sequence([1, 1, 0, 1])
     schemata = implies.get_one_symbol_schemata()
     swapped = reorder_one_symbol(schemata, ["A", "B"], ["B", "A"])
-    assert list(bit_lut_from_schemata(swapped, 2)) == [1, 0, 1, 1]
+    assert list(bit_lut_from_one_symbol_schemata(swapped, 2)) == [1, 0, 1, 1]
 
 
 def test_function_outputs_reorder_both_peers():
@@ -537,12 +548,12 @@ def test_function_outputs_reorder_both_peers():
     assert out is not fo
     assert list(out.bit_lut) == [1, 0, 1, 1]
     assert out.one_symbol_schemata is not None
-    assert list(bit_lut_from_schemata(out.one_symbol_schemata, 2)) == [1, 0, 1, 1]
+    assert list(bit_lut_from_one_symbol_schemata(out.one_symbol_schemata, 2)) == [1, 0, 1, 1]
     assert out.one_symbol_is_prime_implicant is True
     assert out.representations_consistent is True
     assert out.two_symbol_schemata is not None
     expanded = one_symbol_from_two_symbol(out.two_symbol_schemata)
-    assert list(bit_lut_from_schemata(expanded, 2)) == [1, 0, 1, 1]
+    assert list(bit_lut_from_one_symbol_schemata(expanded, 2)) == [1, 0, 1, 1]
     assert out.verify_representations_consistent() is True
 
 
@@ -554,8 +565,11 @@ def test_function_outputs_reorder_identity_returns_self():
 def test_one_symbol_module_public_api():
     assert "OneSymbolSchemata" in one_symbol_mod.__all__
     assert callable(one_symbol_mod.reorder)
-    assert callable(one_symbol_mod.bit_lut_from_schemata)
-    assert callable(one_symbol_mod.schemata_from_bit_lut)
+    assert callable(one_symbol_mod.bit_lut_from_one_symbol_schemata)
+    assert callable(one_symbol_mod.one_symbol_schemata_from_bit_lut)
+    assert callable(one_symbol_mod.primes_to_one_symbol_schemata)
+    assert callable(one_symbol_mod.one_symbol_schemata_to_primes)
+    assert callable(one_symbol_mod.one_symbol_schemata_from_positional_expression)
 
 
 def test_two_symbol_module_public_api():
@@ -575,7 +589,7 @@ def test_two_symbol_reorder_swaps_or_and_same_groups():
     swapped_or = reorder_two_symbol(or_ts, ["A", "B"], ["B", "A"])
     assert swapped_or == ([["00", [], [[0, 1]]]], [["21", [[0, 1]], []]])
     assert one_symbol_from_two_symbol(swapped_or)[1] == {"12", "21"}
-    assert list(bit_lut_from_schemata(one_symbol_from_two_symbol(swapped_or), 2)) == [
+    assert list(bit_lut_from_one_symbol_schemata(one_symbol_from_two_symbol(swapped_or), 2)) == [
         0,
         1,
         1,
@@ -586,7 +600,7 @@ def test_two_symbol_reorder_swaps_or_and_same_groups():
     and_ts = ([["02", [[0, 1]], []]], [["11", [], [[0, 1]]]])
     swapped_and = reorder_two_symbol(and_ts, ["A", "B"], ["B", "A"])
     assert swapped_and == ([["20", [[0, 1]], []]], [["11", [], [[0, 1]]]])
-    assert list(bit_lut_from_schemata(one_symbol_from_two_symbol(swapped_and), 2)) == [
+    assert list(bit_lut_from_one_symbol_schemata(one_symbol_from_two_symbol(swapped_and), 2)) == [
         0,
         0,
         0,
