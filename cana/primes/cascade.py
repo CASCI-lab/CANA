@@ -5,10 +5,15 @@ Does **not** build a dense LUT or run Quine–McCluskey; callers that need a
 LUT/QM fallback (e.g. :meth:`~cana.function_outputs.FunctionOutputs.get_one_symbol_schemata`)
 handle that separately after an unsuccessful cascade.
 
+When the Primer-B path is reached but ``pysat`` (``python-sat``) is missing,
+a :class:`UserWarning` is emitted before returning ``status="unsuccessful"``
+(so LUT/QM fallback is not silent about the skipped Primer attempt).
+
 No wall-clock timeout — structural caps only (``max_primes``, nesting).
 """
 from __future__ import annotations
 
+import warnings
 from dataclasses import dataclass
 from typing import List, Literal, Optional
 
@@ -38,6 +43,20 @@ CascadeStatus = Literal[
     "unsuccessful",
 ]
 CascadeMethod = Literal["rof", "primer"]
+
+_PYSAT_INSTALL_HINT = "pip install python-sat"
+
+
+def _warn_primer_unavailable(exc: BaseException, *, stacklevel: int) -> None:
+    """Warn that Primer-B was attempted but could not run (usually missing pysat)."""
+    warnings.warn(
+        "Primer-B path skipped: pysat (python-sat) is not available "
+        f"({type(exc).__name__}: {exc}). Install with: {_PYSAT_INSTALL_HINT}. "
+        "Expression primes were not computed; callers may fall through to "
+        "LUT/Quine–McCluskey.",
+        UserWarning,
+        stacklevel=stacklevel,
+    )
 
 
 @dataclass
@@ -134,6 +153,7 @@ def on_off_primes_from_expression(
     try:
         from cana.primes.primer import primer_on_off_primes
     except Exception as exc:  # noqa: BLE001
+        _warn_primer_unavailable(exc, stacklevel=3)
         return PrimesResult(
             status="unsuccessful",
             message=f"primer unavailable: {exc}",
@@ -142,6 +162,7 @@ def on_off_primes_from_expression(
     try:
         on_p, off_p = primer_on_off_primes(raw, max_primes=max_primes)
     except ImportError as exc:
+        _warn_primer_unavailable(exc, stacklevel=3)
         return PrimesResult(
             status="unsuccessful",
             method="primer",

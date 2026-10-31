@@ -32,17 +32,43 @@ def test_cascade_rof_too_many():
 
 def test_cascade_non_rof_primer_or_unsuccessful():
     expr = "a & b | !a & c"
-    result = on_off_primes_from_expression(expr)
-    if result.ok:
+    try:
+        import pysat  # noqa: F401
+    except ImportError:
+        pysat_ok = False
+    else:
+        pysat_ok = True
+
+    if pysat_ok:
+        result = on_off_primes_from_expression(expr)
+        assert result.ok
         assert result.method == "primer"
         assert result.n_on == 3
     else:
-        # Missing pysat / other soft failure — not a hard crash.
-        assert result.status in (
-            "unsuccessful",
-            "refused",
-            "error",
+        # Missing pysat: soft-fail, but must warn (not silent).
+        with pytest.warns(UserWarning, match=r"Primer-B path skipped.*pysat"):
+            result = on_off_primes_from_expression(expr)
+        assert result.status == "unsuccessful"
+        assert result.method == "primer"
+        assert "pysat" in result.message.lower()
+
+
+def test_cascade_warns_when_primer_raises_import_error(monkeypatch):
+    from cana.primes import cascade as cascade_mod
+
+    def _boom(_expr, **_kwargs):
+        raise ImportError("No module named 'pysat'")
+
+    monkeypatch.setattr(
+        "cana.primes.primer.primer_on_off_primes", _boom
+    )
+    with pytest.warns(UserWarning, match=r"Primer-B path skipped.*pysat"):
+        result = cascade_mod.on_off_primes_from_expression(
+            "a & b | !a & c"
         )
+    assert result.status == "unsuccessful"
+    assert result.method == "primer"
+    assert "pysat not installed" in result.message
 
 
 def test_fo_rof_stores_schemata_without_lut():

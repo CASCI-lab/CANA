@@ -116,8 +116,14 @@ def primer_on_off_primes(
         RecursionError: if parenthesis nesting exceeds
             :data:`~cana.primes.util.MAX_PRIMER_PAREN_DEPTH`.
     """
-    import pysat  # noqa: F401
-    from pysat.formula import Formula, Neg
+    try:
+        import pysat  # noqa: F401
+        from pysat.formula import Formula, Neg
+    except ImportError as exc:
+        raise ImportError(
+            "pysat (python-sat) is required for Primer-B; "
+            "install with: pip install python-sat"
+        ) from exc
 
     raw = expr.strip()
     const = _constant_on_off(raw)
