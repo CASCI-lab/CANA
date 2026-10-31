@@ -48,11 +48,8 @@ from high_k.bbm_rules import (
     iter_bnet_rules,
     unique_regulators,
 )
-from high_k.rof import (
-    check_syntactic_rof,
-    count_on_off_primes,
-    iter_on_off_primes,
-)
+from cana.function_properties.rof import check_syntactic_rof
+from cana.primes.rof_primes import count_on_off_primes, iter_on_off_primes
 from high_k.run_log import run_log_dir, start_run_log
 from high_k.synthetic import (
     MULTI_OCCURRENCE_BUILDERS,

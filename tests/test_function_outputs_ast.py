@@ -1,14 +1,14 @@
 # -*- coding: utf-8 -*-
-"""Tests for :mod:`high_k.ast`."""
+"""Tests for :mod:`cana.function_outputs.ast`."""
 from __future__ import annotations
 
-from cana.function_outputs.expression import normalize_operators
-from high_k.ast import (
+from cana.function_outputs.ast import (
     ast_leaf_polarities,
     ast_variable_names,
     invert_ast,
     expression_to_ast,
 )
+from cana.function_outputs.expression import normalize_operators
 
 
 def _to_symbolic(expr: str) -> str:

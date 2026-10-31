@@ -20,7 +20,7 @@
 #   ``pairwise_*`` / ``random``) at each ``K_VALUES`` size
 # - **bbm** — every rule in ``BBM/models/*/model.bnet``, then corpus stats
 #
-# Shared helpers: ``high_k.rof`` (``check_syntactic_rof``),
+# Shared helpers: ``cana.function_properties.rof`` (``check_syntactic_rof``),
 # ``high_k.timing.time_import_and_rof``, ``high_k.synthetic``,
 # ``high_k.bbm_rules``.
 #

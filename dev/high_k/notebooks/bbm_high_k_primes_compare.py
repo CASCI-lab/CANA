@@ -58,7 +58,8 @@ from high_k.general_primes import (
     complete_sum_on_off_primes,
     primer_on_off_primes,
 )
-from high_k.rof import check_syntactic_rof, iter_on_off_primes
+from cana.function_properties.rof import check_syntactic_rof
+from cana.primes.rof_primes import iter_on_off_primes
 from high_k.run_log import TeeLogger, run_log_dir, start_run_log
 from high_k.timing import call_in_subprocess, fmt_s
 from high_k.unate import check_syntactic_unate

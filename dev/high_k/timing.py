@@ -261,9 +261,9 @@ def time_import_and_rof(
 
     Import is :func:`import_detached_rule` only (no LUT / one-symbol).
     The ROF check runs on the original named *expr* string via
-    :func:`~high_k.rof.check_syntactic_rof`.
+    :func:`~cana.function_properties.rof.check_syntactic_rof`.
     """
-    from high_k.rof import check_syntactic_rof
+    from cana.function_properties.rof import check_syntactic_rof
 
     def _import():
         return import_detached_rule(bnet_text, fmt="bnet", target=target)
@@ -302,11 +302,11 @@ def time_import_and_unate(
     :func:`~high_k.unate.check_syntactic_unate` (stops at the first
     binate for polarity; ``n_unique_variables`` is still a full count).
 
-    Also runs an untimed :func:`~high_k.rof.check_syntactic_rof` for
+    Also runs an untimed :func:`~cana.function_properties.rof.check_syntactic_rof` for
     cross-classification (``is_rof``, ``n_variables``). Occurrence
     counts come from the ROF pass so they match ``rof_check`` logs.
     """
-    from high_k.rof import check_syntactic_rof
+    from cana.function_properties.rof import check_syntactic_rof
     from high_k.unate import check_syntactic_unate
 
     def _import():

@@ -6,7 +6,6 @@ from pathlib import Path
 
 import pytest
 
-from cana.function_outputs import FunctionOutputs
 from cana.function_outputs.ast import invert_ast, expression_to_ast
 from cana.function_properties.rof import (
     check_syntactic_rof,
@@ -21,8 +20,29 @@ from cana.primes.rof_primes import (
     iter_on_off_primes,
 )
 
+# ---------------------------------------------------------------------------
+# Fixtures / helpers
+# ---------------------------------------------------------------------------
+
+MASSIVE_HUB_BNET = """
+# Toy Biological Network Model
+targets,factors
+Protein_A,      Input_1 & Input_2
+Protein_B,      (Input_3 | Input_4) & Protein_A
+Massive_Hub,    (a1 | b1) & (a2 | b2) & (a3 | b3) & (a4 | b4) & (a5 | b5) & (a6 | b6) & (a7 | b7) & (a8 | b8) & (a9 | b9) & (a10 | b10)
+Protein_C,      Massive_Hub | Protein_B
+"""
+
+NEGATION_BNET = """
+# Regulatory Network with Inhibitors
+Cell_Cycle_Start,   Growth_Factor & !DNA_Damage
+S_Phase_Entry,      Cell_Cycle_Start & !Checkpoint_Arrest
+Mitosis_Inhibitor,  (p53 | p21) & !Anaphase_Promoting_Complex
+"""
+
 
 def _qm_pi_counts(expr: str) -> tuple[int, int]:
+    """ON/OFF prime counts via CANA Quine–McCluskey one-symbol schemata."""
     rule = named_expression_to_detached_rule("Y", expr)
     fo = rule.outputs
     fo.build_bit_lut_from_positional_expression()
@@ -32,6 +52,11 @@ def _qm_pi_counts(expr: str) -> tuple[int, int]:
 
 def _freeze(primes) -> frozenset:
     return frozenset(frozenset(p.items()) for p in primes)
+
+
+# ---------------------------------------------------------------------------
+# Syntactic ROF check
+# ---------------------------------------------------------------------------
 
 
 def test_check_syntactic_rof_accepts_single_occurrence():
@@ -54,6 +79,53 @@ def test_check_syntactic_rof_ast_matches_string():
     assert check_syntactic_rof_ast(node) == check_syntactic_rof(expr)
 
 
+# ---------------------------------------------------------------------------
+# SafeNetworkPrimes / multi-node bnet regressions
+# ---------------------------------------------------------------------------
+
+
+def test_massive_hub_network_counts():
+    net = SafeNetworkPrimes(MASSIVE_HUB_BNET)
+    assert net.nodes["Protein_A"]["on_count"] == 1
+    assert net.nodes["Protein_A"]["off_count"] == 2
+    assert net.nodes["Protein_B"]["on_count"] == 2
+    assert net.nodes["Protein_B"]["off_count"] == 2
+    assert net.nodes["Massive_Hub"]["on_count"] == 1024
+    assert net.nodes["Massive_Hub"]["off_count"] == 10
+    assert net.nodes["Protein_C"]["on_count"] == 2
+    assert net.nodes["Protein_C"]["off_count"] == 1
+
+
+def test_massive_hub_off_primes():
+    net = SafeNetworkPrimes(MASSIVE_HUB_BNET)
+    offs = list(net.get_off_generator("Massive_Hub"))
+    assert len(offs) == 10
+    assert offs[0] == {"a1": False, "b1": False}
+    assert offs[-1] == {"a10": False, "b10": False}
+
+
+def test_negation_network_cell_cycle_start():
+    model = SafeNetworkPrimes(NEGATION_BNET)
+    assert model.nodes["Cell_Cycle_Start"]["on_count"] == 1
+    assert model.nodes["Cell_Cycle_Start"]["off_count"] == 2
+    assert list(model.get_on_generator("Cell_Cycle_Start")) == [
+        {"Growth_Factor": True, "DNA_Damage": False}
+    ]
+    offs = list(model.get_off_generator("Cell_Cycle_Start"))
+    assert len(offs) == 2
+    assert _freeze(offs) == _freeze(
+        [
+            {"Growth_Factor": False},
+            {"DNA_Damage": True},
+        ]
+    )
+
+
+# ---------------------------------------------------------------------------
+# Cross-check vs CANA QM (small ROFs)
+# ---------------------------------------------------------------------------
+
+
 @pytest.mark.parametrize(
     "expr",
     [
@@ -62,6 +134,11 @@ def test_check_syntactic_rof_ast_matches_string():
         "(a0 | a1) & (a2 | a3)",
         "(a0 & a1) | (a2 & a3)",
         "a0 and not a1",
+        "(a0 | a1) & (a2 | a3) & (a4 | a5)",
+        "(a0 & a1) | (a2 & a3) | (a4 & a5)",
+        "a0 & a1 & a2 & a3",
+        "a0 | a1 | a2 | a3",
+        "((a0 & a1) | (a2 & a3)) & (a4 | a5)",
     ],
 )
 def test_rof_counts_match_qm_one_symbol(expr: str):
@@ -69,6 +146,32 @@ def test_rof_counts_match_qm_one_symbol(expr: str):
     on_n, off_n = count_on_off_primes(expr)
     qm_on, qm_off = _qm_pi_counts(expr)
     assert (on_n, off_n) == (qm_on, qm_off)
+
+
+@pytest.mark.parametrize(
+    "expr,expected_on,expected_off",
+    [
+        ("a0 & a1 & a2 & a3 & a4", 1, 5),
+        ("a0 | a1 | a2 | a3 | a4", 5, 1),
+        (
+            "(a0 | a1) & (a2 | a3) & (a4 | a5) & (a6 | a7)",
+            16,
+            4,
+        ),
+        (
+            "(a0 & a1) | (a2 & a3) | (a4 & a5) | (a6 & a7)",
+            4,
+            16,
+        ),
+    ],
+)
+def test_rof_closed_form_counts(expr, expected_on, expected_off):
+    assert count_on_off_primes(expr) == (expected_on, expected_off)
+
+
+# ---------------------------------------------------------------------------
+# Count / generate basics
+# ---------------------------------------------------------------------------
 
 
 def test_parse_negated_group_rof_count():
@@ -106,11 +209,27 @@ def test_python_style_count_and_iter():
     ]
 
 
+# ---------------------------------------------------------------------------
+# Syntactic ROF assertion / constants / network I/O
+# ---------------------------------------------------------------------------
+
+
+def test_syntactic_rof_accepted():
+    assert count_on_off_primes("a & b") == (1, 2)
+
+
 def test_rejects_repeated_variable_not_just_semantic_rof():
+    # ``a & a`` ≡ ``a`` (semantic ROF after simplification) but is not
+    # syntactic / single-occurrence ROF; the engine must reject it.
     with pytest.raises(ValueError, match="syntactic ROF"):
         count_on_off_primes("a & a")
     with pytest.raises(ValueError, match="syntactic ROF"):
         list(iter_on_off_primes("a | a", "on"))
+    node = expression_to_ast("a & a")
+    with pytest.raises(ValueError, match="syntactic ROF"):
+        count_rof_primes(node)
+    with pytest.raises(ValueError, match="syntactic ROF"):
+        list(generate_rof_primes(node))
 
 
 @pytest.mark.parametrize("const", ["0", "1", "True", "False", "true", "false"])
@@ -142,3 +261,17 @@ def test_safe_network_skips_comments_and_header():
     assert list(net.nodes) == ["A"]
     assert net.nodes["A"]["on_count"] == 2
     assert net.nodes["A"]["off_count"] == 1
+
+
+def test_safe_network_unknown_node_generators():
+    net = SafeNetworkPrimes("Y, a\n")
+    assert net.get_on_generator("missing") is None
+    assert net.get_off_generator("missing") is None
+
+
+def test_summary_prints(capsys):
+    net = SafeNetworkPrimes("Y, a & b\n")
+    net.summary()
+    out = capsys.readouterr().out
+    assert "Y" in out
+    assert "a & b" in out

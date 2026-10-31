@@ -209,6 +209,22 @@ def test_n_unique_matches_rof_on_binate():
     assert unate["n_unique_variables"] == rof["n_unique_variables"] == 5
 
 
+def test_deep_nesting_does_not_hit_recursion_limit():
+    # BBM-style left-nested parens; recursive descent used to raise
+    # RecursionError well below this depth.
+    depth = 5_000
+    expr = "(" * depth + "a & !b" + ")" * depth
+    info = check_syntactic_unate(expr)
+    assert info["is_unate"] is True
+    assert info["positive"] == ["a"]
+    assert info["negative"] == ["b"]
+    # Polarity flip under a deep outer negation.
+    info_neg = check_syntactic_unate("!" + expr)
+    assert info_neg["is_unate"] is True
+    assert info_neg["positive"] == ["b"]
+    assert info_neg["negative"] == ["a"]
+
+
 def test_check_syntactic_unate_ast_agrees_when_unate():
     expr = "a & !b | c"
     info = check_syntactic_unate(expr)
