@@ -36,9 +36,6 @@ from cana.function_outputs import FunctionOutputs
 from cana.function_outputs.expression import positional_names
 from cana.function_properties import input_signs as lut_input_signs
 from cana.function_properties import syntactic_input_signs
-from cana.utils import ncr
-
-
 class BooleanNode(object):
     """ """
 
@@ -1003,7 +1000,7 @@ class BooleanNode(object):
                         S_c_f += 1
             if S_c_f == 0:
                 return 0.0
-            return S_c_f / float(ncr(self.k, c)) / float(2**self.k)
+            return S_c_f / float(math.comb(self.k, c)) / float(2**self.k)
         else:
             assert max_k >= self.k
             for ic in range(max(1, c + self.k - max_k), min(c, self.k) + 1):
@@ -1016,8 +1013,8 @@ class BooleanNode(object):
                         if self.step("".join(origin_config)) != self.step(
                             "".join(mut_config)
                         ):
-                            S_c_f += ncr(max_k - self.k, c - ic)
-            return S_c_f / float(ncr(max_k, c)) / float(2**self.k)
+                            S_c_f += math.comb(max_k - self.k, c - ic)
+            return S_c_f / float(math.comb(max_k, c)) / float(2**self.k)
 
     # --- Node properties ---
 

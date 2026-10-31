@@ -20,6 +20,7 @@ import warnings
 
 import networkx as nx
 import numpy as np
+from scipy.stats import entropy
 
 import cana.bns as bns
 from cana.function_outputs.bit_lut import BitLut
@@ -42,7 +43,7 @@ from cana.cutils import (
 # from cana.utils import *
 from cana.canalization.cm_simplify import simplify_canalizing_map
 from cana.function_outputs import FunctionOutputs
-from cana.utils import entropy, flip_binstate_bit_set
+from cana.utils import flip_binstate_bit_set
 
 
 class BooleanNetwork:
@@ -62,7 +63,8 @@ class BooleanNetwork:
         When a dense :class:`~cana.function_outputs.bit_lut.BitLut` is present on a node, row
         ``s`` is the next value when the input state — interpreted in the
         ``inputs`` order with ``inputs[0]`` as the most significant bit —
-        equals ``s``.  This matches :func:`~cana.utils.output_transitions` /
+        equals ``s``.  This matches
+        :func:`~cana.function_outputs.expression.named_expression_to_bit_lut` /
         :func:`~cana.cutils.statenum_to_binstate`.
 
         Example (AND of ``A`` then ``B``, node ids 0 and 1)::

@@ -28,6 +28,7 @@ from cana.function_outputs.bit_lut import (
 )
 from cana.function_outputs.expression import (
     positional_expression_to_bit_lut,
+    named_expression_to_bit_lut,
     bit_lut_to_expression,
     positional_names,
     reorder_positional,

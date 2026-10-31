@@ -3,8 +3,9 @@
 # Tests for ``boolean_node.py``
 # These tests were manually calculated by Luis M. Rocha and implemented by Rion B. Correia.
 #
+from math import isclose
+
 from cana.datasets.bools import CONTRADICTION, AND, OR, XOR, COPYx1, RULE90, RULE110
-from cana.utils import *
 from cana.boolean_node import BooleanNode
 import cana.sensitivity as sensitivity
 import numpy as np

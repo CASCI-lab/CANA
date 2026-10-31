@@ -23,14 +23,16 @@ def test_EG_weight_THALIANA():
     assert network.effective_indegrees() == sorted(true, reverse=True)
 
 
-def test_output_transitions():
-    """Test output_transitions produces correct truth tables."""
-    from cana.utils import output_transitions
+def test_named_expression_to_bit_lut():
+    """Test named_expression_to_bit_lut produces correct truth tables."""
+    from cana.function_outputs.expression import named_expression_to_bit_lut
 
-    assert output_transitions('A', ['A']) == [0, 1]
-    assert output_transitions('A and B', ['A', 'B']) == [0, 0, 0, 1]
-    assert output_transitions('A or B', ['A', 'B']) == [0, 1, 1, 1]
-    assert output_transitions('(A or B) and not C', ['A', 'B', 'C']) == [0, 0, 1, 0, 1, 0, 1, 0]
+    assert named_expression_to_bit_lut('A', ['A']).to_list() == [0, 1]
+    assert named_expression_to_bit_lut('A and B', ['A', 'B']).to_list() == [0, 0, 0, 1]
+    assert named_expression_to_bit_lut('A or B', ['A', 'B']).to_list() == [0, 1, 1, 1]
+    assert named_expression_to_bit_lut(
+        '(A or B) and not C', ['A', 'B', 'C']
+    ).to_list() == [0, 0, 1, 0, 1, 0, 1, 0]
 
 
 def test_from_string_booleannet():

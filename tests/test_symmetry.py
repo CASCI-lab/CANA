@@ -2,8 +2,9 @@
 #
 # Tests for ``symmetry.py``
 #
+from math import isclose
+
 from cana.datasets.bools import AND, OR, XOR, COPYx1
-from cana.utils import isclose
 from cana.boolean_node import BooleanNode
 
 

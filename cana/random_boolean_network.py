@@ -20,10 +20,10 @@ from io import StringIO
 
 import networkx as nx
 
-from cana.function_outputs.bit_lut import BitLut
 from cana.boolean_network import BooleanNetwork
 from cana.boolean_node import BooleanNode
-from cana.utils import output_transitions
+from cana.function_outputs.bit_lut import BitLut
+from cana.function_outputs.expression import named_expression_to_bit_lut
 
 
 def regular_boolean_network(
@@ -225,9 +225,7 @@ def from_string_booleannet(self, string, keep_constants=True, **kwargs):
         input_nums = [names.index(inp) for inp in input_name_list]
         nodes.append(
             BooleanNode.from_bit_lut(
-                BitLut.from_sequence(
-                    output_transitions(eval_line, input_name_list)
-                ),
+                named_expression_to_bit_lut(eval_line, input_name_list),
                 id=i,
                 name=names[i],
                 inputs=input_nums,

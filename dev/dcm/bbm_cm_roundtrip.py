@@ -39,7 +39,7 @@ for _p in (_DEV_DIR, _PKG_ROOT):
 
 from cana.boolean_node import BooleanNode
 from cana.canalization.cm_lut import lut_from_canalizing_map
-from cana.utils import output_transitions
+from cana.function_outputs.expression import named_expression_to_bit_lut
 
 # ---------------------------------------------------------------------------
 # Config
@@ -168,7 +168,7 @@ def load_model_nodes(path: Path, max_k: int) -> List[LoadedNode]:
     """Load a booleannet model, building LUTs only for nodes with ``k <= max_k``.
 
     Mirrors CANA's ``from_string_booleannet`` input detection, but skips
-    ``output_transitions`` (full ``2^k`` expansion) when ``k > max_k`` so
+    ``named_expression_to_bit_lut`` (full ``2^k`` expansion) when ``k > max_k`` so
     high-indegree models (e.g. ERBB ``v_Shc`` ≈ 27) do not hang at load.
     """
     rules = parse_booleannet_rules(path.read_text(encoding="utf-8"))
@@ -192,10 +192,10 @@ def load_model_nodes(path: Path, max_k: int) -> List[LoadedNode]:
                 )
             )
             continue
-        outputs = output_transitions(expr, input_names)
+        lut = named_expression_to_bit_lut(expr, input_names)
         input_ids = [name_to_id[inp] for inp in input_names]
         node = BooleanNode.from_bit_lut(
-            outputs, name=name, inputs=input_ids, id=nid
+            lut, name=name, inputs=input_ids, id=nid
         )
         loaded.append(LoadedNode(name=name, k=k, node=node))
     return loaded

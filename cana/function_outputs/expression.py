@@ -8,6 +8,8 @@ I/O / :class:`~cana.boolean_node.BooleanNode` boundary.
 Naming:
 - ``*_positional*`` / ``named_to_positional`` / ``positional_to_named`` —
   fixed IR kind (positional ``x_i`` or named regulators).
+- ``positional_expression_to_bit_lut`` / ``named_expression_to_bit_lut`` —
+  evaluate IR to a dense LUT.
 - ``bit_lut_to_expression`` — emit whatever names are in ``input_names``
   (pass :func:`positional_names` for positional IR).
 - :func:`normalize_operators` / :func:`expression_identifiers` — either kind.
@@ -20,7 +22,6 @@ from typing import Any, List, Optional, Sequence
 
 from cana.function_outputs.bit_lut import BitLut, refuse_dense_lut_k
 from cana.cutils import statenum_to_binstate
-from cana.utils import output_transitions
 
 __all__ = [
     "BOOL_KEYWORDS",
@@ -34,6 +35,7 @@ __all__ = [
     "positional_to_named",
     "reorder_positional",
     "positional_expression_to_bit_lut",
+    "named_expression_to_bit_lut",
     "bit_lut_to_expression",
     "function_outputs_to_named_expression",
 ]
@@ -52,8 +54,8 @@ def normalize_operators(expr: str, style: str = "python") -> str:
 
     Args:
         expr: Boolean expression string.
-        style: ``"python"`` (for :func:`~cana.utils.output_transitions`) or
-            ``"symbolic"``.
+        style: ``"python"`` (for :func:`positional_expression_to_bit_lut` /
+            :func:`named_expression_to_bit_lut`) or ``"symbolic"``.
     """
     s = expr.strip()
     if style == "python":
@@ -191,7 +193,35 @@ def positional_expression_to_bit_lut(expr: str, k: int) -> BitLut:
         return BitLut.from_sequence([0])
     refuse_dense_lut_k(k, via="positional_expression_to_bit_lut")
     names = positional_names(k)
-    return BitLut.from_sequence(output_transitions(expr, names))
+    # Eval trusted python ``and``/``or``/``not`` over all ``2**k`` input rows
+    # (builtins disabled; not a security boundary for untrusted strings).
+    ns = {}
+    safe_globals = {"__builtins__": {}}
+    code = compile(expr.strip(), "<string>", "eval")
+    outputs = []
+    for i in range(2**k):
+        trial = statenum_to_binstate(i, k)
+        for j, name in enumerate(names):
+            ns[name] = int(trial[j])
+        outputs.append(int(eval(code, safe_globals, ns)))
+    return BitLut.from_sequence(outputs)
+
+
+def named_expression_to_bit_lut(
+    expr: str, input_names: Sequence[str]
+) -> BitLut:
+    """Evaluate a named boolean expression to a dense :class:`BitLut`.
+
+    Rewrites *expr* to positional IR via :func:`named_to_positional`, then
+    evaluates with :func:`positional_expression_to_bit_lut`.
+
+    Refuses when ``len(input_names)`` exceeds
+    :data:`~cana.function_outputs.bit_lut.MAX_DENSE_LUT_K`.
+    """
+    names = list(input_names)
+    return positional_expression_to_bit_lut(
+        named_to_positional(expr, names), len(names)
+    )
 
 
 def _style_ops(style: str):
