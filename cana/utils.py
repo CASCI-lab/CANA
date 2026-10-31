@@ -150,6 +150,9 @@ def output_transitions(eval_line, input_list):
     Expressions must be trusted boolean rules using ``and``, ``or``,
     ``not``, and parentheses, as produced by CANA model files.
 
+    Refuses when ``len(input_list)`` exceeds
+    :data:`~cana.function_outputs.bit_lut.MAX_DENSE_LUT_K`.
+
     Args:
         eval_line (string) : boolean expression to evaluate (e.g. "A and not B")
         input_list (list) : list of input variable names
@@ -178,6 +181,9 @@ def output_transitions(eval_line, input_list):
         trial string via a namespace dict, and the expression is evaluated
         which results in the output list [0, 0, 1, 0, 1, 0, 1, 0]
     """
+    from cana.function_outputs.bit_lut import refuse_dense_lut_k
+
+    refuse_dense_lut_k(len(input_list), via="output_transitions")
     total = 2 ** len(input_list)  # Total combinations to try
     output_list = []
     # Use an explicit namespace dict for exec/eval so that dynamically

@@ -15,7 +15,7 @@ from __future__ import annotations
 import re
 from typing import Dict, List, Optional, Sequence, Set, Tuple
 
-from cana.function_outputs.bit_lut import BitLut
+from cana.function_outputs.bit_lut import BitLut, refuse_dense_lut_k
 from cana.cutils import binstate_to_statenum, outputs_to_binstates_of_given_type
 from cana.function_outputs.expression import _contradiction_expr, _style_ops
 
@@ -87,11 +87,14 @@ def one_symbol_to_bit_lut(
     Raises
     ------
     ValueError
-        On polarity conflicts or incomplete coverage of the ``2**k`` rows.
+        If ``k`` exceeds
+        :data:`~cana.function_outputs.bit_lut.MAX_DENSE_LUT_K`, or on
+        polarity conflicts or incomplete coverage of the ``2**k`` rows.
         Incomplete covers are not filled with a default output value.
     """
     import cana.canalization.cboolean_canalization as cBCanalization
 
+    refuse_dense_lut_k(k, via="one_symbol_to_bit_lut")
     lut = BitLut(k)
     covered = [False] * len(lut)
     for output, piset in schemata.items():
@@ -214,16 +217,16 @@ def positional_expression_to_one_symbol(
     """Derive one-symbol schemata from a positional boolean expression.
 
     Tries the expression cascade (syntactic ROF, then Primer-B) without
-    building a dense LUT.  On cascade failure, falls back to LUT +
-    Quine–McCluskey when ``k`` is at most ``MAX_DENSE_LUT_K``; otherwise
-    raises ``ValueError``.
+    building a dense LUT.  On cascade failure, falls back to building a
+    BitLut (subject to
+    :data:`~cana.function_outputs.bit_lut.MAX_DENSE_LUT_K`) then
+    Quine–McCluskey.
     """
     from cana.function_outputs.expression import (
         positional_expression_to_bit_lut,
         positional_names,
     )
     from cana.primes.cascade import on_off_primes_from_expression
-    from cana.primes.util import MAX_DENSE_LUT_K
 
     result = on_off_primes_from_expression(expr)
     if result.ok and result.on_primes is not None and result.off_primes is not None:
@@ -233,14 +236,6 @@ def positional_expression_to_one_symbol(
             input_names=positional_names(k),
         )
 
-    if k > MAX_DENSE_LUT_K:
-        raise ValueError(
-            "Cannot get one_symbol_schemata from positional_expression: "
-            "expression cascade unsuccessful and k={0:d} > "
-            "MAX_DENSE_LUT_K={1:d} (refusing dense LUT/QM)".format(
-                k, MAX_DENSE_LUT_K
-            )
-        )
     return bit_lut_to_one_symbol(positional_expression_to_bit_lut(expr, k))
 
 

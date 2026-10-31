@@ -32,11 +32,9 @@ from high_k.primes_util import (
 
 ensure_cana_on_path()
 
+from cana.function_outputs.bit_lut import MAX_DENSE_LUT_K  # noqa: E402
 from cana.primes.primer import primer_on_off_primes as _primer_core  # noqa: E402
-from cana.primes.util import (  # noqa: E402
-    MAX_DENSE_LUT_K,
-    MAX_PRIMES as MAX_PRIMER_PRIMES,
-)
+from cana.primes.util import MAX_PRIMES as MAX_PRIMER_PRIMES  # noqa: E402
 
 __all__ = [
     "DEFAULT_TIMEOUT_S",
@@ -90,16 +88,6 @@ def _for_cana_eval(expr: str) -> str:
     return to_symbolic_expr(expr).replace("~", "!")
 
 
-def _refuse_huge_dense_lut(expr: str) -> None:
-    """Raise ``ValueError`` when dense ``2**k`` materialization is unsafe."""
-    names = unique_regulators(_for_cana_eval(expr))
-    k = len(names)
-    if k > MAX_DENSE_LUT_K:
-        raise ValueError(
-            f"refusing dense LUT/QM for k={k} > MAX_DENSE_LUT_K={MAX_DENSE_LUT_K}"
-        )
-
-
 def _schemata_to_primes(
     sset, names: List[str]
 ) -> List[PrimeDict]:
@@ -124,7 +112,6 @@ def _qm_on_off_primes_inprocess(expr: str) -> OnOffPrimes:
         return const
 
     refuse_extreme_nesting(expr)
-    _refuse_huge_dense_lut(expr)
     cana_expr = _for_cana_eval(expr)
     names = unique_regulators(cana_expr)
     fo = import_detached_outputs(as_bnet(cana_expr), "Y")
@@ -152,10 +139,10 @@ def qm_on_off_primes(
 ) -> OnOffPrimes:
     """Exact ON/OFF primes via dense LUT + CANA Quine–McCluskey.
 
-    Refuses expressions with more than :data:`MAX_DENSE_LUT_K` inputs
-    (predictable ``2**k`` RAM).  Otherwise *timeout_s* and subprocess kill
-    bound wall-clock time.  *timeout_s* ``<= 0`` runs in-process
-    (tests / debug).
+    Building the dense BitLut refuses when ``k`` exceeds
+    :data:`~cana.function_outputs.bit_lut.MAX_DENSE_LUT_K`.  Otherwise
+    *timeout_s* and subprocess kill bound wall-clock time.  *timeout_s*
+    ``<= 0`` runs in-process (tests / debug).
     """
     return _run_timed(
         _qm_on_off_primes_inprocess,

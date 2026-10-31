@@ -10,7 +10,8 @@ from cana.primes.primer import (
     MAX_PRIMER_PRIMES,
     primer_on_off_primes,
 )
-from cana.primes.util import MAX_DENSE_LUT_K, one_symbol_to_primes
+from cana.function_outputs.bit_lut import MAX_DENSE_LUT_K
+from cana.primes.util import one_symbol_to_primes
 
 
 def _freeze(prime_list) -> frozenset:

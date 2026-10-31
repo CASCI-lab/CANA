@@ -33,7 +33,6 @@ from cana.primes.rof import (
     require_syntactic_rof_ast,
 )
 from cana.primes.util import (
-    MAX_DENSE_LUT_K,
     MAX_PRIMES,
     MAX_PRIMER_PAREN_DEPTH,
     MAX_SAFE_PAREN_DEPTH,
@@ -69,7 +68,6 @@ __all__ = [
     "generate_rof_primes",
     "iter_on_off_primes",
     "require_syntactic_rof_ast",
-    "MAX_DENSE_LUT_K",
     "MAX_PRIMES",
     "MAX_PRIMER_PRIMES",
     "MAX_PRIMER_PAREN_DEPTH",

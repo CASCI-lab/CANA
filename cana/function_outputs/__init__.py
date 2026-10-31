@@ -21,7 +21,11 @@ from __future__ import annotations
 import warnings
 from typing import Any, Iterator, List, Optional, Sequence, Tuple, Union
 
-from cana.function_outputs.bit_lut import BitLut
+from cana.function_outputs.bit_lut import (
+    BitLut,
+    MAX_DENSE_LUT_K,
+    refuse_dense_lut_k,
+)
 from cana.function_outputs.expression import (
     positional_expression_to_bit_lut,
     bit_lut_to_expression,
@@ -43,6 +47,8 @@ from cana.function_outputs.two_symbol import (
 
 __all__ = [
     "BitLut",
+    "MAX_DENSE_LUT_K",
+    "refuse_dense_lut_k",
     "FunctionOutputs",
     "OneSymbolSchemata",
     "TwoSymbolSchemata",
@@ -214,7 +220,8 @@ class FunctionOutputs(object):
         3. expression cascade (syntactic ROF, then Primer-B) when
            ``positional_expression`` is set — stores schemata only, not a LUT
         4. Quine–McCluskey from stored ``bit_lut``, or build+store ``bit_lut``
-           from ``positional_expression`` when ``k`` is small enough, then QM
+           from ``positional_expression`` (subject to
+           :data:`~cana.function_outputs.bit_lut.MAX_DENSE_LUT_K`), then QM
 
         Intermediates are cached.  Raises ``ValueError`` if no peer can produce
         one-symbol schemata.
@@ -254,16 +261,6 @@ class FunctionOutputs(object):
         if self.positional_expression is not None:
             # Same QM fallback as positional_expression_to_one_symbol,
             # but cache the dense LUT on this container.
-            from cana.primes.util import MAX_DENSE_LUT_K
-
-            if self.k > MAX_DENSE_LUT_K:
-                raise ValueError(
-                    "Cannot get one_symbol_schemata from positional_expression: "
-                    "expression cascade unsuccessful and k={0:d} > "
-                    "MAX_DENSE_LUT_K={1:d} (refusing dense LUT/QM)".format(
-                        self.k, MAX_DENSE_LUT_K
-                    )
-                )
             self.build_bit_lut_from_positional_expression()
             return self.compute_one_symbol_schemata_from_bit_lut()
 

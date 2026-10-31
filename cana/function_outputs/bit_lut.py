@@ -6,7 +6,20 @@ from typing import Iterator, List, Optional, Sequence, Union
 
 from cana.cutils import binstate_to_statenum, statenum_to_binstate
 
-__all__ = ["BitLut"]
+__all__ = ["BitLut", "MAX_DENSE_LUT_K", "refuse_dense_lut_k"]
+
+# Building a dense BitLut from another representation allocates Θ(2^k).
+MAX_DENSE_LUT_K = 20
+
+
+def refuse_dense_lut_k(k: int, *, via: str) -> None:
+    """Raise ``ValueError`` when materializing a dense BitLut would be too large."""
+    if int(k) > MAX_DENSE_LUT_K:
+        raise ValueError(
+            "refusing to build dense BitLut via {0}: k={1:d} > MAX_DENSE_LUT_K={2:d}".format(
+                via, int(k), MAX_DENSE_LUT_K
+            )
+        )
 
 
 def _coerce_bit(value: object) -> int:

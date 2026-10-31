@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 """Tests for :class:`cana.function_outputs.FunctionOutputs`."""
-from cana.function_outputs.bit_lut import BitLut
+from cana.function_outputs.bit_lut import BitLut, MAX_DENSE_LUT_K
 from cana.boolean_network import BooleanNetwork
 from cana.boolean_node import BooleanNode
 from cana.function_outputs import FunctionOutputs
@@ -206,6 +206,26 @@ def test_positional_expression_to_bit_lut_and_get_bit_lut():
     built = fo.get_bit_lut()
     assert list(built) == [0, 1, 1, 1]
     assert fo.bit_lut is built
+
+
+def test_get_bit_lut_refuses_huge_k_from_expression():
+    k = MAX_DENSE_LUT_K + 1
+    expr = " and ".join("x{0:d}".format(i) for i in range(k))
+    fo = FunctionOutputs(positional_expression=expr, k=k)
+    with pytest.raises(ValueError, match="MAX_DENSE_LUT_K"):
+        fo.get_bit_lut()
+    assert fo.bit_lut is None
+
+
+def test_get_bit_lut_refuses_huge_k_from_one_symbol():
+    k = MAX_DENSE_LUT_K + 1
+    fo = FunctionOutputs(
+        one_symbol_schemata={1: {"2" * k}},
+        k=k,
+    )
+    with pytest.raises(ValueError, match="MAX_DENSE_LUT_K"):
+        fo.get_bit_lut()
+    assert fo.bit_lut is None
 
 
 def test_function_outputs_reorder_expression():

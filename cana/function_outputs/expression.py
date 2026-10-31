@@ -18,7 +18,7 @@ import re
 import warnings
 from typing import Any, List, Optional, Sequence
 
-from cana.function_outputs.bit_lut import BitLut
+from cana.function_outputs.bit_lut import BitLut, refuse_dense_lut_k
 from cana.cutils import statenum_to_binstate
 from cana.utils import output_transitions
 
@@ -169,7 +169,11 @@ def reorder_positional(
 
 
 def positional_expression_to_bit_lut(expr: str, k: int) -> BitLut:
-    """Evaluate positional ``x0``…``x{k-1}`` IR to a dense :class:`BitLut`."""
+    """Evaluate positional ``x0``…``x{k-1}`` IR to a dense :class:`BitLut`.
+
+    Refuses when ``k`` exceeds
+    :data:`~cana.function_outputs.bit_lut.MAX_DENSE_LUT_K`.
+    """
     k = int(k)
     if expr in ("True", "true", "1"):
         if k != 0:
@@ -179,6 +183,7 @@ def positional_expression_to_bit_lut(expr: str, k: int) -> BitLut:
         if k != 0:
             raise ValueError("constant False requires k=0")
         return BitLut.from_sequence([0])
+    refuse_dense_lut_k(k, via="positional_expression_to_bit_lut")
     names = positional_names(k)
     return BitLut.from_sequence(output_transitions(expr, names))
 

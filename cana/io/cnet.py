@@ -4,7 +4,7 @@ from __future__ import annotations
 
 from typing import Any, Dict, List, Sequence, Tuple
 
-from cana.function_outputs.bit_lut import BitLut
+from cana.function_outputs.bit_lut import BitLut, refuse_dense_lut_k
 from cana.boolean_node import BooleanNode
 from cana.cutils import binstate_to_statenum, expand_logic_line, statenum_to_binstate
 from cana.function_outputs import FunctionOutputs, OneSymbolSchemata
@@ -49,6 +49,7 @@ def _schemata_from_logic_lines(logic_lines: List[str]) -> OneSymbolSchemata:
 
 def _bit_lut_from_logic_lines(logic_lines: List[str], indegree: int) -> BitLut:
     """Expand logic lines (including wildcards) into a dense ``BitLut``."""
+    refuse_dense_lut_k(indegree, via="_bit_lut_from_logic_lines")
     lut = BitLut(indegree)
     for logic_line in logic_lines:
         for nlogicline in expand_logic_line(logic_line):

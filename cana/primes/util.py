@@ -23,7 +23,6 @@ __all__ = [
     "MAX_SAFE_PAREN_DEPTH",
     "MAX_PRIMER_PAREN_DEPTH",
     "MAX_PRIMES",
-    "MAX_DENSE_LUT_K",
     "paren_nesting_depth",
     "refuse_extreme_nesting",
     "to_symbolic_expr",
@@ -46,8 +45,6 @@ MAX_SAFE_PAREN_DEPTH = 200
 
 # Shared PI enumeration / ROF-generate cap used by cascade and Primer-B.
 MAX_PRIMES = 1_000_000
-# Dense LUT / onset→QM paths allocate Θ(2^k) memory.
-MAX_DENSE_LUT_K = 20
 
 
 def paren_nesting_depth(expr: str) -> int:
