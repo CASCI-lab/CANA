@@ -46,7 +46,9 @@ POSITIONAL_RE = re.compile(r"\bx(\d+)\b")
 def normalize_operators(expr: str, style: str = "python") -> str:
     """Normalize boolean operators to ``and``/``or``/``not`` or ``&``/``|``/``!``.
 
-    Works on positional or named expressions (operators only).
+    Works on positional or named expressions (operators only).  Prefix
+    ``~`` is treated as logical NOT (same as ``!`` / ``not``), not Python
+    bitwise complement.
 
     Args:
         expr: Boolean expression string.
@@ -60,6 +62,9 @@ def normalize_operators(expr: str, style: str = "python") -> str:
         s = re.sub(r"\bNOT\b", "not", s, flags=re.IGNORECASE)
         s = s.replace("&&", " and ").replace("||", " or ")
         s = re.sub(r"(?<![A-Za-z0-9_])!(?!=)", " not ", s)
+        # ``~x`` must become logical ``not x`` before eval; bare ``~`` is
+        # Python bitwise NOT and would make both 0 and 1 truthy.
+        s = re.sub(r"(?<![A-Za-z0-9_])~", " not ", s)
         s = s.replace("&", " and ").replace("|", " or ")
         s = re.sub(r"\s+", " ", s).strip()
         return s
@@ -67,6 +72,7 @@ def normalize_operators(expr: str, style: str = "python") -> str:
         s = re.sub(r"\band\b", "&", s, flags=re.IGNORECASE)
         s = re.sub(r"\bor\b", "|", s, flags=re.IGNORECASE)
         s = re.sub(r"\bnot\b", "!", s, flags=re.IGNORECASE)
+        s = re.sub(r"(?<![A-Za-z0-9_])~", "!", s)
         s = re.sub(r"\s+", " ", s).strip()
         return s
     raise ValueError("style must be 'python' or 'symbolic'")
