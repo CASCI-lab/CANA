@@ -1,0 +1,80 @@
+log_path=/home/kyuhyongpark/CANA/CANA/dev/high_k/logs/bbm_high_k_measures_probe/bbm_high_k_measures_probe.log
+MODE=starter  TIMEOUT_S=10.0  MIN_K=13
+BBM_MODELS=/home/kyuhyongpark/CANA/BBM/models
+COMPARE_LOG=/home/kyuhyongpark/CANA/CANA/dev/high_k/logs/bbm_high_k_primes_compare/bbm_high_k_primes_compare.log
+PROBES=('import', 'one_symbol', 'schemata_pi', 'input_redundancy', 'effective_connectivity', 'edge_effectiveness', 'bias', 'sensitivity', 'input_symmetry')
+
+=== probe matrix  n_funcs=5  n_probes=9  timeout=10s ===
+#   1 rof     expect_k= 80  [id-256]::v_v211_Oligomycin_b1  model=[id-256]__[var-296]__[in-17]__[LACTIC-ACID-LYMPH
+       import                      15.89 ms  ok  lut=N  value={'k': 80, 'name': 'v_v211_Oligomycin_b1'}
+       one_symbol                 269.24 ms  ok  lut=N  value={'0': 1, '1': 80}
+       schemata_pi                164.08 ms  ok  lut=N  value='shape=(81, 2)'
+       input_redundancy            10.000 s  timeout
+       effective_connectivity      10.000 s  timeout
+       edge_effectiveness          10.000 s  timeout
+       bias                           error  RuntimeError: ValueError: refusing to build dense BitLut via positional_expression_to_bit_lut: k=...
+       sensitivity                    error  RuntimeError: ValueError: refusing to build dense BitLut via positional_expression_to_bit_lut: k=...
+       input_symmetry              10.000 s  timeout
+#   2 rof     expect_k= 31  [id-207]::v_TP53  model=[id-207]__[var-85]__[in-18]__[BREAST-CANCER-TUMO
+       import                       5.93 ms  ok  lut=N  value={'k': 31, 'name': 'v_TP53'}
+       one_symbol                  24.62 ms  ok  lut=N  value={'0': 17, '1': 15}
+       schemata_pi                 54.42 ms  ok  lut=N  value='shape=(32, 2)'
+       input_redundancy            10.000 s  timeout
+       effective_connectivity      10.000 s  timeout
+       edge_effectiveness          10.000 s  timeout
+       bias                           error  RuntimeError: ValueError: refusing to build dense BitLut via positional_expression_to_bit_lut: k=...
+       sensitivity                    error  RuntimeError: ValueError: refusing to build dense BitLut via positional_expression_to_bit_lut: k=...
+       input_symmetry              10.000 s  timeout
+#   3 unate   expect_k= 36  [id-251]::v_v52_Cdk1_cycB_Pool_b10  model=[id-251]__[var-113]__[in-4]__[CELL-CYCLE-POOL]
+       import                      16.63 ms  ok  lut=N  value={'k': 36, 'name': 'v_v52_Cdk1_cycB_Pool_b10'}
+       one_symbol                   1.024 s  ok  lut=N  value={'0': 67, '1': 51}
+       schemata_pi                917.38 ms  ok  lut=N  value='shape=(118, 2)'
+       input_redundancy            10.000 s  timeout
+       effective_connectivity      10.000 s  timeout
+       edge_effectiveness          10.000 s  timeout
+       bias                           error  RuntimeError: ValueError: refusing to build dense BitLut via positional_expression_to_bit_lut: k=...
+       sensitivity                    error  RuntimeError: ValueError: refusing to build dense BitLut via positional_expression_to_bit_lut: k=...
+       input_symmetry              10.000 s  timeout
+#   4 unate   expect_k= 27  [id-004]::v_Shc  model=[id-004]__[var-225]__[in-22]__[ERBB-RECEPTOR-SIG
+       import                       5.10 ms  ok  lut=N  value={'k': 27, 'name': 'v_Shc'}
+       one_symbol                 166.06 ms  ok  lut=N  value={'0': 3, '1': 137}
+       schemata_pi                162.70 ms  ok  lut=N  value='shape=(140, 2)'
+       input_redundancy            10.000 s  timeout
+       effective_connectivity      10.000 s  timeout
+       edge_effectiveness          10.000 s  timeout
+       bias                           error  RuntimeError: ValueError: refusing to build dense BitLut via positional_expression_to_bit_lut: k=...
+       sensitivity                    error  RuntimeError: ValueError: refusing to build dense BitLut via positional_expression_to_bit_lut: k=...
+       input_symmetry              10.000 s  timeout
+#   5 rest    expect_k= 21  [id-263]::v_v33_acetyl_CoA_b2  model=[id-263]__[var-313]__[in-42]__[METABOLISM-TUTORI
+       import                       8.83 ms  ok  lut=N  value={'k': 21, 'name': 'v_v33_acetyl_CoA_b2'}
+       one_symbol                 386.89 ms  ok  lut=N  value={'0': 45, '1': 100}
+       schemata_pi                343.98 ms  ok  lut=N  value='shape=(145, 2)'
+       input_redundancy            10.000 s  timeout
+       effective_connectivity      10.000 s  timeout
+       edge_effectiveness          10.000 s  timeout
+       bias                           error  RuntimeError: ValueError: refusing to build dense BitLut via positional_expression_to_bit_lut: k=...
+       sensitivity                    error  RuntimeError: ValueError: refusing to build dense BitLut via positional_expression_to_bit_lut: k=...
+       input_symmetry              10.000 s  timeout
+
+done: rows=45  funcs_attempted=5  load_failed=0
+
+=== summary (time/lut=Y|N | timeout | error) ===
+cohort    k  function                                                import          one_symbol         schemata_pi    input_redundancy  effective_connectivity  edge_effectiveness                bias         sensitivity      input_symmetry
+rof      80  [id-256]::v_v211_Oligomycin_b1                  15.89 ms/lut=N     269.24 ms/lut=N     164.08 ms/lut=N        timeout(10s)        timeout(10s)        timeout(10s)               error               error        timeout(10s)
+unate    36  [id-251]::v_v52_Cdk1_cycB_Pool_b10              16.63 ms/lut=N       1.024 s/lut=N     917.38 ms/lut=N        timeout(10s)        timeout(10s)        timeout(10s)               error               error        timeout(10s)
+rof      31  [id-207]::v_TP53                                 5.93 ms/lut=N      24.62 ms/lut=N      54.42 ms/lut=N        timeout(10s)        timeout(10s)        timeout(10s)               error               error        timeout(10s)
+unate    27  [id-004]::v_Shc                                  5.10 ms/lut=N     166.06 ms/lut=N     162.70 ms/lut=N        timeout(10s)        timeout(10s)        timeout(10s)               error               error        timeout(10s)
+rest     21  [id-263]::v_v33_acetyl_CoA_b2                    8.83 ms/lut=N     386.89 ms/lut=N     343.98 ms/lut=N        timeout(10s)        timeout(10s)        timeout(10s)               error               error        timeout(10s)
+
+=== per-probe status counts ===
+import                    ok=   5 (lut_Y=0)  timeout=   0  error=   0
+one_symbol                ok=   5 (lut_Y=0)  timeout=   0  error=   0
+schemata_pi               ok=   5 (lut_Y=0)  timeout=   0  error=   0
+input_redundancy          ok=   0 (lut_Y=0)  timeout=   5  error=   0
+effective_connectivity    ok=   0 (lut_Y=0)  timeout=   5  error=   0
+edge_effectiveness        ok=   0 (lut_Y=0)  timeout=   5  error=   0
+bias                      ok=   0 (lut_Y=0)  timeout=   0  error=   5
+sensitivity               ok=   0 (lut_Y=0)  timeout=   0  error=   5
+input_symmetry            ok=   0 (lut_Y=0)  timeout=   5  error=   0
+
+log_path=/home/kyuhyongpark/CANA/CANA/dev/high_k/logs/bbm_high_k_measures_probe/bbm_high_k_measures_probe.log
