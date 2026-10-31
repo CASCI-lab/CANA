@@ -33,7 +33,9 @@ from cana.cutils import (
     statenum_to_binstate,
 )
 from cana.function_outputs import FunctionOutputs
+from cana.function_outputs.expression import positional_names
 from cana.function_properties import input_signs as lut_input_signs
+from cana.function_properties import syntactic_input_signs
 from cana.utils import ncr
 
 
@@ -1040,10 +1042,17 @@ class BooleanNode(object):
         """
         Determine if each input can be considered activation (1), inhibition (-1), or neither (0).
 
-        Semantic (truth-table) signs via
+        Prefers a fast syntactic NNF scan when a stored positional expression
+        is available and syntactically unate (no LUT).  Otherwise uses
+        semantic (truth-table) signs via
         :func:`~cana.function_properties.unate.input_signs`.
 
         Returns:
             (list) : The list of input signs.
         """
+        expr = self.outputs.positional_expression
+        if expr is not None:
+            signs = syntactic_input_signs(expr, positional_names(self.k))
+            if signs is not None:
+                return signs
         return lut_input_signs(self.outputs.get_bit_lut())

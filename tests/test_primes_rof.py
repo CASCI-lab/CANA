@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-"""Tests for :mod:`cana.primes.rof`."""
+"""Tests for syntactic ROF checks and :mod:`cana.primes.rof_primes`."""
 from __future__ import annotations
 
 from pathlib import Path
@@ -7,12 +7,14 @@ from pathlib import Path
 import pytest
 
 from cana.function_outputs import FunctionOutputs
-from cana.nodes_builder import named_expression_to_detached_rule
-from cana.primes.ast import invert_ast, parse_to_ast
-from cana.primes.rof import (
-    SafeNetworkPrimes,
+from cana.function_outputs.ast import invert_ast, expression_to_ast
+from cana.function_properties.rof import (
     check_syntactic_rof,
     check_syntactic_rof_ast,
+)
+from cana.nodes_builder import named_expression_to_detached_rule
+from cana.primes.rof_primes import (
+    SafeNetworkPrimes,
     count_on_off_primes,
     count_rof_primes,
     generate_rof_primes,
@@ -48,7 +50,7 @@ def test_check_syntactic_rof_rejects_repeated_variable():
 
 def test_check_syntactic_rof_ast_matches_string():
     expr = "(a0 | a1) & !a2"
-    node = parse_to_ast(expr)
+    node = expression_to_ast(expr)
     assert check_syntactic_rof_ast(node) == check_syntactic_rof(expr)
 
 
@@ -70,13 +72,13 @@ def test_rof_counts_match_qm_one_symbol(expr: str):
 
 
 def test_parse_negated_group_rof_count():
-    node = parse_to_ast("!(A & B)")
+    node = expression_to_ast("!(A & B)")
     assert node is not None
     assert count_rof_primes(node) == 2
 
 
 def test_invert_preserves_rof_primes():
-    node = parse_to_ast("(a0 | a1) & !a2")
+    node = expression_to_ast("(a0 | a1) & !a2")
     assert node is not None
     twice = invert_ast(invert_ast(node))
     assert count_rof_primes(twice) == count_rof_primes(node)

@@ -1,20 +1,22 @@
 # -*- coding: utf-8 -*-
-"""Shim: syntactic ROF / primes live in :mod:`cana.primes.rof`."""
+"""Shim: syntactic ROF checks + primes from CANA."""
 from __future__ import annotations
 
 from high_k.paths import ensure_cana_on_path
 
 ensure_cana_on_path()
 
-from cana.primes.rof import (  # noqa: E402
-    SafeNetworkPrimes,
+from cana.function_properties.rof import (  # noqa: E402
     check_syntactic_rof,
     check_syntactic_rof_ast,
+    require_syntactic_rof_ast,
+)
+from cana.primes.rof_primes import (  # noqa: E402
+    SafeNetworkPrimes,
     count_on_off_primes,
     count_rof_primes,
     generate_rof_primes,
     iter_on_off_primes,
-    require_syntactic_rof_ast,
 )
 
 __all__ = [

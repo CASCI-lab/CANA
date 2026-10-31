@@ -7,13 +7,17 @@ expression cascade when deriving one-symbol schemata.
 
 Wall-clock timeouts are not part of this package; see ``dev/high_k.timing``.
 """
-from cana.primes.ast import (
+from cana.function_outputs.ast import (
     LogicNode,
     ast_leaf_polarities,
     ast_variable_names,
     invert_ast,
-    parse_to_ast,
-    to_symbolic_expr,
+    expression_to_ast,
+)
+from cana.function_properties.rof import (
+    check_syntactic_rof,
+    check_syntactic_rof_ast,
+    require_syntactic_rof_ast,
 )
 from cana.primes.cascade import (
     CascadeMethod,
@@ -22,15 +26,12 @@ from cana.primes.cascade import (
     on_off_primes_from_expression,
 )
 from cana.primes.primer import primer_on_off_primes
-from cana.primes.rof import (
+from cana.primes.rof_primes import (
     SafeNetworkPrimes,
-    check_syntactic_rof,
-    check_syntactic_rof_ast,
     count_on_off_primes,
     count_rof_primes,
     generate_rof_primes,
     iter_on_off_primes,
-    require_syntactic_rof_ast,
 )
 from cana.primes.util import (
     MAX_PRIMES,
@@ -53,8 +54,7 @@ __all__ = [
     "ast_leaf_polarities",
     "ast_variable_names",
     "invert_ast",
-    "parse_to_ast",
-    "to_symbolic_expr",
+    "expression_to_ast",
     "CascadeMethod",
     "CascadeStatus",
     "PrimesResult",

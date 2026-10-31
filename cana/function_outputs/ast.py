@@ -3,7 +3,7 @@
 
 Structural ``&`` / ``|`` / ``!`` trees only — no read-once assumption.
 Callers that need syntactic ROF (single occurrence) should use
-:mod:`cana.primes.rof`.
+:mod:`cana.function_properties.rof`.
 """
 from __future__ import annotations
 
@@ -16,8 +16,7 @@ LeafPolarity = Literal["pos", "neg"]
 __all__ = [
     "LeafPolarity",
     "LogicNode",
-    "to_symbolic_expr",
-    "parse_to_ast",
+    "expression_to_ast",
     "invert_ast",
     "ast_variable_names",
     "ast_leaf_polarities",
@@ -43,14 +42,7 @@ class LogicNode:
         self.children = children
 
 
-def to_symbolic_expr(expr: str) -> str:
-    """Normalize *expr* to symbolic ``&`` / ``|`` / ``!`` form."""
-    return normalize_operators(
-        normalize_operators(expr, "python"), "symbolic"
-    )
-
-
-def parse_to_ast(expr_str: str) -> Optional[LogicNode]:
+def expression_to_ast(expr_str: str) -> Optional[LogicNode]:
     """Parse a boolean expression into a :class:`LogicNode` AST.
 
     Accepts python (``and``/``or``/``not``) or symbolic (``&``/``|``/``!``)
@@ -58,7 +50,10 @@ def parse_to_ast(expr_str: str) -> Optional[LogicNode]:
     parentheses, and treats ``!`` as a prefix pushed via :func:`invert_ast`
     (NNF; stacked ``!!a`` cancels).
     """
-    expr_str = to_symbolic_expr(expr_str).strip()
+    # python first so ``&&`` / ``!`` / ``AND`` normalize, then symbolic ops.
+    expr_str = normalize_operators(
+        normalize_operators(expr_str, "python"), "symbolic"
+    ).strip()
     if not expr_str:
         return None
 
@@ -79,7 +74,7 @@ def parse_to_ast(expr_str: str) -> Optional[LogicNode]:
             parts.append(expr_str[last_idx:idx].strip())
             last_idx = idx + 1
         parts.append(expr_str[last_idx:].strip())
-        return LogicNode("OR", [parse_to_ast(p) for p in parts])  # type: ignore[misc]
+        return LogicNode("OR", [expression_to_ast(p) for p in parts])  # type: ignore[misc]
 
     paren_depth = 0
     and_indices: List[int] = []
@@ -98,13 +93,13 @@ def parse_to_ast(expr_str: str) -> Optional[LogicNode]:
             parts.append(expr_str[last_idx:idx].strip())
             last_idx = idx + 1
         parts.append(expr_str[last_idx:].strip())
-        return LogicNode("AND", [parse_to_ast(p) for p in parts])  # type: ignore[misc]
+        return LogicNode("AND", [expression_to_ast(p) for p in parts])  # type: ignore[misc]
 
     if expr_str.startswith("(") and expr_str.endswith(")"):
-        return parse_to_ast(expr_str[1:-1])
+        return expression_to_ast(expr_str[1:-1])
 
     if expr_str.startswith("!"):
-        inner = parse_to_ast(expr_str[1:].strip())
+        inner = expression_to_ast(expr_str[1:].strip())
         assert inner is not None
         return invert_ast(inner)
 

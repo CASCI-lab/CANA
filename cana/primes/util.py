@@ -25,7 +25,6 @@ __all__ = [
     "MAX_PRIMES",
     "paren_nesting_depth",
     "refuse_extreme_nesting",
-    "to_symbolic_expr",
     "expr_to_pysat_formula",
     "primes_to_one_symbol",
     "one_symbol_to_primes",
@@ -79,13 +78,6 @@ def refuse_extreme_nesting(
         )
 
 
-def to_symbolic_expr(expr: str) -> str:
-    """Normalize *expr* to symbolic ``&`` / ``|`` / ``!`` form."""
-    return normalize_operators(
-        normalize_operators(expr, "python"), "symbolic"
-    )
-
-
 _IDENT_RE = re.compile(r"[A-Za-z_][A-Za-z0-9_]*")
 
 
@@ -99,7 +91,9 @@ def expr_to_pysat_formula(expr: str):
     """
     from pysat.formula import Atom, And, Or, Neg
 
-    text = to_symbolic_expr(expr).strip()
+    text = normalize_operators(
+        normalize_operators(expr, "python"), "symbolic"
+    ).strip()
     if not text:
         raise ValueError("empty expression")
 

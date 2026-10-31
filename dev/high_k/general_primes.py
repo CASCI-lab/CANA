@@ -27,12 +27,12 @@ from high_k.primes_util import (
     dnf_terms_to_primes,
     refuse_extreme_nesting,
     to_pyeda_expr_str,
-    to_symbolic_expr,
 )
 
 ensure_cana_on_path()
 
 from cana.function_outputs.bit_lut import MAX_DENSE_LUT_K  # noqa: E402
+from cana.function_outputs.expression import normalize_operators  # noqa: E402
 from cana.primes.primer import primer_on_off_primes as _primer_core  # noqa: E402
 from cana.primes.util import MAX_PRIMES as MAX_PRIMER_PRIMES  # noqa: E402
 
@@ -85,7 +85,9 @@ def _constant_on_off(raw: str) -> Optional[OnOffPrimes]:
 
 def _for_cana_eval(expr: str) -> str:
     """Rewrite ``~`` to ``!`` so CANA LUT eval uses logical (not bitwise) NOT."""
-    return to_symbolic_expr(expr).replace("~", "!")
+    return normalize_operators(
+        normalize_operators(expr, "python"), "symbolic"
+    ).replace("~", "!")
 
 
 def _schemata_to_primes(

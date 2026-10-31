@@ -17,8 +17,8 @@ import warnings
 from dataclasses import dataclass
 from typing import List, Literal, Optional
 
-from cana.primes.rof import (
-    check_syntactic_rof,
+from cana.function_properties.rof import check_syntactic_rof
+from cana.primes.rof_primes import (
     count_on_off_primes,
     iter_on_off_primes,
 )

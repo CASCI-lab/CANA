@@ -1,43 +1,28 @@
 # -*- coding: utf-8 -*-
-"""Syntactic read-once (ROF) checks and prime-implicant count / generation.
-
-**Syntactic ROF** means every identifier occurs exactly once in the written
-expression / AST (``n_variables == n_unique_variables``; also called trivial
-/ single-occurrence).  That is distinct from **semantic** read-once-ness: a
-formula may become read-once only after algebraic rewriting (e.g.
-``a & a`` ≡ ``a``), which this module does not attempt.
-
-``is_rof`` in return dicts means *syntactic* ROF.
+"""Prime-implicant count / generation for syntactic read-once formulas.
 
 Prime count / generate use the syntactic-ROF product-over-AND / sum-over-OR
 rules (AST is only the evaluation vehicle).  :func:`count_rof_primes` and
-:func:`generate_rof_primes` assert syntactic ROF on every call.
+:func:`generate_rof_primes` assert syntactic ROF on every call via
+:mod:`cana.function_properties.rof`.
 
 AND prime generation streams recursively (no intermediate product lists).
 """
 from __future__ import annotations
 
-from collections import Counter
 from pathlib import Path
 from typing import Dict, Iterator, List, Literal, Optional, Tuple, Union
 
-from cana.function_outputs.expression import (
-    expression_identifiers,
-    normalize_operators,
-)
-from cana.io.bnet import parse_bnet_update_rule
-from cana.primes.ast import (
+from cana.function_outputs.ast import (
     LogicNode,
-    ast_variable_names,
     invert_ast,
-    parse_to_ast,
+    expression_to_ast,
 )
+from cana.function_properties.rof import require_syntactic_rof_ast
+from cana.io.bnet import parse_bnet_update_rule
 from cana.primes.util import PrimeDict
 
 __all__ = [
-    "check_syntactic_rof",
-    "check_syntactic_rof_ast",
-    "require_syntactic_rof_ast",
     "count_rof_primes",
     "generate_rof_primes",
     "count_on_off_primes",
@@ -46,58 +31,6 @@ __all__ = [
 ]
 
 Polarity = Literal["on", "off"]
-
-
-def _occurrence_stats(
-    names: List[str],
-) -> Dict[str, Union[bool, int]]:
-    """Return ``is_rof``, ``n_variables``, ``n_unique_variables`` for *names*."""
-    counts = Counter(names)
-    return {
-        "is_rof": all(c == 1 for c in counts.values()),
-        "n_variables": len(names),
-        "n_unique_variables": len(counts),
-    }
-
-
-def check_syntactic_rof(expr: str) -> Dict[str, Union[bool, int]]:
-    """Return syntactic-ROF stats for expression *expr*.
-
-    ``is_rof`` means *syntactic* (single occurrence), not semantic
-    read-once after simplification.  Constants (no identifiers) are
-    vacuously ROFs.
-    """
-    toks = expression_identifiers(normalize_operators(expr, "python"))
-    return _occurrence_stats(list(toks))
-
-
-def check_syntactic_rof_ast(
-    node: Optional[LogicNode],
-) -> Dict[str, Union[bool, int]]:
-    """Return syntactic-ROF stats for an AST *node* (leaf occurrence walk)."""
-    return _occurrence_stats(ast_variable_names(node))
-
-
-def require_syntactic_rof_ast(node: Optional[LogicNode]) -> None:
-    """Raise if *node* is not a syntactic ROF (single occurrence).
-
-    Rejects formulas that might only be read-once after simplification;
-    this engine never rewrites.
-    """
-    info = check_syntactic_rof_ast(node)
-    if info["is_rof"]:
-        return
-    names = ast_variable_names(node)
-    counts = Counter(names)
-    repeated = sorted(v for v, c in counts.items() if c > 1)
-    raise ValueError(
-        "AST is not a syntactic ROF (single occurrence); "
-        f"repeated variables={repeated} "
-        f"(n_occurrences={info['n_variables']}, "
-        f"n_unique={info['n_unique_variables']}). "
-        "This method does not simplify; a formula that is read-once "
-        "only after rewriting (semantic ROF) is not accepted."
-    )
 
 
 def count_rof_primes(node: Optional[LogicNode]) -> int:
@@ -204,7 +137,7 @@ def count_on_off_primes(expr: str) -> Tuple[int, int]:
     const = _constant_ast(expr)
     if const is not None:
         return const[1], const[3]
-    ast_on = parse_to_ast(expr)
+    ast_on = expression_to_ast(expr)
     ast_off = invert_ast(ast_on) if ast_on is not None else None
     return count_rof_primes(ast_on), count_rof_primes(ast_off)
 
@@ -224,7 +157,7 @@ def iter_on_off_primes(
         node = ast_on if polarity == "on" else ast_off
         yield from generate_rof_primes(node)
         return
-    ast_on = parse_to_ast(expr)
+    ast_on = expression_to_ast(expr)
     if polarity == "on":
         yield from generate_rof_primes(ast_on)
         return
@@ -267,7 +200,7 @@ class SafeNetworkPrimes:
             if const is not None:
                 ast_on, on_count, ast_off, off_count = const
             else:
-                ast_on = parse_to_ast(expr)
+                ast_on = expression_to_ast(expr)
                 ast_off = invert_ast(ast_on) if ast_on is not None else None
                 on_count = count_rof_primes(ast_on)
                 off_count = count_rof_primes(ast_off)

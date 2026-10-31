@@ -8,6 +8,7 @@ from high_k.paths import ensure_cana_on_path
 
 ensure_cana_on_path()
 
+from cana.function_outputs.expression import normalize_operators  # noqa: E402
 from cana.primes.util import (  # noqa: E402
     MAX_PRIMER_PAREN_DEPTH,
     MAX_SAFE_PAREN_DEPTH,
@@ -15,7 +16,6 @@ from cana.primes.util import (  # noqa: E402
     expr_to_pysat_formula,
     paren_nesting_depth,
     refuse_extreme_nesting,
-    to_symbolic_expr,
 )
 
 __all__ = [
@@ -25,7 +25,6 @@ __all__ = [
     "MAX_PRIMER_PAREN_DEPTH",
     "paren_nesting_depth",
     "refuse_extreme_nesting",
-    "to_symbolic_expr",
     "to_pyeda_expr_str",
     "dnf_terms_to_primes",
     "expr_to_pysat_formula",
@@ -37,7 +36,9 @@ MAX_PYEDA_PAREN_DEPTH = 120
 
 def to_pyeda_expr_str(expr: str) -> str:
     """Normalize *expr* to a form ``pyeda.inter.expr`` accepts (``~`` not ``!``)."""
-    return to_symbolic_expr(expr).replace("!", "~")
+    return normalize_operators(
+        normalize_operators(expr, "python"), "symbolic"
+    ).replace("!", "~")
 
 
 def dnf_terms_to_primes(dnf) -> List[PrimeDict]:

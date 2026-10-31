@@ -6,7 +6,7 @@ from pathlib import Path
 
 import pytest
 
-from high_k.ast import invert_ast, parse_to_ast
+from high_k.ast import invert_ast, expression_to_ast
 from high_k.bbm_rules import as_bnet
 from high_k.rof import (
     SafeNetworkPrimes,
@@ -80,7 +80,7 @@ def test_check_syntactic_rof_rejects_repeated_variable():
 
 def test_check_syntactic_rof_ast_matches_string():
     expr = "(a0 | a1) & !a2"
-    node = parse_to_ast(expr)
+    node = expression_to_ast(expr)
     assert check_syntactic_rof_ast(node) == check_syntactic_rof(expr)
 
 
@@ -172,13 +172,13 @@ def test_synthetic_rof_closed_form_counts(expr, expected_on, expected_off):
 
 
 def test_parse_negated_group_rof_count():
-    node = parse_to_ast("!(A & B)")
+    node = expression_to_ast("!(A & B)")
     assert node is not None
     assert count_rof_primes(node) == 2
 
 
 def test_invert_preserves_rof_primes():
-    node = parse_to_ast("(a0 | a1) & !a2")
+    node = expression_to_ast("(a0 | a1) & !a2")
     assert node is not None
     twice = invert_ast(invert_ast(node))
     assert count_rof_primes(twice) == count_rof_primes(node)
@@ -222,7 +222,7 @@ def test_rejects_repeated_variable_not_just_semantic_rof():
         count_on_off_primes("a & a")
     with pytest.raises(ValueError, match="syntactic ROF"):
         list(iter_on_off_primes("a | a", "on"))
-    node = parse_to_ast("a & a")
+    node = expression_to_ast("a & a")
     with pytest.raises(ValueError, match="syntactic ROF"):
         count_rof_primes(node)
     with pytest.raises(ValueError, match="syntactic ROF"):
