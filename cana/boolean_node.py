@@ -33,7 +33,8 @@ from cana.cutils import (
     statenum_to_binstate,
 )
 from cana.function_outputs import FunctionOutputs
-from cana.utils import input_monotone, ncr
+from cana.function_properties import input_signs as lut_input_signs
+from cana.utils import ncr
 
 
 class BooleanNode(object):
@@ -1037,30 +1038,12 @@ class BooleanNode(object):
 
     def input_signs(self):
         """
-        Determine if a each input can be considered activation (1), inhibition (-1), or neither (0).
+        Determine if each input can be considered activation (1), inhibition (-1), or neither (0).
 
-        Here we test every pair of inputs that are Hamming distance 1. (see Goldreich et al 2000)
+        Semantic (truth-table) signs via
+        :func:`~cana.function_properties.unate.input_signs`.
 
         Returns:
             (list) : The list of input signs.
-
-        Example:
-            >>> is_monotone(outputs=[0,0,0,1])
         """
-
-        # first test if the inputs are activation inputs (more common in bio networks)
-        input_sign_list = [
-            int(input_monotone(self.outputs, idx, activation=1))
-            for idx in range(self.k)
-        ]
-
-        # for those inputs that are not activation inputs (more common in bio networks),
-        # then test for inhibition
-        input_sign_list = [
-            -1 * int(input_monotone(self.outputs, idx, activation=-1))
-            if sign == 0
-            else sign
-            for idx, sign in enumerate(input_sign_list)
-        ]
-
-        return input_sign_list
+        return lut_input_signs(self.outputs.get_bit_lut())

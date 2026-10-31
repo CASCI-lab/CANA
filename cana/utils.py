@@ -1,6 +1,6 @@
 import copy
-import math
 import operator as op
+import warnings
 from functools import reduce
 from itertools import takewhile
 
@@ -50,34 +50,38 @@ def flip_binstate_bit_set(binstate, idxs):
 
 
 def negate_LUT_input(outputs, idx):
-    """For a LUT defined by the output list, it negates the input.
+    """Negate one LUT input; deprecated alias of :meth:`BitLut.negate_input`.
+
+    .. deprecated::
+        Use :meth:`cana.function_outputs.bit_lut.BitLut.negate_input` instead.
 
     Args:
         outputs (list) : The output list defining the LUT.
-        idxs (int) : The indexes of the input to negate.
+        idx (int) : The index of the input to negate.
 
     Returns:
         (list) : The new output with input idx negated
     """
-    k = int(np.log2(len(outputs)))
-    return [
-        outputs[
-            binstate_to_statenum(
-                flip_binstate_bit(statenum_to_binstate(istate, k), idx)
-            )
-        ]
-        for istate in range(len(outputs))
-    ]
+    warnings.warn(
+        "cana.utils.negate_LUT_input is deprecated; use BitLut.negate_input instead.",
+        DeprecationWarning,
+        stacklevel=2,
+    )
+    from cana.function_outputs.bit_lut import BitLut
+
+    if isinstance(outputs, BitLut):
+        return outputs.negate_input(idx).to_list()
+    return BitLut.from_sequence(outputs).negate_input(idx).to_list()
 
 
 def print_logic_table(outputs):
-    """Print Logic Table
+    """Print a LUT; deprecated alias of :meth:`BitLut.lut_as_str`.
+
+    .. deprecated::
+        Use :meth:`cana.function_outputs.bit_lut.BitLut.lut_as_str` instead.
 
     Args:
         outputs (list) : The transition outputs of the function.
-
-    Returns:
-        print : a print-out of the logic table.
 
     Example:
         >>> print_logic_table([0,0,1,1])
@@ -85,11 +89,19 @@ def print_logic_table(outputs):
         01 : 0
         10 : 1
         11 : 1
-
     """
-    k = int(math.log(len(outputs)) / math.log(2))
-    for statenum in range(2**k):
-        print(statenum_to_binstate(statenum, base=k) + " : " + str(outputs[statenum]))
+    warnings.warn(
+        "cana.utils.print_logic_table is deprecated; use BitLut.lut_as_str instead.",
+        DeprecationWarning,
+        stacklevel=2,
+    )
+    from cana.function_outputs.bit_lut import BitLut
+
+    if isinstance(outputs, BitLut):
+        lut = outputs
+    else:
+        lut = BitLut.from_sequence(outputs)
+    print(lut.lut_as_str())
 
 
 def entropy(prob_vector, logbase=2.0):
@@ -252,96 +264,53 @@ def pathlength(p, weights, rule="sum"):
 
 
 def function_monotone(outputs, method="exact", nsamples=100, random_seed=None):
+    """Deprecated alias of :func:`~cana.function_properties.unate.is_function_monotone_increasing`.
+
+    .. deprecated::
+        Use :func:`cana.function_properties.is_function_monotone_increasing` instead.
+
+    ``method``, ``nsamples``, and ``random_seed`` are ignored (legacy signature).
     """
-    Determine if a given LUT is monotone.
+    warnings.warn(
+        "cana.utils.function_monotone is deprecated; "
+        "use cana.function_properties.is_function_monotone_increasing instead.",
+        DeprecationWarning,
+        stacklevel=2,
+    )
+    from cana.function_outputs.bit_lut import BitLut
+    from cana.function_properties import is_function_monotone_increasing
 
-    Here we test every pair of inputs that are Hamming distance 1. (see Goldreich et al 2000)
-
-    Args:
-        outputs (list) : The transition outputs of the function.
-
-        method (str) :
-            'exact' - test all pairs of inputs
-            TODO: 'random' - sample pairs of inputs
-
-        nsamples (int) : when method=='random', specifies the number of samples.
-
-    Returns:
-        (Bool) : True if monotone.
-
-    Example:
-        >>> is_monotone(outputs=[0,0,0,1])
-    """
-    # np.random.seed(random_seed)
-
-    k = int(np.log2(len(outputs)))
-
-    # for all input configurations
-    for input_confignum in range(2**k):
-        input_configbin = statenum_to_binstate(input_confignum, k)
-
-        # for all input states that are 0
-        for idx, state in enumerate(input_configbin):
-            if state == "0":
-                # we flip the 0 and check for monotone along the edge
-                next_confignum = binstate_to_statenum(
-                    flip_binstate_bit(input_configbin, idx)
-                )
-
-                # if the monotone property fails
-                if outputs[input_confignum] > outputs[next_confignum]:
-                    return False
-    return True
+    lut = outputs if isinstance(outputs, BitLut) else BitLut.from_sequence(outputs)
+    return is_function_monotone_increasing(lut)
 
 
 def input_monotone(outputs, input_idx, activation=1):
-    """
-    Determine if a given input is activating or inhibiting in a given function.
+    """Deprecated alias of per-input positive/negative unate checks.
 
-    Args:
-        outputs (list) : The transition outputs of the function.
-
-        input_idx (int) : The input to test.
-
-        activation (1 or -1) : Whether to test for activation or inhibition.
-
-    Returns:
-        (Bool) : True if monotone with respect to activation or inhibition.
+    .. deprecated::
+        Use :func:`cana.function_properties.is_input_positive_unate` or
+        :func:`cana.function_properties.is_input_negative_unate` instead.
 
     Example:
         >>> input_monotone([0,1,0,0], 0, activation=1) == False
         >>> input_monotone([0,1,0,0], 0, activation=-1) == True
     """
+    warnings.warn(
+        "cana.utils.input_monotone is deprecated; "
+        "use cana.function_properties.is_input_positive_unate / "
+        "is_input_negative_unate instead.",
+        DeprecationWarning,
+        stacklevel=2,
+    )
+    from cana.function_outputs.bit_lut import BitLut
+    from cana.function_properties import (
+        is_input_negative_unate,
+        is_input_positive_unate,
+    )
 
-    k = int(np.log2(len(outputs)))
-
-    if k == 1:
-        return True
-    else:
-        monotone_configs = []
-        # for all input configurations
-        for input_confignum in range(2 ** (k - 1)):
-            other_input_configbin = statenum_to_binstate(input_confignum, k - 1)
-
-            input_confignum_0 = binstate_to_statenum(
-                other_input_configbin[:input_idx]
-                + "0"
-                + other_input_configbin[input_idx:]
-            )
-
-            input_confignum_1 = binstate_to_statenum(
-                other_input_configbin[:input_idx]
-                + "1"
-                + other_input_configbin[input_idx:]
-            )
-
-            if activation == 1:
-                monotone_configs.append(
-                    outputs[input_confignum_0] <= outputs[input_confignum_1]
-                )
-            elif activation == -1:
-                monotone_configs.append(
-                    outputs[input_confignum_0] >= outputs[input_confignum_1]
-                )
-
-        return all(monotone_configs)
+    lut = outputs if isinstance(outputs, BitLut) else BitLut.from_sequence(outputs)
+    if activation == 1:
+        return is_input_positive_unate(lut, input_idx)
+    if activation == -1:
+        return is_input_negative_unate(lut, input_idx)
+    raise ValueError("activation must be 1 or -1; got {0!r}".format(activation))

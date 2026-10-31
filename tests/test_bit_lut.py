@@ -114,3 +114,19 @@ def test_reorder_swaps_input_bits():
 def test_reorder_sequence_from_list():
     lut = BitLut.reorder_sequence([1, 1, 0, 1], ["A", "B"], ["B", "A"])
     assert list(lut) == [1, 0, 1, 1]
+
+
+def test_negate_input_matches_xor_remap():
+    # Implies A->B: [1,1,0,1]; negate A (idx 0) remaps with mask 2
+    lut = BitLut.from_sequence([1, 1, 0, 1])
+    negated = lut.negate_input(0)
+    mask = 1 << (2 - 1 - 0)
+    assert list(negated) == [lut[i ^ mask] for i in range(4)]
+    # Negating both inputs twice returns to identity
+    again = lut.negate_input(0).negate_input(0)
+    assert again == lut
+
+
+def test_lut_as_str():
+    text = BitLut.from_sequence([0, 0, 1, 1]).lut_as_str()
+    assert text == "00 : 0\n01 : 0\n10 : 1\n11 : 1"

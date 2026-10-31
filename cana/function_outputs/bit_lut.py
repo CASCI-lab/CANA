@@ -193,6 +193,32 @@ class BitLut(object):
         # int.bit_count is 3.10+
         return sum(byte.bit_count() for byte in self._data)
 
+    def negate_input(self, idx: int) -> "BitLut":
+        """Return a copy with input bit ``idx`` negated (MSB-first bit order).
+
+        Row ``i`` of the result equals row ``i ^ (1 << (k - 1 - idx))`` of
+        ``self``, matching the legacy ``negate_LUT_input`` remapping.
+        """
+        k = self._k
+        if idx < 0 or idx >= k:
+            raise IndexError(
+                "input index {0:d} out of range for BitLut.k={1:d}".format(idx, k)
+            )
+        mask = 1 << (k - 1 - idx)
+        out = BitLut(k)
+        for i in range(self._n):
+            out[i] = self[i ^ mask]
+        return out
+
+    def lut_as_str(self) -> str:
+        """Return a multi-line string of ``binstate : output`` rows."""
+        k = self._k
+        lines = [
+            "{0} : {1}".format(statenum_to_binstate(i, base=k), self[i])
+            for i in range(self._n)
+        ]
+        return "\n".join(lines)
+
     def reorder(
         self, old_labels: Sequence[object], new_labels: Sequence[object]
     ) -> "BitLut":
