@@ -1,0 +1,90 @@
+log_path=/home/kyuhyongpark/CANA/CANA/dev/high_k/logs/bbm_high_k_redundancy_sampling/bbm_high_k_redundancy_sampling.log
+MODE=starter  TIMEOUT_S=10.0  MAX_K_EXACT=12  N_SAMPLES_GRID=(1024, 2048, 4096, 8192)  N_BOOT=1000  CI=0.95  SEED=0
+BBM_MODELS=/home/kyuhyongpark/CANA/BBM/models
+COMPARE_LOG=/home/kyuhyongpark/CANA/CANA/dev/high_k/logs/bbm_high_k_primes_compare/bbm_high_k_primes_compare.log
+FIG_DIR=/home/kyuhyongpark/CANA/CANA/dev/high_k/logs/bbm_high_k_redundancy_sampling
+
+=== accuracy (exact vs sample)  n_funcs=6  MAX_K_EXACT=12 ===
+/home/kyuhyongpark/CANA/CANA/cana/boolean_node.py:610: UserWarning: Node 'v_IFNAgene': using one_symbol_schemata (one_symbol_is_prime_implicant=None); canalization assumes a prime-implicant cover. Call outputs.verify_one_symbol_schemata() to check.
+  self._check_compute_canalization_variables(prime_implicants=True)
+#   1 rof     k=  8  [id-001]::v_IFNAgene  primes=rof (8+1)  exact_kr=0.871582  t_exact=  19.32 ms
+       n=   16  est_kr=0.875000  |Δkr|=0.003418  |Δri|_mean=0.02552  CI=[0.875000,0.875000] cover=False  t_samp=   2.73 ms  t_boot=   4.61 ms
+       n=   32  est_kr=0.875000  |Δkr|=0.003418  |Δri|_mean=0.01327  CI=[0.875000,0.875000] cover=False  t_samp=   3.55 ms  t_boot=   4.67 ms
+       n=   64  est_kr=0.875000  |Δkr|=0.003418  |Δri|_mean=0.01108  CI=[0.875000,0.875000] cover=False  t_samp=   5.86 ms  t_boot=   4.04 ms
+       n=  128  est_kr=0.875000  |Δkr|=0.003418  |Δri|_mean=0.008125  CI=[0.875000,0.875000] cover=False  t_samp=  11.71 ms  t_boot=   8.32 ms
+       n=  256  est_kr=0.871582  |Δkr|=0  |Δri|_mean=1.277e-15  CI=[0.864746,0.875000] cover=True  t_samp=  21.15 ms  t_boot=  15.79 ms
+/home/kyuhyongpark/CANA/CANA/cana/boolean_node.py:610: UserWarning: Node 'v_Akt': using one_symbol_schemata (one_symbol_is_prime_implicant=None); canalization assumes a prime-implicant cover. Call outputs.verify_one_symbol_schemata() to check.
+  self._check_compute_canalization_variables(prime_implicants=True)
+#   2 rest    k=  8  [id-002]::v_Akt  primes=primer (9+9)  exact_kr=0.694027  t_exact=  17.63 ms
+       n=   16  est_kr=0.680469  |Δkr|=0.01356  |Δri|_mean=0.03934  CI=[0.625000,0.729167] cover=True  t_samp=   3.08 ms  t_boot=   4.91 ms
+       n=   32  est_kr=0.691081  |Δkr|=0.002946  |Δri|_mean=0.0259  CI=[0.664982,0.727222] cover=True  t_samp=   6.51 ms  t_boot=   3.05 ms
+       n=   64  est_kr=0.686523  |Δkr|=0.007503  |Δri|_mean=0.0284  CI=[0.683077,0.724618] cover=True  t_samp=  10.14 ms  t_boot=   6.56 ms
+       n=  128  est_kr=0.681413  |Δkr|=0.01261  |Δri|_mean=0.02043  CI=[0.682520,0.715517] cover=True  t_samp=  25.72 ms  t_boot=  20.30 ms
+       n=  256  est_kr=0.694027  |Δkr|=1.11e-16  |Δri|_mean=3.053e-16  CI=[0.681812,0.706575] cover=True  t_samp=  46.09 ms  t_boot=  31.86 ms
+/home/kyuhyongpark/CANA/CANA/cana/boolean_node.py:610: UserWarning: Node 'v_MAP3K7IP1_MAP3K7IP2_MAP3K7': using one_symbol_schemata (one_symbol_is_prime_implicant=None); canalization assumes a prime-implicant cover. Call outputs.verify_one_symbol_schemata() to check.
+  self._check_compute_canalization_variables(prime_implicants=True)
+#   3 rest    k= 10  [id-001]::v_MAP3K7IP1_MAP3K7IP2_MAP3K7  primes=primer (7+4)  exact_kr=0.860596  t_exact=  53.56 ms
+       n=   64  est_kr=0.834375  |Δkr|=0.02622  |Δri|_mean=0.02637  CI=[0.829688,0.876680] cover=True  t_samp=   9.21 ms  t_boot=   5.31 ms
+       n=  128  est_kr=0.865625  |Δkr|=0.005029  |Δri|_mean=0.005467  CI=[0.839063,0.874219] cover=True  t_samp=  16.31 ms  t_boot=  16.43 ms
+       n=  256  est_kr=0.857422  |Δkr|=0.003174  |Δri|_mean=0.007554  CI=[0.847070,0.871094] cover=True  t_samp=  54.74 ms  t_boot=  21.31 ms
+       n=  512  est_kr=0.862109  |Δkr|=0.001514  |Δri|_mean=0.004998  CI=[0.856240,0.873638] cover=True  t_samp=  64.51 ms  t_boot=  41.37 ms
+       n= 1024  est_kr=0.860596  |Δkr|=0  |Δri|_mean=5.662e-16  CI=[0.853850,0.867096] cover=True  t_samp= 134.12 ms  t_boot=  80.61 ms
+/home/kyuhyongpark/CANA/CANA/cana/boolean_node.py:610: UserWarning: Node 'v_Sek1': using one_symbol_schemata (one_symbol_is_prime_implicant=None); canalization assumes a prime-implicant cover. Call outputs.verify_one_symbol_schemata() to check.
+  self._check_compute_canalization_variables(prime_implicants=True)
+#   4 rest    k= 10  [id-002]::v_Sek1  primes=primer (9+2)  exact_kr=0.848926  t_exact=  86.49 ms
+       n=   64  est_kr=0.842187  |Δkr|=0.006738  |Δri|_mean=0.0118  CI=[0.821875,0.845313] cover=False  t_samp=  11.04 ms  t_boot=   6.99 ms
+       n=  128  est_kr=0.843750  |Δkr|=0.005176  |Δri|_mean=0.008589  CI=[0.836719,0.853906] cover=True  t_samp=  19.98 ms  t_boot=  20.93 ms
+       n=  256  est_kr=0.848047  |Δkr|=0.0008789  |Δri|_mean=0.003245  CI=[0.840615,0.853525] cover=True  t_samp=  33.67 ms  t_boot=  18.46 ms
+       n=  512  est_kr=0.850391  |Δkr|=0.001465  |Δri|_mean=0.001811  CI=[0.845107,0.855273] cover=True  t_samp=  57.62 ms  t_boot=  52.44 ms
+       n= 1024  est_kr=0.848926  |Δkr|=0  |Δri|_mean=4.663e-16  CI=[0.845112,0.852249] cover=True  t_samp= 329.25 ms  t_boot= 142.37 ms
+/home/kyuhyongpark/CANA/CANA/cana/boolean_node.py:610: UserWarning: Node 'v_ROS_CYT': using one_symbol_schemata (one_symbol_is_prime_implicant=None); canalization assumes a prime-implicant cover. Call outputs.verify_one_symbol_schemata() to check.
+  self._check_compute_canalization_variables(prime_implicants=True)
+#   5 rest    k= 12  [id-009]::v_ROS_CYT  primes=primer (11+3)  exact_kr=0.903386  t_exact= 431.24 ms
+       n=  256  est_kr=0.903307  |Δkr|=7.835e-05  |Δri|_mean=0.00657  CI=[0.894091,0.905774] cover=True  t_samp=  37.18 ms  t_boot=  23.09 ms
+       n=  512  est_kr=0.903123  |Δkr|=0.0002624  |Δri|_mean=0.003835  CI=[0.899228,0.904875] cover=True  t_samp=  74.13 ms  t_boot=  48.40 ms
+       n= 1024  est_kr=0.904204  |Δkr|=0.0008185  |Δri|_mean=0.002277  CI=[0.899724,0.904720] cover=True  t_samp= 146.32 ms  t_boot=  92.28 ms
+       n= 2048  est_kr=0.903529  |Δkr|=0.000143  |Δri|_mean=0.002105  CI=[0.901042,0.904338] cover=True  t_samp= 294.35 ms  t_boot= 177.49 ms
+       n= 4096  est_kr=0.903386  |Δkr|=0  |Δri|_mean=4.284e-15  CI=[0.902381,0.904281] cover=True  t_samp= 683.14 ms  t_boot= 392.64 ms
+/home/kyuhyongpark/CANA/CANA/cana/boolean_node.py:610: UserWarning: Node 'v_erbb13': using one_symbol_schemata (one_symbol_is_prime_implicant=None); canalization assumes a prime-implicant cover. Call outputs.verify_one_symbol_schemata() to check.
+  self._check_compute_canalization_variables(prime_implicants=True)
+#   6 unate   k= 12  [id-018]::v_erbb13  primes=primer (8+5)  exact_kr=0.878129  t_exact= 250.09 ms
+       n=  256  est_kr=0.872873  |Δkr|=0.005255  |Δri|_mean=0.00858  CI=[0.868792,0.887246] cover=True  t_samp=  27.82 ms  t_boot=  29.50 ms
+       n=  512  est_kr=0.877510  |Δkr|=0.0006189  |Δri|_mean=0.00557  CI=[0.874571,0.888265] cover=True  t_samp= 107.87 ms  t_boot=  69.43 ms
+       n= 1024  est_kr=0.878619  |Δkr|=0.0004902  |Δri|_mean=0.003048  CI=[0.870111,0.881279] cover=True  t_samp= 371.41 ms  t_boot= 134.62 ms
+       n= 2048  est_kr=0.878684  |Δkr|=0.0005554  |Δri|_mean=0.001743  CI=[0.873915,0.882004] cover=True  t_samp= 292.39 ms  t_boot= 196.57 ms
+       n= 4096  est_kr=0.878129  |Δkr|=0  |Δri|_mean=1.804e-15  CI=[0.875181,0.881123] cover=True  t_samp= 665.62 ms  t_boot= 582.03 ms
+
+=== high-k bootstrap  n_funcs=5  N_SAMPLES_GRID=(1024, 2048, 4096, 8192)  N_BOOT=1000 ===
+#   1 rof     k= 80  [id-256]::v_v211_Oligomycin_b1  primes=rof (80+1)  t_primes= 597.25 ms
+       n= 1024  kr=0.987500  CI=[0.987500,0.987500]  width=0  edge_w_mean=0.001524  ri=[0.987,0.988]  t=  1.461 s  samp/s=701
+       n= 2048  kr=0.987500  CI=[0.987500,0.987500]  width=0  edge_w_mean=0.001084  ri=[0.987,0.988]  t=  1.974 s  samp/s=1,037
+       n= 4096  kr=0.987500  CI=[0.987500,0.987500]  width=0  edge_w_mean=0.0007604  ri=[0.987,0.988]  t=  5.782 s  samp/s=708
+       n= 8192  kr=0.987500  CI=[0.987500,0.987500]  width=0  edge_w_mean=0.0005387  ri=[0.987,0.988]  t=  5.126 s  samp/s=1,598
+#   2 rof     k= 31  [id-207]::v_TP53  primes=rof (15+17)  t_primes=  77.88 ms
+       n= 1024  kr=0.967742  CI=[0.967742,0.967742]  width=0  edge_w_mean=0.004309  ri=[0.934,1.000]  t= 181.19 ms  samp/s=5,651
+       n= 2048  kr=0.967742  CI=[0.967742,0.967742]  width=0  edge_w_mean=0.003173  ri=[0.935,1.000]  t= 282.75 ms  samp/s=7,243
+       n= 4096  kr=0.967742  CI=[0.967742,0.967742]  width=0  edge_w_mean=0.00212  ri=[0.936,1.000]  t= 818.62 ms  samp/s=5,004
+       n= 8192  kr=0.967742  CI=[0.967742,0.967742]  width=0  edge_w_mean=0.001505  ri=[0.936,1.000]  t=  1.377 s  samp/s=5,951
+#   3 unate   k= 36  [id-251]::v_v52_Cdk1_cycB_Pool_b10  primes=primer (51+67)  t_primes=  1.482 s
+       n= 1024  kr=0.956102  CI=[0.955061,0.957154]  width=0.002094  edge_w_mean=0.008592  ri=[0.857,1.000]  t= 223.10 ms  samp/s=4,590
+       n= 2048  kr=0.955487  CI=[0.954512,0.956372]  width=0.00186  edge_w_mean=0.005852  ri=[0.857,1.000]  t= 492.98 ms  samp/s=4,154
+       n= 4096  kr=0.956571  CI=[0.956063,0.957137]  width=0.001075  edge_w_mean=0.004235  ri=[0.853,1.000]  t= 876.76 ms  samp/s=4,672
+       n= 8192  kr=0.956695  CI=[0.956336,0.957067]  width=0.0007302  edge_w_mean=0.003038  ri=[0.853,1.000]  t=  2.052 s  samp/s=3,992
+#   4 unate   k= 27  [id-004]::v_Shc  primes=primer (137+3)  t_primes= 352.58 ms
+       n= 1024  kr=0.926462  CI=[0.924248,0.928702]  width=0.004454  edge_w_mean=0.007799  ri=[0.000,0.992]  t= 829.60 ms  samp/s=1,234
+       n= 2048  kr=0.926096  CI=[0.924433,0.927648]  width=0.003214  edge_w_mean=0.006374  ri=[0.001,0.990]  t= 860.73 ms  samp/s=2,379
+       n= 4096  kr=0.925055  CI=[0.923911,0.926223]  width=0.002312  edge_w_mean=0.004193  ri=[0.000,0.991]  t=  1.683 s  samp/s=2,434
+       n= 8192  kr=0.926424  CI=[0.925613,0.927121]  width=0.001508  edge_w_mean=0.002964  ri=[0.000,0.991]  t=  3.115 s  samp/s=2,630
+#   5 rest    k= 21  [id-263]::v_v33_acetyl_CoA_b2  primes=primer (100+45)  t_primes= 546.49 ms
+       n= 1024  kr=0.868846  CI=[0.864578,0.873905]  width=0.009327  edge_w_mean=0.02364  ri=[0.344,0.977]  t= 392.79 ms  samp/s=2,607
+       n= 2048  kr=0.871399  CI=[0.867841,0.874511]  width=0.00667  edge_w_mean=0.01687  ri=[0.343,0.976]  t= 648.84 ms  samp/s=3,156
+       n= 4096  kr=0.873032  CI=[0.870695,0.874935]  width=0.00424  edge_w_mean=0.01203  ri=[0.336,0.975]  t=  1.180 s  samp/s=3,471
+       n= 8192  kr=0.872225  CI=[0.870801,0.873653]  width=0.002852  edge_w_mean=0.008291  ri=[0.341,0.975]  t=  2.125 s  samp/s=3,856
+wrote /home/kyuhyongpark/CANA/CANA/dev/high_k/logs/bbm_high_k_redundancy_sampling/error_vs_n_samples.png
+wrote /home/kyuhyongpark/CANA/CANA/dev/high_k/logs/bbm_high_k_redundancy_sampling/time_exact_vs_sample.png
+wrote /home/kyuhyongpark/CANA/CANA/dev/high_k/logs/bbm_high_k_redundancy_sampling/bootstrap_ci_width_vs_n.png
+wrote /home/kyuhyongpark/CANA/CANA/dev/high_k/logs/bbm_high_k_redundancy_sampling/high_k_kr_forest.png
+
+done: accuracy_rows=30  high_rows=20
+log_path=/home/kyuhyongpark/CANA/CANA/dev/high_k/logs/bbm_high_k_redundancy_sampling/bbm_high_k_redundancy_sampling.log
+fig_dir=/home/kyuhyongpark/CANA/CANA/dev/high_k/logs/bbm_high_k_redundancy_sampling
