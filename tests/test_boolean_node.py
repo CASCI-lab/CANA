@@ -111,6 +111,44 @@ def test_input_redundancy_RULE110():
     assert (k_r == true_k_r), ('Input Redundancy (upper, normed) for RULE110 node does not match. %s != %s' % (k_r, true_k_r))
 
 
+def _k_input_or(k):
+    """k-input OR: output 0 only on the all-zero input."""
+    return BooleanNode.from_bit_lut([0] + [1] * (2**k - 1), name="OR_k%d" % k)
+
+
+def _k_input_and(k):
+    """k-input AND: output 1 only on the all-one input."""
+    return BooleanNode.from_bit_lut([0] * (2**k - 1) + [1], name="AND_k%d" % k)
+
+
+def _and_or_mean_input_redundancy(k):
+    """Mean input redundancy for k-input AND or OR: (2^k-1)/2^k * (k-1)."""
+    return ((2**k - 1) / (2**k)) * (k - 1)
+
+
+def _and_or_mean_edge_redundancy(k):
+    """Mean edge redundancy for each input of k-input AND or OR."""
+    return ((2**k - 1) / (2**k)) * ((k - 1) / k)
+
+
+@pytest.mark.parametrize("k", range(1, 7))
+@pytest.mark.parametrize("factory", [_k_input_or, _k_input_and], ids=["OR", "AND"])
+def test_input_redundancy_AND_OR_general_k(factory, k):
+    """Mean input redundancy for k-input AND/OR is (2^k-1)/2^k * (k-1)."""
+    n = factory(k)
+    expected = _and_or_mean_input_redundancy(k)
+    k_r = n.input_redundancy(norm=False)
+    assert isclose(k_r, expected), (
+        "Input Redundancy (mean) for %s (k=%d) does not match. %s != %s"
+        % (n.name, k, k_r, expected)
+    )
+    k_r_norm = n.input_redundancy(norm=True)
+    assert isclose(k_r_norm, expected / k), (
+        "Input Redundancy (mean, normed) for %s (k=%d) does not match. %s != %s"
+        % (n.name, k, k_r_norm, expected / k)
+    )
+
+
 #
 # Test Edge Redundancy
 #
@@ -143,6 +181,21 @@ def test_edge_redundancy_OR():
 
     r_ji, true_r_ji = n.edge_redundancy(bound='tuple'), [(0.25, 0.5), (0.25, 0.5)]
     assert (r_ji == true_r_ji), ('Edge Redundancy (tuples) for OR node does not match. %s != %s' % (r_ji, true_r_ji))
+
+
+@pytest.mark.parametrize("k", range(1, 7))
+@pytest.mark.parametrize("factory", [_k_input_or, _k_input_and], ids=["OR", "AND"])
+def test_edge_redundancy_AND_OR_general_k(factory, k):
+    """Mean edge redundancy for each input of k-input AND/OR is (2^k-1)/2^k * (k-1)/k."""
+    n = factory(k)
+    expected = _and_or_mean_edge_redundancy(k)
+    r_ji = n.edge_redundancy(bound="mean")
+    assert len(r_ji) == k
+    for i, r in enumerate(r_ji):
+        assert isclose(r, expected), (
+            "Edge Redundancy (mean) for %s input %d (k=%d) does not match. %s != %s"
+            % (n.name, i, k, r, expected)
+        )
 
 
 # XOR
@@ -592,6 +645,23 @@ def test_from_two_symbol_schemata_factory():
     n = BooleanNode.from_two_symbol_schemata(ts, k=2, name="OR", inputs=[0, 1])
     assert n.outputs.two_symbol_schemata is not None
     assert list(n.outputs.get_bit_lut()) == [0, 1, 1, 1]
+
+def test_coverage_refuses_huge_k():
+    """pi_coverage / ts_coverage refuse Θ(2^k) expansion above MAX_DENSE_LUT_K."""
+    from cana.function_outputs.bit_lut import MAX_DENSE_LUT_K
+
+    k = MAX_DENSE_LUT_K + 1
+    n_pi = BooleanNode.from_one_symbol_schemata({1: {"2" * k}}, k=k)
+    with pytest.raises(ValueError, match="pi_coverage.*MAX_DENSE_LUT_K"):
+        n_pi.pi_coverage()
+    assert n_pi._pi_coverage is None
+
+    ts = ([], [["2" * k, [], []]])
+    n_ts = BooleanNode.from_two_symbol_schemata(ts, k=k)
+    with pytest.raises(ValueError, match="ts_coverage.*MAX_DENSE_LUT_K"):
+        n_ts.ts_coverage()
+    assert n_ts._ts_coverage is None
+
 
 def test_input_symmetry_mean_on_fresh_node():
     """input_symmetry_mean must compute its own coverage instead of requiring input_symmetry() to run first"""

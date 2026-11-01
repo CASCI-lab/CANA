@@ -33,9 +33,22 @@ from cana.cutils import (
     statenum_to_binstate,
 )
 from cana.function_outputs import FunctionOutputs
+from cana.function_outputs.bit_lut import MAX_DENSE_LUT_K
 from cana.function_outputs.expression import positional_names
 from cana.function_properties import input_signs as lut_input_signs
 from cana.function_properties import syntactic_input_signs
+
+
+def _refuse_coverage_k(k, *, kind):
+    """Raise ``ValueError`` when building a Θ(2^k) coverage dict would be too large."""
+    if int(k) > MAX_DENSE_LUT_K:
+        raise ValueError(
+            "refusing to build {0}: k={1:d} > MAX_DENSE_LUT_K={2:d}".format(
+                kind, int(k), MAX_DENSE_LUT_K
+            )
+        )
+
+
 class BooleanNode(object):
     """ """
 
@@ -593,6 +606,7 @@ class BooleanNode(object):
             self.outputs.get_one_symbol_schemata()
 
         elif "pi_coverage" in kwargs:
+            _refuse_coverage_k(self.k, kind="pi_coverage")
             self._check_compute_canalization_variables(prime_implicants=True)
             if self._pi_coverage is None:
                 self._pi_coverage = dict()
@@ -606,6 +620,7 @@ class BooleanNode(object):
             # Soft-warn (if needed) lives in get_two_symbol_schemata.
             self.outputs.get_two_symbol_schemata()
         elif "ts_coverage" in kwargs:
+            _refuse_coverage_k(self.k, kind="ts_coverage")
             self._check_compute_canalization_variables(two_symbols=True)
             if self._ts_coverage is None:
                 self._ts_coverage = BCanalization.computes_ts_coverage(
