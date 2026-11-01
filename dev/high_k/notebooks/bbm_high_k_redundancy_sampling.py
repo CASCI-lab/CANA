@@ -5,9 +5,12 @@
 # ``input_redundancy`` / ``edge_redundancy`` by sampling minterms and matching
 # covering PIs — **without** building the Θ(``2**k``) ``pi_coverage`` dict.
 #
-# - **Enumerable *k*** (``k ≤ MAX_K_EXACT``): compare sample estimates to exact
-#   ``BooleanNode`` measures (speed + accuracy); optionally overlay bootstrap CIs.
-# - **High *k*** (``k > 20``): exact is impossible; report bootstrap CIs.
+# - **Enumerable *k*** (``MIN_K_EXACT ≤ k ≤ MAX_K_EXACT``): compare sample
+#   estimates (``n ≥ 2**10``) to exact ``BooleanNode`` measures. Exact vs
+#   sampling only makes sense for ``k > 10`` so a ``2**10`` sample is a proper
+#   subsample of ``2**k``.
+# - **High *k*** (``k > MAX_K_EXACT``): exact coverage is impractical; report
+#   bootstrap CIs.
 #
 # Output is teed to ``high_k/logs/bbm_high_k_redundancy_sampling/``.
 
@@ -63,8 +66,12 @@ from cana.primes.cascade import on_off_primes_from_expression  # noqa: E402
 MODE = "starter"
 
 TIMEOUT_S = 10.0
-MAX_K_EXACT = 12  # exact BooleanNode gold only when k <= this
+MIN_K_EXACT = 11  # k > 10 so n=2**10 is a proper subsample
+MAX_K_EXACT = 18  # try exact pi_coverage up to here (≤ MAX_DENSE_LUT_K)
+MIN_N_SAMPLES = 2**10
 N_SAMPLES_GRID: Tuple[int, ...] = (2**10, 2**11, 2**12, 2**13)
+# Single n for exact-vs-sample timing (most accurate grid size).
+N_TIME_COMPARE = max(N_SAMPLES_GRID)
 N_BOOT = 1000
 CI = 0.95
 SEED = 0
@@ -75,15 +82,19 @@ COMPARE_LOG = (
 )
 FIG_DIR = run_log_dir(NOTEBOOK_NAME)
 
-# Enumerable-k accuracy cohort (BBM rules with known-good primes).
+# Enumerable-k accuracy cohort (k > 10; BBM rules with known-good primes).
 # (model_id, target, expected_k, cohort)
 STARTER_EXACT: Tuple[Tuple[str, str, int, str], ...] = (
-    ("001", "v_IFNAgene", 8, "rof"),
-    ("002", "v_Akt", 8, "rest"),
-    ("001", "v_MAP3K7IP1_MAP3K7IP2_MAP3K7", 10, "rest"),
-    ("002", "v_Sek1", 10, "rest"),
+    ("002", "v_MKK3", 11, "rest"),
+    ("002", "v_Src", 11, "rest"),
     ("009", "v_ROS_CYT", 12, "rest"),
     ("018", "v_erbb13", 12, "unate"),
+    ("004", "v_Nck", 14, "rof"),
+    ("004", "v_Spry2", 14, "unate"),
+    ("004", "v_p120_catenin", 16, "rof"),
+    ("004", "v_B_catenin", 16, "rest"),
+    ("004", "v_DGK", 18, "rof"),
+    ("004", "v_PI3K", 18, "unate"),
 )
 
 # High-k bootstrap cohort (from bbm_high_k_primes_compare / measures_probe).
@@ -97,8 +108,10 @@ STARTER_HIGH: Tuple[Tuple[str, str, int, str], ...] = (
 
 log, LOG_PATH = start_run_log(NOTEBOOK_NAME)
 log.info(
-    f"MODE={MODE}  TIMEOUT_S={TIMEOUT_S}  MAX_K_EXACT={MAX_K_EXACT}  "
-    f"N_SAMPLES_GRID={N_SAMPLES_GRID}  N_BOOT={N_BOOT}  CI={CI}  SEED={SEED}"
+    f"MODE={MODE}  TIMEOUT_S={TIMEOUT_S}  "
+    f"MIN_K_EXACT={MIN_K_EXACT}  MAX_K_EXACT={MAX_K_EXACT}  "
+    f"MIN_N_SAMPLES={MIN_N_SAMPLES}  N_SAMPLES_GRID={N_SAMPLES_GRID}  "
+    f"N_TIME_COMPARE={N_TIME_COMPARE}  N_BOOT={N_BOOT}  CI={CI}  SEED={SEED}"
 )
 log.info(f"BBM_MODELS={BBM_MODELS}")
 log.info(f"COMPARE_LOG={COMPARE_LOG}")
@@ -310,7 +323,7 @@ accuracy_rows: List[Dict[str, Any]] = []
 log.info("")
 log.info(
     f"=== accuracy (exact vs sample)  n_funcs={len(exact_funcs)}  "
-    f"MAX_K_EXACT={MAX_K_EXACT} ==="
+    f"k in [{MIN_K_EXACT},{MAX_K_EXACT}]  n >= {MIN_N_SAMPLES} ==="
 )
 
 for i, fn in enumerate(exact_funcs, start=1):
@@ -332,6 +345,9 @@ for i, fn in enumerate(exact_funcs, start=1):
         log.info(
             f"#{i:4d} WARN k mismatch expect={expect_k} got={k}  {label}"
         )
+    if k < MIN_K_EXACT:
+        log.info(f"#{i:4d} skip (k={k} < MIN_K_EXACT={MIN_K_EXACT}) {label}")
+        continue
     if k > MAX_K_EXACT:
         log.info(f"#{i:4d} skip (k={k} > MAX_K_EXACT) {label}")
         continue
@@ -353,8 +369,15 @@ for i, fn in enumerate(exact_funcs, start=1):
     node.outputs.one_symbol_is_prime_implicant = True
 
     t0 = time.perf_counter()
-    exact_kr = float(node.input_redundancy(norm=True))
-    exact_ri = [float(x) for x in node.edge_redundancy(bound="mean")]
+    try:
+        exact_kr = float(node.input_redundancy(norm=True))
+        exact_ri = [float(x) for x in node.edge_redundancy(bound="mean")]
+    except Exception as exc:  # noqa: BLE001 — coverage may OOM/refuse
+        log.info(
+            f"#{i:4d} {cohort:7s} k={k:3d}  {label}  exact_FAIL  "
+            f"{type(exc).__name__}: {exc}"
+        )
+        continue
     t_exact = time.perf_counter() - t0
 
     log.info(
@@ -364,15 +387,14 @@ for i, fn in enumerate(exact_funcs, start=1):
     )
 
     space = 1 << k
-    # Relative fractions of the space plus any grid sizes still < 2**k.
+    # Only n >= MIN_N_SAMPLES; include full space as the exact-sample check.
     n_list = sorted(
-        {
-            1 << e
-            for e in range(max(0, k - 4), k + 1)
-        }
-        | {int(n) for n in N_SAMPLES_GRID if int(n) < space}
-        | {space}
+        {int(n) for n in N_SAMPLES_GRID if MIN_N_SAMPLES <= int(n) < space}
+        | ({space} if space >= MIN_N_SAMPLES else set())
     )
+    if not n_list:
+        log.info(f"       no n_samples >= {MIN_N_SAMPLES} for k={k}; skip")
+        continue
 
     for n_eff in n_list:
         rng = np.random.default_rng(SEED + n_eff + k)
@@ -572,33 +594,47 @@ if accuracy_rows:
     plt.close(fig)
     log.info(f"wrote {path}")
 
-    # time: exact vs sample
-    fig, ax = plt.subplots(figsize=(7.5, 4.5))
-    ks = sorted({r["k"] for r in accuracy_rows})
-    # one point per k: mean exact time, mean sample time at max n used
-    for k in ks:
-        rows_k = [r for r in accuracy_rows if r["k"] == k]
-        t_ex = float(np.mean([r["t_exact"] for r in rows_k]))
-        # largest n for this k
-        n_max = max(r["n_samples"] for r in rows_k)
-        t_sm = float(
-            np.mean([r["t_sample"] for r in rows_k if r["n_samples"] == n_max])
+    # time: exact vs sample at one fixed n (most accurate grid size)
+    time_rows = [
+        r for r in accuracy_rows if r["n_samples"] == N_TIME_COMPARE
+    ]
+    if time_rows:
+        fig, ax = plt.subplots(figsize=(7.5, 4.5))
+        # one point per function at N_TIME_COMPARE
+        for r in sorted(time_rows, key=lambda x: (x["k"], x["label"])):
+            ax.scatter(
+                [r["k"]], [r["t_exact"]], marker="s", color="C0", s=60, zorder=3
+            )
+            ax.scatter(
+                [r["k"]], [r["t_sample"]], marker="o", color="C1", s=60, zorder=3
+            )
+        ax.scatter([], [], marker="s", color="C0", label="exact (pi_coverage)")
+        ax.scatter(
+            [],
+            [],
+            marker="o",
+            color="C1",
+            label=f"sample (n={N_TIME_COMPARE})",
         )
-        ax.scatter([k], [t_ex], marker="s", color="C0", s=60, zorder=3)
-        ax.scatter([k], [t_sm], marker="o", color="C1", s=60, zorder=3)
-    ax.scatter([], [], marker="s", color="C0", label="exact (pi_coverage)")
-    ax.scatter([], [], marker="o", color="C1", label=f"sample (n≤{max(N_SAMPLES_GRID)})")
-    ax.set_xlabel("k")
-    ax.set_ylabel("time (s)")
-    ax.set_yscale("log")
-    ax.set_title("Exact coverage vs sampling time")
-    ax.legend()
-    ax.grid(True, which="both", alpha=0.3)
-    fig.tight_layout()
-    path = FIG_DIR / "time_exact_vs_sample.png"
-    fig.savefig(path, dpi=140)
-    plt.close(fig)
-    log.info(f"wrote {path}")
+        ax.set_xlabel("k")
+        ax.set_ylabel("time (s)")
+        ax.set_yscale("log")
+        ax.set_title(
+            f"Exact coverage vs sampling time (n={N_TIME_COMPARE})"
+        )
+        ax.legend()
+        ax.grid(True, which="both", alpha=0.3)
+        fig.tight_layout()
+        path = FIG_DIR / "time_exact_vs_sample.png"
+        fig.savefig(path, dpi=140)
+        plt.close(fig)
+        log.info(f"wrote {path}")
+    else:
+        log.info(
+            f"skip time_exact_vs_sample.png: no rows with "
+            f"n_samples==N_TIME_COMPARE={N_TIME_COMPARE} "
+            f"(need k > {int(np.log2(N_TIME_COMPARE))})"
+        )
 
 # --- high-k CI width vs n ---
 if high_rows:
