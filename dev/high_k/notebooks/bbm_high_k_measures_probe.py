@@ -1,14 +1,16 @@
 # %% [markdown]
-# BBM high-*k* measures probe (LUT dependence)
+# BBM high-*k* measures probe (LUT / full-cover / sample-cover)
 #
 # Pick BBM update rules that already yielded **expression-based** ON/OFF prime
 # implicants in ``bbm_high_k_primes_compare`` (``match=True``, ``k > 12``),
 # then try tutorial-style CANA measures under a hard subprocess kill.
 #
 # Goal: see which APIs succeed from positional expression / primes **without**
-# materializing a dense LUT, and which hit ``pi_coverage`` Θ(``2**k``) expansion
-# or ``get_bit_lut`` (refuses above ``MAX_DENSE_LUT_K``).  **No** CANA measure
-# code is patched to avoid LUT builds — timeouts and errors are the result.
+# materializing a dense LUT or a Θ(``2**k``) coverage dict, and which hit
+# ``pi_coverage`` / ``ts_coverage`` expansion or ``get_bit_lut`` (refuses above
+# ``MAX_DENSE_LUT_K``).  Sampling probes estimate ``input_redundancy`` /
+# ``edge_redundancy`` by matching covering PIs on a fixed minterm sample.
+# **No** CANA measure code is patched — timeouts and errors are the result.
 #
 # Modes:
 #
@@ -29,6 +31,8 @@ import time
 from pathlib import Path
 from typing import Any, Dict, List, Optional, Tuple
 
+import numpy as np
+
 # notebooks/ → high_k/ → dev/
 _DEV_DIR = Path(__file__).resolve().parents[2]
 if str(_DEV_DIR) not in sys.path:
@@ -41,6 +45,10 @@ from high_k.bbm_rules import (  # noqa: E402
 )
 from high_k.paths import ensure_cana_on_path  # noqa: E402
 from high_k.run_log import run_log_dir, start_run_log  # noqa: E402
+from high_k.sampling_redundancy import (  # noqa: E402
+    estimate_edge_redundancy,
+    estimate_input_redundancy,
+)
 from high_k.timing import call_in_subprocess, fmt_s  # noqa: E402
 
 ensure_cana_on_path()
@@ -57,6 +65,8 @@ MODE = "starter"
 
 TIMEOUT_S = 10.0
 MIN_K = 13  # used when MODE == "all_from_log" (k > 12)
+N_SAMPLES = 2**13  # minterm sample size for *_sample probes
+SEED = 0
 
 NOTEBOOK_NAME = "bbm_high_k_measures_probe"
 COMPARE_LOG = (
@@ -86,23 +96,71 @@ STARTER: Tuple[Tuple[str, str, int, str], ...] = (
 )
 
 # Probe ids (order = run / summary column order).
+# effective_connectivity omitted: k_e = k - k_r (same cost as input_redundancy).
 PROBE_IDS: Tuple[str, ...] = (
     "import",
     "one_symbol",
     "schemata_pi",
     "input_redundancy",
-    "effective_connectivity",
-    "edge_effectiveness",
+    "input_redundancy_sample",
+    "edge_redundancy",
+    "edge_redundancy_sample",
     "bias",
     "sensitivity",
     "input_symmetry",
 )
 
+# What each probe does (logged once at startup).
+PROBE_METHODS: Dict[str, str] = {
+    "import": (
+        "detached positional import → BooleanNode "
+        "(no LUT / no covers)"
+    ),
+    "one_symbol": (
+        "expression cascade → one-symbol primes/schemata "
+        "(no LUT / no covers)"
+    ),
+    "schemata_pi": (
+        "PI schemata DataFrame from derived primes "
+        "(no full covers)"
+    ),
+    "input_redundancy": (
+        "exact k_r: build full pi_coverage over all 2**k minterms"
+    ),
+    "input_redundancy_sample": (
+        f"sample covers: estimate k_r from n={N_SAMPLES} minterms "
+        "(match covering PIs; no pi_coverage dict)"
+    ),
+    "edge_redundancy": (
+        "exact r_i: build full pi_coverage over all 2**k minterms"
+    ),
+    "edge_redundancy_sample": (
+        f"sample covers: estimate r_i from n={N_SAMPLES} minterms "
+        "(match covering PIs; no pi_coverage dict)"
+    ),
+    "bias": (
+        "build dense LUT (get_bit_lut), then popcount / 2**k"
+    ),
+    "sensitivity": (
+        "build dense LUT, then single-flip average sensitivity"
+    ),
+    "input_symmetry": (
+        "exact k_s: build full ts_coverage over all 2**k minterms"
+    ),
+}
+
 log, LOG_PATH = start_run_log(NOTEBOOK_NAME)
-log.info(f"MODE={MODE}  TIMEOUT_S={TIMEOUT_S}  MIN_K={MIN_K}")
+log.info(
+    f"MODE={MODE}  TIMEOUT_S={TIMEOUT_S}  MIN_K={MIN_K}  "
+    f"N_SAMPLES={N_SAMPLES}  SEED={SEED}"
+)
 log.info(f"BBM_MODELS={BBM_MODELS}")
 log.info(f"COMPARE_LOG={COMPARE_LOG}")
 log.info(f"PROBES={PROBE_IDS}")
+log.info("")
+log.info("=== probe methods ===")
+for probe in PROBE_IDS:
+    log.info(f"  {probe:24s}  {PROBE_METHODS[probe]}")
 
 
 # %% [markdown]
@@ -176,14 +234,13 @@ def _summarize(value: Any) -> Any:
 
 
 def _run_probe_body(bnet_text: str, target: str, probe: str) -> Dict[str, Any]:
-    """Execute one probe in-process; return timing + lut + summary value."""
+    """Execute one probe in-process; return timing + summary value."""
     if probe == "import":
         t0 = time.perf_counter()
         node = make_node(bnet_text, target)
         dt = time.perf_counter() - t0
         return {
             "t": dt,
-            "lut": node.outputs.bit_lut is not None,
             "k": node.k,
             "value": {"k": node.k, "name": node.name},
         }
@@ -201,10 +258,24 @@ def _run_probe_body(bnet_text: str, target: str, probe: str) -> Dict[str, Any]:
         value = _summarize(df)
     elif probe == "input_redundancy":
         value = float(node.input_redundancy())
-    elif probe == "effective_connectivity":
-        value = float(node.effective_connectivity())
-    elif probe == "edge_effectiveness":
-        value = _summarize(node.edge_effectiveness())
+    elif probe == "input_redundancy_sample":
+        schemata = node.outputs.get_one_symbol_schemata()
+        rng = np.random.default_rng(SEED)
+        value = float(
+            estimate_input_redundancy(
+                schemata, n_samples=N_SAMPLES, norm=True, rng=rng
+            )
+        )
+    elif probe == "edge_redundancy":
+        value = _summarize(node.edge_redundancy())
+    elif probe == "edge_redundancy_sample":
+        schemata = node.outputs.get_one_symbol_schemata()
+        rng = np.random.default_rng(SEED)
+        value = _summarize(
+            estimate_edge_redundancy(
+                schemata, n_samples=N_SAMPLES, bound="mean", rng=rng
+            )
+        )
     elif probe == "bias":
         value = float(node.bias())
     elif probe == "sensitivity":
@@ -216,7 +287,6 @@ def _run_probe_body(bnet_text: str, target: str, probe: str) -> Dict[str, Any]:
     dt = time.perf_counter() - t0
     return {
         "t": dt,
-        "lut": node.outputs.bit_lut is not None,
         "k": node.k,
         "value": value,
     }
@@ -244,7 +314,6 @@ def run_probe(
         return {
             "status": "ok",
             "t": float(payload["t"]),
-            "lut": bool(payload["lut"]),
             "k": int(payload["k"]),
             "value": payload.get("value"),
             "error": None,
@@ -253,7 +322,6 @@ def run_probe(
         return {
             "status": "timeout",
             "t": float(timeout_s),
-            "lut": None,
             "k": None,
             "value": None,
             "error": str(exc),
@@ -262,7 +330,6 @@ def run_probe(
         return {
             "status": "error",
             "t": None,
-            "lut": None,
             "k": None,
             "value": None,
             "error": f"{type(exc).__name__}: {exc}",
@@ -380,7 +447,6 @@ for i, fn in enumerate(funcs, start=1):
             "probe": probe,
             "status": r["status"],
             "t": r["t"],
-            "lut": r["lut"],
             "k": r["k"],
             "value": r["value"],
             "error": r["error"],
@@ -389,10 +455,9 @@ for i, fn in enumerate(funcs, start=1):
         rows.append(row)
 
         if r["status"] == "ok":
-            lut_s = "Y" if r["lut"] else "N"
             log.info(
                 f"       {probe:24s}  {fmt_s(r['t']):>10s}  "
-                f"ok  lut={lut_s}  value={_summarize(r['value'])!r}"
+                f"ok  value={_summarize(r['value'])!r}"
             )
         elif r["status"] == "timeout":
             log.info(
@@ -413,7 +478,7 @@ log.info(
 
 
 # %% [markdown]
-# ## Summary table (status / time / lut per probe)
+# ## Summary table (status / time per probe)
 
 
 # %%
@@ -422,8 +487,7 @@ def _cell(row: Optional[Dict[str, Any]]) -> str:
         return "—"
     st = row["status"]
     if st == "ok":
-        lut = "Y" if row["lut"] else "N"
-        return f"{fmt_s(row['t']).strip()}/lut={lut}"
+        return fmt_s(row["t"]).strip()
     if st == "timeout":
         return f"timeout({TIMEOUT_S:g}s)"
     return "error"
@@ -442,10 +506,10 @@ for row in rows:
 
 header = (
     f"{'cohort':7s} {'k':>3s}  {'function':42s}  "
-    + "  ".join(f"{p:>18s}" for p in PROBE_IDS)
+    + "  ".join(f"{p:>22s}" for p in PROBE_IDS)
 )
 log.info("")
-log.info("=== summary (time/lut=Y|N | timeout | error) ===")
+log.info("=== summary (time | timeout | error) ===")
 log.info(header)
 for key in sorted(
     by_func.keys(),
@@ -456,7 +520,7 @@ for key in sorted(
     short = key if len(key) <= 42 else key[:39] + "..."
     log.info(
         f"{meta['cohort']:7s} {meta['expect_k']:3d}  {short:42s}  "
-        + "  ".join(f"{c:>18s}" for c in cells)
+        + "  ".join(f"{c:>22s}" for c in cells)
     )
 
 # Counts per probe.
@@ -464,21 +528,17 @@ log.info("")
 log.info("=== per-probe status counts ===")
 for probe in PROBE_IDS:
     n_ok = n_to = n_err = 0
-    n_lut = 0
     for row in rows:
         if row["probe"] != probe:
             continue
         if row["status"] == "ok":
             n_ok += 1
-            if row["lut"]:
-                n_lut += 1
         elif row["status"] == "timeout":
             n_to += 1
         else:
             n_err += 1
     log.info(
-        f"{probe:24s}  ok={n_ok:4d} (lut_Y={n_lut})  "
-        f"timeout={n_to:4d}  error={n_err:4d}"
+        f"{probe:24s}  ok={n_ok:4d}  timeout={n_to:4d}  error={n_err:4d}"
     )
 
 log.info("")
