@@ -63,13 +63,13 @@ from cana.primes.cascade import on_off_primes_from_expression  # noqa: E402
 # ---------------------------------------------------------------------------
 
 # "starter" | "all_from_log"
-MODE = "starter"
+MODE = "all_from_log"
 
 TIMEOUT_S = 10.0
 MIN_K_EXACT = 11  # k > 10 so n=2**10 is a proper subsample
 MAX_K_EXACT = 18  # try exact pi_coverage up to here (≤ MAX_DENSE_LUT_K)
 MIN_N_SAMPLES = 2**10
-N_SAMPLES_GRID: Tuple[int, ...] = (2**10, 2**11, 2**12, 2**13)
+N_SAMPLES_GRID: Tuple[int, ...] = (2**10, 2**11, 2**12, 2**13, 2**14)
 # Single n for exact-vs-sample timing (most accurate grid size).
 N_TIME_COMPARE = max(N_SAMPLES_GRID)
 N_BOOT = 1000
