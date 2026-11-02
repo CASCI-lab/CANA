@@ -45,6 +45,7 @@ __all__ = [
     "OneSymbolSchemata",
     "pi_covers",
     "covering_primes",
+    "covering_primes_with_polarity",
     "sample_binstates",
     "sample_pi_coverage",
     "input_redundancy_from_coverage",
@@ -85,13 +86,16 @@ class SampledPiCoverage:
 
     ``coverage`` maps each sampled binary state to the one-symbol primes that
     cover it (same shape as a full :meth:`~cana.boolean_node.BooleanNode.pi_coverage`
-    dict, but only for the sample). Bootstrap helpers derive per-minterm
-    contributions from this coverage without re-matching primes.
+    dict, but only for the sample). ``outputs`` stores the polarity (0/1) of
+    each sampled minterm so bias can be estimated without re-matching primes.
+    Bootstrap helpers derive per-minterm contributions from this coverage
+    without re-matching primes.
     """
 
     coverage: Dict[str, Tuple[str, ...]]
     k: int
     n_samples: int
+    outputs: Dict[str, int]
 
     @property
     def minterms(self) -> List[str]:
@@ -109,6 +113,12 @@ class SampledPiCoverage:
             self.coverage, self.minterms, bound=bound
         )
 
+    def bias_contributions(self) -> np.ndarray:
+        """Per-minterm output bits as ``float64``, shape ``(n_samples,)``."""
+        return np.asarray(
+            [self.outputs[m] for m in self.minterms], dtype=np.float64
+        )
+
 
 def pi_covers(schema: str, binstate: str) -> bool:
     """Return True if one-symbol *schema* covers binary *binstate*."""
@@ -121,22 +131,43 @@ def pi_covers(schema: str, binstate: str) -> bool:
     return all(s == WILDCARD or s == b for s, b in zip(schema, binstate))
 
 
-def covering_primes(binstate: str, schemata: OneSymbolSchemata) -> List[str]:
-    """Return one-symbol PIs covering *binstate* (ON and OFF scanned).
+def covering_primes_with_polarity(
+    binstate: str, schemata: OneSymbolSchemata
+) -> Tuple[List[str], int]:
+    """Return covering one-symbol PIs and the output polarity of *binstate*.
 
     Raises:
-        ValueError: if no prime covers *binstate* (incomplete cover).
+        ValueError: if no prime covers *binstate*, or ON and OFF primes both
+            cover it (polarity conflict).
     """
     covered: List[str] = []
+    found_polarity: Optional[int] = None
     for polarity in (0, 1):
         for pi in schemata.get(polarity, ()) or ():
             if pi_covers(pi, binstate):
+                if found_polarity is not None and found_polarity != polarity:
+                    raise ValueError(
+                        "polarity conflict at binstate {0!r}: "
+                        "covered by both ON and OFF primes".format(binstate)
+                    )
+                found_polarity = polarity
                 covered.append(pi)
-    if not covered:
+    if not covered or found_polarity is None:
         raise ValueError(
             "no prime implicant covers binstate {0!r} "
             "(incomplete ON/OFF schemata?)".format(binstate)
         )
+    return covered, found_polarity
+
+
+def covering_primes(binstate: str, schemata: OneSymbolSchemata) -> List[str]:
+    """Return one-symbol PIs covering *binstate* (ON and OFF scanned).
+
+    Raises:
+        ValueError: if no prime covers *binstate* (incomplete cover), or ON
+            and OFF primes both cover it (polarity conflict).
+    """
+    covered, _polarity = covering_primes_with_polarity(binstate, schemata)
     return covered
 
 
@@ -305,10 +336,16 @@ def sample_pi_coverage(
         mt = sample_binstates(k_inf, int(n_samples), rng=rng, replace=False)
 
     coverage: Dict[str, Tuple[str, ...]] = {}
+    outputs: Dict[str, int] = {}
     for binstate in mt:
-        coverage[binstate] = tuple(covering_primes(binstate, schemata))
+        pis, polarity = covering_primes_with_polarity(binstate, schemata)
+        coverage[binstate] = tuple(pis)
+        outputs[binstate] = polarity
     return SampledPiCoverage(
-        coverage=coverage, k=k_inf, n_samples=len(coverage)
+        coverage=coverage,
+        k=k_inf,
+        n_samples=len(coverage),
+        outputs=outputs,
     )
 
 

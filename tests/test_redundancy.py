@@ -72,6 +72,20 @@ def test_pi_covers_and_covering_primes_and2():
     assert set(covering_primes("11", schemata)) == {"11"}
 
 
+def test_sample_pi_coverage_outputs_and2():
+    schemata = AND().outputs.get_one_symbol_schemata()
+    sampled = sample_pi_coverage(schemata, 4, k=2)
+    assert sampled.n_samples == 4
+    assert set(sampled.outputs) == set(sampled.coverage)
+    assert sampled.outputs["00"] == 0
+    assert sampled.outputs["01"] == 0
+    assert sampled.outputs["10"] == 0
+    assert sampled.outputs["11"] == 1
+    assert list(sampled.bias_contributions()) == [
+        float(sampled.outputs[m]) for m in sampled.minterms
+    ]
+
+
 def test_covering_primes_raises_on_incomplete():
     with pytest.raises(ValueError, match="no prime implicant"):
         covering_primes("11", {0: {"00"}, 1: set()})

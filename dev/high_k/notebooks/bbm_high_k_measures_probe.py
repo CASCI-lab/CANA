@@ -10,9 +10,11 @@
 # ``pi_coverage`` / ``ts_coverage`` expansion or ``get_bit_lut`` (refuses above
 # ``MAX_DENSE_LUT_K``).  Sampling probes estimate ``input_redundancy`` /
 # ``edge_redundancy`` by matching covering PIs on a fixed minterm sample.
-# Sensitivity is probed both via dense LUT (``sensitivity_from_bit_lut``) and
-# via one-symbol schemata (``sensitivity_from_schemata`` with sample covers
-# for high *k*, same minterm sample as the redundancy ``*_sample`` probes).
+# Bias and sensitivity are each probed both via dense LUT
+# (``bias_from_bit_lut`` / ``sensitivity_from_bit_lut``) and via one-symbol
+# schemata (``bias_from_schemata`` / ``sensitivity_from_schemata`` with
+# sample covers for high *k*, same minterm sample as the redundancy
+# ``*_sample`` probes).
 # **No** CANA measure code is patched — timeouts and errors are the result.
 #
 # Modes:
@@ -108,7 +110,8 @@ PROBE_IDS: Tuple[str, ...] = (
     "input_redundancy_sample",
     "edge_redundancy",
     "edge_redundancy_sample",
-    "bias",
+    "bias_bit_lut",
+    "bias_schemata",
     "sensitivity_bit_lut",
     "sensitivity_schemata",
     "input_symmetry",
@@ -144,8 +147,14 @@ PROBE_METHODS: Dict[str, str] = {
         f"sample covers: estimate r_i from n={N_SAMPLES} minterms "
         "(match covering PIs; no pi_coverage dict)"
     ),
-    "bias": (
-        "build dense LUT (get_bit_lut), then popcount / 2**k"
+    "bias_bit_lut": (
+        "exact bias: build dense LUT (get_bit_lut), then popcount / 2**k; "
+        "refuses above MAX_DENSE_LUT_K"
+    ),
+    "bias_schemata": (
+        f"sample covers: estimate bias from n={N_SAMPLES} minterms via "
+        "bias_from_schemata (ON-fraction over PI covers; "
+        "exact_k_max=-1; no pi_coverage dict)"
     ),
     "sensitivity_bit_lut": (
         "exact s: build dense LUT (get_bit_lut), then single-flip "
@@ -298,8 +307,21 @@ def _run_probe_body(bnet_text: str, target: str, probe: str) -> Dict[str, Any]:
                 rng=rng,
             )
         )
-    elif probe == "bias":
-        value = float(node.bias())
+    elif probe == "bias_bit_lut":
+        value = float(node.bias_from_bit_lut())
+    elif probe == "bias_schemata":
+        # High-k path: force sampling (exact_k_max=-1), same N_SAMPLES /
+        # SEED as the redundancy / sensitivity *_sample probes. Default
+        # exact_k_max=14 would still exact-cover for k<=14; -1 makes the
+        # probe always sample so high-k timing is comparable across rules.
+        rng = np.random.default_rng(SEED)
+        value = float(
+            node.bias_from_schemata(
+                exact_k_max=-1,
+                n_samples=N_SAMPLES,
+                rng=rng,
+            )
+        )
     elif probe == "sensitivity_bit_lut":
         value = float(node.sensitivity_from_bit_lut())
     elif probe == "sensitivity_schemata":

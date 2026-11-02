@@ -25,6 +25,7 @@ import pandas as pd
 import cana.canalization.boolean_canalization as BCanalization
 import cana.canalization.cboolean_canalization as cBCanalization
 from cana.canalization.canalizing_map import build_canalizing_map
+import cana.function_properties.bias as bias
 import cana.function_properties.redundancy as redundancy
 import cana.function_properties.symmetry as symmetry
 import cana.function_properties.sensitivity as sensitivity
@@ -1281,22 +1282,96 @@ class BooleanNode(object):
 
     # --- Node properties ---
 
-    def bias(self):
+    def bias_from_bit_lut(self):
+        """Bias from the dense LUT via :func:`cana.function_properties.bias.bias_from_bit_lut`.
+
+        Returns:
+            (float)
+        """
+        return bias.bias_from_bit_lut(self.outputs.get_bit_lut())
+
+    def bias_from_schemata(
+        self,
+        *,
+        exact_k_max=EXACT_K_MAX_DEFAULT,
+        n_samples=None,
+        rng=None,
+        return_mode=False,
+    ):
+        """Bias as ON-fraction from one-symbol schemata.
+
+        See :func:`cana.function_properties.bias.bias_from_schemata`. Prefer
+        this when prime implicants are available, or when ``k`` exceeds the
+        dense-LUT limit.
+
+        Args:
+            exact_k_max, n_samples, rng : Same two-track kwargs as
+                :meth:`input_redundancy`.
+            return_mode (bool) : If True, return ``(value, \"exact\"|\"sampled\")``.
+
+        Returns:
+            (float) or ``(float, str)`` when ``return_mode`` is True.
+        """
+        return bias.bias_from_schemata(
+            self.outputs.get_one_symbol_schemata(),
+            k=self.k,
+            exact_k_max=exact_k_max,
+            n_samples=n_samples,
+            rng=rng,
+            return_mode=return_mode,
+        )
+
+    def bias(
+        self,
+        *,
+        exact_k_max=EXACT_K_MAX_DEFAULT,
+        n_samples=None,
+        rng=None,
+        return_mode=False,
+    ):
         r"""The node bias. The sum of the boolean output transitions divided by the number of entries (:math:`2^k`) in the LUT.
 
         .. math::
 
             bias(x) = \frac{ \sum_{f_{\alpha}\in F} s_{\alpha} }{ |F| }
 
+        Prefers :meth:`bias_from_schemata` when full or sampled
+        ``pi_coverage`` is already cached; otherwise uses
+        :meth:`bias_from_bit_lut` when ``k <= exact_k_max``; otherwise
+        :meth:`bias_from_schemata`. Sampling kwargs apply only on the
+        schemata path.
+
+        Args:
+            exact_k_max, n_samples, rng : Forwarded to the schemata path when used.
+            return_mode (bool) : If True, return ``(value, \"exact\"|\"sampled\")``.
+                On the LUT path the mode is always ``\"exact\"``.
+
         Returns:
-            (float)
+            (float) or ``(float, str)`` when ``return_mode`` is True.
 
         See Also:
-            :func:`~cana.boolean_network.BooleanNetwork.network_bias`
+            :func:`~cana.boolean_network.BooleanNetwork.network_bias`,
+            :func:`cana.function_properties.bias.bias_from_bit_lut`,
+            :func:`cana.function_properties.bias.bias_from_schemata`.
         """
-        if self.outputs.bit_lut is not None:
-            return self.outputs.bit_lut.popcount() / 2**self.k
-        return sum(self.outputs) / 2**self.k
+        if self._pi_coverage is not None or self._sampled_pi_coverage is not None:
+            return self.bias_from_schemata(
+                exact_k_max=exact_k_max,
+                n_samples=n_samples,
+                rng=rng,
+                return_mode=return_mode,
+            )
+        if self.k <= exact_k_max:
+            value = self.bias_from_bit_lut()
+            if return_mode:
+                return value, "exact"
+            return value
+        return self.bias_from_schemata(
+            exact_k_max=exact_k_max,
+            n_samples=n_samples,
+            rng=rng,
+            return_mode=return_mode,
+        )
 
     def input_signs(self):
         """

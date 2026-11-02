@@ -2,7 +2,7 @@ log_path=/home/kyuhyongpark/CANA/CANA/dev/high_k/logs/bbm_high_k_measures_probe/
 MODE=starter  TIMEOUT_S=10.0  MIN_K=13  N_SAMPLES=16384  SEED=0
 BBM_MODELS=/home/kyuhyongpark/CANA/BBM/models
 COMPARE_LOG=/home/kyuhyongpark/CANA/CANA/dev/high_k/logs/bbm_high_k_primes_compare/bbm_high_k_primes_compare.log
-PROBES=('import', 'one_symbol', 'schemata_pi', 'input_redundancy', 'input_redundancy_sample', 'edge_redundancy', 'edge_redundancy_sample', 'bias', 'sensitivity_bit_lut', 'sensitivity_schemata', 'input_symmetry')
+PROBES=('import', 'one_symbol', 'schemata_pi', 'input_redundancy', 'input_redundancy_sample', 'edge_redundancy', 'edge_redundancy_sample', 'bias_bit_lut', 'bias_schemata', 'sensitivity_bit_lut', 'sensitivity_schemata', 'input_symmetry')
 
 === probe methods ===
   import                    detached positional import → BooleanNode (no LUT / no covers)
@@ -12,224 +12,241 @@ PROBES=('import', 'one_symbol', 'schemata_pi', 'input_redundancy', 'input_redund
   input_redundancy_sample   sample covers: estimate k_r from n=16384 minterms (match covering PIs; no pi_coverage dict)
   edge_redundancy           exact r_i: force full pi_coverage (exact_k_max=k); refuses / times out when Θ(2**k) cover is too large
   edge_redundancy_sample    sample covers: estimate r_i from n=16384 minterms (match covering PIs; no pi_coverage dict)
-  bias                      build dense LUT (get_bit_lut), then popcount / 2**k
+  bias_bit_lut              exact bias: build dense LUT (get_bit_lut), then popcount / 2**k; refuses above MAX_DENSE_LUT_K
+  bias_schemata             sample covers: estimate bias from n=16384 minterms via bias_from_schemata (ON-fraction over PI covers; exact_k_max=-1; no pi_coverage dict)
   sensitivity_bit_lut       exact s: build dense LUT (get_bit_lut), then single-flip average sensitivity; refuses above MAX_DENSE_LUT_K
   sensitivity_schemata      sample covers: estimate s from n=16384 minterms via sensitivity_from_schemata (upper edge effectiveness; exact_k_max=-1; no pi_coverage dict)
   input_symmetry            exact k_s: build full ts_coverage over all 2**k minterms
 
-=== probe matrix  n_funcs=15  n_probes=11  timeout=10s ===
+=== probe matrix  n_funcs=15  n_probes=12  timeout=10s ===
 #   1 rest    expect_k= 11  [id-002]::v_MKK3  model=[id-002]__[var-130]__[in-9]__[SIGNAL-TRANSDUCTIO
-       import                      18.54 ms  ok  value={'k': 11, 'name': 'v_MKK3'}
-       one_symbol                 235.24 ms  ok  value={'0': 2, '1': 10}
-       schemata_pi                273.72 ms  ok  value='shape=(12, 2)'
-       input_redundancy           440.90 ms  ok  value=0.8630814985795454
-       input_redundancy_sample    396.43 ms  ok  value=0.8630814985795454
-       edge_redundancy            319.16 ms  ok  value={'len': 11, 'min': 0.000732421875, 'max': 0.9493164062499996, 'mean': 0.8630814985795449}
-       edge_redundancy_sample     493.97 ms  ok  value={'len': 11, 'min': 0.000732421875, 'max': 0.9493164062499969, 'mean': 0.8630814985795425}
-       bias                        42.19 ms  ok  value=0.49951171875
-       sensitivity_bit_lut         80.12 ms  ok  value=1.0087890625
-       sensitivity_schemata       340.55 ms  ok  value=1.0087890625
+       import                       5.32 ms  ok  value={'k': 11, 'name': 'v_MKK3'}
+       one_symbol                  86.26 ms  ok  value={'0': 2, '1': 10}
+       schemata_pi                 72.16 ms  ok  value='shape=(12, 2)'
+       input_redundancy           174.20 ms  ok  value=0.8630814985795454
+       input_redundancy_sample    122.17 ms  ok  value=0.8630814985795454
+       edge_redundancy             84.66 ms  ok  value={'len': 11, 'min': 0.000732421875, 'max': 0.9493164062499996, 'mean': 0.8630814985795449}
+       edge_redundancy_sample      99.46 ms  ok  value={'len': 11, 'min': 0.000732421875, 'max': 0.9493164062499969, 'mean': 0.8630814985795425}
+       bias_bit_lut                14.64 ms  ok  value=0.49951171875
+       bias_schemata              245.00 ms  ok  value=0.49951171875
+       sensitivity_bit_lut         24.15 ms  ok  value=1.0087890625
+       sensitivity_schemata       110.79 ms  ok  value=1.0087890625
        input_symmetry              10.000 s  timeout
 #   2 rest    expect_k= 11  [id-002]::v_Src  model=[id-002]__[var-130]__[in-9]__[SIGNAL-TRANSDUCTIO
-       import                      17.53 ms  ok  value={'k': 11, 'name': 'v_Src'}
-       one_symbol                 360.23 ms  ok  value={'0': 5, '1': 14}
-       schemata_pi                215.68 ms  ok  value='shape=(19, 2)'
-       input_redundancy           379.29 ms  ok  value=0.769487917681277
-       input_redundancy_sample    223.28 ms  ok  value=0.769487917681277
-       edge_redundancy            153.65 ms  ok  value={'len': 11, 'min': 0.42006835937499976, 'max': 0.9239606584821437, 'mean': 0.7694879176812769}
-       edge_redundancy_sample     205.40 ms  ok  value={'len': 11, 'min': 0.42006835937499987, 'max': 0.9239606584821454, 'mean': 0.7694879176812769}
-       bias                        26.62 ms  ok  value=0.68408203125
-       sensitivity_bit_lut         36.75 ms  ok  value=1.4541015625
-       sensitivity_schemata       206.04 ms  ok  value=1.4541015625
+       import                       5.99 ms  ok  value={'k': 11, 'name': 'v_Src'}
+       one_symbol                  64.62 ms  ok  value={'0': 5, '1': 14}
+       schemata_pi                 53.64 ms  ok  value='shape=(19, 2)'
+       input_redundancy            88.98 ms  ok  value=0.769487917681277
+       input_redundancy_sample    229.18 ms  ok  value=0.769487917681277
+       edge_redundancy             81.74 ms  ok  value={'len': 11, 'min': 0.42006835937499976, 'max': 0.9239606584821437, 'mean': 0.7694879176812769}
+       edge_redundancy_sample     125.78 ms  ok  value={'len': 11, 'min': 0.42006835937499987, 'max': 0.9239606584821454, 'mean': 0.7694879176812769}
+       bias_bit_lut                 9.17 ms  ok  value=0.68408203125
+       bias_schemata              110.06 ms  ok  value=0.68408203125
+       sensitivity_bit_lut         25.50 ms  ok  value=1.4541015625
+       sensitivity_schemata       139.25 ms  ok  value=1.4541015625
        input_symmetry              10.000 s  timeout
 #   3 rest    expect_k= 12  [id-009]::v_ROS_CYT  model=[id-009]__[var-60]__[in-13]__[YEAST-APOPTOSIS]
-       import                      11.35 ms  ok  value={'k': 12, 'name': 'v_ROS_CYT'}
-       one_symbol                 107.32 ms  ok  value={'0': 3, '1': 11}
-       schemata_pi                115.61 ms  ok  value='shape=(14, 2)'
-       input_redundancy           236.69 ms  ok  value=0.9033857454755893
-       input_redundancy_sample    303.53 ms  ok  value=0.9033857454755893
-       edge_redundancy            355.38 ms  ok  value={'len': 12, 'min': 0.891015131786614, 'max': 0.9511279790088416, 'mean': 0.903385745475592}
-       edge_redundancy_sample     337.03 ms  ok  value={'len': 12, 'min': 0.8910151317866198, 'max': 0.9511279790088388, 'mean': 0.9033857454755935}
-       bias                        41.78 ms  ok  value=0.998046875
-       sensitivity_bit_lut         80.15 ms  ok  value=0.037109375
-       sensitivity_schemata       306.92 ms  ok  value=0.037109375
+       import                       4.05 ms  ok  value={'k': 12, 'name': 'v_ROS_CYT'}
+       one_symbol                  57.05 ms  ok  value={'0': 3, '1': 11}
+       schemata_pi                 46.97 ms  ok  value='shape=(14, 2)'
+       input_redundancy           164.03 ms  ok  value=0.9033857454755893
+       input_redundancy_sample    191.43 ms  ok  value=0.9033857454755893
+       edge_redundancy            147.83 ms  ok  value={'len': 12, 'min': 0.891015131786614, 'max': 0.9511279790088416, 'mean': 0.903385745475592}
+       edge_redundancy_sample     190.78 ms  ok  value={'len': 12, 'min': 0.8910151317866198, 'max': 0.9511279790088388, 'mean': 0.9033857454755935}
+       bias_bit_lut                22.97 ms  ok  value=0.998046875
+       bias_schemata              154.87 ms  ok  value=0.998046875
+       sensitivity_bit_lut         42.09 ms  ok  value=0.037109375
+       sensitivity_schemata       185.36 ms  ok  value=0.037109375
        input_symmetry              10.000 s  timeout
 #   4 unate   expect_k= 12  [id-018]::v_erbb13  model=[id-018]__[var-76]__[in-28]__[EGFR-ERBB-SIGNALIN
-       import                      11.66 ms  ok  value={'k': 12, 'name': 'v_erbb13'}
-       one_symbol                 150.99 ms  ok  value={'0': 5, '1': 8}
-       schemata_pi                139.28 ms  ok  value='shape=(13, 2)'
-       input_redundancy           283.88 ms  ok  value=0.8781285603841146
-       input_redundancy_sample    417.18 ms  ok  value=0.8781285603841146
-       edge_redundancy            170.48 ms  ok  value={'len': 12, 'min': 0.6437906901041641, 'max': 0.990704345703125, 'mean': 0.8781285603841144}
-       edge_redundancy_sample     257.97 ms  ok  value={'len': 12, 'min': 0.6437906901041661, 'max': 0.9907043457031263, 'mean': 0.8781285603841154}
-       bias                        51.72 ms  ok  value=0.093505859375
-       sensitivity_bit_lut        141.13 ms  ok  value=0.689453125
-       sensitivity_schemata       266.62 ms  ok  value=0.689453125
+       import                       4.53 ms  ok  value={'k': 12, 'name': 'v_erbb13'}
+       one_symbol                  67.83 ms  ok  value={'0': 5, '1': 8}
+       schemata_pi                 64.63 ms  ok  value='shape=(13, 2)'
+       input_redundancy           119.00 ms  ok  value=0.8781285603841146
+       input_redundancy_sample    171.23 ms  ok  value=0.8781285603841146
+       edge_redundancy             99.07 ms  ok  value={'len': 12, 'min': 0.6437906901041641, 'max': 0.990704345703125, 'mean': 0.8781285603841144}
+       edge_redundancy_sample     168.43 ms  ok  value={'len': 12, 'min': 0.6437906901041661, 'max': 0.9907043457031263, 'mean': 0.8781285603841154}
+       bias_bit_lut                25.57 ms  ok  value=0.093505859375
+       bias_schemata              151.01 ms  ok  value=0.093505859375
+       sensitivity_bit_lut         48.53 ms  ok  value=0.689453125
+       sensitivity_schemata       154.12 ms  ok  value=0.689453125
        input_symmetry              10.000 s  timeout
 #   5 rof     expect_k= 14  [id-004]::v_Nck  model=[id-004]__[var-225]__[in-22]__[ERBB-RECEPTOR-SIG
-       import                       9.07 ms  ok  value={'k': 14, 'name': 'v_Nck'}
-       one_symbol                  37.40 ms  ok  value={'0': 1, '1': 14}
-       schemata_pi                 51.04 ms  ok  value='shape=(15, 2)'
-       input_redundancy           999.97 ms  ok  value=0.9285147530691964
-       input_redundancy_sample      1.528 s  ok  value=0.9285147530691964
-       edge_redundancy              1.190 s  ok  value={'len': 14, 'min': 0.9285147530691795, 'max': 0.9285147530691914, 'mean': 0.9285147530691894}
-       edge_redundancy_sample       1.504 s  ok  value={'len': 14, 'min': 0.9285147530691759, 'max': 0.928514753069187, 'mean': 0.9285147530691774}
-       bias                       174.02 ms  ok  value=0.99993896484375
-       sensitivity_bit_lut        431.51 ms  ok  value=0.001708984375
-       sensitivity_schemata         1.273 s  ok  value=0.001708984375
+       import                       4.46 ms  ok  value={'k': 14, 'name': 'v_Nck'}
+       one_symbol                  15.10 ms  ok  value={'0': 1, '1': 14}
+       schemata_pi                 16.27 ms  ok  value='shape=(15, 2)'
+       input_redundancy           532.24 ms  ok  value=0.9285147530691964
+       input_redundancy_sample    735.60 ms  ok  value=0.9285147530691964
+       edge_redundancy            489.86 ms  ok  value={'len': 14, 'min': 0.9285147530691795, 'max': 0.9285147530691914, 'mean': 0.9285147530691894}
+       edge_redundancy_sample     662.71 ms  ok  value={'len': 14, 'min': 0.9285147530691759, 'max': 0.928514753069187, 'mean': 0.9285147530691774}
+       bias_bit_lut                88.44 ms  ok  value=0.99993896484375
+       bias_schemata              505.15 ms  ok  value=0.99993896484375
+       sensitivity_bit_lut        295.24 ms  ok  value=0.001708984375
+       sensitivity_schemata       651.90 ms  ok  value=0.001708984375
        input_symmetry              10.000 s  timeout
 #   6 unate   expect_k= 14  [id-004]::v_Spry2  model=[id-004]__[var-225]__[in-22]__[ERBB-RECEPTOR-SIG
-       import                      10.86 ms  ok  value={'k': 14, 'name': 'v_Spry2'}
-       one_symbol                  99.36 ms  ok  value={'0': 2, '1': 13}
-       schemata_pi                122.35 ms  ok  value='shape=(15, 2)'
-       input_redundancy           619.36 ms  ok  value=0.8927830287388393
-       input_redundancy_sample      1.562 s  ok  value=0.8927830287388393
-       edge_redundancy            625.69 ms  ok  value={'len': 14, 'min': 9.1552734375e-05, 'max': 0.9614516038161038, 'mean': 0.8927830287388371}
-       edge_redundancy_sample       1.320 s  ok  value={'len': 14, 'min': 9.1552734375e-05, 'max': 0.9614516038161105, 'mean': 0.8927830287388392}
-       bias                       202.36 ms  ok  value=0.49993896484375
-       sensitivity_bit_lut        427.38 ms  ok  value=1.00146484375
-       sensitivity_schemata         1.325 s  ok  value=1.00146484375
+       import                       6.79 ms  ok  value={'k': 14, 'name': 'v_Spry2'}
+       one_symbol                  81.63 ms  ok  value={'0': 2, '1': 13}
+       schemata_pi                 67.69 ms  ok  value='shape=(15, 2)'
+       input_redundancy           395.68 ms  ok  value=0.8927830287388393
+       input_redundancy_sample    610.04 ms  ok  value=0.8927830287388393
+       edge_redundancy            353.73 ms  ok  value={'len': 14, 'min': 9.1552734375e-05, 'max': 0.9614516038161038, 'mean': 0.8927830287388371}
+       edge_redundancy_sample     579.62 ms  ok  value={'len': 14, 'min': 9.1552734375e-05, 'max': 0.9614516038161105, 'mean': 0.8927830287388392}
+       bias_bit_lut                97.55 ms  ok  value=0.49993896484375
+       bias_schemata              456.16 ms  ok  value=0.49993896484375
+       sensitivity_bit_lut        368.77 ms  ok  value=1.00146484375
+       sensitivity_schemata       589.55 ms  ok  value=1.00146484375
        input_symmetry              10.000 s  timeout
 #   7 rof     expect_k= 16  [id-004]::v_p120_catenin  model=[id-004]__[var-225]__[in-22]__[ERBB-RECEPTOR-SIG
-       import                       9.80 ms  ok  value={'k': 16, 'name': 'v_p120_catenin'}
-       one_symbol                  39.81 ms  ok  value={'0': 2, '1': 15}
-       schemata_pi                 50.15 ms  ok  value='shape=(17, 2)'
-       input_redundancy             5.249 s  ok  value=0.9353766759236654
-       input_redundancy_sample      1.956 s  ok  value=0.9353723222294503
-       edge_redundancy              4.877 s  ok  value={'len': 16, 'min': 0.9309098016648765, 'max': 0.9666447957358731, 'mean': 0.9353766759239941}
-       edge_redundancy_sample       1.483 s  ok  value={'len': 16, 'min': 0.9296672403117545, 'max': 0.9668116478586924, 'mean': 0.9353723222294322}
-       bias                       778.24 ms  ok  value=0.9999542236328125
-       sensitivity_bit_lut          1.828 s  ok  value=0.0013427734375
-       sensitivity_schemata         1.795 s  ok  value=0.00152587890625
+       import                       5.69 ms  ok  value={'k': 16, 'name': 'v_p120_catenin'}
+       one_symbol                  15.61 ms  ok  value={'0': 2, '1': 15}
+       schemata_pi                 21.61 ms  ok  value='shape=(17, 2)'
+       input_redundancy             2.414 s  ok  value=0.9353766759236654
+       input_redundancy_sample    727.16 ms  ok  value=0.9353723222294503
+       edge_redundancy              2.329 s  ok  value={'len': 16, 'min': 0.9309098016648765, 'max': 0.9666447957358731, 'mean': 0.9353766759239941}
+       edge_redundancy_sample     860.61 ms  ok  value={'len': 16, 'min': 0.9296672403117545, 'max': 0.9668116478586924, 'mean': 0.9353723222294322}
+       bias_bit_lut               406.24 ms  ok  value=0.9999542236328125
+       bias_schemata              701.94 ms  ok  value=0.99993896484375
+       sensitivity_bit_lut        763.95 ms  ok  value=0.0013427734375
+       sensitivity_schemata       809.75 ms  ok  value=0.00152587890625
        input_symmetry              10.000 s  timeout
 #   8 rest    expect_k= 16  [id-004]::v_B_catenin  model=[id-004]__[var-225]__[in-22]__[ERBB-RECEPTOR-SIG
-       import                      11.14 ms  ok  value={'k': 16, 'name': 'v_B_catenin'}
-       one_symbol                 126.19 ms  ok  value={'0': 28, '1': 2}
-       schemata_pi                135.82 ms  ok  value='shape=(30, 2)'
-       input_redundancy             4.338 s  ok  value=0.8749599456787109
-       input_redundancy_sample      2.389 s  ok  value=0.8748855590820312
-       edge_redundancy              4.992 s  ok  value={'len': 16, 'min': 0.375030517578125, 'max': 0.9463784354077249, 'mean': 0.8749599456789956}
-       edge_redundancy_sample       2.265 s  ok  value={'len': 16, 'min': 0.37359619140625, 'max': 0.9468598965257196, 'mean': 0.8748855590820239}
-       bias                       743.60 ms  ok  value=0.2500457763671875
-       sensitivity_bit_lut          2.035 s  ok  value=1.001220703125
-       sensitivity_schemata         2.501 s  ok  value=0.99505615234375
+       import                       5.70 ms  ok  value={'k': 16, 'name': 'v_B_catenin'}
+       one_symbol                  75.25 ms  ok  value={'0': 28, '1': 2}
+       schemata_pi                 70.90 ms  ok  value='shape=(30, 2)'
+       input_redundancy             2.425 s  ok  value=0.8749599456787109
+       input_redundancy_sample      1.171 s  ok  value=0.8748855590820312
+       edge_redundancy              2.410 s  ok  value={'len': 16, 'min': 0.375030517578125, 'max': 0.9463784354077249, 'mean': 0.8749599456789956}
+       edge_redundancy_sample       1.226 s  ok  value={'len': 16, 'min': 0.37359619140625, 'max': 0.9468598965257196, 'mean': 0.8748855590820239}
+       bias_bit_lut               341.79 ms  ok  value=0.2500457763671875
+       bias_schemata              964.91 ms  ok  value=0.2476806640625
+       sensitivity_bit_lut        869.37 ms  ok  value=1.001220703125
+       sensitivity_schemata         1.078 s  ok  value=0.99505615234375
        input_symmetry              10.000 s  timeout
 #   9 rof     expect_k= 18  [id-004]::v_DGK  model=[id-004]__[var-225]__[in-22]__[ERBB-RECEPTOR-SIG
-       import                      13.59 ms  ok  value={'k': 18, 'name': 'v_DGK'}
-       one_symbol                  42.12 ms  ok  value={'0': 6, '1': 15}
-       schemata_pi                 72.39 ms  ok  value='shape=(21, 2)'
-       input_redundancy            10.000 s  timeout
-       input_redundancy_sample      2.046 s  ok  value=0.9404828702354744
+       import                       5.28 ms  ok  value={'k': 18, 'name': 'v_DGK'}
+       one_symbol                  20.18 ms  ok  value={'0': 6, '1': 15}
+       schemata_pi                 25.95 ms  ok  value='shape=(21, 2)'
+       input_redundancy             9.446 s  ok  value=0.9405132838657924
+       input_redundancy_sample    934.10 ms  ok  value=0.9404828702354744
        edge_redundancy             10.000 s  timeout
-       edge_redundancy_sample       2.021 s  ok  value={'len': 18, 'min': 0.9261558330314378, 'max': 0.9831558332550111, 'mean': 0.9404828702354683}
-       bias                         3.288 s  ok  value=0.9999198913574219
-       sensitivity_bit_lut          7.349 s  ok  value=0.00225830078125
-       sensitivity_schemata         1.740 s  ok  value=0.003173828125
+       edge_redundancy_sample     932.73 ms  ok  value={'len': 18, 'min': 0.9261558330314378, 'max': 0.9831558332550111, 'mean': 0.9404828702354683}
+       bias_bit_lut                 1.377 s  ok  value=0.9999198913574219
+       bias_schemata              768.62 ms  ok  value=0.9998779296875
+       sensitivity_bit_lut          3.721 s  ok  value=0.00225830078125
+       sensitivity_schemata       935.73 ms  ok  value=0.003173828125
        input_symmetry              10.000 s  timeout
 #  10 unate   expect_k= 18  [id-004]::v_PI3K  model=[id-004]__[var-225]__[in-22]__[ERBB-RECEPTOR-SIG
-       import                       9.26 ms  ok  value={'k': 18, 'name': 'v_PI3K'}
-       one_symbol                 140.38 ms  ok  value={'0': 3, '1': 16}
-       schemata_pi                163.07 ms  ok  value='shape=(19, 2)'
-       input_redundancy            10.000 s  timeout
-       input_redundancy_sample      1.791 s  ok  value=0.9154642938675125
-       edge_redundancy             10.000 s  timeout
-       edge_redundancy_sample       1.834 s  ok  value={'len': 18, 'min': 0.0, 'max': 0.9843387349277131, 'mean': 0.9154642938674985}
-       bias                         3.415 s  ok  value=0.4999885559082031
-       sensitivity_bit_lut          7.143 s  ok  value=1.000335693359375
-       sensitivity_schemata         1.971 s  ok  value=1.00018310546875
+       import                       5.88 ms  ok  value={'k': 18, 'name': 'v_PI3K'}
+       one_symbol                  79.34 ms  ok  value={'0': 3, '1': 16}
+       schemata_pi                 65.88 ms  ok  value='shape=(19, 2)'
+       input_redundancy             7.097 s  ok  value=0.9157844252056546
+       input_redundancy_sample    736.30 ms  ok  value=0.9154642938675125
+       edge_redundancy              6.964 s  ok  value={'len': 18, 'min': 1.7801920572916664e-05, 'max': 0.9843663374582838, 'mean': 0.9157844252056625}
+       edge_redundancy_sample     771.48 ms  ok  value={'len': 18, 'min': 0.0, 'max': 0.9843387349277131, 'mean': 0.9154642938674985}
+       bias_bit_lut                 1.581 s  ok  value=0.4999885559082031
+       bias_schemata              570.23 ms  ok  value=0.5059814453125
+       sensitivity_bit_lut          3.791 s  ok  value=1.000335693359375
+       sensitivity_schemata       822.21 ms  ok  value=1.00018310546875
        input_symmetry              10.000 s  timeout
 #  11 rest    expect_k= 21  [id-263]::v_v33_acetyl_CoA_b2  model=[id-263]__[var-313]__[in-42]__[METABOLISM-TUTORI
-       import                      25.22 ms  ok  value={'k': 21, 'name': 'v_v33_acetyl_CoA_b2'}
-       one_symbol                 960.17 ms  ok  value={'0': 45, '1': 100}
-       schemata_pi                955.51 ms  ok  value='shape=(145, 2)'
+       import                       9.26 ms  ok  value={'k': 21, 'name': 'v_v33_acetyl_CoA_b2'}
+       one_symbol                 553.75 ms  ok  value={'0': 45, '1': 100}
+       schemata_pi                369.20 ms  ok  value='shape=(145, 2)'
        input_redundancy               error  RuntimeError: ValueError: refusing to build pi_coverage: k=21 > MAX_DENSE_LUT_K=20
-       input_redundancy_sample      8.319 s  ok  value=0.8719228323502148
+       input_redundancy_sample      4.205 s  ok  value=0.8719228323502148
        edge_redundancy                error  RuntimeError: ValueError: refusing to build pi_coverage: k=21 > MAX_DENSE_LUT_K=20
-       edge_redundancy_sample       9.346 s  ok  value={'len': 21, 'min': 0.34655047537569883, 'max': 0.9764919260747219, 'mean': 0.8719228323502151}
-       bias                           error  RuntimeError: ValueError: refusing to build dense BitLut via positional_expression_to_bit_lut: k=...
+       edge_redundancy_sample       4.366 s  ok  value={'len': 21, 'min': 0.34655047537569883, 'max': 0.9764919260747219, 'mean': 0.8719228323502151}
+       bias_bit_lut                   error  RuntimeError: ValueError: refusing to build dense BitLut via positional_expression_to_bit_lut: k=...
+       bias_schemata                4.172 s  ok  value=0.730224609375
        sensitivity_bit_lut            error  RuntimeError: ValueError: refusing to build dense BitLut via positional_expression_to_bit_lut: k=...
-       sensitivity_schemata         8.692 s  ok  value=1.22503662109375
+       sensitivity_schemata         4.357 s  ok  value=1.22503662109375
        input_symmetry                 error  RuntimeError: ValueError: refusing to build ts_coverage: k=21 > MAX_DENSE_LUT_K=20
 #  12 unate   expect_k= 27  [id-004]::v_Shc  model=[id-004]__[var-225]__[in-22]__[ERBB-RECEPTOR-SIG
-       import                      36.86 ms  ok  value={'k': 27, 'name': 'v_Shc'}
-       one_symbol                 332.38 ms  ok  value={'0': 3, '1': 137}
-       schemata_pi                302.71 ms  ok  value='shape=(140, 2)'
+       import                       8.07 ms  ok  value={'k': 27, 'name': 'v_Shc'}
+       one_symbol                 170.55 ms  ok  value={'0': 3, '1': 137}
+       schemata_pi                165.87 ms  ok  value='shape=(140, 2)'
        input_redundancy               error  RuntimeError: ValueError: refusing to build pi_coverage: k=27 > MAX_DENSE_LUT_K=20
-       input_redundancy_sample     10.000 s  timeout
+       input_redundancy_sample      5.307 s  ok  value=0.9264708069266773
        edge_redundancy                error  RuntimeError: ValueError: refusing to build pi_coverage: k=27 > MAX_DENSE_LUT_K=20
-       edge_redundancy_sample      10.000 s  timeout
-       bias                           error  RuntimeError: ValueError: refusing to build dense BitLut via positional_expression_to_bit_lut: k=...
+       edge_redundancy_sample       5.804 s  ok  value={'len': 27, 'min': 0.000457763671875, 'max': 0.990628419811087, 'mean': 0.9264708069266673}
+       bias_bit_lut                   error  RuntimeError: ValueError: refusing to build dense BitLut via positional_expression_to_bit_lut: k=...
+       bias_schemata                5.004 s  ok  value=0.49932861328125
        sensitivity_bit_lut            error  RuntimeError: ValueError: refusing to build dense BitLut via positional_expression_to_bit_lut: k=...
-       sensitivity_schemata        10.000 s  timeout
+       sensitivity_schemata         6.170 s  ok  value=1.005615234375
        input_symmetry                 error  RuntimeError: ValueError: refusing to build ts_coverage: k=27 > MAX_DENSE_LUT_K=20
 #  13 rof     expect_k= 31  [id-207]::v_TP53  model=[id-207]__[var-85]__[in-18]__[BREAST-CANCER-TUMO
-       import                      12.02 ms  ok  value={'k': 31, 'name': 'v_TP53'}
-       one_symbol                  66.65 ms  ok  value={'0': 17, '1': 15}
-       schemata_pi                 72.14 ms  ok  value='shape=(32, 2)'
+       import                       5.05 ms  ok  value={'k': 31, 'name': 'v_TP53'}
+       one_symbol                  29.00 ms  ok  value={'0': 17, '1': 15}
+       schemata_pi                 28.71 ms  ok  value='shape=(32, 2)'
        input_redundancy               error  RuntimeError: ValueError: refusing to build pi_coverage: k=31 > MAX_DENSE_LUT_K=20
-       input_redundancy_sample      3.302 s  ok  value=0.9677366732152676
+       input_redundancy_sample      1.710 s  ok  value=0.9677366732152676
        edge_redundancy                error  RuntimeError: ValueError: refusing to build pi_coverage: k=31 > MAX_DENSE_LUT_K=20
-       edge_redundancy_sample       3.839 s  ok  value={'len': 31, 'min': 0.9364689011752796, 'max': 0.9999883478338067, 'mean': 0.9677366732152451}
-       bias                           error  RuntimeError: ValueError: refusing to build dense BitLut via positional_expression_to_bit_lut: k=...
+       edge_redundancy_sample       1.843 s  ok  value={'len': 31, 'min': 0.9364689011752796, 'max': 0.9999883478338067, 'mean': 0.9677366732152451}
+       bias_bit_lut                   error  RuntimeError: ValueError: refusing to build dense BitLut via positional_expression_to_bit_lut: k=...
+       bias_schemata                1.471 s  ok  value=0.0
        sensitivity_bit_lut            error  RuntimeError: ValueError: refusing to build dense BitLut via positional_expression_to_bit_lut: k=...
-       sensitivity_schemata         3.662 s  ok  value=6.103515625e-05
+       sensitivity_schemata         1.964 s  ok  value=6.103515625e-05
        input_symmetry                 error  RuntimeError: ValueError: refusing to build ts_coverage: k=31 > MAX_DENSE_LUT_K=20
 #  14 unate   expect_k= 36  [id-251]::v_v52_Cdk1_cycB_Pool_b10  model=[id-251]__[var-113]__[in-4]__[CELL-CYCLE-POOL]
-       import                      42.58 ms  ok  value={'k': 36, 'name': 'v_v52_Cdk1_cycB_Pool_b10'}
-       one_symbol                   1.885 s  ok  value={'0': 67, '1': 51}
-       schemata_pi                  2.238 s  ok  value='shape=(118, 2)'
+       import                      16.55 ms  ok  value={'k': 36, 'name': 'v_v52_Cdk1_cycB_Pool_b10'}
+       one_symbol                 970.60 ms  ok  value={'0': 67, '1': 51}
+       schemata_pi                915.39 ms  ok  value='shape=(118, 2)'
        input_redundancy               error  RuntimeError: ValueError: refusing to build pi_coverage: k=36 > MAX_DENSE_LUT_K=20
-       input_redundancy_sample      9.021 s  ok  value=0.9563925181223684
+       input_redundancy_sample      4.532 s  ok  value=0.9563925181223684
        edge_redundancy                error  RuntimeError: ValueError: refusing to build pi_coverage: k=36 > MAX_DENSE_LUT_K=20
-       edge_redundancy_sample       9.632 s  ok  value={'len': 36, 'min': 0.8511853512840187, 'max': 0.9998913455063565, 'mean': 0.9563925181223579}
-       bias                           error  RuntimeError: ValueError: refusing to build dense BitLut via positional_expression_to_bit_lut: k=...
+       edge_redundancy_sample       4.591 s  ok  value={'len': 36, 'min': 0.8511853512840187, 'max': 0.9998913455063565, 'mean': 0.9563925181223579}
+       bias_bit_lut                   error  RuntimeError: ValueError: refusing to build dense BitLut via positional_expression_to_bit_lut: k=...
+       bias_schemata                4.213 s  ok  value=0.0003662109375
        sensitivity_bit_lut            error  RuntimeError: ValueError: refusing to build dense BitLut via positional_expression_to_bit_lut: k=...
-       sensitivity_schemata         9.523 s  ok  value=0.00909423828125
+       sensitivity_schemata         4.516 s  ok  value=0.00909423828125
        input_symmetry                 error  RuntimeError: ValueError: refusing to build ts_coverage: k=36 > MAX_DENSE_LUT_K=20
 #  15 rof     expect_k= 80  [id-256]::v_v211_Oligomycin_b1  model=[id-256]__[var-296]__[in-17]__[LACTIC-ACID-LYMPH
-       import                      22.10 ms  ok  value={'k': 80, 'name': 'v_v211_Oligomycin_b1'}
-       one_symbol                 290.64 ms  ok  value={'0': 1, '1': 80}
-       schemata_pi                322.58 ms  ok  value='shape=(81, 2)'
+       import                      13.61 ms  ok  value={'k': 80, 'name': 'v_v211_Oligomycin_b1'}
+       one_symbol                 155.95 ms  ok  value={'0': 1, '1': 80}
+       schemata_pi                151.24 ms  ok  value='shape=(81, 2)'
        input_redundancy               error  RuntimeError: ValueError: refusing to build pi_coverage: k=80 > MAX_DENSE_LUT_K=20
-       input_redundancy_sample     10.000 s  timeout
+       input_redundancy_sample      8.252 s  ok  value=0.9875
        edge_redundancy                error  RuntimeError: ValueError: refusing to build pi_coverage: k=80 > MAX_DENSE_LUT_K=20
        edge_redundancy_sample      10.000 s  timeout
-       bias                           error  RuntimeError: ValueError: refusing to build dense BitLut via positional_expression_to_bit_lut: k=...
+       bias_bit_lut                   error  RuntimeError: ValueError: refusing to build dense BitLut via positional_expression_to_bit_lut: k=...
+       bias_schemata                7.970 s  ok  value=1.0
        sensitivity_bit_lut            error  RuntimeError: ValueError: refusing to build dense BitLut via positional_expression_to_bit_lut: k=...
        sensitivity_schemata        10.000 s  timeout
        input_symmetry                 error  RuntimeError: ValueError: refusing to build ts_coverage: k=80 > MAX_DENSE_LUT_K=20
 
-done: rows=165  funcs_attempted=15  load_failed=0
+done: rows=180  funcs_attempted=15  load_failed=0
 
 === summary (time | timeout | error) ===
-cohort    k  function                                                    import              one_symbol             schemata_pi        input_redundancy  input_redundancy_sample         edge_redundancy  edge_redundancy_sample                    bias     sensitivity_bit_lut    sensitivity_schemata          input_symmetry
-rof      80  [id-256]::v_v211_Oligomycin_b1                            22.10 ms               290.64 ms               322.58 ms                   error            timeout(10s)                   error            timeout(10s)                   error                   error            timeout(10s)                   error
-unate    36  [id-251]::v_v52_Cdk1_cycB_Pool_b10                        42.58 ms                 1.885 s                 2.238 s                   error                 9.021 s                   error                 9.632 s                   error                   error                 9.523 s                   error
-rof      31  [id-207]::v_TP53                                          12.02 ms                66.65 ms                72.14 ms                   error                 3.302 s                   error                 3.839 s                   error                   error                 3.662 s                   error
-unate    27  [id-004]::v_Shc                                           36.86 ms               332.38 ms               302.71 ms                   error            timeout(10s)                   error            timeout(10s)                   error                   error            timeout(10s)                   error
-rest     21  [id-263]::v_v33_acetyl_CoA_b2                             25.22 ms               960.17 ms               955.51 ms                   error                 8.319 s                   error                 9.346 s                   error                   error                 8.692 s                   error
-rof      18  [id-004]::v_DGK                                           13.59 ms                42.12 ms                72.39 ms            timeout(10s)                 2.046 s            timeout(10s)                 2.021 s                 3.288 s                 7.349 s                 1.740 s            timeout(10s)
-unate    18  [id-004]::v_PI3K                                           9.26 ms               140.38 ms               163.07 ms            timeout(10s)                 1.791 s            timeout(10s)                 1.834 s                 3.415 s                 7.143 s                 1.971 s            timeout(10s)
-rest     16  [id-004]::v_B_catenin                                     11.14 ms               126.19 ms               135.82 ms                 4.338 s                 2.389 s                 4.992 s                 2.265 s               743.60 ms                 2.035 s                 2.501 s            timeout(10s)
-rof      16  [id-004]::v_p120_catenin                                   9.80 ms                39.81 ms                50.15 ms                 5.249 s                 1.956 s                 4.877 s                 1.483 s               778.24 ms                 1.828 s                 1.795 s            timeout(10s)
-rof      14  [id-004]::v_Nck                                            9.07 ms                37.40 ms                51.04 ms               999.97 ms                 1.528 s                 1.190 s                 1.504 s               174.02 ms               431.51 ms                 1.273 s            timeout(10s)
-unate    14  [id-004]::v_Spry2                                         10.86 ms                99.36 ms               122.35 ms               619.36 ms                 1.562 s               625.69 ms                 1.320 s               202.36 ms               427.38 ms                 1.325 s            timeout(10s)
-rest     12  [id-009]::v_ROS_CYT                                       11.35 ms               107.32 ms               115.61 ms               236.69 ms               303.53 ms               355.38 ms               337.03 ms                41.78 ms                80.15 ms               306.92 ms            timeout(10s)
-unate    12  [id-018]::v_erbb13                                        11.66 ms               150.99 ms               139.28 ms               283.88 ms               417.18 ms               170.48 ms               257.97 ms                51.72 ms               141.13 ms               266.62 ms            timeout(10s)
-rest     11  [id-002]::v_MKK3                                          18.54 ms               235.24 ms               273.72 ms               440.90 ms               396.43 ms               319.16 ms               493.97 ms                42.19 ms                80.12 ms               340.55 ms            timeout(10s)
-rest     11  [id-002]::v_Src                                           17.53 ms               360.23 ms               215.68 ms               379.29 ms               223.28 ms               153.65 ms               205.40 ms                26.62 ms                36.75 ms               206.04 ms            timeout(10s)
+cohort    k  function                                                    import              one_symbol             schemata_pi        input_redundancy  input_redundancy_sample         edge_redundancy  edge_redundancy_sample            bias_bit_lut           bias_schemata     sensitivity_bit_lut    sensitivity_schemata          input_symmetry
+rof      80  [id-256]::v_v211_Oligomycin_b1                            13.61 ms               155.95 ms               151.24 ms                   error                 8.252 s                   error            timeout(10s)                   error                 7.970 s                   error            timeout(10s)                   error
+unate    36  [id-251]::v_v52_Cdk1_cycB_Pool_b10                        16.55 ms               970.60 ms               915.39 ms                   error                 4.532 s                   error                 4.591 s                   error                 4.213 s                   error                 4.516 s                   error
+rof      31  [id-207]::v_TP53                                           5.05 ms                29.00 ms                28.71 ms                   error                 1.710 s                   error                 1.843 s                   error                 1.471 s                   error                 1.964 s                   error
+unate    27  [id-004]::v_Shc                                            8.07 ms               170.55 ms               165.87 ms                   error                 5.307 s                   error                 5.804 s                   error                 5.004 s                   error                 6.170 s                   error
+rest     21  [id-263]::v_v33_acetyl_CoA_b2                              9.26 ms               553.75 ms               369.20 ms                   error                 4.205 s                   error                 4.366 s                   error                 4.172 s                   error                 4.357 s                   error
+rof      18  [id-004]::v_DGK                                            5.28 ms                20.18 ms                25.95 ms                 9.446 s               934.10 ms            timeout(10s)               932.73 ms                 1.377 s               768.62 ms                 3.721 s               935.73 ms            timeout(10s)
+unate    18  [id-004]::v_PI3K                                           5.88 ms                79.34 ms                65.88 ms                 7.097 s               736.30 ms                 6.964 s               771.48 ms                 1.581 s               570.23 ms                 3.791 s               822.21 ms            timeout(10s)
+rest     16  [id-004]::v_B_catenin                                      5.70 ms                75.25 ms                70.90 ms                 2.425 s                 1.171 s                 2.410 s                 1.226 s               341.79 ms               964.91 ms               869.37 ms                 1.078 s            timeout(10s)
+rof      16  [id-004]::v_p120_catenin                                   5.69 ms                15.61 ms                21.61 ms                 2.414 s               727.16 ms                 2.329 s               860.61 ms               406.24 ms               701.94 ms               763.95 ms               809.75 ms            timeout(10s)
+rof      14  [id-004]::v_Nck                                            4.46 ms                15.10 ms                16.27 ms               532.24 ms               735.60 ms               489.86 ms               662.71 ms                88.44 ms               505.15 ms               295.24 ms               651.90 ms            timeout(10s)
+unate    14  [id-004]::v_Spry2                                          6.79 ms                81.63 ms                67.69 ms               395.68 ms               610.04 ms               353.73 ms               579.62 ms                97.55 ms               456.16 ms               368.77 ms               589.55 ms            timeout(10s)
+rest     12  [id-009]::v_ROS_CYT                                        4.05 ms                57.05 ms                46.97 ms               164.03 ms               191.43 ms               147.83 ms               190.78 ms                22.97 ms               154.87 ms                42.09 ms               185.36 ms            timeout(10s)
+unate    12  [id-018]::v_erbb13                                         4.53 ms                67.83 ms                64.63 ms               119.00 ms               171.23 ms                99.07 ms               168.43 ms                25.57 ms               151.01 ms                48.53 ms               154.12 ms            timeout(10s)
+rest     11  [id-002]::v_MKK3                                           5.32 ms                86.26 ms                72.16 ms               174.20 ms               122.17 ms                84.66 ms                99.46 ms                14.64 ms               245.00 ms                24.15 ms               110.79 ms            timeout(10s)
+rest     11  [id-002]::v_Src                                            5.99 ms                64.62 ms                53.64 ms                88.98 ms               229.18 ms                81.74 ms               125.78 ms                 9.17 ms               110.06 ms                25.50 ms               139.25 ms            timeout(10s)
 
 === per-probe status counts ===
 import                    ok=  15  timeout=   0  error=   0
 one_symbol                ok=  15  timeout=   0  error=   0
 schemata_pi               ok=  15  timeout=   0  error=   0
-input_redundancy          ok=   8  timeout=   2  error=   5
-input_redundancy_sample   ok=  13  timeout=   2  error=   0
-edge_redundancy           ok=   8  timeout=   2  error=   5
-edge_redundancy_sample    ok=  13  timeout=   2  error=   0
-bias                      ok=  10  timeout=   0  error=   5
+input_redundancy          ok=  10  timeout=   0  error=   5
+input_redundancy_sample   ok=  15  timeout=   0  error=   0
+edge_redundancy           ok=   9  timeout=   1  error=   5
+edge_redundancy_sample    ok=  14  timeout=   1  error=   0
+bias_bit_lut              ok=  10  timeout=   0  error=   5
+bias_schemata             ok=  15  timeout=   0  error=   0
 sensitivity_bit_lut       ok=  10  timeout=   0  error=   5
-sensitivity_schemata      ok=  13  timeout=   2  error=   0
+sensitivity_schemata      ok=  14  timeout=   1  error=   0
 input_symmetry            ok=   0  timeout=  10  error=   5
 
 log_path=/home/kyuhyongpark/CANA/CANA/dev/high_k/logs/bbm_high_k_measures_probe/bbm_high_k_measures_probe.log

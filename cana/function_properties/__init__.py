@@ -7,6 +7,7 @@ Submodules:
   — semantic and syntactic predicates
 - :mod:`~cana.function_properties.redundancy` — input / edge redundancy
 - :mod:`~cana.function_properties.sensitivity` — activities and average sensitivity
+- :mod:`~cana.function_properties.bias` — node bias (ON-fraction)
 - :mod:`~cana.function_properties.symmetry` — LUT permutation symmetry
 
 The package root re-exports the unate / ROF predicate API for convenience.

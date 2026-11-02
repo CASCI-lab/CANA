@@ -613,6 +613,7 @@ def test_activities_sensitivity_auto_fallback_paths():
     assert lut_node.outputs.bit_lut is not None
     assert lut_node.activities() == lut_node.activities_from_bit_lut()
     assert lut_node.sensitivity() == lut_node.sensitivity_from_bit_lut()
+    assert lut_node.bias() == lut_node.bias_from_bit_lut()
 
     # no coverage and k <= exact_k_max → bit_lut for both
     fresh = BooleanNode.from_one_symbol_schemata(
@@ -622,8 +623,10 @@ def test_activities_sensitivity_auto_fallback_paths():
     assert fresh._pi_coverage is None and fresh._sampled_pi_coverage is None
     assert fresh.activities() == fresh.activities_from_bit_lut()
     assert fresh.sensitivity() == fresh.sensitivity_from_bit_lut()
+    assert fresh.bias() == fresh.bias_from_bit_lut()
     assert fresh.activities() == lut_node.activities()
     assert fresh.sensitivity() == lut_node.sensitivity()
+    assert fresh.bias() == lut_node.bias()
 
     # once pi_coverage is cached, both prefer the schemata path
     covered = BooleanNode.from_one_symbol_schemata(
@@ -634,6 +637,8 @@ def test_activities_sensitivity_auto_fallback_paths():
     assert covered._pi_coverage is not None
     assert covered.activities() == covered.activities_from_schemata()
     assert covered.sensitivity() == covered.sensitivity_from_schemata()
+    assert covered.bias() == covered.bias_from_schemata()
+    assert covered.bias() == pytest.approx(0.25, abs=1e-12)
 
 
 def test_activities_sensitivity_high_k_schemata_sampling():
