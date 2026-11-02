@@ -25,15 +25,15 @@ import pandas as pd
 import cana.canalization.boolean_canalization as BCanalization
 import cana.canalization.cboolean_canalization as cBCanalization
 from cana.canalization.canalizing_map import build_canalizing_map
-import cana.redundancy as redundancy
-import cana.symmetry as symmetry
-import cana.sensitivity as sensitivity
+import cana.function_properties.redundancy as redundancy
+import cana.function_properties.symmetry as symmetry
+import cana.function_properties.sensitivity as sensitivity
 from cana.cutils import (
     binstate_to_statenum,
     flip_bit,
     statenum_to_binstate,
 )
-from cana.redundancy import EXACT_K_MAX_DEFAULT
+from cana.function_properties.redundancy import EXACT_K_MAX_DEFAULT
 from cana.function_outputs import FunctionOutputs
 from cana.function_outputs.bit_lut import MAX_DENSE_LUT_K
 from cana.function_outputs.expression import positional_names
@@ -741,13 +741,13 @@ class BooleanNode(object):
             The complete mathematical description can be found in :cite:`Marques-Pita:2013`.
             For large ``k``, the last sampled coverage is cached on
             ``_sampled_pi_coverage`` for bootstrap CIs via
-            :func:`cana.redundancy.bootstrap_input_redundancy`.
+            :func:`cana.function_properties.redundancy.bootstrap_input_redundancy`.
             Automatic sampling (``k > exact_k_max`` with ``exact_k_max >= 0``)
             emits a :class:`UserWarning`.
 
         See also:
             :func:`effective_connectivity`, :func:`input_symmetry`, :func:`edge_redundancy`,
-            :func:`cana.redundancy.input_redundancy`.
+            :func:`cana.function_properties.redundancy.input_redundancy`.
         """
         if not hasattr(operator, "__call__"):
             raise AttributeError(
@@ -831,13 +831,13 @@ class BooleanNode(object):
             The complete mathematical description can be found in :cite:Gates:2020`.
             For large ``k``, the last sampled coverage is cached on
             ``_sampled_pi_coverage`` for bootstrap CIs via
-            :func:`cana.redundancy.bootstrap_edge_redundancy`.
+            :func:`cana.function_properties.redundancy.bootstrap_edge_redundancy`.
             Automatic sampling (``k > exact_k_max`` with ``exact_k_max >= 0``)
             emits a :class:`UserWarning`.
 
         See also:
             :func:`effective_connectivity`, :func:`input_symmetry`,
-            :func:`cana.redundancy.edge_redundancy`.
+            :func:`cana.function_properties.redundancy.edge_redundancy`.
         """
         if bound not in ("lower", "mean", "avg", "upper", "tuple"):
             raise AttributeError(
@@ -895,7 +895,7 @@ class BooleanNode(object):
         Caches the result on ``_sampled_pi_coverage``. Pass ``reuse=False`` to
         force a fresh sample.
 
-        See :func:`cana.redundancy.sample_pi_coverage`.
+        See :func:`cana.function_properties.redundancy.sample_pi_coverage`.
         """
         n = (
             (1 << int(exact_k_max))
@@ -1060,7 +1060,7 @@ class BooleanNode(object):
             (float)
 
         See also:
-            :func:`cana.symmetry.distinct_symmetry`
+            :func:`cana.function_properties.symmetry.distinct_symmetry`
         """
         return symmetry.distinct_symmetry(self.outputs, self.k)
 
@@ -1075,14 +1075,14 @@ class BooleanNode(object):
             (float)
 
         See also:
-            :func:`cana.symmetry.raw_symmetry`
+            :func:`cana.function_properties.symmetry.raw_symmetry`
         """
         return symmetry.raw_symmetry(self.outputs, self.k)
 
     # --- Sensitivity ---
 
     def activities_from_bit_lut(self):
-        """Activities from the dense LUT via :func:`cana.sensitivity.activities_from_bit_lut`.
+        """Activities from the dense LUT via :func:`cana.function_properties.sensitivity.activities_from_bit_lut`.
 
         Returns:
             (list of floats)
@@ -1091,7 +1091,7 @@ class BooleanNode(object):
 
     def sensitivity_from_bit_lut(self, norm=False):
         """Average sensitivity from the dense LUT via
-        :func:`cana.sensitivity.sensitivity_from_bit_lut`.
+        :func:`cana.function_properties.sensitivity.sensitivity_from_bit_lut`.
 
         Args:
             norm (bool) : whether or not to normalize by the number of inputs (k)
@@ -1112,7 +1112,7 @@ class BooleanNode(object):
     ):
         """Activities as upper edge effectiveness from one-symbol schemata.
 
-        See :func:`cana.sensitivity.activities_from_schemata`. Prefer this when
+        See :func:`cana.function_properties.sensitivity.activities_from_schemata`. Prefer this when
         prime implicants are available, or when ``k`` exceeds the dense-LUT limit.
 
         Args:
@@ -1208,8 +1208,8 @@ class BooleanNode(object):
             (float)
         See Also:
             :meth:`activities`, :meth:`c_sensitivity`,
-            :func:`cana.sensitivity.sensitivity_from_bit_lut`,
-            :func:`cana.sensitivity.sensitivity_from_schemata`.
+            :func:`cana.function_properties.sensitivity.sensitivity_from_bit_lut`,
+            :func:`cana.function_properties.sensitivity.sensitivity_from_schemata`.
         """
         if self._pi_coverage is not None or self._sampled_pi_coverage is not None:
             return self.sensitivity_from_schemata(

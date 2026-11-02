@@ -51,7 +51,7 @@ from cana.io import import_detached_rule  # noqa: E402
 from cana.nodes_builder import detached_rule_to_node  # noqa: E402
 from cana.function_outputs.one_symbol import primes_to_one_symbol  # noqa: E402
 from cana.primes.cascade import on_off_primes_from_expression  # noqa: E402
-from cana.redundancy import (  # noqa: E402
+from cana.function_properties.redundancy import (  # noqa: E402
     bootstrap_edge_redundancy,
     bootstrap_input_redundancy,
     edge_redundancy_from_coverage,

@@ -1,13 +1,13 @@
 # -*- coding: utf-8 -*-
-"""Tests for :mod:`cana.sensitivity` bootstrap helpers."""
+"""Tests for :mod:`cana.function_properties.sensitivity` bootstrap helpers."""
 from __future__ import annotations
 
 import numpy as np
 import pytest
 
 from cana.boolean_node import BooleanNode
-from cana.redundancy import sample_binstates, sample_pi_coverage
-from cana.sensitivity import (
+from cana.function_properties.redundancy import sample_binstates, sample_pi_coverage
+from cana.function_properties.sensitivity import (
     activities_from_schemata,
     bootstrap_activities,
     bootstrap_sensitivity,

@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 #
-# Tests for ``symmetry.py``
+# Tests for ``cana.function_properties.symmetry``
 #
 from math import isclose
 

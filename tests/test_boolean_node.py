@@ -7,7 +7,7 @@ from math import isclose
 
 from cana.datasets.bools import CONTRADICTION, AND, OR, XOR, COPYx1, RULE90, RULE110
 from cana.boolean_node import BooleanNode
-import cana.sensitivity as sensitivity
+import cana.function_properties.sensitivity as sensitivity
 import numpy as np
 import pytest
 
@@ -629,6 +629,7 @@ def test_activities_sensitivity_auto_fallback_paths():
     covered = BooleanNode.from_one_symbol_schemata(
         {0: {"02", "20"}, 1: {"11"}}, k=2, name="AND"
     )
+    assert covered.outputs.verify_one_symbol_schemata() is True
     _ = covered.pi_coverage()
     assert covered._pi_coverage is not None
     assert covered.activities() == covered.activities_from_schemata()

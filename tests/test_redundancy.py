@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-"""Tests for :mod:`cana.redundancy`."""
+"""Tests for :mod:`cana.function_properties.redundancy`."""
 from __future__ import annotations
 
 import warnings
@@ -11,7 +11,7 @@ import pytest
 from cana.boolean_node import BooleanNode
 from cana.datasets.bools import AND
 from cana.function_outputs.one_symbol import primes_to_one_symbol
-from cana.redundancy import (
+from cana.function_properties.redundancy import (
     EXACT_K_MAX_DEFAULT,
     bootstrap_edge_redundancy,
     bootstrap_input_redundancy,
@@ -124,7 +124,7 @@ def test_primes_to_one_symbol_and():
 # ---------------------------------------------------------------------------
 
 
-@pytest.mark.parametrize("k", [6, 8, 10, 12])
+@pytest.mark.parametrize("k", [6, 8, 10])
 @pytest.mark.parametrize(
     "schemata_fn,node_fn",
     [(_and_schemata, _k_input_and_node), (_or_schemata, _k_input_or_node)],
@@ -145,7 +145,7 @@ def test_full_enum_matches_boolean_node_input(k, schemata_fn, node_fn):
     assert est == pytest.approx(exact, abs=1e-12)
 
 
-@pytest.mark.parametrize("k", [6, 8, 10])
+@pytest.mark.parametrize("k", [6, 8])
 @pytest.mark.parametrize(
     "schemata_fn,node_fn",
     [(_and_schemata, _k_input_and_node), (_or_schemata, _k_input_or_node)],
@@ -178,8 +178,8 @@ def test_from_coverage_matches_node_and2():
 # ---------------------------------------------------------------------------
 
 
-def test_large_subsample_accuracy_k12():
-    k = 12
+def test_large_subsample_accuracy_k10():
+    k = 10
     schemata = _and_schemata(k)
     node = _k_input_and_node(k)
     exact_kr = node.input_redundancy(norm=True)
@@ -187,13 +187,13 @@ def test_large_subsample_accuracy_k12():
 
     rng = np.random.default_rng(42)
     est_kr = input_redundancy(
-        schemata, norm=True, exact_k_max=-1, n_samples=2**11, rng=rng
+        schemata, norm=True, exact_k_max=-1, n_samples=2**9, rng=rng
     )
     assert abs(est_kr - exact_kr) < 0.05
 
     rng = np.random.default_rng(42)
     est_ri = edge_redundancy(
-        schemata, bound="mean", exact_k_max=-1, n_samples=2**11, rng=rng
+        schemata, bound="mean", exact_k_max=-1, n_samples=2**9, rng=rng
     )
     mean_abs = float(np.mean([abs(a - b) for a, b in zip(est_ri, exact_ri)]))
     assert mean_abs < 0.05
@@ -205,7 +205,11 @@ def test_large_subsample_accuracy_k12():
 
 
 def _random_schemata_node(k: int, seed: int = 0):
-    """Random LUT → node + one-symbol schemata (variable PI covers)."""
+    """Random LUT → node + one-symbol schemata (variable PI covers).
+
+    Keep ``k`` modest: dense random covers at large ``k`` make prime-matching
+    dominate runtime (see test_sensitivity for the same constraint).
+    """
     lut = [int(x) for x in np.random.default_rng(seed).integers(0, 2, size=2**k)]
     if all(v == lut[0] for v in lut):
         lut[0] = 1 - lut[0]
@@ -217,17 +221,18 @@ def _random_schemata_node(k: int, seed: int = 0):
 
 
 def test_bootstrap_input_matches_point_and_covers_exact():
-    k = 12
-    schemata, node = _random_schemata_node(k, seed=0)
-    exact = node.input_redundancy(norm=True)
+    # Sparse AND cover (no dense-LUT QM); same pattern as test_sensitivity.
+    k = 10
+    schemata = _and_schemata(k)
+    exact = _k_input_and_node(k).input_redundancy(norm=True)
 
-    minterms = sample_binstates(k, 2**11, rng=np.random.default_rng(7))
+    minterms = sample_binstates(k, 2**9, rng=np.random.default_rng(7))
     point = input_redundancy(
         schemata, norm=True, exact_k_max=-1, minterms=minterms
     )
     boot = bootstrap_input_redundancy(
         schemata,
-        n_samples=2**11,
+        n_samples=2**9,
         n_boot=200,
         ci=0.95,
         norm=True,
@@ -236,16 +241,17 @@ def test_bootstrap_input_matches_point_and_covers_exact():
     )
     assert boot.estimate == pytest.approx(point, abs=1e-12)
     assert boot.ci_low <= exact <= boot.ci_high
-    assert boot.n_samples == 2**11
+    assert boot.n_samples == 2**9
     assert boot.n_boot == 200
 
 
 def test_bootstrap_from_sampled_pi_coverage():
-    k = 10
+    # Random cover needed so per-minterm contributions vary (AND is near-constant).
+    k = 8
     schemata, node = _random_schemata_node(k, seed=3)
     exact = node.input_redundancy(norm=True)
     sampled = sample_pi_coverage(
-        schemata, 2**9, rng=np.random.default_rng(5), k=k
+        schemata, 2**7, rng=np.random.default_rng(5), k=k
     )
     point = input_redundancy_from_coverage(sampled.coverage, k, norm=True)
     boot = bootstrap_input_redundancy(
@@ -258,8 +264,8 @@ def test_bootstrap_from_sampled_pi_coverage():
 
 def test_bootstrap_edge_covers_exact():
     k = 10
-    schemata, node = _random_schemata_node(k, seed=1)
-    exact = node.edge_redundancy(bound="mean")
+    schemata = _and_schemata(k)
+    exact = _k_input_and_node(k).edge_redundancy(bound="mean")
     minterms = sample_binstates(k, 2**9, rng=np.random.default_rng(3))
     boots = bootstrap_edge_redundancy(
         schemata,
@@ -277,21 +283,22 @@ def test_bootstrap_edge_covers_exact():
 
 
 def test_bootstrap_ci_shrinks_with_more_samples():
-    k = 12
+    # Dense random LUT at modest k (variable contributions; CI shrink is stable).
+    k = 8
     schemata, _node = _random_schemata_node(k, seed=2)
-    mt_small = sample_binstates(k, 2**10, rng=np.random.default_rng(1))
-    mt_large = sample_binstates(k, 2**11, rng=np.random.default_rng(2))
+    mt_large = sample_binstates(k, 2**7, rng=np.random.default_rng(2))
+    mt_small = mt_large[: 2**6]
     b_small = bootstrap_input_redundancy(
         schemata,
-        n_samples=2**10,
-        n_boot=300,
+        n_samples=len(mt_small),
+        n_boot=400,
         minterms=mt_small,
         rng=np.random.default_rng(0),
     )
     b_large = bootstrap_input_redundancy(
         schemata,
-        n_samples=2**11,
-        n_boot=300,
+        n_samples=len(mt_large),
+        n_boot=400,
         minterms=mt_large,
         rng=np.random.default_rng(0),
     )

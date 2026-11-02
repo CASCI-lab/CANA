@@ -31,7 +31,7 @@ from typing import List, Optional, Sequence, Union
 import numpy as np
 
 from cana.function_outputs.bit_lut import BitLut
-from cana.redundancy import (
+from cana.function_properties.redundancy import (
     EXACT_K_MAX_DEFAULT,
     BootstrapResult,
     OneSymbolSchemata,
@@ -39,7 +39,7 @@ from cana.redundancy import (
     bootstrap_edge_redundancy,
     edge_redundancy,
 )
-from cana.redundancy import (
+from cana.function_properties.redundancy import (
     _as_sampled_or_schemata,
     _bootstrap_means_1d,
     _percentile_ci,
@@ -98,14 +98,14 @@ def activities_from_schemata(
     """Edge activities from one-symbol schemata: upper edge effectiveness.
 
     Equivalent to ``1 - r_i`` with ``bound="upper"`` (see
-    :func:`cana.redundancy.edge_redundancy`). Use when prime implicants are
+    :func:`cana.function_properties.redundancy.edge_redundancy`). Use when prime implicants are
     available, or when ``k`` exceeds the dense-LUT limit.
 
     Args:
         schemata : Polarity → set of length-``k`` schemas over ``{0,1,2}``.
         k (int, optional) : Inferred from schema length when omitted.
         exact_k_max, n_samples, rng, minterms : Forwarded to
-            :func:`cana.redundancy.edge_redundancy` for the exact/sampled track.
+            :func:`cana.function_properties.redundancy.edge_redundancy` for the exact/sampled track.
 
     Returns:
         (list) : The activity of each input.
@@ -290,7 +290,7 @@ def activities(outputs, k=None):
     length-``2**k`` 0/1 sequence.
     """
     warnings.warn(
-        "cana.sensitivity.activities is deprecated; use activities_from_bit_lut",
+        "cana.function_properties.sensitivity.activities is deprecated; use activities_from_bit_lut",
         DeprecationWarning,
         stacklevel=2,
     )
@@ -304,7 +304,7 @@ def sensitivity(outputs, k=None, norm=False):
     length-``2**k`` 0/1 sequence.
     """
     warnings.warn(
-        "cana.sensitivity.sensitivity is deprecated; use sensitivity_from_bit_lut",
+        "cana.function_properties.sensitivity.sensitivity is deprecated; use sensitivity_from_bit_lut",
         DeprecationWarning,
         stacklevel=2,
     )
@@ -314,7 +314,7 @@ def sensitivity(outputs, k=None, norm=False):
 def activities_old(node):
     """Deprecated alias of node :meth:`~cana.boolean_node.BooleanNode.activities_from_schemata`."""
     warnings.warn(
-        "cana.sensitivity.activities_old is deprecated; use activities_from_schemata",
+        "cana.function_properties.sensitivity.activities_old is deprecated; use activities_from_schemata",
         DeprecationWarning,
         stacklevel=2,
     )
@@ -324,7 +324,7 @@ def activities_old(node):
 def sensitivity_old(node, norm=False):
     """Deprecated alias of node :meth:`~cana.boolean_node.BooleanNode.sensitivity_from_schemata`."""
     warnings.warn(
-        "cana.sensitivity.sensitivity_old is deprecated; use sensitivity_from_schemata",
+        "cana.function_properties.sensitivity.sensitivity_old is deprecated; use sensitivity_from_schemata",
         DeprecationWarning,
         stacklevel=2,
     )

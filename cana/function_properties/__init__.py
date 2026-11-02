@@ -1,5 +1,17 @@
 # -*- coding: utf-8 -*-
-"""Predicates on Boolean update functions (semantic and syntactic)."""
+"""Predicates and quantitative measures on Boolean update functions.
+
+Submodules:
+
+- :mod:`~cana.function_properties.unate` / :mod:`~cana.function_properties.rof`
+  — semantic and syntactic predicates
+- :mod:`~cana.function_properties.redundancy` — input / edge redundancy
+- :mod:`~cana.function_properties.sensitivity` — activities and average sensitivity
+- :mod:`~cana.function_properties.symmetry` — LUT permutation symmetry
+
+The package root re-exports the unate / ROF predicate API for convenience.
+Measure APIs are imported from their submodules.
+"""
 from cana.function_properties.rof import (
     check_syntactic_rof,
     check_syntactic_rof_ast,

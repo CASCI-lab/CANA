@@ -54,7 +54,7 @@ ensure_cana_on_path()
 
 from cana.io import import_detached_rule  # noqa: E402
 from cana.nodes_builder import detached_rule_to_node  # noqa: E402
-from cana.redundancy import (  # noqa: E402
+from cana.function_properties.redundancy import (  # noqa: E402
     edge_redundancy,
     input_redundancy,
 )
