@@ -12,8 +12,9 @@
 #
 # Modes:
 #
-# - ``MODE = "starter"`` — five hand-picked rules with ``k > 20`` (ROF + unate
-#   non-ROF + rest), from the compare log
+# - ``MODE = "starter"`` — same BBM rules as
+#   ``bbm_high_k_redundancy_sampling``: enumerable-*k* exact cohort
+#   (``11 ≤ k ≤ 18``) plus high-*k* rules (``k > 20``), ROF / unate / rest
 # - ``MODE = "all_from_log"`` — every ``match=True`` row with ``k > 12`` from
 #   that log (same 10s cutoff per probe)
 #
@@ -62,14 +63,26 @@ COMPARE_LOG = (
     run_log_dir("bbm_high_k_primes_compare") / "bbm_high_k_primes_compare.log"
 )
 
-# Hand-picked from bbm_high_k_primes_compare.log (match=True, k > 20).
+# Shared with bbm_high_k_redundancy_sampling (STARTER_EXACT + STARTER_HIGH).
 # (model_id, target, expected_k, cohort)
 STARTER: Tuple[Tuple[str, str, int, str], ...] = (
-    ("256", "v_v211_Oligomycin_b1", 80, "rof"),
+    # enumerable-k exact cohort (11 ≤ k ≤ 18)
+    ("002", "v_MKK3", 11, "rest"),
+    ("002", "v_Src", 11, "rest"),
+    ("009", "v_ROS_CYT", 12, "rest"),
+    ("018", "v_erbb13", 12, "unate"),
+    ("004", "v_Nck", 14, "rof"),
+    ("004", "v_Spry2", 14, "unate"),
+    ("004", "v_p120_catenin", 16, "rof"),
+    ("004", "v_B_catenin", 16, "rest"),
+    ("004", "v_DGK", 18, "rof"),
+    ("004", "v_PI3K", 18, "unate"),
+    # high-k cohort (k > 20)
+    ("263", "v_v33_acetyl_CoA_b2", 21, "rest"),
+    ("004", "v_Shc", 27, "unate"),
     ("207", "v_TP53", 31, "rof"),
     ("251", "v_v52_Cdk1_cycB_Pool_b10", 36, "unate"),
-    ("004", "v_Shc", 27, "unate"),
-    ("263", "v_v33_acetyl_CoA_b2", 21, "rest"),
+    ("256", "v_v211_Oligomycin_b1", 80, "rof"),
 )
 
 # Probe ids (order = run / summary column order).
