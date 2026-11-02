@@ -42,13 +42,6 @@ from high_k.bbm_rules import (  # noqa: E402
 )
 from high_k.paths import ensure_cana_on_path  # noqa: E402
 from high_k.run_log import run_log_dir, start_run_log  # noqa: E402
-from high_k.sampling_redundancy import (  # noqa: E402
-    bootstrap_edge_redundancy,
-    bootstrap_input_redundancy,
-    estimate_edge_redundancy,
-    estimate_input_redundancy,
-    schemata_from_on_off,
-)
 from high_k.timing import call_in_subprocess, fmt_s  # noqa: E402
 
 ensure_cana_on_path()
@@ -56,14 +49,21 @@ ensure_cana_on_path()
 from cana.boolean_node import BooleanNode  # noqa: E402
 from cana.io import import_detached_rule  # noqa: E402
 from cana.nodes_builder import detached_rule_to_node  # noqa: E402
+from cana.function_outputs.one_symbol import primes_to_one_symbol  # noqa: E402
 from cana.primes.cascade import on_off_primes_from_expression  # noqa: E402
+from cana.redundancy import (  # noqa: E402
+    bootstrap_edge_redundancy,
+    bootstrap_input_redundancy,
+    edge_redundancy,
+    input_redundancy,
+)
 
 # ---------------------------------------------------------------------------
 # Config
 # ---------------------------------------------------------------------------
 
 # "starter" | "all_from_log"
-MODE = "all_from_log"
+MODE = "starter"
 
 TIMEOUT_S = 10.0
 MIN_K_EXACT = 11  # k > 10 so n=2**10 is a proper subsample
@@ -360,7 +360,7 @@ for i, fn in enumerate(exact_funcs, start=1):
         )
         continue
 
-    schemata = schemata_from_on_off(
+    schemata = primes_to_one_symbol(
         primes["on"], primes["off"], input_names=names
     )
     node = make_node(bnet, target)
@@ -370,8 +370,16 @@ for i, fn in enumerate(exact_funcs, start=1):
 
     t0 = time.perf_counter()
     try:
-        exact_kr = float(node.input_redundancy(norm=True))
-        exact_ri = [float(x) for x in node.edge_redundancy(bound="mean")]
+        # Force full pi_coverage (node default exact_k_max=14 would sample for
+        # k > 14 — the exact-vs-sample cohort goes up to MAX_K_EXACT).
+        exact_kr, kr_mode = node.input_redundancy(
+            norm=True, exact_k_max=k, return_mode=True
+        )
+        exact_ri, ri_mode = node.edge_redundancy(
+            bound="mean", exact_k_max=k, return_mode=True
+        )
+        exact_kr = float(exact_kr)
+        exact_ri = [float(x) for x in exact_ri]
     except Exception as exc:  # noqa: BLE001 — coverage may OOM/refuse
         log.info(
             f"#{i:4d} {cohort:7s} k={k:3d}  {label}  exact_FAIL  "
@@ -380,10 +388,18 @@ for i, fn in enumerate(exact_funcs, start=1):
         continue
     t_exact = time.perf_counter() - t0
 
+    if kr_mode != "exact" or ri_mode != "exact":
+        log.info(
+            f"#{i:4d} {cohort:7s} k={k:3d}  {label}  exact_FAIL  "
+            f"unexpected mode kr={kr_mode!r} ri={ri_mode!r} "
+            f"(expected 'exact' with exact_k_max=k)"
+        )
+        continue
+
     log.info(
         f"#{i:4d} {cohort:7s} k={k:3d}  {label}  primes={primes['method']} "
         f"({primes['n_on']}+{primes['n_off']})  "
-        f"exact_kr={exact_kr:.6f}  t_exact={fmt_s(t_exact)}"
+        f"exact_kr={exact_kr:.6f}  mode={kr_mode}  t_exact={fmt_s(t_exact)}"
     )
 
     space = 1 << k
@@ -400,14 +416,27 @@ for i, fn in enumerate(exact_funcs, start=1):
         rng = np.random.default_rng(SEED + n_eff + k)
 
         t0 = time.perf_counter()
-        est_kr = estimate_input_redundancy(
-            schemata, n_samples=n_eff, norm=True, rng=rng
+        # exact_k_max=-1 forces the sampling path (no auto-fallback warning).
+        est_kr, samp_kr_mode = input_redundancy(
+            schemata,
+            norm=True,
+            exact_k_max=-1,
+            n_samples=n_eff,
+            rng=rng,
+            return_mode=True,
         )
         rng = np.random.default_rng(SEED + n_eff + k)
-        est_ri = estimate_edge_redundancy(
-            schemata, n_samples=n_eff, bound="mean", rng=rng
+        est_ri, samp_ri_mode = edge_redundancy(
+            schemata,
+            bound="mean",
+            exact_k_max=-1,
+            n_samples=n_eff,
+            rng=rng,
+            return_mode=True,
         )
         t_samp = time.perf_counter() - t0
+        # Full-space n (== 2**k) is reported as exact; otherwise sampled.
+        expected_samp_mode = "exact" if n_eff >= space else "sampled"
 
         # Bootstrap CI on same n (reuses contribution cache internally)
         rng = np.random.default_rng(SEED + n_eff + k + 17)
@@ -445,10 +474,17 @@ for i, fn in enumerate(exact_funcs, start=1):
         }
         accuracy_rows.append(row)
         log.info(
-            f"       n={n_eff:5d}  est_kr={est_kr:.6f}  |Δkr|={d_kr:.4g}  "
+            f"       n={n_eff:5d}  mode={samp_kr_mode}/{samp_ri_mode}  "
+            f"est_kr={est_kr:.6f}  |Δkr|={d_kr:.4g}  "
             f"|Δri|_mean={d_ri:.4g}  "
             f"CI=[{boot.ci_low:.6f},{boot.ci_high:.6f}] cover={covers}  "
             f"t_samp={fmt_s(t_samp)}  t_boot={fmt_s(t_boot)}"
+            + (
+                ""
+                if samp_kr_mode == expected_samp_mode
+                and samp_ri_mode == expected_samp_mode
+                else f"  WARN expected_mode={expected_samp_mode}"
+            )
         )
 
 
@@ -489,7 +525,7 @@ for i, fn in enumerate(high_funcs, start=1):
         )
         continue
 
-    schemata = schemata_from_on_off(
+    schemata = primes_to_one_symbol(
         primes["on"], primes["off"], input_names=names
     )
     log.info(

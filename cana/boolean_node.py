@@ -25,6 +25,7 @@ import pandas as pd
 import cana.canalization.boolean_canalization as BCanalization
 import cana.canalization.cboolean_canalization as cBCanalization
 from cana.canalization.canalizing_map import build_canalizing_map
+import cana.redundancy as redundancy
 import cana.symmetry as symmetry
 import cana.sensitivity as sensitivity
 from cana.cutils import (
@@ -32,6 +33,7 @@ from cana.cutils import (
     flip_bit,
     statenum_to_binstate,
 )
+from cana.redundancy import EXACT_K_MAX_DEFAULT
 from cana.function_outputs import FunctionOutputs
 from cana.function_outputs.bit_lut import MAX_DENSE_LUT_K
 from cana.function_outputs.expression import positional_names
@@ -109,6 +111,7 @@ class BooleanNode(object):
         # Canalization Variables (PI / TS live on outputs.*; coverage stays here)
         self._pi_coverage = None  # The Coverage of inputs by Prime Implicants schemata
         self._ts_coverage = None  # The Coverage of inputs by Two Symbol schemata
+        self._sampled_pi_coverage = None  # Partial coverage from high-k sampling
 
     @staticmethod
     def _factory_common_kwargs(k, kwargs):
@@ -692,7 +695,16 @@ class BooleanNode(object):
 
     # --- Canalization metrics ---
 
-    def input_redundancy(self, operator=mean, norm=True):
+    def input_redundancy(
+        self,
+        operator=mean,
+        norm=True,
+        *,
+        exact_k_max=EXACT_K_MAX_DEFAULT,
+        n_samples=None,
+        rng=None,
+        return_mode=False,
+    ):
         r"""The Input Redundancy :math:`k_{r}` is the mean number of unnecessary inputs (or ``#``) in the Prime Implicants Look Up Table (LUT).
         Since there may be more than one redescription schema for each input entry, the input redundancy is bounded by an upper and lower limit.
 
@@ -710,39 +722,84 @@ class BooleanNode(object):
                 Use this value when comparing nodes with different input sizes. (Defaults to "True".)
 
                 :math:`k^{*}_r(x) = \frac{ k_r(x) }{ k(x) }`.
+            exact_k_max (int) : For ``k <= exact_k_max``, compute exactly from full
+                ``pi_coverage``. Above that, sample minterms. Defaults to 14.
+                Pass ``exact_k_max=k`` (or larger) to force the exact path for
+                ``k > 14``. Pass ``exact_k_max=-1`` to force sampling without a
+                warning.
+            n_samples (int or None) : Sample size when ``k > exact_k_max``.
+                Defaults to ``2**exact_k_max``.
+            rng : Optional ``numpy.random.Generator`` for the sampling path.
+            return_mode (bool) : If True, return ``(value, \"exact\"|\"sampled\")``.
 
 
         Returns:
             (float) : The :math:`k_r` value.
+            or ``(float, str)`` when ``return_mode`` is True.
 
         Note:
             The complete mathematical description can be found in :cite:`Marques-Pita:2013`.
+            For large ``k``, the last sampled coverage is cached on
+            ``_sampled_pi_coverage`` for bootstrap CIs via
+            :func:`cana.redundancy.bootstrap_input_redundancy`.
+            Automatic sampling (``k > exact_k_max`` with ``exact_k_max >= 0``)
+            emits a :class:`UserWarning`.
 
         See also:
-            :func:`effective_connectivity`, :func:`input_symmetry`, :func:`edge_redundancy`.
+            :func:`effective_connectivity`, :func:`input_symmetry`, :func:`edge_redundancy`,
+            :func:`cana.redundancy.input_redundancy`.
         """
-
-        self._check_compute_canalization_variables(pi_coverage=True)
-
         if not hasattr(operator, "__call__"):
             raise AttributeError(
                 'The operator you selected must be a function. Try "min", "statitics.mean", or "max".'
             )
 
-        redundancy = [
-            operator([pi.count("2") for pi in self._pi_coverage[binstate]])
-            for binstate in self._pi_coverage
-        ]
+        if self.k <= exact_k_max:
+            self._check_compute_canalization_variables(pi_coverage=True)
+            value = redundancy.input_redundancy_from_coverage(
+                self._pi_coverage, self.k, operator=operator, norm=norm
+            )
+            mode = "exact"
+        else:
+            if n_samples is not None:
+                n = int(n_samples)
+            elif exact_k_max >= 0:
+                n = 1 << int(exact_k_max)
+            else:
+                raise ValueError(
+                    "n_samples is required when exact_k_max < 0 "
+                    "(forced sampling path)"
+                )
+            mode = redundancy._redundancy_mode(
+                self.k, n, use_exact=False
+            )
+            redundancy._warn_if_sampled(
+                "BooleanNode.input_redundancy",
+                mode=mode,
+                k=self.k,
+                exact_k_max=int(exact_k_max),
+                n=n,
+            )
+            sampled = self.sampled_pi_coverage(
+                exact_k_max=exact_k_max, n_samples=n_samples, rng=rng
+            )
+            value = redundancy.input_redundancy_from_coverage(
+                sampled.coverage, self.k, operator=operator, norm=norm
+            )
 
-        k_r = math.fsum(redundancy) / 2**self.k
+        if return_mode:
+            return value, mode
+        return value
 
-        if norm:
-            # Normalizes
-            k_r = k_r / self.k
-
-        return k_r
-
-    def edge_redundancy(self, bound="mean"):
+    def edge_redundancy(
+        self,
+        bound="mean",
+        *,
+        exact_k_max=EXACT_K_MAX_DEFAULT,
+        n_samples=None,
+        rng=None,
+        return_mode=False,
+    ):
         r"""The Edge Redundancy :math:`r_{i}` is the mean number of unnecessary inputs (or ``#``) in the Prime Implicants Look Up Table (LUT) for that input.
         Since there may be more than one redescription schema for each input entry, the input redundancy is bounded by an upper and lower limit.
 
@@ -756,56 +813,109 @@ class BooleanNode(object):
             bound (string) : The bound to which compute input redundancy.
                 Mode "input" accepts: ["lower", "mean", "ave", upper", "tuple"].
                 Defaults to "mean".
+            exact_k_max (int) : For ``k <= exact_k_max``, compute exactly from full
+                ``pi_coverage``. Above that, sample minterms. Defaults to 14.
+                Pass ``exact_k_max=k`` (or larger) to force the exact path for
+                ``k > 14``. Pass ``exact_k_max=-1`` to force sampling without a
+                warning.
+            n_samples (int or None) : Sample size when ``k > exact_k_max``.
+                Defaults to ``2**exact_k_max``.
+            rng : Optional ``numpy.random.Generator`` for the sampling path.
+            return_mode (bool) : If True, return ``(value, \"exact\"|\"sampled\")``.
 
         Returns:
             (list) : The list of :math:`r_i` for inputs.
+            or ``(list, str)`` when ``return_mode`` is True.
 
         Note:
             The complete mathematical description can be found in :cite:Gates:2020`.
+            For large ``k``, the last sampled coverage is cached on
+            ``_sampled_pi_coverage`` for bootstrap CIs via
+            :func:`cana.redundancy.bootstrap_edge_redundancy`.
+            Automatic sampling (``k > exact_k_max`` with ``exact_k_max >= 0``)
+            emits a :class:`UserWarning`.
 
         See also:
-            :func:`effective_connectivity`, :func:`input_symmetry`.
+            :func:`effective_connectivity`, :func:`input_symmetry`,
+            :func:`cana.redundancy.edge_redundancy`.
         """
+        if bound not in ("lower", "mean", "avg", "upper", "tuple"):
+            raise AttributeError(
+                'The bound you selected does not exist. Try "upper", "mean", "lower" or "tuple".'
+            )
 
-        self._check_compute_canalization_variables(pi_coverage=True)
-
-        redundancies = []
-        # Generate a per input coverage
-        # ex: {0: {'11': [], '10': [], '00': [], '01': []}, 1: {'11': [], '10': [], '00': [], '01': []}}
-        # pi_edge_coverage = { input : { binstate: [ pi[input] for pi in pis ] for binstate,pis in self._pi_coverage.items() } for input in range(self.k) }
-        pi_edge_coverage = cBCanalization.input_wildcard_coverage(self._pi_coverage)
-        # Loop ever input node
-        for edge, binstates2wildcard in pi_edge_coverage.items():
-            # {'numstate': [matches], '10': [True,False,True,...] ...}
-
-            # countslenghts = {binstate_to_statenum(binstate): ([pi=='#' for pi in pis]) for binstate,pis in binstates.items() }
-            # A triplet of (min, mean, max) values
-            if bound == "lower":
-                redundancy = (
-                    sum([all(pi) for pi in binstates2wildcard.values()]) / 2**self.k
-                )  # min(r_i)
-            elif bound == "mean" or bound == "avg":
-                redundancy = (
-                    sum([sum(pi) / len(pi) for pi in binstates2wildcard.values()])
-                    / 2**self.k
-                )  # <r_i>
-            elif bound == "upper":
-                redundancy = (
-                    sum([any(pi) for pi in binstates2wildcard.values()]) / 2**self.k
-                )  # max(r_i)
-            elif bound == "tuple":
-                redundancy = (
-                    sum([all(pi) for pi in binstates2wildcard.values()]) / 2**self.k,
-                    sum([any(pi) for pi in binstates2wildcard.values()]) / 2**self.k,
-                )  # (min,max)
+        if self.k <= exact_k_max:
+            self._check_compute_canalization_variables(pi_coverage=True)
+            value = redundancy.edge_redundancy_from_coverage(
+                self._pi_coverage, self.k, bound=bound
+            )
+            mode = "exact"
+        else:
+            if n_samples is not None:
+                n = int(n_samples)
+            elif exact_k_max >= 0:
+                n = 1 << int(exact_k_max)
             else:
-                raise AttributeError(
-                    'The bound you selected does not exist. Try "upper", "mean", "lower" or "tuple".'
+                raise ValueError(
+                    "n_samples is required when exact_k_max < 0 "
+                    "(forced sampling path)"
                 )
+            mode = redundancy._redundancy_mode(
+                self.k, n, use_exact=False
+            )
+            redundancy._warn_if_sampled(
+                "BooleanNode.edge_redundancy",
+                mode=mode,
+                k=self.k,
+                exact_k_max=int(exact_k_max),
+                n=n,
+            )
+            sampled = self.sampled_pi_coverage(
+                exact_k_max=exact_k_max, n_samples=n_samples, rng=rng
+            )
+            value = redundancy.edge_redundancy_from_coverage(
+                sampled.coverage, self.k, bound=bound
+            )
 
-            redundancies.append(redundancy)
+        if return_mode:
+            return value, mode
+        return value
 
-        return redundancies  # r_i
+
+    def sampled_pi_coverage(
+        self,
+        *,
+        exact_k_max=EXACT_K_MAX_DEFAULT,
+        n_samples=None,
+        rng=None,
+        reuse=True,
+    ):
+        """Sample a partial pi-coverage for high-``k`` redundancy estimates.
+
+        Caches the result on ``_sampled_pi_coverage``. Pass ``reuse=False`` to
+        force a fresh sample.
+
+        See :func:`cana.redundancy.sample_pi_coverage`.
+        """
+        n = (
+            (1 << int(exact_k_max))
+            if n_samples is None
+            else int(n_samples)
+        )
+        if (
+            reuse
+            and self._sampled_pi_coverage is not None
+            and self._sampled_pi_coverage.k == self.k
+            and self._sampled_pi_coverage.n_samples == n
+        ):
+            return self._sampled_pi_coverage
+
+        schemata = self.outputs.get_one_symbol_schemata()
+        sampled = redundancy.sample_pi_coverage(
+            schemata, n, rng=rng, k=self.k
+        )
+        self._sampled_pi_coverage = sampled
+        return sampled
 
     def effective_connectivity(self, operator=mean, norm=True):
         r"""The Effective Connectiviy is the mean number of input nodes needed to determine the transition of the node.

@@ -45,16 +45,16 @@ from high_k.bbm_rules import (  # noqa: E402
 )
 from high_k.paths import ensure_cana_on_path  # noqa: E402
 from high_k.run_log import run_log_dir, start_run_log  # noqa: E402
-from high_k.sampling_redundancy import (  # noqa: E402
-    estimate_edge_redundancy,
-    estimate_input_redundancy,
-)
 from high_k.timing import call_in_subprocess, fmt_s  # noqa: E402
 
 ensure_cana_on_path()
 
 from cana.io import import_detached_rule  # noqa: E402
 from cana.nodes_builder import detached_rule_to_node  # noqa: E402
+from cana.redundancy import (  # noqa: E402
+    edge_redundancy,
+    input_redundancy,
+)
 
 # ---------------------------------------------------------------------------
 # Config
@@ -125,14 +125,16 @@ PROBE_METHODS: Dict[str, str] = {
         "(no full covers)"
     ),
     "input_redundancy": (
-        "exact k_r: build full pi_coverage over all 2**k minterms"
+        "exact k_r: force full pi_coverage (exact_k_max=k); "
+        "refuses / times out when Θ(2**k) cover is too large"
     ),
     "input_redundancy_sample": (
         f"sample covers: estimate k_r from n={N_SAMPLES} minterms "
         "(match covering PIs; no pi_coverage dict)"
     ),
     "edge_redundancy": (
-        "exact r_i: build full pi_coverage over all 2**k minterms"
+        "exact r_i: force full pi_coverage (exact_k_max=k); "
+        "refuses / times out when Θ(2**k) cover is too large"
     ),
     "edge_redundancy_sample": (
         f"sample covers: estimate r_i from n={N_SAMPLES} minterms "
@@ -257,23 +259,33 @@ def _run_probe_body(bnet_text: str, target: str, probe: str) -> Dict[str, Any]:
         df = node.schemata_look_up_table(type="pi")
         value = _summarize(df)
     elif probe == "input_redundancy":
-        value = float(node.input_redundancy())
+        # Force the exact Θ(2**k) pi_coverage path (node default exact_k_max=14
+        # would otherwise sample for k > 14).
+        value = float(node.input_redundancy(exact_k_max=node.k))
     elif probe == "input_redundancy_sample":
         schemata = node.outputs.get_one_symbol_schemata()
         rng = np.random.default_rng(SEED)
         value = float(
-            estimate_input_redundancy(
-                schemata, n_samples=N_SAMPLES, norm=True, rng=rng
+            input_redundancy(
+                schemata,
+                norm=True,
+                exact_k_max=-1,
+                n_samples=N_SAMPLES,
+                rng=rng,
             )
         )
     elif probe == "edge_redundancy":
-        value = _summarize(node.edge_redundancy())
+        value = _summarize(node.edge_redundancy(exact_k_max=node.k))
     elif probe == "edge_redundancy_sample":
         schemata = node.outputs.get_one_symbol_schemata()
         rng = np.random.default_rng(SEED)
         value = _summarize(
-            estimate_edge_redundancy(
-                schemata, n_samples=N_SAMPLES, bound="mean", rng=rng
+            edge_redundancy(
+                schemata,
+                bound="mean",
+                exact_k_max=-1,
+                n_samples=N_SAMPLES,
+                rng=rng,
             )
         )
     elif probe == "bias":
