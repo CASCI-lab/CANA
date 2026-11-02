@@ -527,11 +527,13 @@ def test_input_symmetry_SBF():
 
 
 #
-# Test sensitivity (direct computation)
+# Test sensitivity / activities (LUT and schemata paths)
 #
 
 def test_sensitivity_hand_values():
     """sensitivity: mean number of single-input flips that change the output"""
+    from cana.function_outputs.bit_lut import BitLut
+
     cases = [
         (list("00"), 0.0),          # constant
         (list("01"), 1.0),          # identity
@@ -544,10 +546,11 @@ def test_sensitivity_hand_values():
         n = BooleanNode.from_bit_lut(outputs)
         s = n.sensitivity(norm=False)
         assert s == true_s, f"sensitivity for {''.join(outputs)}: returned {s}, true value is {true_s}"
-        assert sensitivity.sensitivity(outputs, n.k) == true_s
+        assert sensitivity.sensitivity_from_bit_lut(BitLut.from_sequence(outputs)) == true_s
 
-def test_sensitivity_matches_original_implementation():
-    """the direct sensitivity must be bit-exactly equal to sensitivity_old, the sum-of-activities implementation used up to CANA 1.0.2"""
+
+def test_sensitivity_lut_matches_schemata():
+    """bit-lut and schemata sensitivity paths must be bit-exactly equal on the full space"""
     import random
     nodes = [AND(), OR(), XOR(), COPYx1(), CONTRADICTION(), RULE90(), RULE110()]
     rng = random.Random(20260921)
@@ -556,17 +559,20 @@ def test_sensitivity_matches_original_implementation():
             nodes.append(BooleanNode.from_bit_lut([rng.randint(0, 1) for _ in range(2**k)]))
     for n in nodes:
         for norm in (False, True):
-            s, s0 = n.sensitivity(norm=norm), sensitivity.sensitivity_old(n, norm=norm)
-            assert s == s0, f"sensitivity(norm={norm}) for k={n.k} outputs={''.join(map(str, n.outputs))}: {s!r} != sensitivity_old {s0!r}"
+            s_lut = n.sensitivity_from_bit_lut(norm=norm)
+            s_sch = n.sensitivity_from_schemata(norm=norm)
+            assert s_lut == s_sch, (
+                f"sensitivity(norm={norm}) for k={n.k} outputs="
+                f"{''.join(map(str, n.outputs))}: lut {s_lut!r} != schemata {s_sch!r}"
+            )
+            assert n.sensitivity(norm=norm) == s_lut
         assert abs(n.sensitivity(norm=True) - n.c_sensitivity(1)) < 1e-12
 
 
-#
-# Test activities (direct computation)
-#
-
 def test_activities_hand_values():
     """activities: per input, the fraction of input states where flipping it changes the output"""
+    from cana.function_outputs.bit_lut import BitLut
+
     cases = [
         (list("00"), [0.0]),                     # constant
         (list("01"), [1.0]),                     # identity
@@ -580,10 +586,11 @@ def test_activities_hand_values():
         n = BooleanNode.from_bit_lut(outputs)
         a = n.activities()
         assert a == true_a, f"activities for {''.join(outputs)}: returned {a}, true value is {true_a}"
-        assert sensitivity.activities(outputs, n.k) == true_a
+        assert sensitivity.activities_from_bit_lut(BitLut.from_sequence(outputs)) == true_a
 
-def test_activities_matches_original_implementation():
-    """the direct activities must be bit-exactly equal to activities_old, the upper edge effectiveness used up to CANA 1.0.2"""
+
+def test_activities_lut_matches_schemata():
+    """bit-lut and schemata activities paths must be bit-exactly equal on the full space"""
     import random
     nodes = [AND(), OR(), XOR(), COPYx1(), CONTRADICTION(), RULE90(), RULE110()]
     rng = random.Random(20260928)
@@ -591,8 +598,60 @@ def test_activities_matches_original_implementation():
         for _ in range(50 if k <= 5 else 15):
             nodes.append(BooleanNode.from_bit_lut([rng.randint(0, 1) for _ in range(2**k)]))
     for n in nodes:
-        a, a0 = n.activities(), sensitivity.activities_old(n)
-        assert a == a0, f"activities for k={n.k} outputs={''.join(map(str, n.outputs))}: {a!r} != activities_old {a0!r}"
+        a_lut = n.activities_from_bit_lut()
+        a_sch = n.activities_from_schemata()
+        assert a_lut == a_sch, (
+            f"activities for k={n.k} outputs={''.join(map(str, n.outputs))}: "
+            f"lut {a_lut!r} != schemata {a_sch!r}"
+        )
+        assert n.activities() == a_lut
+
+
+def test_activities_sensitivity_auto_fallback_paths():
+    """default methods prefer cached coverage, else LUT when k <= exact_k_max"""
+    lut_node = BooleanNode.from_bit_lut([0, 0, 0, 1], name="AND")
+    assert lut_node.outputs.bit_lut is not None
+    assert lut_node.activities() == lut_node.activities_from_bit_lut()
+    assert lut_node.sensitivity() == lut_node.sensitivity_from_bit_lut()
+
+    # no coverage and k <= exact_k_max → bit_lut for both
+    fresh = BooleanNode.from_one_symbol_schemata(
+        {0: {"02", "20"}, 1: {"11"}}, k=2, name="AND"
+    )
+    assert fresh.outputs.bit_lut is None
+    assert fresh._pi_coverage is None and fresh._sampled_pi_coverage is None
+    assert fresh.activities() == fresh.activities_from_bit_lut()
+    assert fresh.sensitivity() == fresh.sensitivity_from_bit_lut()
+    assert fresh.activities() == lut_node.activities()
+    assert fresh.sensitivity() == lut_node.sensitivity()
+
+    # once pi_coverage is cached, both prefer the schemata path
+    covered = BooleanNode.from_one_symbol_schemata(
+        {0: {"02", "20"}, 1: {"11"}}, k=2, name="AND"
+    )
+    _ = covered.pi_coverage()
+    assert covered._pi_coverage is not None
+    assert covered.activities() == covered.activities_from_schemata()
+    assert covered.sensitivity() == covered.sensitivity_from_schemata()
+
+
+def test_activities_sensitivity_high_k_schemata_sampling():
+    """schemata-only nodes above MAX_DENSE_LUT_K can still estimate via sampling"""
+    import numpy as np
+    from cana.function_outputs.bit_lut import MAX_DENSE_LUT_K
+
+    k = MAX_DENSE_LUT_K + 1
+    # constant-1 on all inputs: every input is fictitious → activity 0
+    n = BooleanNode.from_one_symbol_schemata({1: {"2" * k}}, k=k)
+    assert n.outputs.bit_lut is None
+    with pytest.raises(ValueError, match="MAX_DENSE_LUT_K"):
+        n.outputs.get_bit_lut()
+
+    rng = np.random.default_rng(0)
+    a = n.activities(exact_k_max=-1, n_samples=64, rng=rng)
+    s = n.sensitivity(exact_k_max=-1, n_samples=64, rng=np.random.default_rng(0))
+    assert a == [0.0] * k
+    assert s == 0.0
 
 #
 # Test representation factories

@@ -54,8 +54,9 @@ from cana.primes.cascade import on_off_primes_from_expression  # noqa: E402
 from cana.redundancy import (  # noqa: E402
     bootstrap_edge_redundancy,
     bootstrap_input_redundancy,
-    edge_redundancy,
-    input_redundancy,
+    edge_redundancy_from_coverage,
+    input_redundancy_from_coverage,
+    sample_pi_coverage,
 )
 
 # ---------------------------------------------------------------------------
@@ -413,43 +414,41 @@ for i, fn in enumerate(exact_funcs, start=1):
         continue
 
     for n_eff in n_list:
+        # One shared SampledPiCoverage for point estimate + bootstrap CI.
         rng = np.random.default_rng(SEED + n_eff + k)
-
         t0 = time.perf_counter()
-        # exact_k_max=-1 forces the sampling path (no auto-fallback warning).
-        est_kr, samp_kr_mode = input_redundancy(
-            schemata,
-            norm=True,
-            exact_k_max=-1,
-            n_samples=n_eff,
-            rng=rng,
-            return_mode=True,
+        sampled = sample_pi_coverage(schemata, n_eff, rng=rng, k=k)
+        est_kr = float(
+            input_redundancy_from_coverage(
+                sampled.coverage, k, norm=True
+            )
         )
-        rng = np.random.default_rng(SEED + n_eff + k)
-        est_ri, samp_ri_mode = edge_redundancy(
-            schemata,
-            bound="mean",
-            exact_k_max=-1,
-            n_samples=n_eff,
-            rng=rng,
-            return_mode=True,
-        )
+        est_ri = [
+            float(x)
+            for x in edge_redundancy_from_coverage(
+                sampled.coverage, k, bound="mean"
+            )
+        ]
         t_samp = time.perf_counter() - t0
-        # Full-space n (== 2**k) is reported as exact; otherwise sampled.
-        expected_samp_mode = "exact" if n_eff >= space else "sampled"
+        # Full-space n (== 2**k) is exact; otherwise sampled.
+        samp_mode = "exact" if n_eff >= space else "sampled"
 
-        # Bootstrap CI on same n (reuses contribution cache internally)
-        rng = np.random.default_rng(SEED + n_eff + k + 17)
+        rng_boot = np.random.default_rng(SEED + n_eff + k + 17)
         t0 = time.perf_counter()
         boot = bootstrap_input_redundancy(
-            schemata,
-            n_samples=n_eff,
+            sampled,
             n_boot=min(N_BOOT, 400) if MODE == "starter" else N_BOOT,
             ci=CI,
             norm=True,
-            rng=rng,
+            rng=rng_boot,
         )
         t_boot = time.perf_counter() - t0
+
+        if abs(boot.estimate - est_kr) > 1e-9:
+            log.info(
+                f"       WARN boot.estimate={boot.estimate:.6f} != "
+                f"est_kr={est_kr:.6f}"
+            )
 
         d_kr = abs(est_kr - exact_kr)
         d_ri = float(np.mean([abs(a - b) for a, b in zip(est_ri, exact_ri)]))
@@ -474,17 +473,11 @@ for i, fn in enumerate(exact_funcs, start=1):
         }
         accuracy_rows.append(row)
         log.info(
-            f"       n={n_eff:5d}  mode={samp_kr_mode}/{samp_ri_mode}  "
+            f"       n={n_eff:5d}  mode={samp_mode}  "
             f"est_kr={est_kr:.6f}  |Δkr|={d_kr:.4g}  "
             f"|Δri|_mean={d_ri:.4g}  "
             f"CI=[{boot.ci_low:.6f},{boot.ci_high:.6f}] cover={covers}  "
             f"t_samp={fmt_s(t_samp)}  t_boot={fmt_s(t_boot)}"
-            + (
-                ""
-                if samp_kr_mode == expected_samp_mode
-                and samp_ri_mode == expected_samp_mode
-                else f"  WARN expected_mode={expected_samp_mode}"
-            )
         )
 
 
@@ -539,27 +532,27 @@ for i, fn in enumerate(high_funcs, start=1):
             # Would be full enum; skip for high-k narrative
             continue
         rng = np.random.default_rng(SEED + n_eff + k)
+        sampled = sample_pi_coverage(schemata, n_eff, rng=rng, k=k)
+        n_boot = N_BOOT if MODE != "starter" else min(N_BOOT, 400)
 
         t0 = time.perf_counter()
         boot = bootstrap_input_redundancy(
-            schemata,
-            n_samples=n_eff,
-            n_boot=N_BOOT if MODE != "starter" else min(N_BOOT, 400),
+            sampled,
+            n_boot=n_boot,
             ci=CI,
             norm=True,
             rng=rng,
         )
         t_boot = time.perf_counter() - t0
 
-        rng = np.random.default_rng(SEED + n_eff + k + 1)
+        rng_edge = np.random.default_rng(SEED + n_eff + k + 1)
         t0 = time.perf_counter()
         edge_boots = bootstrap_edge_redundancy(
-            schemata,
-            n_samples=n_eff,
-            n_boot=N_BOOT if MODE != "starter" else min(N_BOOT, 400),
+            sampled,
+            n_boot=n_boot,
             ci=CI,
             bound="mean",
-            rng=rng,
+            rng=rng_edge,
         )
         t_edge = time.perf_counter() - t0
 

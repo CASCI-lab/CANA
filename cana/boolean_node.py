@@ -945,7 +945,15 @@ class BooleanNode(object):
             k_e = k_e / self.k
         return k_e
 
-    def edge_effectiveness(self, bound="mean"):
+    def edge_effectiveness(
+        self,
+        bound="mean",
+        *,
+        exact_k_max=EXACT_K_MAX_DEFAULT,
+        n_samples=None,
+        rng=None,
+        return_mode=False,
+    ):
         r"""The Edge Effectiveness is the mean number of an input's states needed to determine the transition of the node.
 
         .. math::
@@ -954,15 +962,27 @@ class BooleanNode(object):
 
         Args:
             bound (string) : The bound for the :math:`k_r` Input Redundancy
+            exact_k_max, n_samples, rng, return_mode : Forwarded to
+                :func:`edge_redundancy`.
 
         Returns:
             (list) : The list of :math:`e_r` values.
+            or ``(list, str)`` when ``return_mode`` is True.
 
         See Also:
             :func:`input_redundancy`, :func:`input_symmetry`, :func:`~cana.boolean_network.BooleanNetwork.effective_graph`.
         """
-        e_i = [1.0 - x_i for x_i in self.edge_redundancy(bound=bound)]
-        return e_i
+        r = self.edge_redundancy(
+            bound=bound,
+            exact_k_max=exact_k_max,
+            n_samples=n_samples,
+            rng=rng,
+            return_mode=return_mode,
+        )
+        if return_mode:
+            r_i, mode = r
+            return [1.0 - x_i for x_i in r_i], mode
+        return [1.0 - x_i for x_i in r]
 
     # --- Symmetry ---
 
@@ -1061,33 +1081,151 @@ class BooleanNode(object):
 
     # --- Sensitivity ---
 
-    def activities(self):
-        """compute the activities of each incoming edge of the node, directly from the LUT.
-        See :func:`cana.sensitivity.activities`.
+    def activities_from_bit_lut(self):
+        """Activities from the dense LUT via :func:`cana.sensitivity.activities_from_bit_lut`.
 
         Returns:
             (list of floats)
         """
-        return sensitivity.activities(self.outputs, self.k)
+        return sensitivity.activities_from_bit_lut(self.outputs.get_bit_lut())
 
-    def sensitivity(self, norm=False):
-        """compute the average sensitivity of the node: the mean, over all input states,
-        of the number of single-input flips that change the output.
-
-        Delegates to :func:`cana.sensitivity.sensitivity`, which computes it directly from
-        the look-up table. Up to CANA 1.0.2 this was ``sum(self.activities())``, kept as
-        :func:`cana.sensitivity.sensitivity_old`; the two are bit-exactly equal, as
-        asserted in ``tests/test_boolean_node.py``
-        (``test_sensitivity_matches_original_implementation``).
+    def sensitivity_from_bit_lut(self, norm=False):
+        """Average sensitivity from the dense LUT via
+        :func:`cana.sensitivity.sensitivity_from_bit_lut`.
 
         Args:
             norm (bool) : whether or not to normalize by the number of inputs (k)
+
+        Returns:
+            (float)
+        """
+        return sensitivity.sensitivity_from_bit_lut(
+            self.outputs.get_bit_lut(), norm=norm
+        )
+
+    def activities_from_schemata(
+        self,
+        *,
+        exact_k_max=EXACT_K_MAX_DEFAULT,
+        n_samples=None,
+        rng=None,
+    ):
+        """Activities as upper edge effectiveness from one-symbol schemata.
+
+        See :func:`cana.sensitivity.activities_from_schemata`. Prefer this when
+        prime implicants are available, or when ``k`` exceeds the dense-LUT limit.
+
+        Args:
+            exact_k_max, n_samples, rng : Forwarded to :func:`edge_effectiveness`.
+
+        Returns:
+            (list of floats)
+        """
+        return self.edge_effectiveness(
+            bound="upper",
+            exact_k_max=exact_k_max,
+            n_samples=n_samples,
+            rng=rng,
+        )
+
+    def sensitivity_from_schemata(
+        self,
+        norm=False,
+        *,
+        exact_k_max=EXACT_K_MAX_DEFAULT,
+        n_samples=None,
+        rng=None,
+    ):
+        """Average sensitivity from one-symbol schemata: sum of
+        :meth:`activities_from_schemata`.
+
+        Args:
+            norm (bool) : whether or not to normalize by the number of inputs (k)
+            exact_k_max, n_samples, rng : Forwarded to :meth:`activities_from_schemata`.
+
+        Returns:
+            (float)
+        """
+        x = math.fsum(
+            self.activities_from_schemata(
+                exact_k_max=exact_k_max, n_samples=n_samples, rng=rng
+            )
+        )
+        if norm:
+            return x / self.k
+        return x
+
+    def activities(
+        self,
+        *,
+        exact_k_max=EXACT_K_MAX_DEFAULT,
+        n_samples=None,
+        rng=None,
+    ):
+        """Activities of each incoming edge.
+
+        Prefers :meth:`activities_from_schemata` when full or sampled
+        ``pi_coverage`` is already cached; otherwise uses
+        :meth:`activities_from_bit_lut` when ``k <= exact_k_max``; otherwise
+        :meth:`activities_from_schemata`. Sampling kwargs apply only on the
+        schemata path.
+
+        Returns:
+            (list of floats)
+        """
+        if self._pi_coverage is not None or self._sampled_pi_coverage is not None:
+            return self.activities_from_schemata(
+                exact_k_max=exact_k_max, n_samples=n_samples, rng=rng
+            )
+        if self.k <= exact_k_max:
+            return self.activities_from_bit_lut()
+        return self.activities_from_schemata(
+            exact_k_max=exact_k_max, n_samples=n_samples, rng=rng
+        )
+
+    def sensitivity(
+        self,
+        norm=False,
+        *,
+        exact_k_max=EXACT_K_MAX_DEFAULT,
+        n_samples=None,
+        rng=None,
+    ):
+        """Average sensitivity: mean number of single-input flips that change the output.
+
+        Prefers :meth:`sensitivity_from_schemata` when full or sampled
+        ``pi_coverage`` is already cached; otherwise uses
+        :meth:`sensitivity_from_bit_lut` when ``k <= exact_k_max``; otherwise
+        :meth:`sensitivity_from_schemata`. The two formulations are bit-exactly
+        equal on the full state space. Sampling kwargs apply only on the
+        schemata path.
+
+        Args:
+            norm (bool) : whether or not to normalize by the number of inputs (k)
+            exact_k_max, n_samples, rng : Forwarded to the schemata path when used.
+
         Returns:
             (float)
         See Also:
-            :func:`cana.sensitivity.sensitivity`, :func:`activities`, :func:`c_sensitivity`.
+            :meth:`activities`, :meth:`c_sensitivity`,
+            :func:`cana.sensitivity.sensitivity_from_bit_lut`,
+            :func:`cana.sensitivity.sensitivity_from_schemata`.
         """
-        return sensitivity.sensitivity(self.outputs, self.k, norm=norm)
+        if self._pi_coverage is not None or self._sampled_pi_coverage is not None:
+            return self.sensitivity_from_schemata(
+                norm=norm,
+                exact_k_max=exact_k_max,
+                n_samples=n_samples,
+                rng=rng,
+            )
+        if self.k <= exact_k_max:
+            return self.sensitivity_from_bit_lut(norm=norm)
+        return self.sensitivity_from_schemata(
+            norm=norm,
+            exact_k_max=exact_k_max,
+            n_samples=n_samples,
+            rng=rng,
+        )
 
     def c_sensitivity(self, c, mode="default", max_k=0):
         """Node c-sensitivity.

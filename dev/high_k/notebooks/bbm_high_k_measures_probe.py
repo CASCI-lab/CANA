@@ -10,6 +10,9 @@
 # ``pi_coverage`` / ``ts_coverage`` expansion or ``get_bit_lut`` (refuses above
 # ``MAX_DENSE_LUT_K``).  Sampling probes estimate ``input_redundancy`` /
 # ``edge_redundancy`` by matching covering PIs on a fixed minterm sample.
+# Sensitivity is probed both via dense LUT (``sensitivity_from_bit_lut``) and
+# via one-symbol schemata (``sensitivity_from_schemata`` with sample covers
+# for high *k*, same minterm sample as the redundancy ``*_sample`` probes).
 # **No** CANA measure code is patched — timeouts and errors are the result.
 #
 # Modes:
@@ -65,7 +68,7 @@ MODE = "starter"
 
 TIMEOUT_S = 10.0
 MIN_K = 13  # used when MODE == "all_from_log" (k > 12)
-N_SAMPLES = 2**13  # minterm sample size for *_sample probes
+N_SAMPLES = 2**14  # minterm sample size for *_sample probes
 SEED = 0
 
 NOTEBOOK_NAME = "bbm_high_k_measures_probe"
@@ -106,7 +109,8 @@ PROBE_IDS: Tuple[str, ...] = (
     "edge_redundancy",
     "edge_redundancy_sample",
     "bias",
-    "sensitivity",
+    "sensitivity_bit_lut",
+    "sensitivity_schemata",
     "input_symmetry",
 )
 
@@ -143,8 +147,14 @@ PROBE_METHODS: Dict[str, str] = {
     "bias": (
         "build dense LUT (get_bit_lut), then popcount / 2**k"
     ),
-    "sensitivity": (
-        "build dense LUT, then single-flip average sensitivity"
+    "sensitivity_bit_lut": (
+        "exact s: build dense LUT (get_bit_lut), then single-flip "
+        "average sensitivity; refuses above MAX_DENSE_LUT_K"
+    ),
+    "sensitivity_schemata": (
+        f"sample covers: estimate s from n={N_SAMPLES} minterms via "
+        "sensitivity_from_schemata (upper edge effectiveness; "
+        "exact_k_max=-1; no pi_coverage dict)"
     ),
     "input_symmetry": (
         "exact k_s: build full ts_coverage over all 2**k minterms"
@@ -290,8 +300,21 @@ def _run_probe_body(bnet_text: str, target: str, probe: str) -> Dict[str, Any]:
         )
     elif probe == "bias":
         value = float(node.bias())
-    elif probe == "sensitivity":
-        value = float(node.sensitivity())
+    elif probe == "sensitivity_bit_lut":
+        value = float(node.sensitivity_from_bit_lut())
+    elif probe == "sensitivity_schemata":
+        # High-k path: force sampling (exact_k_max=-1), same N_SAMPLES /
+        # SEED as the redundancy *_sample probes. Default exact_k_max=14
+        # would still exact-cover for k<=14; -1 makes the probe always
+        # sample so high-k timing is comparable across rules.
+        rng = np.random.default_rng(SEED)
+        value = float(
+            node.sensitivity_from_schemata(
+                exact_k_max=-1,
+                n_samples=N_SAMPLES,
+                rng=rng,
+            )
+        )
     elif probe == "input_symmetry":
         value = float(node.input_symmetry())
     else:
