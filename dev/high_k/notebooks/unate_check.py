@@ -20,14 +20,14 @@
 #
 # Sources (toggle below):
 #
-# - **synthetic** — ``high_k.synthetic`` builders (``and`` / ``or`` /
+# - **synthetic** — ``cana.function_generation`` builders (``and`` / ``or`` /
 #   ``pairwise_*`` / ``random``) at each ``K_VALUES`` size
 # - **bbm** — every rule in ``BBM/models/*/model.bnet``, then corpus stats.
 #   Each BBM function is bounded by ``BBM_TIMEOUT_S`` (import + unate);
 #   oversized ASTs that exceed the limit are skipped.
 #
 # Shared helpers: ``high_k.unate`` (``check_syntactic_unate``),
-# ``high_k.timing.time_import_and_unate``, ``high_k.synthetic``,
+# ``high_k.timing.time_import_and_unate``, ``cana.function_generation``,
 # ``high_k.bbm_rules``.
 #
 # Output is teed to ``high_k/logs/unate_check/``.
@@ -52,7 +52,7 @@ from high_k.bbm_rules import (
     model_id_from_dirname,
 )
 from high_k.run_log import start_run_log
-from high_k.synthetic import SYNTHETIC_BUILDERS, builder_accepts_k
+from cana.function_generation import SYNTHETIC_BUILDERS, builder_accepts_k
 from high_k.timing import call_with_timeout, fmt_s, time_import_and_unate
 
 # ---------------------------------------------------------------------------

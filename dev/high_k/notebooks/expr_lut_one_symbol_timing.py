@@ -13,12 +13,12 @@
 #
 # Sources (toggle below):
 #
-# - **synthetic** — ``high_k.synthetic`` ROFs (``and``, ``or``,
+# - **synthetic** — ``cana.function_generation`` ROFs (``and``, ``or``,
 #   ``pairwise_*``, ``random``), wrapped as single-rule ``.bnet`` strings
 # - **bbm** — ``REPEATS`` real rules per *k* drawn from
 #   ``BBM/models/*/model.bnet`` (reported separately, then averaged)
 #
-# Shared helpers live in ``high_k.synthetic``, ``high_k.bbm_rules``,
+# Shared helpers live in ``cana.function_generation``, ``high_k.bbm_rules``,
 # ``high_k.timing``.  Keep *k* modest: dense LUT + QM grow as ``2**k``.
 # Default ``K_VALUES = [4, 6, 8, 10, 12]``.
 #
@@ -41,7 +41,7 @@ if str(_DEV_DIR) not in sys.path:
 
 from high_k.bbm_rules import BBM_MODELS, as_bnet, bbm_rules_for_k
 from high_k.run_log import start_run_log
-from high_k.synthetic import SYNTHETIC_BUILDERS, builder_accepts_k
+from cana.function_generation import SYNTHETIC_BUILDERS, builder_accepts_k
 from high_k.timing import fmt_s, time_expr_lut_one_symbol
 
 # ---------------------------------------------------------------------------

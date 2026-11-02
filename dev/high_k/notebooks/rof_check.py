@@ -16,12 +16,12 @@
 #
 # Sources (toggle below):
 #
-# - **synthetic** — ``high_k.synthetic`` syntactic ROFs (``and`` / ``or`` /
-#   ``pairwise_*`` / ``random``) at each ``K_VALUES`` size
+# - **synthetic** — ``cana.function_generation`` syntactic ROFs (``and`` /
+#   ``or`` / ``pairwise_*`` / ``random``) at each ``K_VALUES`` size
 # - **bbm** — every rule in ``BBM/models/*/model.bnet``, then corpus stats
 #
 # Shared helpers: ``cana.function_properties.rof`` (``check_syntactic_rof``),
-# ``high_k.timing.time_import_and_rof``, ``high_k.synthetic``,
+# ``high_k.timing.time_import_and_rof``, ``cana.function_generation``,
 # ``high_k.bbm_rules``.
 #
 # Output is teed to ``high_k/logs/rof_check/``.
@@ -46,7 +46,7 @@ from high_k.bbm_rules import (
     model_id_from_dirname,
 )
 from high_k.run_log import start_run_log
-from high_k.synthetic import SYNTHETIC_BUILDERS, builder_accepts_k
+from cana.function_generation import SYNTHETIC_BUILDERS, builder_accepts_k
 from high_k.timing import fmt_s, time_import_and_rof
 
 # ---------------------------------------------------------------------------

@@ -48,7 +48,7 @@ from high_k.bbm_rules import (
     unique_regulators,
 )
 from high_k.run_log import run_log_dir, start_run_log
-from high_k.synthetic import SYNTHETIC_BUILDERS, builder_accepts_k
+from cana.function_generation import SYNTHETIC_BUILDERS, builder_accepts_k
 from high_k.timing import fmt_s, import_detached_outputs, median_time
 from high_k.unate import check_syntactic_unate, on_off_primes
 

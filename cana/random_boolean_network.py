@@ -7,7 +7,6 @@ Methods to generate random ensembles of Boolean networks.
 
 """
 import random
-import re
 
 #   Copyright (C) 2021 by
 #   Alex Gates <ajgates@indiana.edu>
@@ -16,14 +15,12 @@ import re
 #   All rights reserved.
 #   MIT license.
 from collections import Counter
-from io import StringIO
 
 import networkx as nx
 
 from cana.boolean_network import BooleanNetwork
 from cana.boolean_node import BooleanNode
-from cana.function_outputs.bit_lut import BitLut
-from cana.function_outputs.expression import named_expression_to_bit_lut
+from cana.function_generation import random_automata_table
 
 
 def regular_boolean_network(
@@ -102,29 +99,6 @@ def er_boolean_network(
     return BooleanNetwork.from_nodes(nodes)
 
 
-def random_automata_table(indegree, bias, bias_constraint="soft"):
-    """
-    TODO: description
-    """
-    if bias_constraint == "soft":
-        output = [int(random.random() < bias) for b in range(2**indegree)]
-
-    elif bias_constraint == "hard":
-        n_ones = int(bias * (2**indegree))
-        output = [0] * (2**indegree - n_ones) + [1] * n_ones
-        random.shuffle(output)
-
-    elif bias_constraint == "soft_no_constant":
-        output = [int(random.random() < bias) for b in range(2**indegree)]
-        if sum(output) == 0:
-            output[0] = 1
-            random.shuffle(output)
-    else:
-        raise ValueError("Unknown bias_constraint: {0!r}".format(bias_constraint))
-
-    return BitLut.from_sequence(output)
-
-
 def _remove_duplicate_edges(graph, niter_remove=100):
     """
     TODO: description
@@ -168,70 +142,3 @@ def _remove_duplicate_edges(graph, niter_remove=100):
         )
 
     return graph
-
-
-def from_string_booleannet(self, string, keep_constants=True, **kwargs):
-    """
-    Instanciates a Boolean Network from a Boolean update rules format.
-
-    Args:
-        string (string) : A boolean update rules format representation of a Boolean Network.
-
-    Returns:
-        (BooleanNetwork) : The boolean network object.
-
-    Examples:
-        String should be structured as follow:
-
-        .. code-block:: text
-
-            # BOOLEAN RULES (this is a comment)
-            # node_name*=node_input_1 [logic operator] node_input_2 ...
-            NODE3*=NODE1 AND NODE2 ...
-
-    See also:
-        :func:`from_string` :func:`from_nodes`
-    """
-
-    names = []
-
-    # parse lines to receive node names
-    network_file = StringIO(string)
-    line = network_file.readline()
-    while line != "":
-        if line[0] == "#":
-            line = network_file.readline()
-            continue
-        names.append(line.split("*")[0].strip())
-        line = network_file.readline()
-
-    # Parse lines again to determine inputs and output sequence
-    network_file = StringIO(string)
-    line = network_file.readline()
-    nodes = []
-    i = 0
-    while line != "":
-        if line[0] == "#":
-            line = network_file.readline()
-            continue
-        eval_line = line.split("=")[1]  # logical condition to evaluate
-        # RE checks for non-alphanumeric character before/after node name (node names are included in other node names)
-        # Additional characters added to eval_line to avoid start/end of string complications
-        input_name_list = [
-            name
-            for name in names
-            if re.compile(r"\W" + name + r"\W").search("*" + eval_line + "*")
-        ]
-        input_nums = [names.index(inp) for inp in input_name_list]
-        nodes.append(
-            BooleanNode.from_bit_lut(
-                named_expression_to_bit_lut(eval_line, input_name_list),
-                id=i,
-                name=names[i],
-                inputs=input_nums,
-            )
-        )
-        line = network_file.readline()
-        i += 1
-
-    return self.from_nodes(nodes, keep_constants=keep_constants, **kwargs)

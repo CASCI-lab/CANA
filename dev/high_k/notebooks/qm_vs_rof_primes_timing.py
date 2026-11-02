@@ -51,7 +51,7 @@ from high_k.bbm_rules import (
 from cana.function_properties.rof import check_syntactic_rof
 from cana.primes.rof_primes import count_on_off_primes, iter_on_off_primes
 from high_k.run_log import run_log_dir, start_run_log
-from high_k.synthetic import (
+from cana.function_generation import (
     MULTI_OCCURRENCE_BUILDERS,
     SYNTHETIC_BUILDERS,
     builder_accepts_k,

@@ -1,16 +1,11 @@
 # -*- coding: utf-8 -*-
-"""Synthetic Boolean expressions for high-*k* experiments.
+"""Syntactic read-once (ROF) expression builders.
 
-Builders produce variables ``a0…a{k-1}`` with symbolic ``&`` / ``|`` / ``!``.
-Wrap with :func:`~high_k.bbm_rules.as_bnet` when a one-rule ``.bnet`` string
-is needed.
-
-Most builders are syntactic read-once (each variable once).  Exceptions are
-listed in :data:`MULTI_OCCURRENCE_BUILDERS` (e.g. majority DNF).
+Builders produce variables ``a0…a{k-1}`` with symbolic ``&`` / ``|``.
+Each variable appears once.
 """
 from __future__ import annotations
 
-import itertools
 import random
 from typing import Callable, Dict, List, Optional
 
@@ -20,14 +15,11 @@ __all__ = [
     "half_or_half_and",
     "pairwise_and_or",
     "pairwise_or_and",
-    "majority",
     "makino_ibaraki",
     "random_rof",
-    "builder_accepts_k",
-    "SYNTHETIC_BUILDERS",
+    "ROF_BUILDERS",
     "EVEN_K_BUILDERS",
     "MOD3_K_BUILDERS",
-    "MULTI_OCCURRENCE_BUILDERS",
 ]
 
 
@@ -60,22 +52,6 @@ def pairwise_or_and(k: int) -> str:
     return " & ".join(f"(a{i} | a{i+1})" for i in range(0, k, 2))
 
 
-def majority(k: int) -> str:
-    """Majority-of-*k*: OR of every AND of size ``⌊k/2⌋+1`` over ``a0…a{k-1}``.
-
-    Output is 1 iff strictly more than half of the inputs are 1.  Variables
-    repeat across terms (not a syntactic ROF).  Expression size is
-    ``C(k, ⌊k/2⌋+1)`` clauses — keep *k* modest.
-    """
-    assert k >= 1
-    threshold = (k // 2) + 1
-    terms: List[str] = []
-    for combo in itertools.combinations(range(k), threshold):
-        term = " & ".join(f"a{i}" for i in combo)
-        terms.append(f"({term})" if threshold > 1 else term)
-    return " | ".join(terms)
-
-
 def makino_ibaraki(k: int) -> str:
     """Makino–Ibaraki-style product-of-sums: ``(a0|a1|a2) & (a3|a4|a5) & …``.
 
@@ -105,13 +81,12 @@ def random_rof(k: int, seed: Optional[int] = None) -> str:
     return build(variables)
 
 
-SYNTHETIC_BUILDERS: Dict[str, Callable[..., str]] = {
+ROF_BUILDERS: Dict[str, Callable[..., str]] = {
     "and": and_chain,
     "or": or_chain,
     "half_or_half_and": half_or_half_and,
     "pairwise_and_or": pairwise_and_or,
     "pairwise_or_and": pairwise_or_and,
-    "majority": majority,
     "makino_ibaraki": makino_ibaraki,
     "random": random_rof,
 }
@@ -121,17 +96,3 @@ EVEN_K_BUILDERS = frozenset(
 )
 
 MOD3_K_BUILDERS = frozenset({"makino_ibaraki"})
-
-# Builders whose expressions reuse variables (not syntactic ROF).
-MULTI_OCCURRENCE_BUILDERS = frozenset({"majority"})
-
-
-def builder_accepts_k(name: str, k: int) -> bool:
-    """Whether builder *name* is defined for input size *k*."""
-    if name in EVEN_K_BUILDERS and k % 2 != 0:
-        return False
-    if name in MOD3_K_BUILDERS and k % 3 != 0:
-        return False
-    if name == "majority" and k < 1:
-        return False
-    return True
