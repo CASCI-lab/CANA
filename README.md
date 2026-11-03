@@ -104,7 +104,7 @@ Changelog
 Master
 - `FunctionOutputs`: store and convert among `bit_lut`, one-/two-symbol schemata, and positional expressions; build `BooleanNode` from any of them
 - High-`k` support: dense-LUT / coverage guardrails; sampled redundancy, activities, sensitivity, and bias
-- Expression → primes (Quine–McCluskey, optional PySAT / unate shortcuts)
+- Expression → primes (Quine–McCluskey, PySAT Primer-B / unate shortcuts)
 - Fixed canalizing map (CM/DCM): LUT roundtrip, canonical builder with simplification, topology-based evaluation, and visualization
 - Schemata order and k_r/k_s values are now identical across processes (prime implicants sorted, sums use `math.fsum`); last digits of some k_r/k_s means change accordingly
 - Fixed `input_symmetry_mean` failing on a fresh node

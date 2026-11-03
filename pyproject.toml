@@ -41,14 +41,12 @@ dependencies = [
     "pandas",
     "matplotlib",
     "schematodes>=1.0.0",
+    "python-sat",
 ]
 
 [project.optional-dependencies]
 test = [
     "pytest",
-]
-primes = [
-    "python-sat",
 ]
 docs = [
     "sphinx",
@@ -87,4 +85,5 @@ include = ["cana*"]
 ]
 
 [tool.pytest.ini_options]
+testpaths = ["tests"]
 pythonpath = [".", "tests/", "tests/helpers/"]
