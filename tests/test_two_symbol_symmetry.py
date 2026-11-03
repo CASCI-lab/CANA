@@ -19,7 +19,7 @@ def getTss(outputs):
     """
     k = int(math.log(len(outputs)) / math.log(2))
     node = BooleanNode(k=k, inputs=range(k), outputs=list(outputs))
-    node._check_compute_canalization_variables(two_symbols="i dont matter")
+    node.outputs.get_two_symbol_schemata()
     ts0, ts1 = node._two_symbols
 
     return {0: ts0, 1: ts1}

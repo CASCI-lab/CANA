@@ -5,6 +5,8 @@ Submodules:
 
 - :mod:`~cana.function_properties.unate` / :mod:`~cana.function_properties.rof`
   — semantic and syntactic predicates
+- :mod:`~cana.function_properties.sampling` — shared exact/sampled PI coverage
+  and bootstrap helpers
 - :mod:`~cana.function_properties.redundancy` — input / edge redundancy
 - :mod:`~cana.function_properties.sensitivity` — activities and average sensitivity
 - :mod:`~cana.function_properties.bias` — node bias (ON-fraction)

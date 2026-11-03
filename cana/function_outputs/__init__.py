@@ -210,14 +210,38 @@ class FunctionOutputs(object):
             "two_symbol_schemata, nor positional_expression is available"
         )
 
+    def _warn_if_one_symbol_unverified(self):
+        """Soft-warn when using a stored one-symbol cover that is not known PIs.
+
+        Does not run Quine–McCluskey or build a LUT.  Opt-in verification is
+        :meth:`verify_one_symbol_schemata`.  Callers that both obtain and then
+        derive from the same stored cover must invoke this at most once (see
+        :meth:`get_two_symbol_schemata`).
+        """
+        if self.one_symbol_schemata is None:
+            return
+        if self.one_symbol_is_prime_implicant is True:
+            return
+        warnings.warn(
+            "using one_symbol_schemata "
+            "(one_symbol_is_prime_implicant={0!r}); "
+            "downstream use assumes a prime-implicant cover. "
+            "Call verify_one_symbol_schemata() to check.".format(
+                self.one_symbol_is_prime_implicant
+            ),
+            UserWarning,
+            stacklevel=3,
+        )
+
     def get_one_symbol_schemata(self) -> OneSymbolSchemata:
         """Return one-symbol schemata, deriving from any available peer slot.
 
         Preference order:
 
-        1. stored ``one_symbol_schemata``
+        1. stored ``one_symbol_schemata`` (soft-warns unless
+           :attr:`one_symbol_is_prime_implicant` is ``True``)
         2. expand ``two_symbol_schemata`` (does not set
-           :attr:`one_symbol_is_prime_implicant`)
+           :attr:`one_symbol_is_prime_implicant`; no soft-warn on first expand)
         3. expression cascade (syntactic ROF, then Primer-B) when
            ``positional_expression`` is set — stores schemata only, not a LUT
         4. Quine–McCluskey from stored ``bit_lut``, or build+store ``bit_lut``
@@ -228,6 +252,7 @@ class FunctionOutputs(object):
         one-symbol schemata.
         """
         if self.one_symbol_schemata is not None:
+            self._warn_if_one_symbol_unverified()
             return self.one_symbol_schemata
         if self.two_symbol_schemata is not None:
             self.one_symbol_schemata = two_symbol_to_one_symbol(
@@ -273,29 +298,23 @@ class FunctionOutputs(object):
     def get_two_symbol_schemata(self) -> TwoSymbolSchemata:
         """Return two-symbol schemata, deriving from any available peer slot.
 
-        Prefer stored two-symbol; else derive from ``one_symbol_schemata``
-        (soft-warns unless :attr:`one_symbol_is_prime_implicant` is ``True``);
-        else obtain primes via :meth:`get_one_symbol_schemata` (expression
-        cascade, then bit_lut/QM) and derive.  Intermediates are cached.  Does
-        not re-run QM over a stored cover; call
-        :meth:`verify_one_symbol_schemata` to check explicitly.  Raises
-        ``ValueError`` if no peer can produce two-symbol schemata.
+        Prefer stored two-symbol; else derive from stored
+        ``one_symbol_schemata`` (soft-warns once unless
+        :attr:`one_symbol_is_prime_implicant` is ``True``, without also going
+        through :meth:`get_one_symbol_schemata`); else obtain primes via
+        :meth:`get_one_symbol_schemata` (expression cascade, then bit_lut/QM)
+        and derive.  Intermediates are cached.  Does not re-run QM over a
+        stored cover; call :meth:`verify_one_symbol_schemata` to check
+        explicitly.  Raises ``ValueError`` if no peer can produce two-symbol
+        schemata.
         """
         if self.two_symbol_schemata is not None:
             return self.two_symbol_schemata
 
+        # Warn here (not via get_one_symbol_schemata) so a single get_two call
+        # emits at most one unverified-cover warning.
         if self.one_symbol_schemata is not None:
-            if self.one_symbol_is_prime_implicant is not True:
-                warnings.warn(
-                    "using one_symbol_schemata "
-                    "(one_symbol_is_prime_implicant={0!r}); "
-                    "two-symbol derivation assumes a prime-implicant cover. "
-                    "Call verify_one_symbol_schemata() to check.".format(
-                        self.one_symbol_is_prime_implicant
-                    ),
-                    UserWarning,
-                    stacklevel=2,
-                )
+            self._warn_if_one_symbol_unverified()
             return self._two_symbol_from_one_symbol(self.one_symbol_schemata)
 
         one_symbol = self.get_one_symbol_schemata()

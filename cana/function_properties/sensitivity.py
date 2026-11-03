@@ -17,9 +17,10 @@ Two equivalent routes:
 
 The two formulations are bit-exactly equal on the full state space.
 
-High-``k`` sampling reuses the redundancy two-track
-(``exact_k_max`` / ``n_samples``). Percentile bootstrap CIs are available via
-:func:`bootstrap_activities` and :func:`bootstrap_sensitivity`.
+High-``k`` sampling reuses the shared exact/sampled two-track
+(``exact_k_max`` / ``n_samples``) from
+:mod:`~cana.function_properties.sampling`. Percentile bootstrap CIs are
+available via :func:`bootstrap_activities` and :func:`bootstrap_sensitivity`.
 """
 
 from __future__ import annotations
@@ -32,14 +33,14 @@ import numpy as np
 
 from cana.function_outputs.bit_lut import BitLut
 from cana.function_properties.redundancy import (
+    bootstrap_edge_redundancy,
+    edge_redundancy,
+)
+from cana.function_properties.sampling import (
     EXACT_K_MAX_DEFAULT,
     BootstrapResult,
     OneSymbolSchemata,
     SampledPiCoverage,
-    bootstrap_edge_redundancy,
-    edge_redundancy,
-)
-from cana.function_properties.redundancy import (
     _as_sampled_or_schemata,
     _bootstrap_means_1d,
     _percentile_ci,

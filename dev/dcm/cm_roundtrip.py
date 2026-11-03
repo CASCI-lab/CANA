@@ -257,7 +257,7 @@ print(f"LUT        : {lut}")
 cms: dict[str, dict[str, nx.DiGraph]] = {}
 cms[lut] = build_cms(node)
 
-node._check_compute_canalization_variables(two_symbols=True)
+node.outputs.get_two_symbol_schemata()
 print("Two-symbol schemata (out=0):")
 for row in node._two_symbols[0]:
     print(" ", row)

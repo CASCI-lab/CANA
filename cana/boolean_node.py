@@ -367,14 +367,19 @@ class BooleanNode(object):
         Returns:
             (FunctionOutputs) : This node's ``outputs`` (mutated in place).
         """
+        outs = self.outputs
         if representation == "bit_lut":
-            self.outputs.get_bit_lut()
+            if outs.bit_lut is None:
+                outs.get_bit_lut()
         elif representation == "one_symbol_schemata":
-            self.outputs.get_one_symbol_schemata()
+            if outs.one_symbol_schemata is None:
+                outs.get_one_symbol_schemata()
         elif representation == "two_symbol_schemata":
-            self.outputs.get_two_symbol_schemata()
+            if outs.two_symbol_schemata is None:
+                outs.get_two_symbol_schemata()
         elif representation == "positional_expression":
-            self.outputs.get_positional_expression()
+            if outs.positional_expression is None:
+                outs.get_positional_expression()
         else:
             raise ValueError(
                 "Unknown representation {0!r}; expected 'bit_lut', "
@@ -488,7 +493,7 @@ class BooleanNode(object):
         r = []
         # Prime Implicant LUT
         if type == "pi":
-            self._check_compute_canalization_variables(prime_implicants=True)
+            self.outputs.get_one_symbol_schemata()
 
             pi0s = self._prime_implicants.get(0, [])
             pi1s = self._prime_implicants.get(1, [])
@@ -500,7 +505,7 @@ class BooleanNode(object):
 
         # Two Symbol LUT
         elif type == "ts":
-            self._check_compute_canalization_variables(two_symbols=True)
+            self.outputs.get_two_symbol_schemata()
 
             ts0s, ts1s = self._two_symbols
 
@@ -578,59 +583,53 @@ class BooleanNode(object):
     def _two_symbols(self, value):
         self.outputs.two_symbol_schemata = value
 
-    def _warn_one_symbol_unverified(self):
-        """Soft-warn when canalization will use an unverified one-symbol cover.
+    def ensure_pi_coverage(self):
+        """Ensure :attr:`_pi_coverage` is computed (refuses oversized ``k``)."""
+        _refuse_coverage_k(self.k, kind="pi_coverage")
+        self.outputs.get_one_symbol_schemata()
+        if self._pi_coverage is None:
+            self._pi_coverage = dict()
+            for output, piset in self._prime_implicants.items():
+                self._pi_coverage.update(cBCanalization.return_pi_coverage(piset))
 
-        Does not run Quine–McCluskey or build a LUT.  Opt-in verification is
-        :meth:`~cana.function_outputs.FunctionOutputs.verify_one_symbol_schemata`.
-        """
-        outs = self.outputs
-        if outs.one_symbol_schemata is None:
-            return
-        if outs.one_symbol_is_prime_implicant is True:
-            return
-        warnings.warn(
-            "Node {0!r}: using one_symbol_schemata "
-            "(one_symbol_is_prime_implicant={1!r}); "
-            "canalization assumes a prime-implicant cover. "
-            "Call outputs.verify_one_symbol_schemata() to check.".format(
-                self.name, outs.one_symbol_is_prime_implicant
-            ),
-            UserWarning,
-            stacklevel=3,
-        )
+            # make sure every inputstate was covered by at least one prime implicant
+            assert len(self._pi_coverage) == 2**self.k
+        return self._pi_coverage
+
+    def ensure_ts_coverage(self):
+        """Ensure :attr:`_ts_coverage` is computed (refuses oversized ``k``)."""
+        _refuse_coverage_k(self.k, kind="ts_coverage")
+        self.outputs.get_two_symbol_schemata()
+        if self._ts_coverage is None:
+            self._ts_coverage = BCanalization.computes_ts_coverage(
+                self.k, self.outputs, self._two_symbols
+            )
+        return self._ts_coverage
 
     def _check_compute_canalization_variables(self, **kwargs):
-        """Recursevely check if the requested canalization variables are instantiated/computed, otherwise computes them in order.
-        For example: to compute `two_symbols` we need `one_symbol_schemata` first
-        (stored cover, or Quine–McCluskey from the dense LUT when absent).
+        """Deprecated kwargs dispatcher for canalization lazy-compute.
+
+        .. deprecated::
+            Use :meth:`outputs.get_one_symbol_schemata`,
+            :meth:`outputs.get_two_symbol_schemata`, :meth:`ensure_pi_coverage`,
+            or :meth:`ensure_ts_coverage` instead.
         """
+        warnings.warn(
+            "_check_compute_canalization_variables is deprecated; "
+            "use outputs.get_one_symbol_schemata / "
+            "outputs.get_two_symbol_schemata / "
+            "ensure_pi_coverage / ensure_ts_coverage.",
+            DeprecationWarning,
+            stacklevel=2,
+        )
         if "prime_implicants" in kwargs:
-            self._warn_one_symbol_unverified()
             self.outputs.get_one_symbol_schemata()
-
         elif "pi_coverage" in kwargs:
-            _refuse_coverage_k(self.k, kind="pi_coverage")
-            self._check_compute_canalization_variables(prime_implicants=True)
-            if self._pi_coverage is None:
-                self._pi_coverage = dict()
-                for output, piset in self._prime_implicants.items():
-                    self._pi_coverage.update(cBCanalization.return_pi_coverage(piset))
-
-                # make sure every inputstate was covered by at least one prime implicant
-                assert len(self._pi_coverage) == 2**self.k
-
+            self.ensure_pi_coverage()
         elif "two_symbols" in kwargs:
-            # Soft-warn (if needed) lives in get_two_symbol_schemata.
             self.outputs.get_two_symbol_schemata()
         elif "ts_coverage" in kwargs:
-            _refuse_coverage_k(self.k, kind="ts_coverage")
-            self._check_compute_canalization_variables(two_symbols=True)
-            if self._ts_coverage is None:
-                self._ts_coverage = BCanalization.computes_ts_coverage(
-                    self.k, self.outputs, self._two_symbols
-                )
-
+            self.ensure_ts_coverage()
         else:
             raise Exception("Canalization variable name not found. %s" % kwargs)
         return True
@@ -644,8 +643,7 @@ class BooleanNode(object):
         See also:
             :func:`ts_coverage`
         """
-        self._check_compute_canalization_variables(pi_coverage=True)
-        return self._pi_coverage
+        return self.ensure_pi_coverage()
 
     def ts_coverage(self):
         """Returns the :math:`F''` (Two-Symbol schematas) binary state coverage.
@@ -656,8 +654,7 @@ class BooleanNode(object):
         See also:
             :func:`pi_coverage`
         """
-        self._check_compute_canalization_variables(ts_coverage=True)
-        return self._ts_coverage
+        return self.ensure_ts_coverage()
 
     def canalizing_map(self, output=None, builder="legacy"):
         """Computes the node Canalizing Map (CM).
@@ -673,7 +670,7 @@ class BooleanNode(object):
         See Also:
             :func:`boolean_network.dynamics_canalization_map` for the DCM and :func:`drawing.draw_canalizing_map_graphviz` for plotting.
         """
-        self._check_compute_canalization_variables(two_symbols=True)
+        self.outputs.get_two_symbol_schemata()
 
         input_labels = {}
         for in_id in self.inputs:
@@ -756,7 +753,7 @@ class BooleanNode(object):
             )
 
         if self.k <= exact_k_max:
-            self._check_compute_canalization_variables(pi_coverage=True)
+            self.ensure_pi_coverage()
             value = redundancy.input_redundancy_from_coverage(
                 self._pi_coverage, self.k, operator=operator, norm=norm
             )
@@ -846,7 +843,7 @@ class BooleanNode(object):
             )
 
         if self.k <= exact_k_max:
-            self._check_compute_canalization_variables(pi_coverage=True)
+            self.ensure_pi_coverage()
             value = redundancy.edge_redundancy_from_coverage(
                 self._pi_coverage, self.k, bound=bound
             )
@@ -1020,7 +1017,7 @@ class BooleanNode(object):
         def kernFunc(x):
             return strToKern[kernel](x, sameSymbol=sameSymbol)
 
-        self._check_compute_canalization_variables(ts_coverage=True)
+        self.ensure_ts_coverage()
 
         summand = []
         for fAlpha, fTheta in self._ts_coverage.items():
@@ -1035,7 +1032,7 @@ class BooleanNode(object):
         Returns:
             (float)
         """
-        self._check_compute_canalization_variables(ts_coverage=True)
+        self.ensure_ts_coverage()
         summand = []
         # fTheta = a list of TS
         for fTheta in self._ts_coverage.values():

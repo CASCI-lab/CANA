@@ -108,7 +108,7 @@ def getPis(outputs):
     """Compute prime implicants from a string function representation"""
     k = int(math.log(len(outputs)) / math.log(2))
     node = BooleanNode(k=k, inputs=range(k), outputs=list(outputs))
-    node._check_compute_canalization_variables(prime_implicants="i dont matter")
+    node.outputs.get_one_symbol_schemata()
     pi = node._prime_implicants
     return {
         0: set(pi.get(0, ())),

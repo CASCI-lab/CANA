@@ -73,7 +73,7 @@ class TestParity:
         node = BooleanNode.from_bit_lut(
             outputs, name=name, inputs=inputs, id=nid
         )
-        node._check_compute_canalization_variables(two_symbols=True)
+        node.outputs.get_two_symbol_schemata()
         input_labels = {i: str(i) for i in node.inputs}
 
         via_node = node.canalizing_map()
@@ -184,7 +184,7 @@ class TestCanonicalParity:
         node = BooleanNode.from_bit_lut(
             outputs, name=name, inputs=inputs, id=nid
         )
-        node._check_compute_canalization_variables(two_symbols=True)
+        node.outputs.get_two_symbol_schemata()
         input_labels = {i: str(i) for i in node.inputs}
 
         via_node = node.canalizing_map(builder="canonical")

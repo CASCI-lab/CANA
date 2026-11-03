@@ -13,9 +13,10 @@ Two equivalent routes:
   when ``k`` is too large to materialize a dense LUT
   (:data:`~cana.function_outputs.bit_lut.MAX_DENSE_LUT_K`).
 
-High-``k`` sampling reuses the redundancy two-track
-(``exact_k_max`` / ``n_samples``). Percentile bootstrap CIs are available via
-:func:`bootstrap_bias`.
+High-``k`` sampling reuses the shared exact/sampled two-track
+(``exact_k_max`` / ``n_samples``) from
+:mod:`~cana.function_properties.sampling`. Percentile bootstrap CIs are
+available via :func:`bootstrap_bias`.
 """
 from __future__ import annotations
 
@@ -25,21 +26,17 @@ from typing import Optional, Sequence, Tuple, Union
 import numpy as np
 
 from cana.function_outputs.bit_lut import BitLut
-from cana.function_properties.redundancy import (
+from cana.function_properties.sampling import (
     EXACT_K_MAX_DEFAULT,
     BootstrapResult,
     OneSymbolSchemata,
     SampledPiCoverage,
     _as_sampled_or_schemata,
     _bootstrap_means_1d,
-    _default_n_samples,
-    _infer_k_from_schemata,
-    _pack_redundancy_result,
+    _pack_coverage_result,
     _percentile_ci,
-    _redundancy_mode,
     _resolve_sampled,
-    _warn_if_sampled,
-    sample_pi_coverage,
+    resolve_exact_or_sampled,
 )
 
 
@@ -70,35 +67,20 @@ def bias_from_schemata(
     Same exact/sampled two-track and warning / ``return_mode`` behaviour as
     :func:`~cana.function_properties.redundancy.input_redundancy`.
     """
-    k_inf = int(k) if k is not None else _infer_k_from_schemata(schemata)
-    exact_k_max = int(exact_k_max)
-    use_exact = minterms is None and k_inf <= exact_k_max
-    if use_exact:
-        n = 1 << k_inf
-    elif n_samples is None and minterms is None:
-        n = _default_n_samples(exact_k_max)
-    elif minterms is not None:
-        n = len(minterms)
-    else:
-        n = int(n_samples)  # type: ignore[arg-type]
-
-    mode = _redundancy_mode(k_inf, n, use_exact=use_exact)
-    _warn_if_sampled(
-        "bias_from_schemata",
-        mode=mode,
-        k=k_inf,
+    sampled, mode, _k = resolve_exact_or_sampled(
+        schemata,
+        what="bias_from_schemata",
+        k=k,
         exact_k_max=exact_k_max,
-        n=n,
-    )
-
-    sampled = sample_pi_coverage(
-        schemata, n, rng=rng, minterms=minterms, k=k_inf
+        n_samples=n_samples,
+        rng=rng,
+        minterms=minterms,
     )
     if sampled.n_samples < 1:
         raise ValueError("need at least one coverage entry")
     contrib = sampled.bias_contributions()
     estimate = float(math.fsum(contrib) / len(contrib))
-    return _pack_redundancy_result(
+    return _pack_coverage_result(
         estimate,
         sampled,
         mode,

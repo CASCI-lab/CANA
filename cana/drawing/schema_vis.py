@@ -18,9 +18,9 @@ def plot_schemata(n, plotTS=True):
         n.network.get_node_name(i)[0] if n.network is not None else i for i in inputs
     ]
     if not plotTS:
-        n._check_compute_canalization_variables(prime_implicants=True)
+        n.outputs.get_one_symbol_schemata()
     else:
-        n._check_compute_canalization_variables(two_symbols=True)
+        n.outputs.get_two_symbol_schemata()
         ts0s = n._two_symbols[0]
         ts1s = n._two_symbols[1]
         n_ts = sum(len(tss) for tss in [ts0s, ts1s])

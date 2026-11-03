@@ -435,13 +435,13 @@ def test_verify_representations_consistent():
 def test_node_stores_one_symbol_on_outputs():
     n = BooleanNode.from_bit_lut([0, 0, 0, 1], name="AND")
     assert n.outputs.one_symbol_schemata is None
-    n._check_compute_canalization_variables(prime_implicants=True)
+    n.outputs.get_one_symbol_schemata()
     assert n.outputs.one_symbol_schemata is not None
     assert n._prime_implicants is n.outputs.one_symbol_schemata
     cached = n.outputs.one_symbol_schemata
-    n._check_compute_canalization_variables(prime_implicants=True)
+    n.outputs.get_one_symbol_schemata()
     assert n.outputs.one_symbol_schemata is cached
-    n._check_compute_canalization_variables(two_symbols=True)
+    n.outputs.get_two_symbol_schemata()
     assert n.outputs.two_symbol_schemata is not None
     assert n._two_symbols is n.outputs.two_symbol_schemata
 
@@ -460,7 +460,7 @@ def test_canalization_uses_stored_one_symbol_with_soft_warn():
     assert n.outputs.bit_lut is None
 
     with pytest.warns(UserWarning, match="one_symbol_is_prime_implicant"):
-        n._check_compute_canalization_variables(prime_implicants=True)
+        n.outputs.get_one_symbol_schemata()
 
     # Stored cover kept; no LUT / QM forced.
     assert n.outputs.one_symbol_schemata is schemata
@@ -468,10 +468,25 @@ def test_canalization_uses_stored_one_symbol_with_soft_warn():
     assert n.outputs.one_symbol_is_prime_implicant is None
 
     with pytest.warns(UserWarning, match="one_symbol_is_prime_implicant"):
-        n._check_compute_canalization_variables(two_symbols=True)
+        n.outputs.get_two_symbol_schemata()
     assert n.outputs.two_symbol_schemata is not None
     assert n.outputs.bit_lut is None
     assert n.outputs.one_symbol_schemata is schemata
+
+
+def test_get_two_symbol_does_not_double_warn_on_stored_one():
+    schemata = {0: {"00", "01", "10"}, 1: {"11"}}
+    fo = FunctionOutputs(one_symbol_schemata=schemata, k=2)
+    with warnings.catch_warnings(record=True) as caught:
+        warnings.simplefilter("always")
+        fo.get_two_symbol_schemata()
+    pi_warns = [
+        w
+        for w in caught
+        if issubclass(w.category, UserWarning)
+        and "one_symbol_is_prime_implicant" in str(w.message)
+    ]
+    assert len(pi_warns) == 1
 
 
 def test_canalization_skips_warn_when_one_symbol_verified():
@@ -483,11 +498,27 @@ def test_canalization_skips_warn_when_one_symbol_verified():
     )
     with warnings.catch_warnings(record=True) as caught:
         warnings.simplefilter("always")
-        n._check_compute_canalization_variables(prime_implicants=True)
-        n._check_compute_canalization_variables(two_symbols=True)
+        n.outputs.get_one_symbol_schemata()
+        n.outputs.get_two_symbol_schemata()
     assert not [w for w in caught if issubclass(w.category, UserWarning)]
     assert n.outputs.one_symbol_schemata is schemata
     assert n.outputs.bit_lut is None
+
+
+def test_check_compute_canalization_variables_deprecated():
+    n = BooleanNode.from_bit_lut([0, 0, 0, 1], name="AND")
+    with pytest.warns(DeprecationWarning, match="_check_compute_canalization_variables"):
+        n._check_compute_canalization_variables(prime_implicants=True)
+    assert n.outputs.one_symbol_schemata is not None
+    with pytest.warns(DeprecationWarning, match="_check_compute_canalization_variables"):
+        n._check_compute_canalization_variables(two_symbols=True)
+    assert n.outputs.two_symbol_schemata is not None
+    with pytest.warns(DeprecationWarning, match="_check_compute_canalization_variables"):
+        n._check_compute_canalization_variables(pi_coverage=True)
+    assert n._pi_coverage is not None
+    with pytest.warns(DeprecationWarning, match="_check_compute_canalization_variables"):
+        n._check_compute_canalization_variables(ts_coverage=True)
+    assert n._ts_coverage is not None
 
 
 def test_fill_function_outputs_node_and_network():

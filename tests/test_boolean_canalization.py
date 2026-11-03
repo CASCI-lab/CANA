@@ -280,7 +280,7 @@ def test_prime_implicants_random():
     # compute prime implicants
     pis = dict()
     for f, n in nodes.items():
-        n._check_compute_canalization_variables(prime_implicants=True)
+        n.outputs.get_one_symbol_schemata()
         if 0 in n._prime_implicants:
             zeros = n._prime_implicants[0]
         else:
