@@ -8,13 +8,14 @@
 # Goal: see which APIs succeed from positional expression / primes **without**
 # materializing a dense LUT or a Θ(``2**k``) coverage dict, and which hit
 # ``pi_coverage`` / ``ts_coverage`` expansion or ``get_bit_lut`` (refuses above
-# ``MAX_DENSE_LUT_K``).  Sampling probes estimate ``input_redundancy`` /
-# ``edge_redundancy`` by matching covering PIs on a fixed minterm sample.
-# Bias and sensitivity are each probed both via dense LUT
-# (``bias_from_bit_lut`` / ``sensitivity_from_bit_lut``) and via one-symbol
-# schemata (``bias_from_schemata`` / ``sensitivity_from_schemata`` with
-# sample covers for high *k*, same minterm sample as the redundancy
-# ``*_sample`` probes).
+# ``MAX_DENSE_LUT_K``).  Early probes time import, one-symbol, and two-symbol
+# schemata separately so ``input_symmetry`` can isolate full ``ts_coverage``
+# cost.  Sampling probes estimate ``input_redundancy`` / ``edge_redundancy`` by
+# matching covering PIs on a fixed minterm sample.  Bias and sensitivity are
+# each probed both via dense LUT (``bias_from_bit_lut`` /
+# ``sensitivity_from_bit_lut``) and via one-symbol schemata
+# (``bias_from_schemata`` / ``sensitivity_from_schemata`` with sample covers
+# for high *k*, same minterm sample as the redundancy ``*_sample`` probes).
 # **No** CANA measure code is patched — timeouts and errors are the result.
 #
 # Modes:
@@ -105,6 +106,7 @@ STARTER: Tuple[Tuple[str, str, int, str], ...] = (
 PROBE_IDS: Tuple[str, ...] = (
     "import",
     "one_symbol",
+    "two_symbol",
     "schemata_pi",
     "input_redundancy",
     "input_redundancy_sample",
@@ -126,6 +128,10 @@ PROBE_METHODS: Dict[str, str] = {
     "one_symbol": (
         "expression cascade → one-symbol primes/schemata "
         "(no LUT / no covers)"
+    ),
+    "two_symbol": (
+        "derive two-symbol schemata from one-symbol primes "
+        "(get_two_symbol_schemata; no ts_coverage)"
     ),
     "schemata_pi": (
         "PI schemata DataFrame from derived primes "
@@ -166,7 +172,8 @@ PROBE_METHODS: Dict[str, str] = {
         "exact_k_max=-1; no pi_coverage dict)"
     ),
     "input_symmetry": (
-        "exact k_s: build full ts_coverage over all 2**k minterms"
+        "exact k_s: expand full ts_coverage over all 2**k minterms "
+        "(two-symbol already probed separately)"
     ),
 }
 
@@ -273,6 +280,15 @@ def _run_probe_body(bnet_text: str, target: str, probe: str) -> Dict[str, Any]:
         value: Any = {
             0: len(sch.get(0, ()) or ()),
             1: len(sch.get(1, ()) or ()),
+        }
+    elif probe == "two_symbol":
+        # Schemata only — does not expand Θ(2**k) ts_coverage (that is
+        # input_symmetry).  Same TIMEOUT_S kill as every other probe.
+        ts = node.outputs.get_two_symbol_schemata()
+        ts0, ts1 = ts
+        value = {
+            0: len(ts0 or ()),
+            1: len(ts1 or ()),
         }
     elif probe == "schemata_pi":
         df = node.schemata_look_up_table(type="pi")
@@ -494,8 +510,32 @@ for i, fn in enumerate(funcs, start=1):
         f"model={model_name[:48]}"
     )
 
+    two_symbol_timed_out = False
     for probe in PROBE_IDS:
+        if probe == "input_symmetry" and two_symbol_timed_out:
+            row = {
+                "model_id": model_id,
+                "target": target,
+                "cohort": cohort,
+                "expect_k": expect_k,
+                "probe": probe,
+                "status": "skip",
+                "t": None,
+                "k": None,
+                "value": None,
+                "error": "skipped: two_symbol timed out",
+                "label": label,
+            }
+            rows.append(row)
+            log.info(
+                f"       {probe:24s}  {'skip':>10s}  "
+                f"(two_symbol timed out)"
+            )
+            continue
+
         r = run_probe(bnet, target, probe, timeout_s=TIMEOUT_S)
+        if probe == "two_symbol" and r["status"] == "timeout":
+            two_symbol_timed_out = True
         row = {
             "model_id": model_id,
             "target": target,
@@ -547,6 +587,8 @@ def _cell(row: Optional[Dict[str, Any]]) -> str:
         return fmt_s(row["t"]).strip()
     if st == "timeout":
         return f"timeout({TIMEOUT_S:g}s)"
+    if st == "skip":
+        return "skip"
     return "error"
 
 
@@ -584,7 +626,7 @@ for key in sorted(
 log.info("")
 log.info("=== per-probe status counts ===")
 for probe in PROBE_IDS:
-    n_ok = n_to = n_err = 0
+    n_ok = n_to = n_err = n_skip = 0
     for row in rows:
         if row["probe"] != probe:
             continue
@@ -592,10 +634,13 @@ for probe in PROBE_IDS:
             n_ok += 1
         elif row["status"] == "timeout":
             n_to += 1
+        elif row["status"] == "skip":
+            n_skip += 1
         else:
             n_err += 1
     log.info(
-        f"{probe:24s}  ok={n_ok:4d}  timeout={n_to:4d}  error={n_err:4d}"
+        f"{probe:24s}  ok={n_ok:4d}  timeout={n_to:4d}  "
+        f"error={n_err:4d}  skip={n_skip:4d}"
     )
 
 log.info("")
