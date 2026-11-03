@@ -318,3 +318,5 @@ def plot_schemata(n, plotTS=True):
     # FileName
     filename = n.name.replace("/", "_")
     filename = filename.replace(",", "_")
+
+    return fig

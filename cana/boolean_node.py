@@ -27,6 +27,7 @@ import cana.canalization.cboolean_canalization as cBCanalization
 from cana.canalization.canalizing_map import build_canalizing_map
 import cana.function_properties.bias as bias
 import cana.function_properties.redundancy as redundancy
+import cana.function_properties.sampling as sampling
 import cana.function_properties.symmetry as symmetry
 import cana.function_properties.sensitivity as sensitivity
 from cana.cutils import (
@@ -34,7 +35,7 @@ from cana.cutils import (
     flip_bit,
     statenum_to_binstate,
 )
-from cana.function_properties.redundancy import EXACT_K_MAX_DEFAULT
+from cana.function_properties.sampling import EXACT_K_MAX_DEFAULT
 from cana.function_outputs import FunctionOutputs
 from cana.function_outputs.bit_lut import MAX_DENSE_LUT_K
 from cana.function_outputs.expression import positional_names
@@ -109,10 +110,31 @@ class BooleanNode(object):
         else:
             self.set_constant(constant=False)
 
-        # Canalization Variables (PI / TS live on outputs.*; coverage stays here)
-        self._pi_coverage = None  # The Coverage of inputs by Prime Implicants schemata
-        self._ts_coverage = None  # The Coverage of inputs by Two Symbol schemata
-        self._sampled_pi_coverage = None  # Partial coverage from high-k sampling
+    # Coverage caches live on ``outputs`` and clear when one-/two-symbol
+    # schemata are replaced with a different value.
+    @property
+    def _pi_coverage(self):
+        return self.outputs._pi_coverage
+
+    @_pi_coverage.setter
+    def _pi_coverage(self, value):
+        self.outputs._pi_coverage = value
+
+    @property
+    def _ts_coverage(self):
+        return self.outputs._ts_coverage
+
+    @_ts_coverage.setter
+    def _ts_coverage(self, value):
+        self.outputs._ts_coverage = value
+
+    @property
+    def _sampled_pi_coverage(self):
+        return self.outputs._sampled_pi_coverage
+
+    @_sampled_pi_coverage.setter
+    def _sampled_pi_coverage(self, value):
+        self.outputs._sampled_pi_coverage = value
 
     @staticmethod
     def _factory_common_kwargs(k, kwargs):
@@ -181,20 +203,6 @@ class BooleanNode(object):
             *args,
             **kwargs
         )
-
-    @classmethod
-    def from_output_list(cls, outputs=list(), *args, **kwargs):
-        """Deprecated alias of :meth:`from_bit_lut`.
-
-        .. deprecated::
-            Use :meth:`from_bit_lut` instead.
-        """
-        warnings.warn(
-            "BooleanNode.from_output_list is deprecated; use from_bit_lut instead.",
-            DeprecationWarning,
-            stacklevel=2,
-        )
-        return cls.from_bit_lut(outputs, *args, **kwargs)
 
     @classmethod
     def from_positional_expression(cls, expression, *args, **kwargs):
@@ -458,11 +466,10 @@ class BooleanNode(object):
 
         for statenum, output in zip(range(2**k), self.outputs):
             # Binary State, Transition
-            d.append((statenum_to_binstate(statenum, base=self.k), output))
+            d.append((statenum_to_binstate(statenum, base=self.k), int(output)))
 
-        df = pd.DataFrame(d, columns=["In:", "Out:"])
-
-        return df
+        # object dtype keeps Python ints through notebook concat/fillna (avoids 0.0).
+        return pd.DataFrame(d, columns=["In:", "Out:"], dtype=object)
 
     def schemata_look_up_table(
         self,
@@ -509,65 +516,60 @@ class BooleanNode(object):
 
             ts0s, ts1s = self._two_symbols
 
+            def _mark_schema(schemata, group, mark):
+                return "".join(
+                    x if (k not in group) else "%s%s" % (x, mark)
+                    for k, x in enumerate(schemata)
+                )
+
             for output, ts in zip([0, 1], [ts0s, ts1s]):
-                for i, (schemata, permutables, samesymbols) in enumerate(ts):
-                    if max(len(permutables), len(samesymbols)) > len(ts_symbol_list):
+                rows = []
+                for schemata, permutables, samesymbols in ts:
+                    # Same-symbol groups are trivial (identical literals);
+                    # only true permutation groups are shown.
+                    if len(permutables) > len(ts_symbol_list):
                         raise ValueError(
                             "Schema %s has %d permutation groups but ts_symbol_list has only %d symbols; pass a longer ts_symbol_list."
-                            % (schemata, max(len(permutables), len(samesymbols)), len(ts_symbol_list))
+                            % (schemata, len(permutables), len(ts_symbol_list))
                         )
-                    string = ""
-                    if len(permutables):
-                        string += "("
-                        # Permutable
-                        for j, permutable in enumerate(permutables):
-                            #
-                            ts_symbol_unicode = ts_symbol_list[j]
-                            if j > 0:
-                                string += " | "
-                            string += "".join(
-                                [
-                                    x
-                                    if (k not in permutable)
-                                    else "%s%s" % (x, ts_symbol_unicode)
-                                    for k, x in enumerate(schemata, start=0)
-                                ]
-                            )
-                        string += ")"
-
+                    if permutables:
+                        parts = [
+                            _mark_schema(schemata, group, ts_symbol_list[j])
+                            for j, group in enumerate(permutables)
+                        ]
+                        string = (
+                            "(%s)" % (" | ".join(parts))
+                            if len(parts) > 1
+                            else parts[0]
+                        )
                     else:
-                        string += "(" + schemata + ")"
-
-                    if len(samesymbols):
-                        string += " | ("
-                        # Same Symbol
-                        for j, samesymbol in enumerate(samesymbols):
-                            ts_symbol_unicode = ts_symbol_list[j]
-                            if j > 0:
-                                string += " | "
-                            string += "".join(
-                                [
-                                    x
-                                    if (k not in samesymbol)
-                                    else "%s%s" % (x, ts_symbol_unicode)
-                                    for k, x in enumerate(schemata, start=0)
-                                ]
-                            )
-                        string += ")"
-                    r.append((string, output))
+                        string = schemata
+                    rows.append((string, output))
+                r.extend(rows)
         else:
             raise AttributeError(
                 'The schemata type could not be found. Try "PI" (Prime Implicants) or "TS" (Two-Symbol).'
             )
 
-        r = [(schemata.replace("2", pi_symbol), output) for schemata, output in r]
-        return pd.DataFrame(r, columns=["Input", "Output"])
+        r = [
+            (schemata.replace("2", pi_symbol), int(output)) for schemata, output in r
+        ]
+        if type == "ts":
+            # Stable row order within each output polarity (sets → nondeterministic).
+            r = sorted(r, key=lambda row: (row[1], row[0]))
+        # object dtype keeps Python ints through notebook concat/fillna (avoids 0.0).
+        return pd.DataFrame(r, columns=["In:", "Out:"], dtype=object)
 
     # --- Canalization (internals) ---
 
     @property
     def _prime_implicants(self):
-        """Proxy to :attr:`outputs.one_symbol_schemata` (one source of truth)."""
+        """Proxy to :attr:`outputs.one_symbol_schemata` (one source of truth).
+
+        Soft-warns when the stored cover is not known to be prime implicants
+        (same policy as :meth:`outputs.get_one_symbol_schemata`).
+        """
+        self.outputs._warn_if_one_symbol_unverified()
         return self.outputs.one_symbol_schemata
 
     @_prime_implicants.setter
@@ -576,15 +578,26 @@ class BooleanNode(object):
 
     @property
     def _two_symbols(self):
-        """Proxy to :attr:`outputs.two_symbol_schemata` (one source of truth)."""
+        """Proxy to :attr:`outputs.two_symbol_schemata` (one source of truth).
+
+        Soft-warns when the stored two-symbol is not known to be canonical
+        (same policy as :meth:`outputs.get_two_symbol_schemata`).
+        """
+        self.outputs._warn_if_two_symbol_unverified()
         return self.outputs.two_symbol_schemata
 
     @_two_symbols.setter
     def _two_symbols(self, value):
         self.outputs.two_symbol_schemata = value
 
-    def ensure_pi_coverage(self):
-        """Ensure :attr:`_pi_coverage` is computed (refuses oversized ``k``)."""
+    def pi_coverage(self):
+        """Return the :math:`F'` (Prime Implicants) binary state coverage.
+
+        Lazily fills :attr:`_pi_coverage` (refuses oversized ``k``).
+
+        See also:
+            :meth:`sampled_pi_coverage`, :meth:`ts_coverage`
+        """
         _refuse_coverage_k(self.k, kind="pi_coverage")
         self.outputs.get_one_symbol_schemata()
         if self._pi_coverage is None:
@@ -596,8 +609,51 @@ class BooleanNode(object):
             assert len(self._pi_coverage) == 2**self.k
         return self._pi_coverage
 
-    def ensure_ts_coverage(self):
-        """Ensure :attr:`_ts_coverage` is computed (refuses oversized ``k``)."""
+    def sampled_pi_coverage(
+        self,
+        *,
+        exact_k_max=EXACT_K_MAX_DEFAULT,
+        n_samples=None,
+        rng=None,
+        reuse=True,
+    ):
+        """Sample a partial pi-coverage for high-``k`` measure estimates.
+
+        Caches the result on ``_sampled_pi_coverage``. Pass ``reuse=False`` to
+        force a fresh sample.
+
+        See also:
+            :meth:`pi_coverage`,
+            :func:`cana.function_properties.sampling.sample_pi_coverage`.
+        """
+        n = (
+            (1 << int(exact_k_max))
+            if n_samples is None
+            else int(n_samples)
+        )
+        if (
+            reuse
+            and self._sampled_pi_coverage is not None
+            and self._sampled_pi_coverage.k == self.k
+            and self._sampled_pi_coverage.n_samples == n
+        ):
+            return self._sampled_pi_coverage
+
+        schemata = self.outputs.get_one_symbol_schemata()
+        sampled = sampling.sample_pi_coverage(
+            schemata, n, rng=rng, k=self.k
+        )
+        self._sampled_pi_coverage = sampled
+        return sampled
+
+    def ts_coverage(self):
+        """Return the :math:`F''` (Two-Symbol schematas) binary state coverage.
+
+        Lazily fills :attr:`_ts_coverage` (refuses oversized ``k``).
+
+        See also:
+            :meth:`pi_coverage`, :meth:`sampled_pi_coverage`
+        """
         _refuse_coverage_k(self.k, kind="ts_coverage")
         self.outputs.get_two_symbol_schemata()
         if self._ts_coverage is None:
@@ -611,50 +667,28 @@ class BooleanNode(object):
 
         .. deprecated::
             Use :meth:`outputs.get_one_symbol_schemata`,
-            :meth:`outputs.get_two_symbol_schemata`, :meth:`ensure_pi_coverage`,
-            or :meth:`ensure_ts_coverage` instead.
+            :meth:`outputs.get_two_symbol_schemata`, :meth:`pi_coverage`,
+            or :meth:`ts_coverage` instead.
         """
         warnings.warn(
             "_check_compute_canalization_variables is deprecated; "
             "use outputs.get_one_symbol_schemata / "
             "outputs.get_two_symbol_schemata / "
-            "ensure_pi_coverage / ensure_ts_coverage.",
+            "pi_coverage / ts_coverage.",
             DeprecationWarning,
             stacklevel=2,
         )
         if "prime_implicants" in kwargs:
             self.outputs.get_one_symbol_schemata()
         elif "pi_coverage" in kwargs:
-            self.ensure_pi_coverage()
+            self.pi_coverage()
         elif "two_symbols" in kwargs:
             self.outputs.get_two_symbol_schemata()
         elif "ts_coverage" in kwargs:
-            self.ensure_ts_coverage()
+            self.ts_coverage()
         else:
             raise Exception("Canalization variable name not found. %s" % kwargs)
         return True
-
-    def pi_coverage(self):
-        """Returns the :math:`F'` (Prime Implicants) binary state coverage.
-
-        Returns:
-            (list)
-
-        See also:
-            :func:`ts_coverage`
-        """
-        return self.ensure_pi_coverage()
-
-    def ts_coverage(self):
-        """Returns the :math:`F''` (Two-Symbol schematas) binary state coverage.
-
-        Returns:
-            (list)
-
-        See also:
-            :func:`pi_coverage`
-        """
-        return self.ensure_ts_coverage()
 
     def canalizing_map(self, output=None, builder="legacy"):
         """Computes the node Canalizing Map (CM).
@@ -753,9 +787,8 @@ class BooleanNode(object):
             )
 
         if self.k <= exact_k_max:
-            self.ensure_pi_coverage()
             value = redundancy.input_redundancy_from_coverage(
-                self._pi_coverage, self.k, operator=operator, norm=norm
+                self.pi_coverage(), self.k, operator=operator, norm=norm
             )
             mode = "exact"
         else:
@@ -843,9 +876,8 @@ class BooleanNode(object):
             )
 
         if self.k <= exact_k_max:
-            self.ensure_pi_coverage()
             value = redundancy.edge_redundancy_from_coverage(
-                self._pi_coverage, self.k, bound=bound
+                self.pi_coverage(), self.k, bound=bound
             )
             mode = "exact"
         else:
@@ -878,42 +910,6 @@ class BooleanNode(object):
         if return_mode:
             return value, mode
         return value
-
-
-    def sampled_pi_coverage(
-        self,
-        *,
-        exact_k_max=EXACT_K_MAX_DEFAULT,
-        n_samples=None,
-        rng=None,
-        reuse=True,
-    ):
-        """Sample a partial pi-coverage for high-``k`` redundancy estimates.
-
-        Caches the result on ``_sampled_pi_coverage``. Pass ``reuse=False`` to
-        force a fresh sample.
-
-        See :func:`cana.function_properties.redundancy.sample_pi_coverage`.
-        """
-        n = (
-            (1 << int(exact_k_max))
-            if n_samples is None
-            else int(n_samples)
-        )
-        if (
-            reuse
-            and self._sampled_pi_coverage is not None
-            and self._sampled_pi_coverage.k == self.k
-            and self._sampled_pi_coverage.n_samples == n
-        ):
-            return self._sampled_pi_coverage
-
-        schemata = self.outputs.get_one_symbol_schemata()
-        sampled = redundancy.sample_pi_coverage(
-            schemata, n, rng=rng, k=self.k
-        )
-        self._sampled_pi_coverage = sampled
-        return sampled
 
     def effective_connectivity(self, operator=mean, norm=True):
         r"""The Effective Connectiviy is the mean number of input nodes needed to determine the transition of the node.
@@ -1017,10 +1013,10 @@ class BooleanNode(object):
         def kernFunc(x):
             return strToKern[kernel](x, sameSymbol=sameSymbol)
 
-        self.ensure_ts_coverage()
+        ts_coverage = self.ts_coverage()
 
         summand = []
-        for fAlpha, fTheta in self._ts_coverage.items():
+        for fAlpha, fTheta in ts_coverage.items():
             summand.append(op(list(map(kernFunc, fTheta))))
         return math.fsum(summand) / len(summand)
 
@@ -1032,10 +1028,10 @@ class BooleanNode(object):
         Returns:
             (float)
         """
-        self.ensure_ts_coverage()
+        ts_coverage = self.ts_coverage()
         summand = []
         # fTheta = a list of TS
-        for fTheta in self._ts_coverage.values():
+        for fTheta in ts_coverage.values():
             inner = 0
             for ts in fTheta:
                 inner += sum(

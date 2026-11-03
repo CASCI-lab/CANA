@@ -9,6 +9,7 @@ from cana.datasets.bools import CONTRADICTION, AND, OR, XOR, COPYx1, RULE90, RUL
 from cana.boolean_node import BooleanNode
 import cana.function_properties.sensitivity as sensitivity
 import numpy as np
+import pandas as pd
 import pytest
 
 
@@ -649,6 +650,8 @@ def test_activities_sensitivity_high_k_schemata_sampling():
     k = MAX_DENSE_LUT_K + 1
     # constant-1 on all inputs: every input is fictitious → activity 0
     n = BooleanNode.from_one_symbol_schemata({1: {"2" * k}}, k=k)
+    # Known PI cover; verify_one_symbol_schemata would need a dense LUT.
+    n.outputs.one_symbol_is_prime_implicant = True
     assert n.outputs.bit_lut is None
     with pytest.raises(ValueError, match="MAX_DENSE_LUT_K"):
         n.outputs.get_bit_lut()
@@ -679,12 +682,32 @@ def test_from_bit_lut_returns_subclass():
     assert (n.k, n.name, n.outputs) == (2, "xor", list("0110"))
     assert n.input_redundancy(norm=False) == XOR().input_redundancy(norm=False)
 
-def test_from_output_list_deprecated_alias():
-    """from_output_list still works and warns toward from_bit_lut"""
-    with pytest.warns(DeprecationWarning, match="from_bit_lut"):
-        n = BooleanNode.from_output_list([0, 0, 0, 1], name="AND")
-    assert n.k == 2
-    assert list(n.outputs) == [0, 0, 0, 1]
+def test_schemata_look_up_table_ts_hides_same_symbol_groups():
+    """Trivial same-symbol groups are not rendered; only permutables are marked."""
+    n = AND()
+    df = n.schemata_look_up_table(type="ts")
+    assert list(df.columns) == ["In:", "Out:"]
+    by_out = {out: schema for schema, out in df.itertuples(index=False, name=None)}
+    # Output 0: true permute group on wild. Output 1: only same-symbol → plain schema.
+    assert by_out[0] == "0\u030A#\u030A"
+    assert by_out[1] == "11"
+
+
+def test_schema_table_out_stays_int_after_concat_fillna():
+    """Out: values stay ints (not 0.0) when notebooks concat + fillna('-')."""
+    n = AND()
+    dfLUT = n.look_up_table()
+    dfPI = n.schemata_look_up_table(type="pi")
+    dfTS = n.schemata_look_up_table(type="ts")
+    for df in (dfLUT, dfPI, dfTS):
+        assert all(type(v) is int for v in df["Out:"])
+    joined = pd.concat(
+        {"Original LUT": dfLUT, "PI Schema": dfPI, "TS Schema": dfTS}, axis=1
+    ).fillna("-")
+    for col in [("PI Schema", "Out:"), ("TS Schema", "Out:"), ("Original LUT", "Out:")]:
+        vals = [v for v in joined[col] if v != "-"]
+        assert vals and all(type(v) is int for v in vals)
+
 
 def test_from_positional_expression_factory():
     n = BooleanNode.from_positional_expression("x0 and x1", k=2, name="AND", inputs=[0, 1])
@@ -726,6 +749,43 @@ def test_coverage_refuses_huge_k():
     with pytest.raises(ValueError, match="ts_coverage.*MAX_DENSE_LUT_K"):
         n_ts.ts_coverage()
     assert n_ts._ts_coverage is None
+
+
+def test_coverage_clears_when_schemata_replaced():
+    """Replacing one-/two-symbol with a different cover drops coverage caches."""
+    n = BooleanNode.from_bit_lut([0, 0, 0, 1], name="AND")
+    _ = n.pi_coverage()
+    _ = n.ts_coverage()
+    assert n._pi_coverage is not None
+    assert n._ts_coverage is not None
+
+    # Equal reassignment keeps caches.
+    same_one = {
+        0: set(n.outputs.one_symbol_schemata[0]),
+        1: set(n.outputs.one_symbol_schemata[1]),
+    }
+    n.outputs.one_symbol_schemata = same_one
+    assert n._pi_coverage is not None
+    n.outputs.two_symbol_schemata = (
+        list(n.outputs.two_symbol_schemata[0]),
+        list(n.outputs.two_symbol_schemata[1]),
+    )
+    assert n._ts_coverage is not None
+
+    # Different one-symbol clears PI caches only.
+    n.outputs.one_symbol_schemata = {0: {"00", "01", "10"}, 1: {"11"}}
+    assert n._pi_coverage is None
+    assert n._ts_coverage is not None
+
+    _ = n.pi_coverage()
+    _ = n.ts_coverage()
+    # Different two-symbol clears TS cache only.
+    n.outputs.two_symbol_schemata = (
+        [["000", [], []]],  # wrong shape / content vs AND
+        [["11", [], []]],
+    )
+    assert n._ts_coverage is None
+    assert n._pi_coverage is not None
 
 
 def test_input_symmetry_mean_on_fresh_node():

@@ -92,6 +92,8 @@ def test_bootstrap_bias_from_sampled_pi_coverage():
 def test_high_k_constant_one_bias_via_sampling():
     k = MAX_DENSE_LUT_K + 1
     n = BooleanNode.from_one_symbol_schemata({1: {"2" * k}}, k=k)
+    # Known PI cover; verify_one_symbol_schemata would need a dense LUT.
+    n.outputs.one_symbol_is_prime_implicant = True
     assert n.outputs.bit_lut is None
     with pytest.raises(ValueError, match="MAX_DENSE_LUT_K"):
         n.outputs.get_bit_lut()

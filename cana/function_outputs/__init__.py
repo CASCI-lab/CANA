@@ -88,17 +88,24 @@ class FunctionOutputs(object):
     representations_consistent :
         ``None`` until known; ``True``/``False`` after
         :meth:`verify_representations_consistent`.
+    _pi_coverage / _ts_coverage / _sampled_pi_coverage :
+        Optional analysis caches owned by the node API; cleared automatically
+        when :attr:`one_symbol_schemata` or :attr:`two_symbol_schemata` is
+        replaced with a non-equal value.
     """
 
     __slots__ = (
         "bit_lut",
-        "one_symbol_schemata",
-        "two_symbol_schemata",
+        "_one_symbol_schemata",
+        "_two_symbol_schemata",
         "positional_expression",
         "one_symbol_is_prime_implicant",
         "two_symbol_is_canonical",
         "representations_consistent",
         "_k",
+        "_pi_coverage",
+        "_ts_coverage",
+        "_sampled_pi_coverage",
     )
 
     def __init__(
@@ -110,12 +117,16 @@ class FunctionOutputs(object):
         k: Optional[int] = None,
     ) -> None:
         self.bit_lut = bit_lut
-        self.one_symbol_schemata = one_symbol_schemata
-        self.two_symbol_schemata = two_symbol_schemata
+        # Set private slots directly so init does not run replace-invalidation.
+        self._one_symbol_schemata = one_symbol_schemata
+        self._two_symbol_schemata = two_symbol_schemata
         self.positional_expression = positional_expression
         self.one_symbol_is_prime_implicant = None  # type: Optional[bool]
         self.two_symbol_is_canonical = None  # type: Optional[bool]
         self.representations_consistent = None  # type: Optional[bool]
+        self._pi_coverage = None
+        self._ts_coverage = None
+        self._sampled_pi_coverage = None
         if bit_lut is not None:
             self._k = bit_lut.k
         elif k is not None:
@@ -161,6 +172,33 @@ class FunctionOutputs(object):
         if self.bit_lut is not None:
             return self.bit_lut.k
         return self._k
+
+    @property
+    def one_symbol_schemata(self) -> Optional[OneSymbolSchemata]:
+        return self._one_symbol_schemata
+
+    @one_symbol_schemata.setter
+    def one_symbol_schemata(self, value: Optional[OneSymbolSchemata]) -> None:
+        old = self._one_symbol_schemata
+        self._one_symbol_schemata = value
+        if old is value or old == value:
+            return
+        # Derived Θ(2^k) / sampled PI coverage is stale for a different cover.
+        self._pi_coverage = None
+        self._sampled_pi_coverage = None
+
+    @property
+    def two_symbol_schemata(self) -> Optional[TwoSymbolSchemata]:
+        return self._two_symbol_schemata
+
+    @two_symbol_schemata.setter
+    def two_symbol_schemata(self, value: Optional[TwoSymbolSchemata]) -> None:
+        old = self._two_symbol_schemata
+        self._two_symbol_schemata = value
+        if old is value or old == value:
+            return
+        # Derived Θ(2^k) TS coverage is stale for a different redesignation.
+        self._ts_coverage = None
 
     def eval(self, statenum: int) -> int:
         """Evaluate the function at input state ``statenum``.
@@ -422,11 +460,6 @@ class FunctionOutputs(object):
         self.one_symbol_is_prime_implicant = True
         self._k = self.bit_lut.k
         return self.one_symbol_schemata
-
-    @staticmethod
-    def _bit_lut_to_one_symbol(bit_lut: BitLut) -> OneSymbolSchemata:
-        """Run Quine-McCluskey on ``bit_lut`` without mutating a container."""
-        return bit_lut_to_one_symbol(bit_lut)
 
     def _two_symbol_from_one_symbol(
         self, one_symbol: OneSymbolSchemata

@@ -90,9 +90,13 @@ def attractors(cnet, bnspath=_path, cleanup=True):
             elif len(cleanline) > 0:
                 current_attractor.append(binstate_to_statenum(cleanline))
 
-    except OSError:
+    except OSError as err:
+        # ENOENT: missing binary; EINVAL/ENOEXEC: wrong OS architecture (e.g. macOS
+        # Mach-O binary on Linux). cana currently ships a macOS build in cana/bns/.
         print(
-            "'BNS' could not be found! You must have it compiled or download the binary for your system from the 'bns' website (https://people.kth.se/~dubrova/bns.html)."
+            "BNS unavailable (%s). Place a platform-native 'bns' binary in %s "
+            "(https://people.kth.se/~dubrova/bns.html)."
+            % (err.strerror or err, bnspath)
         )
 
     return attractors

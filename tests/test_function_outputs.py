@@ -525,12 +525,18 @@ def test_canalization_uses_stored_one_symbol_with_soft_warn():
     assert n.outputs.bit_lut is None
     assert n.outputs.one_symbol_is_prime_implicant is None
 
+    with pytest.warns(UserWarning, match="one_symbol_is_prime_implicant"):
+        assert n._prime_implicants is schemata
+
     with pytest.warns(UserWarning, match="two_symbol_is_canonical"):
         n.outputs.get_two_symbol_schemata()
     assert n.outputs.two_symbol_schemata is not None
     assert n.outputs.two_symbol_is_canonical is None
     assert n.outputs.bit_lut is None
     assert n.outputs.one_symbol_schemata is schemata
+
+    with pytest.warns(UserWarning, match="two_symbol_is_canonical"):
+        assert n._two_symbols is n.outputs.two_symbol_schemata
 
 
 def test_get_two_symbol_does_not_double_warn_on_stored_one():

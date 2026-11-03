@@ -26,7 +26,6 @@ from cana.cutils import statenum_to_binstate
 __all__ = [
     "BOOL_KEYWORDS",
     "IDENTIFIER_RE",
-    "POSITIONAL_RE",
     "normalize_operators",
     "expression_identifiers",
     "regulator_names_in_expression",
@@ -42,7 +41,6 @@ __all__ = [
 
 BOOL_KEYWORDS = frozenset({"and", "or", "not", "true", "false", "xor"})
 IDENTIFIER_RE = re.compile(r"[A-Za-z_][A-Za-z0-9_]*")
-POSITIONAL_RE = re.compile(r"\bx(\d+)\b")
 
 
 def normalize_operators(expr: str, style: str = "python") -> str:
@@ -195,16 +193,20 @@ def positional_expression_to_bit_lut(expr: str, k: int) -> BitLut:
     names = positional_names(k)
     # Eval trusted python ``and``/``or``/``not`` over all ``2**k`` input rows
     # (builtins disabled; not a security boundary for untrusted strings).
+    # Pack directly into BitLut to avoid a Θ(2**k) intermediate Python list.
     ns = {}
     safe_globals = {"__builtins__": {}}
     code = compile(expr.strip(), "<string>", "eval")
-    outputs = []
-    for i in range(2**k):
-        trial = statenum_to_binstate(i, k)
+    lut = BitLut(k)
+    data = lut._data
+    n = len(lut)
+    shift0 = k - 1
+    for i in range(n):
         for j, name in enumerate(names):
-            ns[name] = int(trial[j])
-        outputs.append(int(eval(code, safe_globals, ns)))
-    return BitLut.from_sequence(outputs)
+            ns[name] = (i >> (shift0 - j)) & 1
+        if eval(code, safe_globals, ns):
+            data[i >> 3] |= 1 << (i & 7)
+    return lut
 
 
 def named_expression_to_bit_lut(
