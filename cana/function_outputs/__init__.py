@@ -82,6 +82,9 @@ class FunctionOutputs(object):
     one_symbol_is_prime_implicant :
         ``None`` until known; ``True``/``False`` after QM compute or
         :meth:`verify_one_symbol_schemata`.
+    two_symbol_is_canonical :
+        ``None`` until known; ``True``/``False`` after deriving two-symbol
+        from a verified PI cover or :meth:`verify_two_symbol_schemata`.
     representations_consistent :
         ``None`` until known; ``True``/``False`` after
         :meth:`verify_representations_consistent`.
@@ -93,6 +96,7 @@ class FunctionOutputs(object):
         "two_symbol_schemata",
         "positional_expression",
         "one_symbol_is_prime_implicant",
+        "two_symbol_is_canonical",
         "representations_consistent",
         "_k",
     )
@@ -110,6 +114,7 @@ class FunctionOutputs(object):
         self.two_symbol_schemata = two_symbol_schemata
         self.positional_expression = positional_expression
         self.one_symbol_is_prime_implicant = None  # type: Optional[bool]
+        self.two_symbol_is_canonical = None  # type: Optional[bool]
         self.representations_consistent = None  # type: Optional[bool]
         if bit_lut is not None:
             self._k = bit_lut.k
@@ -404,7 +409,12 @@ class FunctionOutputs(object):
     def _two_symbol_from_one_symbol(
         self, one_symbol: OneSymbolSchemata
     ) -> TwoSymbolSchemata:
-        """Derive and store two-symbol schemata from a one-symbol cover."""
+        """Derive and store two-symbol schemata from a one-symbol cover.
+
+        When :attr:`one_symbol_is_prime_implicant` is ``True``, also sets
+        :attr:`two_symbol_is_canonical` to ``True`` (canonical redesignation
+        of a verified PI cover).  Otherwise leaves the flag unchanged.
+        """
         # Local import avoids a circular import at module load time.
         import cana.canalization.boolean_canalization as BCanalization
 
@@ -415,6 +425,8 @@ class FunctionOutputs(object):
             BCanalization.find_two_symbols_v2(k=k, prime_implicants=pi0),
             BCanalization.find_two_symbols_v2(k=k, prime_implicants=pi1),
         )
+        if self.one_symbol_is_prime_implicant is True:
+            self.two_symbol_is_canonical = True
         return self.two_symbol_schemata
 
     # --- opt-in verification ---
@@ -443,6 +455,74 @@ class FunctionOutputs(object):
             and set(schemata.get(1, ())) == set(recomputed.get(1, ()))
         )
         self.one_symbol_is_prime_implicant = ok
+        return ok
+
+    def verify_two_symbol_schemata(self) -> bool:
+        """Opt-in: stored two-symbol is the canonical ``find_two_symbols_v2`` of PIs.
+
+        Expands two → one.  If a verified one-symbol cover is already stored:
+        mismatch is a quick ``False``; match skips the PI check and rebuilds
+        from that cover.  Otherwise PI-checks the expansion (LUT + QM).  Then
+        rebuilds two-symbol locally and requires nested equality with the
+        stored value (including ``same_groups``).  Sets
+        :attr:`two_symbol_is_canonical`.  Never called by normal canalization
+        paths.
+        """
+        if self.two_symbol_schemata is None:
+            raise ValueError(
+                "verify_two_symbol_schemata requires two_symbol_schemata"
+            )
+        # Local import avoids a circular import at module load time.
+        import cana.canalization.boolean_canalization as BCanalization
+
+        expanded = two_symbol_to_one_symbol(self.two_symbol_schemata)
+        pi_cover = None  # type: Optional[OneSymbolSchemata]
+
+        if (
+            self.one_symbol_schemata is not None
+            and self.one_symbol_is_prime_implicant is True
+        ):
+            cached = self.one_symbol_schemata
+            if not (
+                set(expanded.get(0, ())) == set(cached.get(0, ()))
+                and set(expanded.get(1, ())) == set(cached.get(1, ()))
+            ):
+                self.two_symbol_is_canonical = False
+                return False
+            pi_cover = cached
+        else:
+            try:
+                lut = one_symbol_to_bit_lut(expanded, self.k)
+            except ValueError:
+                self.two_symbol_is_canonical = False
+                return False
+            recomputed = bit_lut_to_one_symbol(lut)
+            if not (
+                set(expanded.get(0, ())) == set(recomputed.get(0, ()))
+                and set(expanded.get(1, ())) == set(recomputed.get(1, ()))
+            ):
+                self.two_symbol_is_canonical = False
+                return False
+            if self.one_symbol_schemata is not None and (
+                set(expanded.get(0, ()))
+                == set(self.one_symbol_schemata.get(0, ()))
+                and set(expanded.get(1, ()))
+                == set(self.one_symbol_schemata.get(1, ()))
+            ):
+                self.one_symbol_is_prime_implicant = True
+            pi_cover = recomputed
+
+        k = self.k
+        rebuilt = (
+            BCanalization.find_two_symbols_v2(
+                k=k, prime_implicants=pi_cover.get(0, set())
+            ),
+            BCanalization.find_two_symbols_v2(
+                k=k, prime_implicants=pi_cover.get(1, set())
+            ),
+        )
+        ok = self.two_symbol_schemata == rebuilt
+        self.two_symbol_is_canonical = ok
         return ok
 
     def verify_representations_consistent(self) -> bool:
@@ -499,8 +579,8 @@ class FunctionOutputs(object):
 
         Remaps ``bit_lut``, ``one_symbol_schemata``, ``two_symbol_schemata``,
         and positional ``positional_expression`` when present (no QM).  Preserves
-        ``one_symbol_is_prime_implicant``.  If orders already match, returns
-        ``self`` unchanged.
+        ``one_symbol_is_prime_implicant`` and ``two_symbol_is_canonical``.
+        If orders already match, returns ``self`` unchanged.
         """
         if list(old_labels) == list(new_labels):
             return self
@@ -538,6 +618,7 @@ class FunctionOutputs(object):
             k=self.k,
         )
         out.one_symbol_is_prime_implicant = self.one_symbol_is_prime_implicant
+        out.two_symbol_is_canonical = self.two_symbol_is_canonical
         # Peers remapped with the same permutation stay consistent iff they were.
         out.representations_consistent = self.representations_consistent
         return out
@@ -584,6 +665,12 @@ class FunctionOutputs(object):
             parts.append(
                 "one_symbol_is_prime_implicant={0!r}".format(
                     self.one_symbol_is_prime_implicant
+                )
+            )
+        if self.two_symbol_is_canonical is not None:
+            parts.append(
+                "two_symbol_is_canonical={0!r}".format(
+                    self.two_symbol_is_canonical
                 )
             )
         if self.representations_consistent is not None:

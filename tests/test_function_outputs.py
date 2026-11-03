@@ -416,6 +416,64 @@ def test_verify_one_symbol_non_prime_complete_cover():
     assert fo.one_symbol_is_prime_implicant is False
 
 
+def test_verify_two_symbol_schemata_from_qm_path():
+    fo = FunctionOutputs.from_sequence([0, 0, 0, 1])  # AND
+    assert fo.two_symbol_is_canonical is None
+    ts = fo.get_two_symbol_schemata()
+    assert fo.one_symbol_is_prime_implicant is True
+    assert fo.two_symbol_is_canonical is True
+    assert fo.verify_two_symbol_schemata() is True
+    assert fo.two_symbol_is_canonical is True
+
+    # Two-only copy of the same canonical cover.
+    only = FunctionOutputs(two_symbol_schemata=ts, k=2)
+    assert only.one_symbol_schemata is None
+    assert only.verify_two_symbol_schemata() is True
+    assert only.two_symbol_is_canonical is True
+
+
+def test_verify_two_symbol_quick_false_mismatched_verified_one():
+    # Canonical AND two-symbol, but verified one-symbol is OR.
+    and_ts = ([["02", [[0, 1]], []]], [["11", [], [[0, 1]]]])
+    or_one = {0: {"00"}, 1: {"12", "21"}}
+    fo = FunctionOutputs(
+        one_symbol_schemata=or_one,
+        two_symbol_schemata=and_ts,
+        k=2,
+    )
+    fo.one_symbol_is_prime_implicant = True
+    assert fo.verify_two_symbol_schemata() is False
+    assert fo.two_symbol_is_canonical is False
+
+
+def test_verify_two_symbol_non_prime_expanded_cover():
+    # Minterm OFF cover packaged as two-symbol (empty perms) — not PIs.
+    ts = (
+        [["00", [], []], ["01", [], []], ["10", [], []]],
+        [["11", [], []]],
+    )
+    fo = FunctionOutputs(two_symbol_schemata=ts, k=2)
+    assert fo.verify_two_symbol_schemata() is False
+    assert fo.two_symbol_is_canonical is False
+
+
+def test_verify_two_symbol_non_canonical_same_groups():
+    # Expands to the same AND cover, but missing ON same_groups vs finder.
+    ts = ([["02", [[0, 1]], []]], [["11", [], []]])
+    fo = FunctionOutputs(two_symbol_schemata=ts, k=2)
+    assert two_symbol_to_one_symbol(ts) == {0: {"02", "20"}, 1: {"11"}}
+    assert fo.verify_two_symbol_schemata() is False
+    assert fo.two_symbol_is_canonical is False
+
+
+def test_verify_two_symbol_non_canonical_representative():
+    # Same AND function; OFF representative '20' instead of canonical '02'.
+    ts = ([["20", [[0, 1]], []]], [["11", [], [[0, 1]]]])
+    fo = FunctionOutputs(two_symbol_schemata=ts, k=2)
+    assert fo.verify_two_symbol_schemata() is False
+    assert fo.two_symbol_is_canonical is False
+
+
 def test_verify_representations_consistent():
     fo = FunctionOutputs.from_sequence([0, 0, 0, 1])
     assert fo.representations_consistent is None
@@ -593,6 +651,7 @@ def test_function_outputs_reorder_both_peers():
     fo.get_one_symbol_schemata()
     fo.get_two_symbol_schemata()
     assert fo.one_symbol_is_prime_implicant is True
+    assert fo.two_symbol_is_canonical is True
     fo.representations_consistent = True
 
     out = fo.reorder(["A", "B"], ["B", "A"])
@@ -601,6 +660,7 @@ def test_function_outputs_reorder_both_peers():
     assert out.one_symbol_schemata is not None
     assert list(one_symbol_to_bit_lut(out.one_symbol_schemata, 2)) == [1, 0, 1, 1]
     assert out.one_symbol_is_prime_implicant is True
+    assert out.two_symbol_is_canonical is True
     assert out.representations_consistent is True
     assert out.two_symbol_schemata is not None
     expanded = two_symbol_to_one_symbol(out.two_symbol_schemata)
