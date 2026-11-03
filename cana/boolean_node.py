@@ -1003,17 +1003,8 @@ class BooleanNode(object):
             groups = ts[1] + ts[2]
         return len(set(i for group in groups for i in group))
 
-    def _input_symmetry(self, aggOp, kernel):
-        self._check_compute_canalization_variables(ts_coverage=True)
-
-        summand = []
-        for fAlpha, fTheta in self._ts_coverage.items():
-            summand.append(aggOp(list(map(kernel, fTheta))))
-        return math.fsum(summand) / len(summand)
-
     def input_symmetry(self, aggOp="mean", kernel="numDots", sameSymbol=False):
         """compute the input symmetry (k_s) of the boolean node, with variations via the specified functions.
-        Convenience wrapper for lower-level function.
 
         Args:
             aggOp : the function aggregating over all two-symbol schemata that redescribe a LUT entry
@@ -1024,11 +1015,17 @@ class BooleanNode(object):
         """
         strToOp = {"mean": np.mean, "max": max, "min": min}
         strToKern = {"numDots": self.symKernel_numDots}
+        op = strToOp[aggOp]
 
         def kernFunc(x):
             return strToKern[kernel](x, sameSymbol=sameSymbol)
 
-        return self._input_symmetry(strToOp[aggOp], kernFunc)
+        self._check_compute_canalization_variables(ts_coverage=True)
+
+        summand = []
+        for fAlpha, fTheta in self._ts_coverage.items():
+            summand.append(op(list(map(kernFunc, fTheta))))
+        return math.fsum(summand) / len(summand)
 
     def input_symmetry_mean(self):
         """compute the input symmetry (k_s) of the boolean node.
