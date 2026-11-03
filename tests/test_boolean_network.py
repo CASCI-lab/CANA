@@ -4,9 +4,11 @@ import pytest
 from cana.datasets.bio import THALIANA, LEUKEMIA
 
 # THALIANA loads schemata-only nodes from cnet; canalization soft-warns when
-# one_symbol_is_prime_implicant is unset. Not under test here.
+# one_symbol_is_prime_implicant / two_symbol_is_canonical are unset.
+# Not under test here.
 pytestmark = pytest.mark.filterwarnings(
-    "ignore:.*one_symbol_is_prime_implicant.*:UserWarning"
+    "ignore:.*one_symbol_is_prime_implicant.*:UserWarning",
+    "ignore:.*two_symbol_is_canonical.*:UserWarning",
 )
 
 

@@ -317,11 +317,11 @@ def function_outputs_to_named_expression(
     Priority: stored positional expression → two-symbol → one-symbol → LUT.
 
     Never runs ``verify_*``; only reads
-    ``representations_consistent`` / ``one_symbol_is_prime_implicant``.
+    ``representations_consistent`` / ``one_symbol_is_prime_implicant`` /
+    ``two_symbol_is_canonical``.
     Soft-warns (never raises) for the chosen non-LUT source:
     one-symbol when ``one_symbol_is_prime_implicant`` is not ``True``;
-    two-symbol likewise when a one-symbol cover is also stored (two-symbol
-    is often derived from it);
+    two-symbol when ``two_symbol_is_canonical`` is not ``True``;
     consistency only when ``representations_consistent is False``
     (``None`` is silent — common after lazy LUT fill).
 
@@ -381,6 +381,21 @@ def function_outputs_to_named_expression(
             stacklevel=3,
         )
 
+    def _warn_canonical(source: str) -> None:
+        if not warn:
+            return
+        flag = getattr(outputs, "two_symbol_is_canonical", None)
+        if flag is True:
+            return
+        warnings.warn(
+            "{0}: exporting from {1} "
+            "(two_symbol_is_canonical={2!r})".format(
+                label, source, flag
+            ),
+            UserWarning,
+            stacklevel=3,
+        )
+
     expr = getattr(outputs, "positional_expression", None)
     if expr is not None:
         _warn_consistency("positional_expression")
@@ -392,10 +407,7 @@ def function_outputs_to_named_expression(
     two_symbol = getattr(outputs, "two_symbol_schemata", None)
     one_symbol = getattr(outputs, "one_symbol_schemata", None)
     if two_symbol is not None:
-        # Two-symbol is often built from one-symbol; warn if that cover
-        # is present and not known to be prime.
-        if one_symbol is not None:
-            _warn_prime("two_symbol_schemata")
+        _warn_canonical("two_symbol_schemata")
         _warn_consistency("two_symbol_schemata")
         return two_symbol_to_expression(
             input_names, two_symbol, style=style

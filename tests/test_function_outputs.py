@@ -525,9 +525,10 @@ def test_canalization_uses_stored_one_symbol_with_soft_warn():
     assert n.outputs.bit_lut is None
     assert n.outputs.one_symbol_is_prime_implicant is None
 
-    with pytest.warns(UserWarning, match="one_symbol_is_prime_implicant"):
+    with pytest.warns(UserWarning, match="two_symbol_is_canonical"):
         n.outputs.get_two_symbol_schemata()
     assert n.outputs.two_symbol_schemata is not None
+    assert n.outputs.two_symbol_is_canonical is None
     assert n.outputs.bit_lut is None
     assert n.outputs.one_symbol_schemata is schemata
 
@@ -538,13 +539,36 @@ def test_get_two_symbol_does_not_double_warn_on_stored_one():
     with warnings.catch_warnings(record=True) as caught:
         warnings.simplefilter("always")
         fo.get_two_symbol_schemata()
+    canonical_warns = [
+        w
+        for w in caught
+        if issubclass(w.category, UserWarning)
+        and "two_symbol_is_canonical" in str(w.message)
+    ]
+    assert len(canonical_warns) == 1
     pi_warns = [
         w
         for w in caught
         if issubclass(w.category, UserWarning)
         and "one_symbol_is_prime_implicant" in str(w.message)
     ]
-    assert len(pi_warns) == 1
+    assert pi_warns == []
+
+
+def test_get_two_symbol_warns_on_stored_unverified():
+    ts = (
+        [["00", [], []], ["01", [], []], ["10", [], []]],
+        [["11", [], []]],
+    )
+    fo = FunctionOutputs(two_symbol_schemata=ts, k=2)
+    assert fo.two_symbol_is_canonical is None
+    with pytest.warns(UserWarning, match="two_symbol_is_canonical"):
+        assert fo.get_two_symbol_schemata() is ts
+    fo.two_symbol_is_canonical = True
+    with warnings.catch_warnings(record=True) as caught:
+        warnings.simplefilter("always")
+        fo.get_two_symbol_schemata()
+    assert not [w for w in caught if issubclass(w.category, UserWarning)]
 
 
 def test_canalization_skips_warn_when_one_symbol_verified():
@@ -560,6 +584,7 @@ def test_canalization_skips_warn_when_one_symbol_verified():
         n.outputs.get_two_symbol_schemata()
     assert not [w for w in caught if issubclass(w.category, UserWarning)]
     assert n.outputs.one_symbol_schemata is schemata
+    assert n.outputs.two_symbol_is_canonical is True
     assert n.outputs.bit_lut is None
 
 
@@ -805,26 +830,32 @@ def test_function_outputs_to_named_expression_from_two_symbol_only():
         function_outputs_to_named_expression(fo, ["A", "B"], warn=False)
         == "(A or B)"
     )
-    # Two-symbol alone: no prime warn (no stored one-symbol).
+    # Two-symbol alone: warn when not known canonical.
+    with pytest.warns(UserWarning, match="two_symbol_is_canonical"):
+        assert (
+            function_outputs_to_named_expression(fo, ["A", "B"], warn=True)
+            == "(A or B)"
+        )
+    fo.two_symbol_is_canonical = True
     with warnings.catch_warnings(record=True) as caught:
         warnings.simplefilter("always")
         function_outputs_to_named_expression(fo, ["A", "B"], warn=True)
         assert caught == []
 
-    # Two-symbol + one-symbol: warn prime when flag is not True.
+    # Two-symbol + one-symbol: still keyed on two_symbol_is_canonical.
     fo_both = FunctionOutputs(
         one_symbol_schemata={1: {"12", "21"}},
         two_symbol_schemata=ts,
         k=2,
     )
-    with pytest.warns(UserWarning, match="two_symbol_schemata"):
+    with pytest.warns(UserWarning, match="two_symbol_is_canonical"):
         assert (
             function_outputs_to_named_expression(
                 fo_both, ["A", "B"], node_label="X"
             )
             == "(A or B)"
         )
-    fo_both.one_symbol_is_prime_implicant = True
+    fo_both.two_symbol_is_canonical = True
     with warnings.catch_warnings(record=True) as caught:
         warnings.simplefilter("always")
         function_outputs_to_named_expression(fo_both, ["A", "B"], warn=True)

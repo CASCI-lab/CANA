@@ -219,9 +219,7 @@ class FunctionOutputs(object):
         """Soft-warn when using a stored one-symbol cover that is not known PIs.
 
         Does not run Quine–McCluskey or build a LUT.  Opt-in verification is
-        :meth:`verify_one_symbol_schemata`.  Callers that both obtain and then
-        derive from the same stored cover must invoke this at most once (see
-        :meth:`get_two_symbol_schemata`).
+        :meth:`verify_one_symbol_schemata`.
         """
         if self.one_symbol_schemata is None:
             return
@@ -233,6 +231,27 @@ class FunctionOutputs(object):
             "downstream use assumes a prime-implicant cover. "
             "Call verify_one_symbol_schemata() to check.".format(
                 self.one_symbol_is_prime_implicant
+            ),
+            UserWarning,
+            stacklevel=3,
+        )
+
+    def _warn_if_two_symbol_unverified(self):
+        """Soft-warn when using two-symbol that is not known canonical.
+
+        Does not expand, rebuild, or run Quine–McCluskey.  Opt-in verification
+        is :meth:`verify_two_symbol_schemata`.
+        """
+        if self.two_symbol_schemata is None:
+            return
+        if self.two_symbol_is_canonical is True:
+            return
+        warnings.warn(
+            "using two_symbol_schemata "
+            "(two_symbol_is_canonical={0!r}); "
+            "downstream use assumes a canonical two-symbol redesignation. "
+            "Call verify_two_symbol_schemata() to check.".format(
+                self.two_symbol_is_canonical
             ),
             UserWarning,
             stacklevel=3,
@@ -303,27 +322,30 @@ class FunctionOutputs(object):
     def get_two_symbol_schemata(self) -> TwoSymbolSchemata:
         """Return two-symbol schemata, deriving from any available peer slot.
 
-        Prefer stored two-symbol; else derive from stored
-        ``one_symbol_schemata`` (soft-warns once unless
-        :attr:`one_symbol_is_prime_implicant` is ``True``, without also going
-        through :meth:`get_one_symbol_schemata`); else obtain primes via
-        :meth:`get_one_symbol_schemata` (expression cascade, then bit_lut/QM)
-        and derive.  Intermediates are cached.  Does not re-run QM over a
-        stored cover; call :meth:`verify_one_symbol_schemata` to check
-        explicitly.  Raises ``ValueError`` if no peer can produce two-symbol
-        schemata.
+        Prefer stored two-symbol (soft-warns unless
+        :attr:`two_symbol_is_canonical` is ``True``); else derive from stored
+        ``one_symbol_schemata`` without going through
+        :meth:`get_one_symbol_schemata` (soft-warns unless the derived cover
+        is marked canonical, i.e. when the one-symbol was a verified PI
+        cover); else obtain primes via :meth:`get_one_symbol_schemata`
+        (expression cascade, then bit_lut/QM) and derive.  Intermediates are
+        cached.  Does not re-run verification; call
+        :meth:`verify_two_symbol_schemata` to check explicitly.  Raises
+        ``ValueError`` if no peer can produce two-symbol schemata.
         """
         if self.two_symbol_schemata is not None:
+            self._warn_if_two_symbol_unverified()
             return self.two_symbol_schemata
 
-        # Warn here (not via get_one_symbol_schemata) so a single get_two call
-        # emits at most one unverified-cover warning.
         if self.one_symbol_schemata is not None:
-            self._warn_if_one_symbol_unverified()
-            return self._two_symbol_from_one_symbol(self.one_symbol_schemata)
+            ts = self._two_symbol_from_one_symbol(self.one_symbol_schemata)
+            self._warn_if_two_symbol_unverified()
+            return ts
 
         one_symbol = self.get_one_symbol_schemata()
-        return self._two_symbol_from_one_symbol(one_symbol)
+        ts = self._two_symbol_from_one_symbol(one_symbol)
+        self._warn_if_two_symbol_unverified()
+        return ts
 
     def get_positional_expression(self) -> Any:
         """Return positional expression IR, deriving from any available peer.
