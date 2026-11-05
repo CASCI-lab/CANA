@@ -1,0 +1,68 @@
+log_path=/home/kyuhyongpark/CANA/CANA/dev/high_k/logs/bbm_high_k_primes_compare/bbm_high_k_primes_compare.replot.log
+REGENERATE_FROM_LOG_ONLY=True  source=/home/kyuhyongpark/CANA/CANA/dev/high_k/logs/bbm_high_k_primes_compare/bbm_high_k_primes_compare.log  rows=402  MIN_K=13  TIMEOUT_S=1.0
+FIG_DIR=/home/kyuhyongpark/CANA/CANA/dev/high_k/logs/bbm_high_k_primes_compare  plot_methods=('rof', 'pyeda', 'primer')
+
+=== medians by (cohort, k)  (timeout counted as 1s) ===
+cohort    k    n         rof      pyeda     primer
+rest     13   22        skip   79.58 ms   72.28 ms
+rest     14   30        skip    1.000 s  133.98 ms
+rest     15    5        skip    1.000 s  317.75 ms
+rest     16    2        skip   59.60 ms  541.27 ms
+rest     17    3        skip   47.11 ms   79.09 ms
+rest     18    4        skip    1.000 s  786.35 ms
+rest     19    2        skip       skip       skip
+rest     21    2        skip    1.000 s  681.53 ms
+rest     42    1        skip       skip       skip
+rest     43    2        skip       skip       skip
+rof      13    9    19.36 ms   33.67 ms   43.97 ms
+rof      14    3    18.75 ms   31.80 ms   48.08 ms
+rof      15    1    17.22 ms   34.86 ms   62.02 ms
+rof      16    6    19.68 ms   41.81 ms   58.95 ms
+rof      17    4    25.86 ms   36.06 ms   57.61 ms
+rof      18    2    22.30 ms   30.81 ms   59.60 ms
+rof      19    4    27.99 ms   34.77 ms   45.31 ms
+rof      20    1    25.35 ms   37.46 ms   58.47 ms
+rof      21    1    19.72 ms   43.11 ms   66.46 ms
+rof      23    2    28.59 ms   36.56 ms   73.93 ms
+rof      24    1    41.99 ms   32.67 ms   61.82 ms
+rof      29    1    43.63 ms   39.07 ms  107.10 ms
+rof      31    1    28.88 ms   38.29 ms   85.26 ms
+rof      50    1    77.92 ms   31.61 ms  109.21 ms
+rof      80    1   150.06 ms   29.05 ms  182.45 ms
+unate    13   52        skip    1.000 s   71.75 ms
+unate    14   43        skip    1.000 s   99.08 ms
+unate    15   21        skip  562.42 ms   81.19 ms
+unate    16   13        skip    1.000 s  139.52 ms
+unate    17   22        skip  138.31 ms   73.46 ms
+unate    18   16        skip    1.000 s  376.75 ms
+unate    19   20        skip    1.000 s  228.47 ms
+unate    20   12        skip    1.000 s  129.21 ms
+unate    21   13        skip    1.000 s  140.09 ms
+unate    22   12        skip    1.000 s   83.02 ms
+unate    23    7        skip    1.000 s   89.75 ms
+unate    24    8        skip    1.000 s  346.31 ms
+unate    25    9        skip       skip       skip
+unate    26   11        skip       skip       skip
+unate    27    1        skip  990.11 ms  131.96 ms
+unate    28    3        skip    1.000 s  994.85 ms
+unate    29    2        skip       skip       skip
+unate    32    1        skip    1.000 s    1.000 s
+unate    36    1        skip    1.000 s  923.76 ms
+unate    38    1        skip    1.000 s    1.000 s
+unate    39    1        skip       skip    1.000 s
+unate    40    1        skip       skip    1.000 s
+unate    41    1        skip       skip       skip
+unate    42    1        skip       skip       skip
+unate    43    9        skip       skip       skip
+unate    44    8        skip       skip       skip
+unate    46    1        skip    1.000 s    1.000 s
+unate    57    1        skip    1.000 s    1.000 s
+
+402 timing rows  |  wrote /home/kyuhyongpark/CANA/CANA/dev/high_k/logs/bbm_high_k_primes_compare/bbm_high_k_primes_compare.replot.log
+wrote /home/kyuhyongpark/CANA/CANA/dev/high_k/logs/bbm_high_k_primes_compare/time_success_vs_k__rof.png
+  overall success: ROF generate: 38/38 (100%) | pyeda complete_sum: 38/38 (100%) | Primer-B: 38/38 (100%)
+wrote /home/kyuhyongpark/CANA/CANA/dev/high_k/logs/bbm_high_k_primes_compare/time_success_vs_k__unate.png
+  overall success: pyeda complete_sum: 107/329 (33%) | Primer-B: 241/329 (73%)
+wrote /home/kyuhyongpark/CANA/CANA/dev/high_k/logs/bbm_high_k_primes_compare/time_success_vs_k__all.png
+  overall success: pyeda complete_sum: 124/402 (31%) | Primer-B: 301/402 (75%)
+done  |  402 rows  |  mismatches=0  REGENERATE_FROM_LOG_ONLY=True

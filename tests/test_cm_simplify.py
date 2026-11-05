@@ -275,7 +275,7 @@ class TestSimplifyOrdering:
         assert G.has_node("mid")
 
     def test_deterministic_same_result(self):
-        node = BooleanNode.from_output_list(
+        node = BooleanNode.from_bit_lut(
             [0, 1, 1, 0], name="xor", inputs=[0, 1], id=6
         )
         raw = node.canalizing_map(builder="canonical")
@@ -294,7 +294,7 @@ class TestSimplifyOrdering:
 
 class TestSimplifyCanalizingMap:
     def test_constant_tau0_preserved(self):
-        node = BooleanNode.from_output_list(
+        node = BooleanNode.from_bit_lut(
             [0, 0, 0, 0], name="const0", inputs=[0, 1], id=0
         )
         for builder in ("legacy", "canonical"):
@@ -387,13 +387,13 @@ class TestSimplifyCanalizingMap:
     )
     @pytest.mark.parametrize("builder", ["legacy", "canonical"])
     def test_roundtrip_common_k2(self, outputs, builder):
-        node = BooleanNode.from_output_list(
+        node = BooleanNode.from_bit_lut(
             outputs, name="f", inputs=[0, 1], id=1
         )
         _assert_exact_roundtrip_simplified(node, builder=builder)
 
     def test_xor_canonical_roundtrip(self):
-        node = BooleanNode.from_output_list(
+        node = BooleanNode.from_bit_lut(
             [0, 1, 1, 0], name="xor", inputs=[0, 1], id=6
         )
         _assert_exact_roundtrip_simplified(node, builder="canonical")

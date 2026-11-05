@@ -1,0 +1,335 @@
+# -*- coding: utf-8 -*-
+"""Timing helpers for high-*k* CANA benchmarks."""
+from __future__ import annotations
+
+import multiprocessing as mp
+import os
+import signal
+import statistics
+import time
+from typing import Any, Callable, Dict, List, Optional, Tuple, TypeVar
+
+from high_k.paths import ensure_cana_on_path
+
+ensure_cana_on_path()
+
+from cana.function_outputs import FunctionOutputs
+from cana.io import import_detached_rule
+from cana.nodes_builder import DetachedRule
+
+__all__ = [
+    "median_time",
+    "fmt_s",
+    "call_with_timeout",
+    "call_in_subprocess",
+    "import_detached_outputs",
+    "time_expr_lut_one_symbol",
+    "time_import_and_rof",
+    "time_import_and_unate",
+]
+
+_T = TypeVar("_T")
+
+
+class _Timeout(Exception):
+    """Raised internally by :func:`call_with_timeout` via ``SIGALRM``."""
+
+
+def median_time(
+    fn: Callable[[], object], repeats: int = 3
+) -> Tuple[float, object]:
+    """Run *fn* *repeats* times; return ``(median_seconds, last_result)``."""
+    times: List[float] = []
+    result: object = None
+    for _ in range(repeats):
+        t0 = time.perf_counter()
+        result = fn()
+        times.append(time.perf_counter() - t0)
+    return statistics.median(times), result
+
+
+def fmt_s(t: Optional[float]) -> str:
+    """Format a duration in seconds for compact table cells."""
+    if t is None:
+        return "  skip"
+    if t < 1e-3:
+        return f"{t * 1e6:7.1f} µs"
+    if t < 1.0:
+        return f"{t * 1e3:7.2f} ms"
+    return f"{t:7.3f} s"
+
+
+def call_with_timeout(
+    seconds: float, fn: Callable[[], _T]
+) -> _T:
+    """Run *fn* on the main thread; raise ``TimeoutError`` after *seconds*.
+
+    Uses ``signal.setitimer`` / ``SIGALRM`` (Unix, main thread only).  Pure
+    Python work (e.g. AST parse) is interruptible; C extensions that block
+    signals may overrun the limit until they return to Python.
+    """
+    if seconds <= 0:
+        return fn()
+
+    def _handler(signum, frame):  # noqa: ARG001
+        raise _Timeout()
+
+    prev = signal.signal(signal.SIGALRM, _handler)
+    signal.setitimer(signal.ITIMER_REAL, seconds)
+    try:
+        return fn()
+    except _Timeout as exc:
+        raise TimeoutError(
+            f"exceeded {seconds:g}s timeout"
+        ) from exc
+    finally:
+        signal.setitimer(signal.ITIMER_REAL, 0.0)
+        signal.signal(signal.SIGALRM, prev)
+
+
+def _kill_process_group(pid: int, sig: int) -> None:
+    """Send *sig* to the process group led by *pid*; ignore if already gone."""
+    try:
+        os.killpg(pid, sig)
+    except ProcessLookupError:
+        return
+    except PermissionError:
+        try:
+            os.kill(pid, sig)
+        except ProcessLookupError:
+            return
+
+
+def call_in_subprocess(
+    worker: Callable[..., None],
+    args: Tuple[Any, ...],
+    *,
+    timeout_s: float,
+) -> Any:
+    """Run ``worker(*args, conn)`` in a child process; kill on timeout.
+
+    *worker* must ``conn.send(("ok", result))`` or
+    ``conn.send(("err", message))`` then close *conn*.  Raises
+    ``TimeoutError`` if the child exceeds *timeout_s* wall-clock seconds.
+    Raises ``RuntimeError`` on worker error or a missing result.
+
+    The child calls ``os.setsid()`` before running *worker*, so it becomes a
+    new session / process-group leader.  On timeout the whole group is
+    signaled (``SIGTERM`` then ``SIGKILL``), which also reaps grandchildren.
+    """
+    if timeout_s <= 0:
+        raise ValueError("call_in_subprocess requires timeout_s > 0")
+
+    ctx = mp.get_context("fork")
+    parent_conn, child_conn = ctx.Pipe(duplex=False)
+    ready = ctx.Event()
+
+    def _entry() -> None:
+        os.setsid()
+        ready.set()
+        try:
+            worker(*args, child_conn)
+        finally:
+            try:
+                child_conn.close()
+            except Exception:  # noqa: BLE001
+                pass
+
+    proc = ctx.Process(target=_entry)
+    proc.start()
+    child_conn.close()
+    if not ready.wait(timeout=5.0):
+        if proc.pid is not None:
+            _kill_process_group(proc.pid, signal.SIGKILL)
+        proc.join(1.0)
+        parent_conn.close()
+        raise RuntimeError("worker failed to enter new session")
+
+    proc.join(float(timeout_s))
+    if proc.is_alive():
+        assert proc.pid is not None
+        _kill_process_group(proc.pid, signal.SIGTERM)
+        proc.join(5.0)
+        if proc.is_alive():
+            _kill_process_group(proc.pid, signal.SIGKILL)
+            proc.join(1.0)
+        parent_conn.close()
+        raise TimeoutError(
+            f"exceeded {timeout_s:g}s timeout (subprocess killed)"
+        )
+    exitcode = proc.exitcode
+
+    def _missing_result() -> None:
+        if isinstance(exitcode, int) and exitcode < 0:
+            sig = -exitcode
+            raise TimeoutError(
+                f"exceeded {timeout_s:g}s timeout "
+                f"(worker killed by signal {sig}, exitcode={exitcode})"
+            )
+        raise RuntimeError(
+            f"worker exited without result (exitcode={exitcode})"
+        )
+
+    if not parent_conn.poll():
+        parent_conn.close()
+        _missing_result()
+    try:
+        status, payload = parent_conn.recv()
+    except EOFError:
+        parent_conn.close()
+        _missing_result()
+    parent_conn.close()
+    if status == "ok":
+        return payload
+    raise RuntimeError(str(payload))
+
+
+def import_detached_outputs(
+    bnet_text: str, target: str
+) -> FunctionOutputs:
+    """Parse a one-rule bnet snippet → detached positional ``FunctionOutputs``.
+
+    Uses :func:`~cana.io.import_detached_rule` (no free-input siblings).
+    """
+    rule = import_detached_rule(bnet_text, fmt="bnet", target=target)
+    fo = rule.outputs
+    if fo.positional_expression is None:
+        raise RuntimeError("expected positional_expression on DetachedRule")
+    return FunctionOutputs(
+        positional_expression=fo.positional_expression, k=fo.k
+    )
+
+
+def time_expr_lut_one_symbol(
+    bnet_text: str,
+    target: str,
+    *,
+    repeats: int = 3,
+    do_one_symbol: bool = True,
+) -> Dict[str, object]:
+    """Median times for import → LUT → one-symbol on *target*.
+
+    Each stage starts from a fresh :func:`import_detached_outputs` so peer
+    caches are not shared across stages.
+    """
+
+    def _import():
+        return import_detached_outputs(bnet_text, target)
+
+    t_import, fo0 = median_time(_import, repeats=repeats)
+    assert isinstance(fo0, FunctionOutputs)
+    k = fo0.k
+
+    def _lut():
+        fo = import_detached_outputs(bnet_text, target)
+        return fo.build_bit_lut_from_positional_expression()
+
+    t_lut, lut = median_time(_lut, repeats=repeats)
+
+    t_one = None
+    n_on = n_off = None
+    if do_one_symbol:
+
+        def _one():
+            fo = import_detached_outputs(bnet_text, target)
+            fo.build_bit_lut_from_positional_expression()
+            return fo.compute_one_symbol_schemata_from_bit_lut()
+
+        t_one, schemata = median_time(_one, repeats=repeats)
+        n_on = len(schemata.get(1, ()))
+        n_off = len(schemata.get(0, ()))
+
+    return {
+        "k": k,
+        "t_import": t_import,
+        "t_lut": t_lut,
+        "t_one_symbol": t_one,
+        "lut_len": len(lut) if lut is not None else None,
+        "n_pi_on": n_on,
+        "n_pi_off": n_off,
+    }
+
+
+def time_import_and_rof(
+    bnet_text: str,
+    target: str,
+    expr: str,
+    *,
+    repeats: int = 3,
+) -> Dict[str, object]:
+    """Median times for expression import and a syntactic ROF check on *expr*.
+
+    Import is :func:`import_detached_rule` only (no LUT / one-symbol).
+    The ROF check runs on the original named *expr* string via
+    :func:`~cana.function_properties.rof.check_syntactic_rof`.
+    """
+    from cana.function_properties.rof import check_syntactic_rof
+
+    def _import():
+        return import_detached_rule(bnet_text, fmt="bnet", target=target)
+
+    t_import, rule = median_time(_import, repeats=repeats)
+    assert isinstance(rule, DetachedRule)
+    k = rule.k
+
+    def _rof():
+        return check_syntactic_rof(expr)
+
+    t_rof, rof = median_time(_rof, repeats=repeats)
+    assert isinstance(rof, dict)
+
+    return {
+        "k": k,
+        "t_import": t_import,
+        "t_rof": t_rof,
+        "is_rof": bool(rof["is_rof"]),
+        "n_variables": int(rof["n_variables"]),  # type: ignore[arg-type]
+        "n_unique_variables": int(rof["n_unique_variables"]),  # type: ignore[arg-type]
+    }
+
+
+def time_import_and_unate(
+    bnet_text: str,
+    target: str,
+    expr: str,
+    *,
+    repeats: int = 3,
+) -> Dict[str, object]:
+    """Median times for expression import and a syntactic unate check on *expr*.
+
+    Import is :func:`import_detached_rule` only (no LUT / one-symbol).
+    The unate check runs on the original named *expr* string via
+    :func:`~high_k.unate.check_syntactic_unate` (stops at the first
+    binate for polarity; ``n_unique_variables`` is still a full count).
+
+    Also runs an untimed :func:`~cana.function_properties.rof.check_syntactic_rof` for
+    cross-classification (``is_rof``, ``n_variables``). Occurrence
+    counts come from the ROF pass so they match ``rof_check`` logs.
+    """
+    from cana.function_properties.rof import check_syntactic_rof
+    from high_k.unate import check_syntactic_unate
+
+    def _import():
+        return import_detached_rule(bnet_text, fmt="bnet", target=target)
+
+    t_import, rule = median_time(_import, repeats=repeats)
+    assert isinstance(rule, DetachedRule)
+    k = rule.k
+
+    def _unate():
+        return check_syntactic_unate(expr)
+
+    t_unate, unate = median_time(_unate, repeats=repeats)
+    assert isinstance(unate, dict)
+
+    rof = check_syntactic_rof(expr)
+
+    return {
+        "k": k,
+        "t_import": t_import,
+        "t_unate": t_unate,
+        "is_unate": bool(unate["is_unate"]),
+        "is_rof": bool(rof["is_rof"]),
+        "n_variables": int(rof["n_variables"]),  # type: ignore[arg-type]
+        "n_unique_variables": int(rof["n_unique_variables"]),  # type: ignore[arg-type]
+    }

@@ -41,6 +41,7 @@ dependencies = [
     "pandas",
     "matplotlib",
     "schematodes>=1.0.0",
+    "python-sat",
 ]
 
 [project.optional-dependencies]
@@ -77,10 +78,12 @@ include = ["cana*"]
 
 [tool.setuptools.package-data]
 "cana.datasets" = [
-    "*.txt",
+    "*.cnet",
+    "*.booleannet.txt",
     "bns/*.cnet",
-    "cell_collective/*.txt",
+    "cell_collective/*.cnet",
 ]
 
 [tool.pytest.ini_options]
+testpaths = ["tests"]
 pythonpath = [".", "tests/", "tests/helpers/"]

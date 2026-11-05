@@ -102,13 +102,11 @@ Changelog
 ---------
 
 Master
-- Added canalizing map (CM/DCM): LUT roundtrip (`cm_lut`), canonical builder with simplification, topology-based evaluation, and visualization
-- `BooleanNode.activities` now computed directly from the LUT in `cana.sensitivity`; previous formulation kept as `activities_old`, values unchanged
+- `FunctionOutputs`: store and convert among `bit_lut`, one-/two-symbol schemata, and positional expressions; build `BooleanNode` from any of them
+- High-`k` support: dense-LUT / coverage guardrails; sampled redundancy, activities, sensitivity, and bias
+- Expression → primes (Quine–McCluskey, PySAT Primer-B / unate shortcuts)
+- Fixed canalizing map (CM/DCM): LUT roundtrip, canonical builder with simplification, topology-based evaluation, and visualization
 - Schemata order and k_r/k_s values are now identical across processes (prime implicants sorted, sums use `math.fsum`); last digits of some k_r/k_s means change accordingly
-- Fixed `schemata_look_up_table(type='ts')` failing on schemata with more than two permutation groups
-- `BooleanNode.sensitivity` now computed directly from the LUT in the new `cana.sensitivity` module; previous formulation kept as `sensitivity_old`, values unchanged
-- Fixed `from_output_list`: rejects non-power-of-two output lists, returns subclass instances
-- Fixed undefined name in Cython `__pi_covers`
 - Fixed `input_symmetry_mean` failing on a fresh node
 - Added calculation of distinct and raw symmetry
 - Added visualization routines to drawing (effective graph and conditional effective graph)

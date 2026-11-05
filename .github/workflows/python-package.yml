@@ -43,4 +43,4 @@ jobs:
         mv cana/ src/
     - name: Test with pytest
       run: |
-        pytest
+        pytest tests

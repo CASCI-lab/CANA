@@ -7,7 +7,6 @@ Methods to generate random ensembles of Boolean networks.
 
 """
 import random
-import re
 
 #   Copyright (C) 2021 by
 #   Alex Gates <ajgates@indiana.edu>
@@ -15,13 +14,13 @@ import re
 #   Thomas Parmer <tjparmer@indiana.edu>
 #   All rights reserved.
 #   MIT license.
-from collections import Counter, defaultdict
-from io import StringIO
+from collections import Counter
 
 import networkx as nx
 
 from cana.boolean_network import BooleanNetwork
-from cana.utils import output_transitions
+from cana.boolean_node import BooleanNode
+from cana.function_generation import random_automata_table
 
 
 def regular_boolean_network(
@@ -48,19 +47,21 @@ def regular_boolean_network(
             graph=regular_graph, niter_remove=niter_remove
         )
 
-    # A dict that contains the network logic {<id>:{'name':<string>,'in':<list-input-node-id>,'out':<list-output-transitions>},..}
-    bn_dict = {
-        node: {
-            "name": str(node),
-            "in": sorted([n for n in regular_graph.predecessors(node)]),
-            "out": random_automata_table(
-                regular_graph.in_degree(node), bias, bias_constraint
-            ),
-        }
-        for node in range(N)
-    }
+    nodes = []
+    for node in range(N):
+        inputs = sorted(n for n in regular_graph.predecessors(node))
+        nodes.append(
+            BooleanNode.from_bit_lut(
+                random_automata_table(
+                    regular_graph.in_degree(node), bias, bias_constraint
+                ),
+                id=node,
+                name=str(node),
+                inputs=inputs,
+            )
+        )
 
-    return BooleanNetwork.from_dict(bn_dict, keep_constants=keep_constants)
+    return BooleanNetwork.from_nodes(nodes, keep_constants=keep_constants)
 
 
 def er_boolean_network(
@@ -81,40 +82,21 @@ def er_boolean_network(
     if remove_multiedges:
         er_graph = _remove_duplicate_edges(graph=er_graph, niter_remove=niter_remove)
 
-    # A dict that contains the network logic {<id>:{'name':<string>,'in':<list-input-node-id>,'out':<list-output-transitions>},..}
-    bn_dict = {
-        node: {
-            "name": str(node),
-            "in": sorted([n for n in er_graph.predecessors(node)]),
-            "out": random_automata_table(
-                er_graph.in_degree(node), bias, bias_constraint
-            ),
-        }
-        for node in range(N)
-    }
+    nodes = []
+    for node in range(N):
+        inputs = sorted(n for n in er_graph.predecessors(node))
+        nodes.append(
+            BooleanNode.from_bit_lut(
+                random_automata_table(
+                    er_graph.in_degree(node), bias, bias_constraint
+                ),
+                id=node,
+                name=str(node),
+                inputs=inputs,
+            )
+        )
 
-    return BooleanNetwork.from_dict(bn_dict)
-
-
-def random_automata_table(indegree, bias, bias_constraint="soft"):
-    """
-    TODO: description
-    """
-    if bias_constraint == "soft":
-        return [int(random.random() < bias) for b in range(2**indegree)]
-
-    elif bias_constraint == "hard":
-        n_ones = int(bias * (2**indegree))
-        output = [0] * (2**indegree - n_ones) + [1] * n_ones
-        random.shuffle(output)
-        return output
-
-    elif bias_constraint == "soft_no_constant":
-        output = [int(random.random() < bias) for b in range(2**indegree)]
-        if sum(output) == 0:
-            output[0] = 1
-            random.shuffle(output)
-        return output
+    return BooleanNetwork.from_nodes(nodes)
 
 
 def _remove_duplicate_edges(graph, niter_remove=100):
@@ -160,73 +142,3 @@ def _remove_duplicate_edges(graph, niter_remove=100):
         )
 
     return graph
-
-
-def from_string_boolean(self, string, keep_constants=True, **kwargs):
-    """
-    Instanciates a Boolean Network from a Boolean update rules format.
-
-    Args:
-        string (string) : A boolean update rules format representation of a Boolean Network.
-
-    Returns:
-        (BooleanNetwork) : The boolean network object.
-
-    Examples:
-        String should be structured as follow:
-
-        .. code-block:: text
-
-            # BOOLEAN RULES (this is a comment)
-            # node_name*=node_input_1 [logic operator] node_input_2 ...
-            NODE3*=NODE1 AND NODE2 ...
-
-    See also:
-        :func:`from_string` :func:`from_dict`
-    """
-
-    logic = defaultdict(dict)
-
-    # parse lines to receive node names
-    network_file = StringIO(string)
-    line = network_file.readline()
-    i = 0
-    while line != "":
-        if line[0] == "#":
-            line = network_file.readline()
-            continue
-        logic[i] = {"name": line.split("*")[0].strip(), "in": [], "out": []}
-        line = network_file.readline()
-        i += 1
-
-    # Parse lines again to determine inputs and output sequence
-    network_file = StringIO(string)
-    line = network_file.readline()
-    i = 0
-    while line != "":
-        if line[0] == "#":
-            line = network_file.readline()
-            continue
-        eval_line = line.split("=")[1]  # logical condition to evaluate
-        # RE checks for non-alphanumeric character before/after node name (node names are included in other node names)
-        # Additional characters added to eval_line to avoid start/end of string complications
-        input_names = [
-            logic[node]["name"]
-            for node in logic
-            if re.compile(r"\W" + logic[node]["name"] + r"\W").search(
-                "*" + eval_line + "*"
-            )
-        ]
-        input_nums = [
-            node
-            for input in input_names
-            for node in logic
-            if input == logic[node]["name"]
-        ]
-        logic[i]["in"] = input_nums
-        # Determine output transitions
-        logic[i]["out"] = output_transitions(eval_line, input_names)
-        line = network_file.readline()
-        i += 1
-
-    return self.from_dict(logic, keep_constants=keep_constants, **kwargs)

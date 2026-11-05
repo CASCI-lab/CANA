@@ -1,0 +1,97 @@
+log_path=/home/kyuhyongpark/CANA/CANA/dev/high_k/logs/bbm_high_k_activities_sampling/bbm_high_k_activities_sampling.log
+MODE=starter  TIMEOUT_S=10.0  MIN_K_EXACT=11  MAX_K_EXACT=18  MIN_N_SAMPLES=1024  N_SAMPLES_GRID=(1024, 2048, 4096, 8192, 16384)  N_TIME_COMPARE=16384  N_BOOT=1000  CI=0.95  SEED=0
+BBM_MODELS=/home/kyuhyongpark/CANA/BBM/models
+COMPARE_LOG=/home/kyuhyongpark/CANA/CANA/dev/high_k/logs/bbm_high_k_primes_compare/bbm_high_k_primes_compare.log
+FIG_DIR=/home/kyuhyongpark/CANA/CANA/dev/high_k/logs/bbm_high_k_activities_sampling
+
+=== accuracy (exact LUT vs sample)  n_funcs=10  k in [11,18]  n >= 1024 ===
+#   1 rest    k= 11  [id-002]::v_MKK3  primes=primer (10+2)  exact_s=1.008789  t_exact= 265.51 ms
+       n= 1024  mode=sampled  est_s=1.005859  |Δs|=0.00293  |Δa|_mean=0.0004439  CI=[1.001953,1.010742] cover=True  a_w_mean=0.001605  t_samp= 149.50 ms  t_boot= 233.80 ms
+       n= 2048  mode=exact  est_s=1.008789  |Δs|=0  |Δa|_mean=0  CI=[1.002441,1.019531] cover=True  a_w_mean=0.002443  t_samp= 258.27 ms  t_boot= 445.63 ms
+#   2 rest    k= 11  [id-002]::v_Src  primes=primer (14+5)  exact_s=1.454102  t_exact= 107.10 ms
+       n= 1024  mode=sampled  est_s=1.442383  |Δs|=0.01172  |Δa|_mean=0.003018  CI=[1.374976,1.503931] cover=True  a_w_mean=0.03099  t_samp= 108.66 ms  t_boot= 124.69 ms
+       n= 2048  mode=exact  est_s=1.454102  |Δs|=0  |Δa|_mean=0  CI=[1.408679,1.491724] cover=True  a_w_mean=0.023  t_samp= 181.65 ms  t_boot= 282.30 ms
+#   3 rest    k= 12  [id-009]::v_ROS_CYT  primes=primer (11+3)  exact_s=0.037109  t_exact= 281.67 ms
+       n= 1024  mode=sampled  est_s=0.033203  |Δs|=0.003906  |Δa|_mean=0.0009766  CI=[0.016577,0.059570] cover=True  a_w_mean=0.00578  t_samp= 104.87 ms  t_boot= 140.83 ms
+       n= 2048  mode=sampled  est_s=0.033691  |Δs|=0.003418  |Δa|_mean=0.0006104  CI=[0.018555,0.052258] cover=True  a_w_mean=0.004436  t_samp= 179.29 ms  t_boot= 267.99 ms
+       n= 4096  mode=exact  est_s=0.037109  |Δs|=0  |Δa|_mean=0  CI=[0.025629,0.052252] cover=True  a_w_mean=0.003298  t_samp= 299.61 ms  t_boot= 551.12 ms
+#   4 unate   k= 12  [id-018]::v_erbb13  primes=primer (8+5)  exact_s=0.689453  t_exact= 144.72 ms
+       n= 1024  mode=sampled  est_s=0.692383  |Δs|=0.00293  |Δa|_mean=0.001058  CI=[0.627930,0.756909] cover=True  a_w_mean=0.01767  t_samp=  69.00 ms  t_boot= 125.86 ms
+       n= 2048  mode=sampled  est_s=0.673340  |Δs|=0.01611  |Δa|_mean=0.001587  CI=[0.623047,0.721741] cover=True  a_w_mean=0.01254  t_samp= 137.51 ms  t_boot= 227.38 ms
+       n= 4096  mode=exact  est_s=0.689453  |Δs|=0  |Δa|_mean=0  CI=[0.653314,0.726349] cover=True  a_w_mean=0.00918  t_samp= 302.91 ms  t_boot= 438.17 ms
+#   5 rof     k= 14  [id-004]::v_Nck  primes=rof (14+1)  exact_s=0.001709  t_exact=  1.180 s
+       n= 1024  mode=sampled  est_s=0.000000  |Δs|=0.001709  |Δa|_mean=0.0001221  CI=[0.000000,0.000000] cover=False  a_w_mean=0  t_samp=  88.96 ms  t_boot= 124.67 ms
+       n= 2048  mode=sampled  est_s=0.000977  |Δs|=0.0007324  |Δa|_mean=0.0001569  CI=[0.000000,0.002441] cover=True  a_w_mean=0.0002093  t_samp= 145.62 ms  t_boot= 255.00 ms
+       n= 4096  mode=sampled  est_s=0.000732  |Δs|=0.0009766  |Δa|_mean=0.0001221  CI=[0.000000,0.001709] cover=True  a_w_mean=0.0001569  t_samp= 380.03 ms  t_boot= 743.85 ms
+       n= 8192  mode=sampled  est_s=0.000854  |Δs|=0.0008545  |Δa|_mean=6.104e-05  CI=[0.000244,0.001587] cover=False  a_w_mean=0.000192  t_samp= 724.45 ms  t_boot=  1.479 s
+       n=16384  mode=exact  est_s=0.001709  |Δs|=0  |Δa|_mean=0  CI=[0.000549,0.003725] cover=True  a_w_mean=0.0003053  t_samp=  1.349 s  t_boot=  2.540 s
+#   6 unate   k= 14  [id-004]::v_Spry2  primes=primer (13+2)  exact_s=1.001465  t_exact= 805.56 ms
+       n= 1024  mode=sampled  est_s=1.000000  |Δs|=0.001465  |Δa|_mean=0.0001221  CI=[1.000000,1.000000] cover=False  a_w_mean=0  t_samp=  78.74 ms  t_boot= 102.29 ms
+       n= 2048  mode=sampled  est_s=1.000977  |Δs|=0.0004883  |Δa|_mean=0.0001569  CI=[1.000000,1.002441] cover=True  a_w_mean=0.0002093  t_samp= 110.77 ms  t_boot= 188.08 ms
+       n= 4096  mode=sampled  est_s=1.000732  |Δs|=0.0007324  |Δa|_mean=0.0001221  CI=[1.000000,1.001709] cover=True  a_w_mean=0.0001569  t_samp= 277.47 ms  t_boot= 472.70 ms
+       n= 8192  mode=sampled  est_s=1.000854  |Δs|=0.0006104  |Δa|_mean=6.104e-05  CI=[1.000244,1.001587] cover=True  a_w_mean=0.000192  t_samp= 649.86 ms  t_boot= 974.41 ms
+       n=16384  mode=exact  est_s=1.001465  |Δs|=0  |Δa|_mean=0  CI=[1.000426,1.003239] cover=True  a_w_mean=0.0003053  t_samp=  1.215 s  t_boot=  2.655 s
+#   7 rof     k= 16  [id-004]::v_p120_catenin  primes=rof (15+2)  exact_s=0.001343  t_exact=  5.433 s
+       n= 1024  mode=sampled  est_s=0.000977  |Δs|=0.0003662  |Δa|_mean=0.0001335  CI=[0.000000,0.002930] cover=True  a_w_mean=0.0001831  t_samp=  88.01 ms  t_boot= 113.64 ms
+       n= 2048  mode=sampled  est_s=0.000000  |Δs|=0.001343  |Δa|_mean=8.392e-05  CI=[0.000000,0.000000] cover=False  a_w_mean=0  t_samp= 227.12 ms  t_boot= 292.97 ms
+       n= 4096  mode=sampled  est_s=0.003662  |Δs|=0.002319  |Δa|_mean=0.0001526  CI=[0.000000,0.010742] cover=True  a_w_mean=0.0006714  t_samp= 406.63 ms  t_boot= 549.74 ms
+       n= 8192  mode=sampled  est_s=0.002930  |Δs|=0.001587  |Δa|_mean=0.000103  CI=[0.000610,0.007324] cover=True  a_w_mean=0.0004732  t_samp= 922.80 ms  t_boot=  1.146 s
+       n=16384  mode=sampled  est_s=0.001038  |Δs|=0.0003052  |Δa|_mean=4.578e-05  CI=[0.000549,0.001587] cover=True  a_w_mean=0.0001794  t_samp=  1.336 s  t_boot=  3.072 s
+#   8 rest    k= 16  [id-004]::v_B_catenin  primes=primer (2+28)  exact_s=1.001221  t_exact=  5.384 s
+       n= 1024  mode=sampled  est_s=1.023438  |Δs|=0.02222  |Δa|_mean=0.001549  CI=[0.979468,1.066406] cover=True  a_w_mean=0.007204  t_samp= 167.16 ms  t_boot= 161.97 ms
+       n= 2048  mode=sampled  est_s=1.021484  |Δs|=0.02026  |Δa|_mean=0.001717  CI=[0.989734,1.050793] cover=True  a_w_mean=0.005224  t_samp= 312.96 ms  t_boot= 305.92 ms
+       n= 4096  mode=sampled  est_s=1.004150  |Δs|=0.00293  |Δa|_mean=0.0008659  CI=[0.983868,1.025165] cover=True  a_w_mean=0.003741  t_samp= 693.64 ms  t_boot= 410.51 ms
+       n= 8192  mode=sampled  est_s=1.016357  |Δs|=0.01514  |Δa|_mean=0.000946  CI=[1.000122,1.032361] cover=True  a_w_mean=0.00319  t_samp=  1.000 s  t_boot=  1.643 s
+       n=16384  mode=sampled  est_s=1.001831  |Δs|=0.0006104  |Δa|_mean=0.0003586  CI=[0.990538,1.012152] cover=True  a_w_mean=0.001996  t_samp=  2.274 s  t_boot=  2.871 s
+#   9 rof     k= 18  [id-004]::v_DGK  primes=rof (15+6)  exact_s=0.002258  t_exact= 23.702 s
+       n= 1024  mode=sampled  est_s=0.000977  |Δs|=0.001282  |Δa|_mean=0.0001619  CI=[0.000000,0.003906] cover=True  a_w_mean=0.0001641  t_samp= 115.23 ms  t_boot= 148.84 ms
+       n= 2048  mode=sampled  est_s=0.000000  |Δs|=0.002258  |Δa|_mean=0.0001255  CI=[0.000000,0.000000] cover=False  a_w_mean=0  t_samp= 304.64 ms  t_boot= 382.63 ms
+       n= 4096  mode=sampled  est_s=0.004395  |Δs|=0.002136  |Δa|_mean=0.0001297  CI=[0.000244,0.015137] cover=True  a_w_mean=0.0008548  t_samp= 419.13 ms  t_boot= 508.12 ms
+       n= 8192  mode=sampled  est_s=0.005005  |Δs|=0.002747  |Δa|_mean=0.0001526  CI=[0.001343,0.009897] cover=True  a_w_mean=0.0006241  t_samp= 830.79 ms  t_boot=  1.366 s
+       n=16384  mode=sampled  est_s=0.004639  |Δs|=0.00238  |Δa|_mean=0.0001348  CI=[0.001892,0.008488] cover=True  a_w_mean=0.0004681  t_samp=  1.892 s  t_boot=  3.261 s
+#  10 unate   k= 18  [id-004]::v_PI3K  primes=primer (16+3)  exact_s=1.000336  t_exact= 18.369 s
+       n= 1024  mode=sampled  est_s=1.000000  |Δs|=0.0003357  |Δa|_mean=2.119e-05  CI=[1.000000,1.000000] cover=False  a_w_mean=0  t_samp=  76.03 ms  t_boot= 152.55 ms
+       n= 2048  mode=sampled  est_s=1.000000  |Δs|=0.0003357  |Δa|_mean=2.119e-05  CI=[1.000000,1.000000] cover=False  a_w_mean=0  t_samp= 170.37 ms  t_boot= 230.31 ms
+       n= 4096  mode=sampled  est_s=1.000000  |Δs|=0.0003357  |Δa|_mean=2.119e-05  CI=[1.000000,1.000000] cover=False  a_w_mean=0  t_samp= 453.15 ms  t_boot= 669.12 ms
+       n= 8192  mode=sampled  est_s=1.000610  |Δs|=0.0002747  |Δa|_mean=4.239e-05  CI=[1.000122,1.001221] cover=True  a_w_mean=0.0001087  t_samp= 587.52 ms  t_boot=  1.486 s
+       n=16384  mode=sampled  est_s=0.999939  |Δs|=0.0003967  |Δa|_mean=2.628e-05  CI=[0.999756,1.000183] cover=False  a_w_mean=3.06e-05  t_samp=  1.446 s  t_boot=  3.277 s
+
+=== high-k bootstrap  n_funcs=5  N_SAMPLES_GRID=(1024, 2048, 4096, 8192, 16384)  N_BOOT=1000 ===
+#   1 rof     k= 80  [id-256]::v_v211_Oligomycin_b1  primes=rof (80+1)  t_primes= 639.08 ms
+       n= 1024  s=0.000000  CI=[0.000000,0.000000]  width=0  a_w_mean=0  a=[0.000,0.000]  t= 451.09 ms  samp/s=2,270
+       n= 2048  s=0.000000  CI=[0.000000,0.000000]  width=0  a_w_mean=0  a=[0.000,0.000]  t= 826.52 ms  samp/s=2,478
+       n= 4096  s=0.000000  CI=[0.000000,0.000000]  width=0  a_w_mean=0  a=[0.000,0.000]  t=  1.781 s  samp/s=2,300
+       n= 8192  s=0.000000  CI=[0.000000,0.000000]  width=0  a_w_mean=0  a=[0.000,0.000]  t=  3.262 s  samp/s=2,511
+       n=16384  s=0.000000  CI=[0.000000,0.000000]  width=0  a_w_mean=0  a=[0.000,0.000]  t=  6.565 s  samp/s=2,496
+#   2 rof     k= 31  [id-207]::v_TP53  primes=rof (15+17)  t_primes= 106.63 ms
+       n= 1024  s=0.000000  CI=[0.000000,0.000000]  width=0  a_w_mean=0  a=[0.000,0.000]  t=  72.76 ms  samp/s=14,073
+       n= 2048  s=0.000488  CI=[0.000000,0.001465]  width=0.001465  a_w_mean=4.725e-05  a=[0.000,0.000]  t= 185.97 ms  samp/s=11,013
+       n= 4096  s=0.000000  CI=[0.000000,0.000000]  width=0  a_w_mean=0  a=[0.000,0.000]  t= 222.29 ms  samp/s=18,427
+       n= 8192  s=0.000488  CI=[0.000122,0.001099]  width=0.0009766  a_w_mean=4.332e-05  a=[0.000,0.000]  t= 481.99 ms  samp/s=16,996
+       n=16384  s=0.001282  CI=[0.000122,0.003419]  width=0.003297  a_w_mean=0.0001142  a=[0.000,0.000]  t=  1.135 s  samp/s=14,430
+#   3 unate   k= 36  [id-251]::v_v52_Cdk1_cycB_Pool_b10  primes=primer (51+67)  t_primes=  2.229 s
+       n= 1024  s=0.002930  CI=[0.000000,0.005859]  width=0.005859  a_w_mean=0.0002448  a=[0.000,0.001]  t= 117.34 ms  samp/s=8,727
+       n= 2048  s=0.020020  CI=[0.004395,0.041016]  width=0.03662  a_w_mean=0.001059  a=[0.000,0.002]  t= 118.81 ms  samp/s=17,238
+       n= 4096  s=0.012451  CI=[0.004871,0.023450]  width=0.01858  a_w_mean=0.0007197  a=[0.000,0.001]  t= 285.18 ms  samp/s=14,363
+       n= 8192  s=0.008301  CI=[0.004147,0.013431]  width=0.009283  a_w_mean=0.0003834  a=[0.000,0.001]  t= 426.24 ms  samp/s=19,219
+       n=16384  s=0.010315  CI=[0.006651,0.014650]  width=0.007999  a_w_mean=0.0003324  a=[0.000,0.001]  t=  1.236 s  samp/s=13,257
+#   4 unate   k= 27  [id-004]::v_Shc  primes=primer (137+3)  t_primes= 340.52 ms
+       n= 1024  s=1.004883  CI=[1.000977,1.009790]  width=0.008813  a_w_mean=0.0005064  a=[0.000,1.000]  t=  52.28 ms  samp/s=19,587
+       n= 2048  s=1.006836  CI=[1.000488,1.020508]  width=0.02002  a_w_mean=0.0007957  a=[0.000,1.000]  t= 138.19 ms  samp/s=14,820
+       n= 4096  s=1.010254  CI=[1.002441,1.018311]  width=0.01587  a_w_mean=0.0008502  a=[0.000,0.999]  t= 294.20 ms  samp/s=13,923
+       n= 8192  s=1.008423  CI=[1.003659,1.015625]  width=0.01197  a_w_mean=0.0005608  a=[0.000,0.999]  t= 709.97 ms  samp/s=11,539
+       n=16384  s=1.004822  CI=[1.002502,1.007448]  width=0.004945  a_w_mean=0.0002871  a=[0.000,1.000]  t=  1.316 s  samp/s=12,453
+#   5 rest    k= 21  [id-263]::v_v33_acetyl_CoA_b2  primes=primer (100+45)  t_primes=  1.029 s
+       n= 1024  s=1.224609  CI=[1.158032,1.294946]  width=0.1369  a_w_mean=0.01531  a=[0.000,0.533]  t=  54.63 ms  samp/s=18,745
+       n= 2048  s=1.243164  CI=[1.199194,1.293457]  width=0.09426  a_w_mean=0.01098  a=[0.000,0.550]  t=  90.45 ms  samp/s=22,642
+       n= 4096  s=1.208740  CI=[1.178217,1.240723]  width=0.06251  a_w_mean=0.007527  a=[0.000,0.547]  t= 214.12 ms  samp/s=19,129
+       n= 8192  s=1.236328  CI=[1.214108,1.259167]  width=0.04506  a_w_mean=0.005509  a=[0.000,0.549]  t= 378.17 ms  samp/s=21,662
+       n=16384  s=1.218628  CI=[1.204344,1.235785]  width=0.03144  a_w_mean=0.00387  a=[0.000,0.547]  t= 738.43 ms  samp/s=22,187
+wrote /home/kyuhyongpark/CANA/CANA/dev/high_k/logs/bbm_high_k_activities_sampling/error_vs_n_samples.png
+wrote /home/kyuhyongpark/CANA/CANA/dev/high_k/logs/bbm_high_k_activities_sampling/time_exact_vs_sample.png
+wrote /home/kyuhyongpark/CANA/CANA/dev/high_k/logs/bbm_high_k_activities_sampling/bootstrap_ci_width_vs_n.png
+wrote /home/kyuhyongpark/CANA/CANA/dev/high_k/logs/bbm_high_k_activities_sampling/high_k_s_forest.png
+
+done: accuracy_rows=40  high_rows=25
+log_path=/home/kyuhyongpark/CANA/CANA/dev/high_k/logs/bbm_high_k_activities_sampling/bbm_high_k_activities_sampling.log
+fig_dir=/home/kyuhyongpark/CANA/CANA/dev/high_k/logs/bbm_high_k_activities_sampling

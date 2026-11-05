@@ -18,14 +18,14 @@ def plot_schemata(n, plotTS=True):
         n.network.get_node_name(i)[0] if n.network is not None else i for i in inputs
     ]
     if not plotTS:
-        n._check_compute_canalization_variables(prime_implicants=True)
+        n.outputs.get_one_symbol_schemata()
     else:
-        n._check_compute_canalization_variables(two_symbols=True)
+        n.outputs.get_two_symbol_schemata()
         ts0s = n._two_symbols[0]
         ts1s = n._two_symbols[1]
         n_ts = sum(len(tss) for tss in [ts0s, ts1s])
-    pi0s = n._prime_implicants.get("0", [])
-    pi1s = n._prime_implicants.get("1", [])
+    pi0s = n._prime_implicants.get(0, [])
+    pi1s = n._prime_implicants.get(1, [])
     # Count number of PI and TS
     n_pi = sum(len(pis) for pis in [pi0s, pi1s])
     # Schemata Cell Width and spacing
@@ -81,7 +81,7 @@ def plot_schemata(n, plotTS=True):
                 elif input == "1":
                     facecolor = "black"
                     textcolor = "white"
-                elif input == "#":
+                elif input == "2":
                     facecolor = "#cccccc"
                     textcolor = "black"
                 text = "%s" % (input) if (input != "2") else "#"
@@ -318,3 +318,5 @@ def plot_schemata(n, plotTS=True):
     # FileName
     filename = n.name.replace("/", "_")
     filename = filename.replace(",", "_")
+
+    return fig

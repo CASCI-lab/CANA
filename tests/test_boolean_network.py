@@ -1,6 +1,16 @@
 from cana.boolean_network import BooleanNetwork
 import networkx as nx
+import pytest
 from cana.datasets.bio import THALIANA, LEUKEMIA
+
+# THALIANA loads schemata-only nodes from cnet; canalization soft-warns when
+# one_symbol_is_prime_implicant / two_symbol_is_canonical are unset.
+# Not under test here.
+pytestmark = pytest.mark.filterwarnings(
+    "ignore:.*one_symbol_is_prime_implicant.*:UserWarning",
+    "ignore:.*two_symbol_is_canonical.*:UserWarning",
+)
+
 
 def test_EG_weight_THALIANA():
     """Test that effective graph in-degree edge weights are computed correctly."""
@@ -15,37 +25,39 @@ def test_EG_weight_THALIANA():
     assert network.effective_indegrees() == sorted(true, reverse=True)
 
 
-def test_output_transitions():
-    """Test output_transitions produces correct truth tables."""
-    from cana.utils import output_transitions
+def test_named_expression_to_bit_lut():
+    """Test named_expression_to_bit_lut produces correct truth tables."""
+    from cana.function_outputs.expression import named_expression_to_bit_lut
 
-    assert output_transitions('A', ['A']) == [0, 1]
-    assert output_transitions('A and B', ['A', 'B']) == [0, 0, 0, 1]
-    assert output_transitions('A or B', ['A', 'B']) == [0, 1, 1, 1]
-    assert output_transitions('(A or B) and not C', ['A', 'B', 'C']) == [0, 0, 1, 0, 1, 0, 1, 0]
+    assert named_expression_to_bit_lut('A', ['A']).to_list() == [0, 1]
+    assert named_expression_to_bit_lut('A and B', ['A', 'B']).to_list() == [0, 0, 0, 1]
+    assert named_expression_to_bit_lut('A or B', ['A', 'B']).to_list() == [0, 1, 1, 1]
+    assert named_expression_to_bit_lut(
+        '(A or B) and not C', ['A', 'B', 'C']
+    ).to_list() == [0, 0, 1, 0, 1, 0, 1, 0]
 
 
-def test_from_string_boolean():
-    """Test that BooleanNetwork.from_string_boolean parses logical rules."""
+def test_from_string_booleannet():
+    """Test that BooleanNetwork.from_string_booleannet parses update rules."""
     rules = "\n".join([
         "A *= B",
         "B *= A and C",
         "C *= A or B",
     ])
-    network = BooleanNetwork.from_string_boolean(rules, keep_constants=True)
+    network = BooleanNetwork.from_string_booleannet(rules, keep_constants=True)
     assert network.Nnodes == 3
     # A = copy of B: output transitions [0, 1]
-    assert network.nodes[0].outputs == ['0', '1']
+    assert list(network.nodes[0].outputs) == [0, 1]
     # B = A AND C: output transitions [0, 0, 0, 1]
-    assert network.nodes[1].outputs == ['0', '0', '0', '1']
+    assert list(network.nodes[1].outputs) == [0, 0, 0, 1]
     # C = A OR B: output transitions [0, 1, 1, 1]
-    assert network.nodes[2].outputs == ['0', '1', '1', '1']
+    assert list(network.nodes[2].outputs) == [0, 1, 1, 1]
 
 
-def test_load_logical_LEUKEMIA():
-    """Test loading a real model in 'logical' boolean-rule format."""
+def test_load_booleannet_LEUKEMIA():
+    """Test loading a real model in booleannet update-rule format."""
     network = LEUKEMIA()
     assert network.Nnodes == 60
     # Spot-check first rule: CTLA4* = TCR (identity)
     assert network.nodes[0].name == 'CTLA4'
-    assert network.nodes[0].outputs == ['0', '1']
+    assert list(network.nodes[0].outputs) == [0, 1]

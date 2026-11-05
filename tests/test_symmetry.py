@@ -1,9 +1,10 @@
 # -*- coding: utf-8 -*-
 #
-# Tests for ``symmetry.py``
+# Tests for ``cana.function_properties.symmetry``
 #
+from math import isclose
+
 from cana.datasets.bools import AND, OR, XOR, COPYx1
-from cana.utils import isclose
 from cana.boolean_node import BooleanNode
 
 
@@ -36,7 +37,7 @@ EXPECTED_SYMMETRY_VALUES = {
 def test_new_symmetry_matches_expected_values():
     """Check exact expected outputs for the new symmetry implementations."""
     for rule_name in ["GKL", "GP", "COMP1"]:
-        node = BooleanNode.from_output_list(FAMOUS_DCT_RULES[rule_name])
+        node = BooleanNode.from_bit_lut(FAMOUS_DCT_RULES[rule_name])
         raw_value = node.raw_symmetry()
         distinct_value = node.distinct_symmetry()
 
@@ -59,7 +60,7 @@ def test_new_symmetry_matches_expected_values():
 def test_symmetry_values_are_bounded():
     """Symmetry metrics are ratios and must stay inside [0, 1]."""
     for rule_name in ["GKL", "GP", "COMP1"]:
-        node = BooleanNode.from_output_list(FAMOUS_DCT_RULES[rule_name])
+        node = BooleanNode.from_bit_lut(FAMOUS_DCT_RULES[rule_name])
         raw_value = node.raw_symmetry()
         distinct_value = node.distinct_symmetry()
 
@@ -69,7 +70,7 @@ def test_symmetry_values_are_bounded():
 
 def test_smallest_k_behavior():
     """Verify behavior for the smallest non-trivial LUT (k=1)."""
-    node = BooleanNode.from_output_list("01")
+    node = BooleanNode.from_bit_lut("01")
 
     # For k=1, each Hamming-weight bucket has one row, so raw symmetry is 1.
     assert isclose(node.raw_symmetry(), 1.0)

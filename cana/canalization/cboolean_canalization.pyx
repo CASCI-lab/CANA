@@ -14,7 +14,7 @@ Functions to compute the Quine-McCluskey algorithm in cython for increaed comput
 #   MIT license.
 from cana.cutils import *
 
-WILDCARD_SYMBOL = '#'
+WILDCARD_SYMBOL = '2'
 SYMMETRIC_WILDCARD_SYMBOL = '*'
 
 

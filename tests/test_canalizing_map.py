@@ -70,10 +70,10 @@ class TestParity:
         ],
     )
     def test_node_matches_legacy_builder(self, outputs, name, inputs, nid):
-        node = BooleanNode.from_output_list(
+        node = BooleanNode.from_bit_lut(
             outputs, name=name, inputs=inputs, id=nid
         )
-        node._check_compute_canalization_variables(two_symbols=True)
+        node.outputs.get_two_symbol_schemata()
         input_labels = {i: str(i) for i in node.inputs}
 
         via_node = node.canalizing_map()
@@ -117,7 +117,7 @@ class TestK3RegressionRoundtrip:
     @pytest.mark.parametrize("lut", K3_REGRESSION_LUTS)
     def test_exact_roundtrip(self, lut):
         outputs = [int(b) for b in lut]
-        node = BooleanNode.from_output_list(
+        node = BooleanNode.from_bit_lut(
             outputs, name="k3_{}".format(lut), inputs=[0, 1, 2], id=0
         )
         _assert_exact_roundtrip(node)
@@ -138,14 +138,14 @@ class TestCTNNB1Roundtrip:
     """k=5 CTNNB1 example from ``dev/cm_roundtrip.py``."""
 
     def test_exact_roundtrip_via_bnet(self):
-        N = BooleanNetwork.from_string_boolean(CTNNB1_BNET)
+        N = BooleanNetwork.from_string_booleannet(CTNNB1_BNET)
         ct = next(n for n in N.nodes if n.name == "CTNNB1")
         assert "".join(str(x) for x in ct.outputs) == CTNNB1_LUT
         _assert_exact_roundtrip(ct)
 
     def test_exact_roundtrip_from_lut(self):
         outputs = [int(b) for b in CTNNB1_LUT]
-        node = BooleanNode.from_output_list(
+        node = BooleanNode.from_bit_lut(
             outputs,
             name="CTNNB1",
             inputs=[0, 1, 2, 3, 4],
@@ -181,10 +181,10 @@ class TestCanonicalParity:
         ],
     )
     def test_node_matches_canonical_builder(self, outputs, name, inputs, nid):
-        node = BooleanNode.from_output_list(
+        node = BooleanNode.from_bit_lut(
             outputs, name=name, inputs=inputs, id=nid
         )
-        node._check_compute_canalization_variables(two_symbols=True)
+        node.outputs.get_two_symbol_schemata()
         input_labels = {i: str(i) for i in node.inputs}
 
         via_node = node.canalizing_map(builder="canonical")
@@ -220,7 +220,7 @@ class TestCanonicalRoundtrip:
         ],
     )
     def test_and_or(self, outputs, name, inputs, nid):
-        node = BooleanNode.from_output_list(
+        node = BooleanNode.from_bit_lut(
             outputs, name=name, inputs=inputs, id=nid
         )
         _assert_exact_roundtrip(node, builder="canonical")
@@ -228,18 +228,18 @@ class TestCanonicalRoundtrip:
     @pytest.mark.parametrize("lut", K3_REGRESSION_LUTS)
     def test_k3_regression(self, lut):
         outputs = [int(b) for b in lut]
-        node = BooleanNode.from_output_list(
+        node = BooleanNode.from_bit_lut(
             outputs, name="k3_{}".format(lut), inputs=[0, 1, 2], id=0
         )
         _assert_exact_roundtrip(node, builder="canonical")
 
     def test_ctnnb1(self):
-        N = BooleanNetwork.from_string_boolean(CTNNB1_BNET)
+        N = BooleanNetwork.from_string_booleannet(CTNNB1_BNET)
         ct = next(n for n in N.nodes if n.name == "CTNNB1")
         _assert_exact_roundtrip(ct, builder="canonical")
 
     def test_f_xy_abc(self):
-        N = BooleanNetwork.from_string_boolean(F_BNET)
+        N = BooleanNetwork.from_string_booleannet(F_BNET)
         fn = next(n for n in N.nodes if n.name == "F")
         assert "".join(str(x) for x in fn.outputs) == F_LUT
         _assert_exact_roundtrip(fn, builder="canonical")
@@ -249,7 +249,7 @@ class TestCanonicalStructure:
     """No fusion; nested roles and schema tau match the hand examples."""
 
     def test_ctnnb1_out1_structure(self):
-        N = BooleanNetwork.from_string_boolean(CTNNB1_BNET)
+        N = BooleanNetwork.from_string_booleannet(CTNNB1_BNET)
         ct = next(n for n in N.nodes if n.name == "CTNNB1")
         cm = ct.canalizing_map(builder="canonical")
 
@@ -284,7 +284,7 @@ class TestCanonicalStructure:
             assert cm.nodes[pols[0]]["tau"] == 1
 
     def test_f_out1_structure(self):
-        N = BooleanNetwork.from_string_boolean(F_BNET)
+        N = BooleanNetwork.from_string_booleannet(F_BNET)
         fn = next(n for n in N.nodes if n.name == "F")
         cm = fn.canalizing_map(builder="canonical")
 
@@ -359,7 +359,7 @@ class TestDynamicsCanalizationMap:
 
     @pytest.mark.parametrize("builder", ["legacy", "canonical"])
     def test_matches_manual_compose(self, builder):
-        N = BooleanNetwork.from_string_boolean(TINY_DCM_BNET)
+        N = BooleanNetwork.from_string_booleannet(TINY_DCM_BNET)
         via_net = N.dynamics_canalization_map(
             simplify=False, builder=builder, remove_isolates=True
         )
@@ -373,13 +373,13 @@ class TestDynamicsCanalizationMap:
         assert _graphs_equal_ignore_name(via_net, manual)
 
     def test_legacy_default_smoke(self):
-        N = BooleanNetwork.from_string_boolean(TINY_DCM_BNET)
+        N = BooleanNetwork.from_string_booleannet(TINY_DCM_BNET)
         dcm = N.dynamics_canalization_map(simplify=True)
         assert dcm.number_of_nodes() > 0
         assert dcm.name.startswith("DCM:")
 
     def test_remove_isolates_false_matches_raw_compose(self):
-        N = BooleanNetwork.from_string_boolean(TINY_DCM_BNET)
+        N = BooleanNetwork.from_string_booleannet(TINY_DCM_BNET)
         via_net = N.dynamics_canalization_map(
             simplify=False, builder="canonical", remove_isolates=False
         )
@@ -393,7 +393,7 @@ class TestDynamicsCanalizationMap:
 
     def test_remove_isolates_false_keeps_injected_isolate(self):
         """Else-branch strip is skipped when ``remove_isolates=False``."""
-        N = BooleanNetwork.from_string_boolean(TINY_DCM_BNET)
+        N = BooleanNetwork.from_string_booleannet(TINY_DCM_BNET)
         orphan = "orphan_isolate_test"
         orig = N.nodes[0].canalizing_map
 
@@ -422,7 +422,7 @@ class TestDynamicsCanalizationMap:
         monkeypatch.setattr(
             "cana.boolean_network.simplify_canalizing_map", fake_simplify
         )
-        N = BooleanNetwork.from_string_boolean(TINY_DCM_BNET)
+        N = BooleanNetwork.from_string_booleannet(TINY_DCM_BNET)
         N.dynamics_canalization_map(simplify=True, remove_isolates=False)
         assert seen["remove_isolates"] is False
 
@@ -431,7 +431,7 @@ class TestSimplifyCanalizingMap:
     """Safe DCM/CM simplify: keep tau=0; merge buffers; bypass schema tau=1 OR."""
 
     def test_constant_tau0_preserved(self):
-        node = BooleanNode.from_output_list(
+        node = BooleanNode.from_bit_lut(
             [0, 0, 0, 0], name="const0", inputs=[0, 1], id=0
         )
         for builder in ("legacy", "canonical"):
@@ -449,7 +449,7 @@ class TestSimplifyCanalizingMap:
 
     def test_xor_canonical_roundtrip(self):
         # Previously broken by stock simplify (multi-pred tau=1 polarity collapse).
-        node = BooleanNode.from_output_list(
+        node = BooleanNode.from_bit_lut(
             [0, 1, 1, 0], name="xor", inputs=[0, 1], id=6
         )
         _assert_exact_roundtrip_simplified(node, builder="canonical")
@@ -579,7 +579,7 @@ class TestSimplifyCanalizingMap:
     )
     @pytest.mark.parametrize("builder", ["legacy", "canonical"])
     def test_roundtrip_common_k2(self, outputs, builder):
-        node = BooleanNode.from_output_list(
+        node = BooleanNode.from_bit_lut(
             outputs, name="f", inputs=[0, 1], id=1
         )
         _assert_exact_roundtrip_simplified(node, builder=builder)

@@ -108,11 +108,11 @@ def getPis(outputs):
     """Compute prime implicants from a string function representation"""
     k = int(math.log(len(outputs)) / math.log(2))
     node = BooleanNode(k=k, inputs=range(k), outputs=list(outputs))
-    node._check_compute_canalization_variables(prime_implicants="i dont matter")
+    node.outputs.get_one_symbol_schemata()
     pi = node._prime_implicants
     return {
-        0: set(i.replace("#", "2") for i in pi["0"]),
-        1: set(i.replace("#", "2") for i in pi["1"]),
+        0: set(pi.get(0, ())),
+        1: set(pi.get(1, ())),
     }
 
 
@@ -122,7 +122,7 @@ def getCCnodes():
     for network in networks:
         for node in network.nodes:
             if (
-                node.k < 8 and "1" in node.outputs and "0" in node.outputs
+                node.k < 8 and 1 in node.outputs and 0 in node.outputs
             ):  # select non-constant with k<=7
                 nodes.append(node)
     # fs = ["".join(n.outputs) for n in nodes]

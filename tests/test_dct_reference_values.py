@@ -72,7 +72,7 @@ DCT_RULES = {
 def dct_rule(request):
     lut, reference = DCT_RULES[request.param]
     assert len(lut) == 128 and set(lut) <= {"0", "1"}
-    return BooleanNode.from_output_list([int(c) for c in lut], name=request.param), reference
+    return BooleanNode.from_bit_lut([int(c) for c in lut], name=request.param), reference
 
 
 def test_dct_input_redundancy(dct_rule):

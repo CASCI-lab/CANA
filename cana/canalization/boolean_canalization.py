@@ -140,7 +140,7 @@ def _adjacent(imp1, imp2):
     return "".join(match)
 
 
-def __pi_covers(implicant, input, symbol=["2", "#", 2]):
+def __pi_covers(implicant, input, symbol=["2", 2]):
     """Determines if a minterm is covered by a specific implicant.
 
     Args:

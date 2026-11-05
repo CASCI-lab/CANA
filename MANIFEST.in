@@ -1,5 +1,6 @@
 global-include *.pyx
 include cana/canalization/*.pyx
-include cana/datasets/*.txt
+include cana/datasets/*.cnet
+include cana/datasets/*.booleannet.txt
 include cana/datasets/bns/*.cnet
-include cana/datasets/cell_collective/*.txt
+include cana/datasets/cell_collective/*.cnet

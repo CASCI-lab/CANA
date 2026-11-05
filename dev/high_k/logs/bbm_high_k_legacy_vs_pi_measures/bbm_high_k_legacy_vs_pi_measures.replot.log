@@ -1,0 +1,20 @@
+log_path=/home/kyuhyongpark/CANA/CANA/dev/high_k/logs/bbm_high_k_legacy_vs_pi_measures/bbm_high_k_legacy_vs_pi_measures.replot.log
+REGENERATE_FROM_LOG_ONLY=True  source=/home/kyuhyongpark/CANA/CANA/dev/high_k/logs/bbm_high_k_legacy_vs_pi_measures/bbm_high_k_legacy_vs_pi_measures.log  rows=402  MIN_K=13  TIMEOUT_S=10.0
+FIG_DIR=/home/kyuhyongpark/CANA/CANA/dev/high_k/logs/bbm_high_k_legacy_vs_pi_measures
+
+=== per-measure method success ===
+bias             legacy   ok= 277/ 402  (68.9%)
+bias             new      ok= 316/ 402  (78.6%)
+activities       legacy   ok= 266/ 402  (66.2%)
+activities       new      ok= 317/ 402  (78.9%)
+edge_redundancy  legacy   ok=  46/ 402  (11.4%)
+edge_redundancy  new      ok= 316/ 402  (78.6%)
+wrote /home/kyuhyongpark/CANA/CANA/dev/high_k/logs/bbm_high_k_legacy_vs_pi_measures/success_ratio_by_k.png
+wrote /home/kyuhyongpark/CANA/CANA/dev/high_k/logs/bbm_high_k_legacy_vs_pi_measures/completion_curves.png
+wrote /home/kyuhyongpark/CANA/CANA/dev/high_k/logs/bbm_high_k_legacy_vs_pi_measures/README.md
+PI ok (all): legacy=47/402  new=320/402  either=320/402
+PI ok (cell-collective): legacy=2/20  new=20/20  either=20/20
+fully processable (all, assume k<13 ok): legacy=244/285  new=271/285  either=271/285
+fully processable (cell-collective, assume k<13 ok): legacy=74/79  new=79/79  either=79/79
+
+log_path=/home/kyuhyongpark/CANA/CANA/dev/high_k/logs/bbm_high_k_legacy_vs_pi_measures/bbm_high_k_legacy_vs_pi_measures.replot.log

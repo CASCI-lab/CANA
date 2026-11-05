@@ -1,0 +1,127 @@
+log_path=/home/kyuhyongpark/CANA/CANA/dev/high_k/logs/unate_check/unate_check.log
+SOURCE=both
+K_VALUES=[8, 16, 32, 64, 128, 256, 512, 1024]  REPEATS=3
+SYNTHETIC_FNS=['and', 'or', 'half_or_half_and', 'pairwise_and_or', 'pairwise_or_and', 'random']  BBM_MODELS=/home/kyuhyongpark/CANA/BBM/models
+INCLUDE_KEYWORDS=[]  EXCLUDE_KEYWORDS=[]
+BBM_TIMEOUT_S=10.0
+=== synthetic (syntactic unate check) ===
+fn                 k      import   syn_unate  is_unate  is_rof   n_uniq
+and                8    131.0 µs    139.4 µs      True    True        8
+and               16    161.1 µs    240.8 µs      True    True       16
+and               32    735.0 µs    715.5 µs      True    True       32
+and               64    908.2 µs    841.8 µs      True    True       64
+and              128     3.30 ms     2.64 ms      True    True      128
+and              256     6.13 ms     5.22 ms      True    True      256
+and              512     9.46 ms     7.81 ms      True    True      512
+and            1,024    26.63 ms    18.97 ms      True    True    1,024
+or                 8    174.5 µs    134.3 µs      True    True        8
+or                16    146.9 µs    404.8 µs      True    True       16
+or                32    513.9 µs    636.2 µs      True    True       32
+or                64     1.06 ms     1.93 ms      True    True       64
+or               128     1.67 ms     3.90 ms      True    True      128
+or               256     3.98 ms     5.63 ms      True    True      256
+or               512     7.37 ms    10.42 ms      True    True      512
+or             1,024    18.38 ms    20.29 ms      True    True    1,024
+half_or_half_and         8    264.9 µs    114.1 µs      True    True        8
+half_or_half_and        16    360.5 µs    423.1 µs      True    True       16
+half_or_half_and        32    507.7 µs    782.4 µs      True    True       32
+half_or_half_and        64    485.7 µs     1.36 ms      True    True       64
+half_or_half_and       128     2.21 ms     3.19 ms      True    True      128
+half_or_half_and       256     3.23 ms     2.95 ms      True    True      256
+half_or_half_and       512     7.05 ms     6.86 ms      True    True      512
+half_or_half_and     1,024    16.71 ms    12.84 ms      True    True    1,024
+pairwise_and_or         8    109.4 µs    163.6 µs      True    True        8
+pairwise_and_or        16    328.7 µs    212.4 µs      True    True       16
+pairwise_and_or        32    595.6 µs    868.7 µs      True    True       32
+pairwise_and_or        64    614.8 µs    800.2 µs      True    True       64
+pairwise_and_or       128     1.69 ms     3.03 ms      True    True      128
+pairwise_and_or       256     3.96 ms     3.30 ms      True    True      256
+pairwise_and_or       512     6.83 ms     6.28 ms      True    True      512
+pairwise_and_or     1,024    21.50 ms    12.28 ms      True    True    1,024
+pairwise_or_and         8    196.8 µs    254.4 µs      True    True        8
+pairwise_or_and        16    325.8 µs    537.0 µs      True    True       16
+pairwise_or_and        32    600.2 µs    834.0 µs      True    True       32
+pairwise_or_and        64    915.2 µs    727.0 µs      True    True       64
+pairwise_or_and       128     1.30 ms     2.90 ms      True    True      128
+pairwise_or_and       256     4.89 ms     6.06 ms      True    True      256
+pairwise_or_and       512     4.78 ms     6.11 ms      True    True      512
+pairwise_or_and     1,024    15.09 ms    11.74 ms      True    True    1,024
+random             8    121.5 µs    107.4 µs      True    True        8
+random            16    180.5 µs    191.7 µs      True    True       16
+random            32    285.7 µs    492.8 µs      True    True       32
+random            64    764.7 µs     1.19 ms      True    True       64
+random           128     2.41 ms     4.32 ms      True    True      128
+random           256     2.63 ms     3.41 ms      True    True      256
+random           512     6.00 ms    14.93 ms      True    True      512
+random         1,024    13.89 ms    22.43 ms      True    True    1,024
+
+=== BBM (all rules; syntactic unate check; timeout=10s) ===
+  … 2,000 rules  (timeout=0  failed=0)
+  … 4,000 rules  (timeout=0  failed=0)
+  … 6,000 rules  (timeout=0  failed=0)
+  … 8,000 rules  (timeout=0  failed=0)
+  … 10,000 rules  (timeout=0  failed=0)
+  … 12,000 rules  (timeout=0  failed=0)
+  … 14,000 rules  (timeout=0  failed=0)
+  … 16,000 rules  (timeout=0  failed=0)
+  … 18,000 rules  (timeout=0  failed=0)
+timed 18,237 BBM rules  timeout=0  failed=0
+
+=== BBM stats (syntactic unate) ===
+Models:    285
+Functions: 18,237
+Syntactic unate:     15,816
+Syntactic unate rate: 86.72%
+Syntactic ROF rate:   74.29%
+Binate (not unate) rate: 13.28%
+Fraction of models with only syntactic unates: 49.12%
+Fraction of functions with >12 unique variables: 2.20%
+Syntactic unate rate for functions with >12 unique variables: 81.84%
+Fraction of models with ≥1 function with >12 variables: 16.14%
+Among those, fraction where all >12-var functions are syntactic unates: 63.04%
+
+Models with only syntactic unates: 140 / 285
+Functions with >12 variables: 402 / 18,237
+Syntactic unates with >12 variables: 329 / 402
+Models with >12-variable function: 46 / 285
+Models where all >12-variable functions are syntactic unates: 29 / 46
+
+import time: mean=  692.5 µs  min=   25.6 µs  max= 760.27 ms
+syntactic unate check time: mean=   1.22 ms  min=   19.9 µs  max=  1.664 s
+
+=== not syntactic ROF but syntactic unate ===
+Functions that are syntactic unate but not ROF: 2,267 / 18,237 (12.43%)
+Among >12-unique functions: 291 / 402 (72.39%)
+Models with ≥1 unate-not-ROF function: 157 / 285 (55.09%)
+Among models with ≥1 non-ROF, fraction where all non-ROFs are still unate: 102 / 247 (41.30%)
+
+Extra variable occurrences among unate-not-ROF functions (n_occ - n_unique):
+      +1: 23.38% (530 / 2,267)
+      +2: 16.85% (382 / 2,267)
+      +3: 9.57% (217 / 2,267)
+      +4: 9.00% (204 / 2,267)
+      +5: 3.75% (85 / 2,267)
+      +6: 6.48% (147 / 2,267)
+      +7: 1.41% (32 / 2,267)
+      +8: 1.81% (41 / 2,267)
+      +9: 1.54% (35 / 2,267)
+     +10: 1.85% (42 / 2,267)
+     +11: 0.26% (6 / 2,267)
+     +12: 3.00% (68 / 2,267)
+     +13: 0.22% (5 / 2,267)
+     +14: 0.75% (17 / 2,267)
+     +15: 1.72% (39 / 2,267)
+     +16: 0.26% (6 / 2,267)
+     +17: 0.40% (9 / 2,267)
+     +18: 1.06% (24 / 2,267)
+     +19: 0.35% (8 / 2,267)
+     +20: 0.66% (15 / 2,267)
+    rest: 15.66% (355 / 2,267)
+
+Three-way split (ROF ⊆ unate ⊆ all):
+  syntactic ROF:           13,549 / 18,237 (74.29%)
+  unate \ ROF:              2,267 / 18,237 (12.43%)
+  binate (not unate):       2,421 / 18,237 (13.28%)
+
+synthetic rows=48  bbm rows=18237  bbm_timeout=0  bbm_failed=0  |  SOURCE=both
+wrote /home/kyuhyongpark/CANA/CANA/dev/high_k/logs/unate_check/unate_check.log

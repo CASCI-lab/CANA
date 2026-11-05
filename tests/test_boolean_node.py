@@ -3,11 +3,13 @@
 # Tests for ``boolean_node.py``
 # These tests were manually calculated by Luis M. Rocha and implemented by Rion B. Correia.
 #
+from math import isclose
+
 from cana.datasets.bools import CONTRADICTION, AND, OR, XOR, COPYx1, RULE90, RULE110
-from cana.utils import *
 from cana.boolean_node import BooleanNode
-import cana.sensitivity as sensitivity
+import cana.function_properties.sensitivity as sensitivity
 import numpy as np
+import pandas as pd
 import pytest
 
 
@@ -110,6 +112,44 @@ def test_input_redundancy_RULE110():
     assert (k_r == true_k_r), ('Input Redundancy (upper, normed) for RULE110 node does not match. %s != %s' % (k_r, true_k_r))
 
 
+def _k_input_or(k):
+    """k-input OR: output 0 only on the all-zero input."""
+    return BooleanNode.from_bit_lut([0] + [1] * (2**k - 1), name="OR_k%d" % k)
+
+
+def _k_input_and(k):
+    """k-input AND: output 1 only on the all-one input."""
+    return BooleanNode.from_bit_lut([0] * (2**k - 1) + [1], name="AND_k%d" % k)
+
+
+def _and_or_mean_input_redundancy(k):
+    """Mean input redundancy for k-input AND or OR: (2^k-1)/2^k * (k-1)."""
+    return ((2**k - 1) / (2**k)) * (k - 1)
+
+
+def _and_or_mean_edge_redundancy(k):
+    """Mean edge redundancy for each input of k-input AND or OR."""
+    return ((2**k - 1) / (2**k)) * ((k - 1) / k)
+
+
+@pytest.mark.parametrize("k", range(1, 7))
+@pytest.mark.parametrize("factory", [_k_input_or, _k_input_and], ids=["OR", "AND"])
+def test_input_redundancy_AND_OR_general_k(factory, k):
+    """Mean input redundancy for k-input AND/OR is (2^k-1)/2^k * (k-1)."""
+    n = factory(k)
+    expected = _and_or_mean_input_redundancy(k)
+    k_r = n.input_redundancy(norm=False)
+    assert isclose(k_r, expected), (
+        "Input Redundancy (mean) for %s (k=%d) does not match. %s != %s"
+        % (n.name, k, k_r, expected)
+    )
+    k_r_norm = n.input_redundancy(norm=True)
+    assert isclose(k_r_norm, expected / k), (
+        "Input Redundancy (mean, normed) for %s (k=%d) does not match. %s != %s"
+        % (n.name, k, k_r_norm, expected / k)
+    )
+
+
 #
 # Test Edge Redundancy
 #
@@ -142,6 +182,21 @@ def test_edge_redundancy_OR():
 
     r_ji, true_r_ji = n.edge_redundancy(bound='tuple'), [(0.25, 0.5), (0.25, 0.5)]
     assert (r_ji == true_r_ji), ('Edge Redundancy (tuples) for OR node does not match. %s != %s' % (r_ji, true_r_ji))
+
+
+@pytest.mark.parametrize("k", range(1, 7))
+@pytest.mark.parametrize("factory", [_k_input_or, _k_input_and], ids=["OR", "AND"])
+def test_edge_redundancy_AND_OR_general_k(factory, k):
+    """Mean edge redundancy for each input of k-input AND/OR is (2^k-1)/2^k * (k-1)/k."""
+    n = factory(k)
+    expected = _and_or_mean_edge_redundancy(k)
+    r_ji = n.edge_redundancy(bound="mean")
+    assert len(r_ji) == k
+    for i, r in enumerate(r_ji):
+        assert isclose(r, expected), (
+            "Edge Redundancy (mean) for %s input %d (k=%d) does not match. %s != %s"
+            % (n.name, i, k, r, expected)
+        )
 
 
 # XOR
@@ -473,11 +528,13 @@ def test_input_symmetry_SBF():
 
 
 #
-# Test sensitivity (direct computation)
+# Test sensitivity / activities (LUT and schemata paths)
 #
 
 def test_sensitivity_hand_values():
     """sensitivity: mean number of single-input flips that change the output"""
+    from cana.function_outputs.bit_lut import BitLut
+
     cases = [
         (list("00"), 0.0),          # constant
         (list("01"), 1.0),          # identity
@@ -487,32 +544,36 @@ def test_sensitivity_hand_values():
         (list("00010111"), 1.5),    # majority k=3: 000 and 111 have none, the rest have two
     ]
     for outputs, true_s in cases:
-        n = BooleanNode.from_output_list(outputs)
+        n = BooleanNode.from_bit_lut(outputs)
         s = n.sensitivity(norm=False)
         assert s == true_s, f"sensitivity for {''.join(outputs)}: returned {s}, true value is {true_s}"
-        assert sensitivity.sensitivity(outputs, n.k) == true_s
+        assert sensitivity.sensitivity_from_bit_lut(BitLut.from_sequence(outputs)) == true_s
 
-def test_sensitivity_matches_original_implementation():
-    """the direct sensitivity must be bit-exactly equal to sensitivity_old, the sum-of-activities implementation used up to CANA 1.0.2"""
+
+def test_sensitivity_lut_matches_schemata():
+    """bit-lut and schemata sensitivity paths must be bit-exactly equal on the full space"""
     import random
     nodes = [AND(), OR(), XOR(), COPYx1(), CONTRADICTION(), RULE90(), RULE110()]
     rng = random.Random(20260921)
     for k in range(1, 8):
         for _ in range(50 if k <= 5 else 15):
-            nodes.append(BooleanNode.from_output_list([rng.randint(0, 1) for _ in range(2**k)]))
+            nodes.append(BooleanNode.from_bit_lut([rng.randint(0, 1) for _ in range(2**k)]))
     for n in nodes:
         for norm in (False, True):
-            s, s0 = n.sensitivity(norm=norm), sensitivity.sensitivity_old(n, norm=norm)
-            assert s == s0, f"sensitivity(norm={norm}) for k={n.k} outputs={''.join(n.outputs)}: {s!r} != sensitivity_old {s0!r}"
+            s_lut = n.sensitivity_from_bit_lut(norm=norm)
+            s_sch = n.sensitivity_from_schemata(norm=norm)
+            assert s_lut == s_sch, (
+                f"sensitivity(norm={norm}) for k={n.k} outputs="
+                f"{''.join(map(str, n.outputs))}: lut {s_lut!r} != schemata {s_sch!r}"
+            )
+            assert n.sensitivity(norm=norm) == s_lut
         assert abs(n.sensitivity(norm=True) - n.c_sensitivity(1)) < 1e-12
 
 
-#
-# Test activities (direct computation)
-#
-
 def test_activities_hand_values():
     """activities: per input, the fraction of input states where flipping it changes the output"""
+    from cana.function_outputs.bit_lut import BitLut
+
     cases = [
         (list("00"), [0.0]),                     # constant
         (list("01"), [1.0]),                     # identity
@@ -523,40 +584,209 @@ def test_activities_hand_values():
         (list("00011111"), [0.75, 0.25, 0.25]),  # x1 OR (x2 AND x3)
     ]
     for outputs, true_a in cases:
-        n = BooleanNode.from_output_list(outputs)
+        n = BooleanNode.from_bit_lut(outputs)
         a = n.activities()
         assert a == true_a, f"activities for {''.join(outputs)}: returned {a}, true value is {true_a}"
-        assert sensitivity.activities(outputs, n.k) == true_a
+        assert sensitivity.activities_from_bit_lut(BitLut.from_sequence(outputs)) == true_a
 
-def test_activities_matches_original_implementation():
-    """the direct activities must be bit-exactly equal to activities_old, the upper edge effectiveness used up to CANA 1.0.2"""
+
+def test_activities_lut_matches_schemata():
+    """bit-lut and schemata activities paths must be bit-exactly equal on the full space"""
     import random
     nodes = [AND(), OR(), XOR(), COPYx1(), CONTRADICTION(), RULE90(), RULE110()]
     rng = random.Random(20260928)
     for k in range(1, 8):
         for _ in range(50 if k <= 5 else 15):
-            nodes.append(BooleanNode.from_output_list([rng.randint(0, 1) for _ in range(2**k)]))
+            nodes.append(BooleanNode.from_bit_lut([rng.randint(0, 1) for _ in range(2**k)]))
     for n in nodes:
-        a, a0 = n.activities(), sensitivity.activities_old(n)
-        assert a == a0, f"activities for k={n.k} outputs={''.join(n.outputs)}: {a!r} != activities_old {a0!r}"
-# Test from_output_list
+        a_lut = n.activities_from_bit_lut()
+        a_sch = n.activities_from_schemata()
+        assert a_lut == a_sch, (
+            f"activities for k={n.k} outputs={''.join(map(str, n.outputs))}: "
+            f"lut {a_lut!r} != schemata {a_sch!r}"
+        )
+        assert n.activities() == a_lut
+
+
+def test_activities_sensitivity_auto_fallback_paths():
+    """default methods prefer cached coverage, else LUT when k <= exact_k_max"""
+    lut_node = BooleanNode.from_bit_lut([0, 0, 0, 1], name="AND")
+    assert lut_node.outputs.bit_lut is not None
+    assert lut_node.activities() == lut_node.activities_from_bit_lut()
+    assert lut_node.sensitivity() == lut_node.sensitivity_from_bit_lut()
+    assert lut_node.bias() == lut_node.bias_from_bit_lut()
+
+    # no coverage and k <= exact_k_max → bit_lut for both
+    fresh = BooleanNode.from_one_symbol_schemata(
+        {0: {"02", "20"}, 1: {"11"}}, k=2, name="AND"
+    )
+    assert fresh.outputs.bit_lut is None
+    assert fresh._pi_coverage is None and fresh._sampled_pi_coverage is None
+    assert fresh.activities() == fresh.activities_from_bit_lut()
+    assert fresh.sensitivity() == fresh.sensitivity_from_bit_lut()
+    assert fresh.bias() == fresh.bias_from_bit_lut()
+    assert fresh.activities() == lut_node.activities()
+    assert fresh.sensitivity() == lut_node.sensitivity()
+    assert fresh.bias() == lut_node.bias()
+
+    # once pi_coverage is cached, both prefer the schemata path
+    covered = BooleanNode.from_one_symbol_schemata(
+        {0: {"02", "20"}, 1: {"11"}}, k=2, name="AND"
+    )
+    assert covered.outputs.verify_one_symbol_schemata() is True
+    _ = covered.pi_coverage()
+    assert covered._pi_coverage is not None
+    assert covered.activities() == covered.activities_from_schemata()
+    assert covered.sensitivity() == covered.sensitivity_from_schemata()
+    assert covered.bias() == covered.bias_from_schemata()
+    assert covered.bias() == pytest.approx(0.25, abs=1e-12)
+
+
+def test_activities_sensitivity_high_k_schemata_sampling():
+    """schemata-only nodes above MAX_DENSE_LUT_K can still estimate via sampling"""
+    import numpy as np
+    from cana.function_outputs.bit_lut import MAX_DENSE_LUT_K
+
+    k = MAX_DENSE_LUT_K + 1
+    # constant-1 on all inputs: every input is fictitious → activity 0
+    n = BooleanNode.from_one_symbol_schemata({1: {"2" * k}}, k=k)
+    # Known PI cover; verify_one_symbol_schemata would need a dense LUT.
+    n.outputs.one_symbol_is_prime_implicant = True
+    assert n.outputs.bit_lut is None
+    with pytest.raises(ValueError, match="MAX_DENSE_LUT_K"):
+        n.outputs.get_bit_lut()
+
+    rng = np.random.default_rng(0)
+    a = n.activities(exact_k_max=-1, n_samples=64, rng=rng)
+    s = n.sensitivity(exact_k_max=-1, n_samples=64, rng=np.random.default_rng(0))
+    assert a == [0.0] * k
+    assert s == 0.0
+
+#
+# Test representation factories
 #
 
-def test_from_output_list_rejects_non_power_of_two():
-    """from_output_list must not silently truncate k on a malformed list"""
+def test_from_bit_lut_rejects_non_power_of_two():
+    """from_bit_lut must not silently truncate k on a malformed list"""
     for bad in ([], [0, 1, 1], [0] * 6, [1] * 129):
         with pytest.raises(ValueError):
-            BooleanNode.from_output_list(bad)
+            BooleanNode.from_bit_lut(bad)
 
-def test_from_output_list_returns_subclass():
-    """from_output_list must instantiate the class it is called on"""
+def test_from_bit_lut_returns_subclass():
+    """from_bit_lut must instantiate the class it is called on"""
     class MyNode(BooleanNode):
         pass
 
-    n = MyNode.from_output_list([0, 1, 1, 0], name="xor")
+    n = MyNode.from_bit_lut([0, 1, 1, 0], name="xor")
     assert type(n) is MyNode
     assert (n.k, n.name, n.outputs) == (2, "xor", list("0110"))
     assert n.input_redundancy(norm=False) == XOR().input_redundancy(norm=False)
+
+def test_schemata_look_up_table_ts_hides_same_symbol_groups():
+    """Trivial same-symbol groups are not rendered; only permutables are marked."""
+    n = AND()
+    df = n.schemata_look_up_table(type="ts")
+    assert list(df.columns) == ["In:", "Out:"]
+    by_out = {out: schema for schema, out in df.itertuples(index=False, name=None)}
+    # Output 0: true permute group on wild. Output 1: only same-symbol → plain schema.
+    assert by_out[0] == "0\u030A#\u030A"
+    assert by_out[1] == "11"
+
+
+def test_schema_table_out_stays_int_after_concat_fillna():
+    """Out: values stay ints (not 0.0) when notebooks concat + fillna('-')."""
+    n = AND()
+    dfLUT = n.look_up_table()
+    dfPI = n.schemata_look_up_table(type="pi")
+    dfTS = n.schemata_look_up_table(type="ts")
+    for df in (dfLUT, dfPI, dfTS):
+        assert all(type(v) is int for v in df["Out:"])
+    joined = pd.concat(
+        {"Original LUT": dfLUT, "PI Schema": dfPI, "TS Schema": dfTS}, axis=1
+    ).fillna("-")
+    for col in [("PI Schema", "Out:"), ("TS Schema", "Out:"), ("Original LUT", "Out:")]:
+        vals = [v for v in joined[col] if v != "-"]
+        assert vals and all(type(v) is int for v in vals)
+
+
+def test_from_positional_expression_factory():
+    n = BooleanNode.from_positional_expression("x0 and x1", k=2, name="AND", inputs=[0, 1])
+    assert n.outputs.positional_expression == "x0 and x1"
+    assert list(n.outputs.get_bit_lut()) == [0, 0, 0, 1]
+
+def test_from_one_symbol_schemata_factory():
+    # Complete AND cover (both polarities) so get_bit_lut can expand.
+    schemata = {0: {"02", "20"}, 1: {"11"}}
+    n = BooleanNode.from_one_symbol_schemata(
+        schemata, k=2, name="AND", inputs=[0, 1]
+    )
+    assert n.outputs.one_symbol_schemata == schemata
+    assert list(n.outputs.get_bit_lut()) == [0, 0, 0, 1]
+
+def test_from_two_symbol_schemata_factory():
+    # OR as two-symbol: one wild entry covering both singleton ON minterms.
+    # Use a concrete two-symbol obtained from a known LUT via FunctionOutputs.
+    from cana.function_outputs import FunctionOutputs
+
+    fo = FunctionOutputs.from_sequence([0, 1, 1, 1])
+    ts = fo.get_two_symbol_schemata()
+    n = BooleanNode.from_two_symbol_schemata(ts, k=2, name="OR", inputs=[0, 1])
+    assert n.outputs.two_symbol_schemata is not None
+    assert list(n.outputs.get_bit_lut()) == [0, 1, 1, 1]
+
+def test_coverage_refuses_huge_k():
+    """pi_coverage / ts_coverage refuse Θ(2^k) expansion above MAX_DENSE_LUT_K."""
+    from cana.function_outputs.bit_lut import MAX_DENSE_LUT_K
+
+    k = MAX_DENSE_LUT_K + 1
+    n_pi = BooleanNode.from_one_symbol_schemata({1: {"2" * k}}, k=k)
+    with pytest.raises(ValueError, match="pi_coverage.*MAX_DENSE_LUT_K"):
+        n_pi.pi_coverage()
+    assert n_pi._pi_coverage is None
+
+    ts = ([], [["2" * k, [], []]])
+    n_ts = BooleanNode.from_two_symbol_schemata(ts, k=k)
+    with pytest.raises(ValueError, match="ts_coverage.*MAX_DENSE_LUT_K"):
+        n_ts.ts_coverage()
+    assert n_ts._ts_coverage is None
+
+
+def test_coverage_clears_when_schemata_replaced():
+    """Replacing one-/two-symbol with a different cover drops coverage caches."""
+    n = BooleanNode.from_bit_lut([0, 0, 0, 1], name="AND")
+    _ = n.pi_coverage()
+    _ = n.ts_coverage()
+    assert n._pi_coverage is not None
+    assert n._ts_coverage is not None
+
+    # Equal reassignment keeps caches.
+    same_one = {
+        0: set(n.outputs.one_symbol_schemata[0]),
+        1: set(n.outputs.one_symbol_schemata[1]),
+    }
+    n.outputs.one_symbol_schemata = same_one
+    assert n._pi_coverage is not None
+    n.outputs.two_symbol_schemata = (
+        list(n.outputs.two_symbol_schemata[0]),
+        list(n.outputs.two_symbol_schemata[1]),
+    )
+    assert n._ts_coverage is not None
+
+    # Different one-symbol clears PI caches only.
+    n.outputs.one_symbol_schemata = {0: {"00", "01", "10"}, 1: {"11"}}
+    assert n._pi_coverage is None
+    assert n._ts_coverage is not None
+
+    _ = n.pi_coverage()
+    _ = n.ts_coverage()
+    # Different two-symbol clears TS cache only.
+    n.outputs.two_symbol_schemata = (
+        [["000", [], []]],  # wrong shape / content vs AND
+        [["11", [], []]],
+    )
+    assert n._ts_coverage is None
+    assert n._pi_coverage is not None
+
 
 def test_input_symmetry_mean_on_fresh_node():
     """input_symmetry_mean must compute its own coverage instead of requiring input_symmetry() to run first"""
