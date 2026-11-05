@@ -21,6 +21,10 @@ from cana.function_properties.rof import (
     require_syntactic_rof_ast,
 )
 from cana.function_properties.unate import (
+    SIGN_BINATE,
+    SIGN_IRRELEVANT,
+    SIGN_NEGATIVE,
+    SIGN_POSITIVE,
     check_syntactic_unate,
     check_syntactic_unate_ast,
     input_sign,
@@ -43,6 +47,10 @@ __all__ = [
     "require_syntactic_unate",
     "require_syntactic_unate_ast",
     "syntactic_input_signs",
+    "SIGN_POSITIVE",
+    "SIGN_NEGATIVE",
+    "SIGN_BINATE",
+    "SIGN_IRRELEVANT",
     "input_sign",
     "input_signs",
     "is_function_monotone_increasing",

@@ -1364,8 +1364,13 @@ class BooleanNode(object):
         )
 
     def input_signs(self):
-        """
-        Determine if each input can be considered activation (1), inhibition (-1), or neither (0).
+        """Return per-input interaction signs as ``frozenset`` values.
+
+        Each entry is one of
+        :data:`~cana.function_properties.unate.SIGN_POSITIVE`,
+        :data:`~cana.function_properties.unate.SIGN_NEGATIVE`,
+        :data:`~cana.function_properties.unate.SIGN_BINATE`, or
+        :data:`~cana.function_properties.unate.SIGN_IRRELEVANT`.
 
         Prefers a fast syntactic NNF scan when a stored positional expression
         is available and syntactically unate (no LUT).  Otherwise uses
@@ -1373,7 +1378,7 @@ class BooleanNode(object):
         :func:`~cana.function_properties.unate.input_signs`.
 
         Returns:
-            (list) : The list of input signs.
+            (list) : The list of input signs (``list[frozenset]``).
         """
         expr = self.outputs.positional_expression
         if expr is not None:

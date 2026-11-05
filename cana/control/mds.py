@@ -20,7 +20,7 @@ def mds(directed_graph, max_search=5, keep_self_loops=True):
     """The minimum dominating set method.
 
     Args:
-        directed_graph (networkx.DiGraph) : The structural graph.
+        directed_graph (networkx.DiGraph) : The interaction graph.
         max_search (int) : Maximum search of additional variables. Defaults to 5.
         keep_self_loops (bool) : If self-loops are used in the computation.
     Returns:

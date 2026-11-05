@@ -138,7 +138,7 @@ class BooleanNetwork:
                     )
                 )
             node.network = self
-        self._sg = sg  # Structure-Graph (SG)
+        self._ig = sg  # Interaction Graph (legacy: Structure-Graph)
         self._stg = stg  # State-Transition-Graph (STG)
         self._stg_r = stg_r  # State-Transition-Graph Reachability dict (STG-R)
         self._eg = _eg  # Effective Graph, computed from the effective connectivity
@@ -167,6 +167,15 @@ class BooleanNetwork:
         self.bin2num = bin2num  # Helper function. Converts binstate to statenum. It gets updated by `_update_trans_func`
         self.num2bin = num2bin  # Helper function. Converts statenum to binstate. It gets updated by `_update_trans_func`
         self._update_trans_func()  # Updates helper functions and other variables
+
+    @property
+    def _sg(self):
+        """Deprecated alias of ``_ig`` (interaction graph cache)."""
+        return self._ig
+
+    @_sg.setter
+    def _sg(self, value):
+        self._ig = value
 
     @property
     def constants(self):
@@ -451,85 +460,142 @@ class BooleanNetwork:
     #
     # Methods
     #
-    def structural_graph(self, remove_constants=False):
-        """Calculates and returns the structural graph of the boolean network.
+    def _fill_wiring_signs(self, G):
+        """Set edge ``sign`` frozensets from each target node's ``input_signs``."""
+        for target in range(self.Nnodes):
+            if target not in G:
+                continue
+            signs = self.nodes[target].input_signs()
+            for idx, source in enumerate(self.nodes[target].inputs):
+                if G.has_edge(source, target):
+                    G[source][target]["sign"] = signs[idx]
+        G.graph["signs_computed"] = True
+        return G
+
+    def interaction_graph(self, remove_constants=False, signed=True):
+        """Return the interaction graph of the boolean network.
+
+        Nodes are variables; an edge ``source -> target`` exists when
+        ``source`` is an input of ``target``.  Edge ``weight`` is ``1.0``
+        (topology only).  Edge ``sign`` is an ``Optional[frozenset[int]]``:
+
+        - ``None`` when ``signed=False`` (not computed)
+        - ``frozenset({1})`` / ``frozenset({-1})`` — pure activation / inhibition
+        - ``frozenset({1, -1})`` — binate / dual-sign
+        - ``frozenset()`` — irrelevant (no influence)
 
         Args:
             remove_constants (bool) : Remove constants from the graph. Defaults to ``False``.
+            signed (bool) : Compute and attach interaction signs. Defaults to ``True``.
 
         Returns:
-            G (networkx.Digraph) : The boolean network structural graph.
+            G (networkx.DiGraph) : The boolean network interaction graph.
         """
-        self._sg = nx.DiGraph(name="Structural Graph: " + self.name)
+        self._ig = nx.DiGraph(name="Interaction Graph: " + self.name)
+        self._ig.graph["signs_computed"] = bool(signed)
 
-        # Add Nodes
-        self._sg.add_nodes_from(
+        self._ig.add_nodes_from(
             (i, {"label": n.name}) for i, n in enumerate(self.nodes)
         )
         for target in range(self.Nnodes):
-            for source in self.nodes[target].inputs:
-                self._sg.add_edge(source, target, **{"weight": 1.0})
+            if signed:
+                signs = self.nodes[target].input_signs()
+            else:
+                signs = [None] * len(self.nodes[target].inputs)
+            for idx, source in enumerate(self.nodes[target].inputs):
+                self._ig.add_edge(
+                    source, target, **{"weight": 1.0, "sign": signs[idx]}
+                )
 
         if remove_constants:
-            self._sg.remove_nodes_from(self.get_constants().keys())
-        #
-        return self._sg
+            self._ig.remove_nodes_from(self.get_constants().keys())
+        return self._ig
+
+    def structural_graph(self, remove_constants=False):
+        """Deprecated alias of :meth:`interaction_graph` with ``signed=False``.
+
+        Prefer :meth:`interaction_graph`.  Kept for cheap unsigned topology
+        (legacy structural-graph callers).
+        """
+        warnings.warn(
+            "BooleanNetwork.structural_graph is deprecated; "
+            "use interaction_graph(signed=False) for unsigned topology "
+            "or interaction_graph() for signed interaction graphs.",
+            DeprecationWarning,
+            stacklevel=2,
+        )
+        return self.interaction_graph(
+            remove_constants=remove_constants, signed=False
+        )
 
     def number_interactions(self):
-        """Returns the number of interactions in the Structural Graph (SG).
-        Practically, it returns the number of edges of the SG.
+        """Returns the number of interactions in the interaction graph.
+        Practically, it returns the number of edges.
 
         Returns:
             int
         """
-        self._check_compute_variables(sg=True)
-        return nx.number_of_edges(self._sg)
+        self._check_compute_variables(ig=True)
+        return nx.number_of_edges(self._ig)
 
-    def structural_indegrees(self):
-        """Returns the in-degrees of the Structural Graph. Sorted.
+    def interaction_indegrees(self):
+        """Returns the in-degrees of the interaction graph. Sorted.
 
         Returns:
-            (int) : the number of in-degrees.
+            (list) : in-degrees.
 
         See also:
-            :func:`structural_outdegrees`, :func:`effective_indegrees`, :func:`effective_outdegrees`
+            :func:`interaction_outdegrees`, :func:`effective_indegrees`, :func:`effective_outdegrees`
         """
-        self._check_compute_variables(sg=True)
-        return sorted([d for n, d in self._sg.in_degree()], reverse=True)
+        self._check_compute_variables(ig=True)
+        return sorted([d for n, d in self._ig.in_degree()], reverse=True)
 
-    def structural_outdegrees(self):
-        """Returns the out-degrees of the Structural Graph. Sorted.
+    def interaction_outdegrees(self):
+        """Returns the out-degrees of the interaction graph. Sorted.
 
         Returns:
             (list) : out-degrees.
 
         See also:
-            :func:`structural_indegrees`, :func:`effective_indegrees`, :func:`effective_outdegrees`
+            :func:`interaction_indegrees`, :func:`effective_indegrees`, :func:`effective_outdegrees`
         """
-        self._check_compute_variables(sg=True)
-        return sorted([d for n, d in self._sg.out_degree()], reverse=True)
+        self._check_compute_variables(ig=True)
+        return sorted([d for n, d in self._ig.out_degree()], reverse=True)
+
+    def structural_indegrees(self):
+        """Deprecated alias of :meth:`interaction_indegrees`."""
+        warnings.warn(
+            "BooleanNetwork.structural_indegrees is deprecated; "
+            "use interaction_indegrees instead.",
+            DeprecationWarning,
+            stacklevel=2,
+        )
+        return self.interaction_indegrees()
+
+    def structural_outdegrees(self):
+        """Deprecated alias of :meth:`interaction_outdegrees`."""
+        warnings.warn(
+            "BooleanNetwork.structural_outdegrees is deprecated; "
+            "use interaction_outdegrees instead.",
+            DeprecationWarning,
+            stacklevel=2,
+        )
+        return self.interaction_outdegrees()
 
     def signed_interaction_graph(self):
-        """Calculates and returns the signed interaction graph of the boolean network.  Here, edge weights denote
-        if an interaction is activation (1), inhibition (-1), or cannot be classified (0).
+        """Deprecated alias of :meth:`interaction_graph` with ``signed=True``.
 
-        Returns:
-            G (networkx.Digraph) : The boolean network structural graph.
+        Signs are stored on the dedicated ``sign`` edge attribute (not ``weight``).
         """
-        signed_ig = nx.DiGraph(name="Signed Interaction Graph: " + self.name)
-        signed_ig.add_nodes_from(
-            (i, {"label": n.name}) for i, n in enumerate(self.nodes)
+        warnings.warn(
+            "BooleanNetwork.signed_interaction_graph is deprecated; "
+            "use interaction_graph(signed=True) instead.",
+            DeprecationWarning,
+            stacklevel=2,
         )
+        return self.interaction_graph(signed=True)
 
-        for target in range(self.Nnodes):
-            input_signs = self.nodes[target].input_signs()
-
-            for idx, source in enumerate(self.nodes[target].inputs):
-                signed_ig.add_edge(source, target, **{"weight": input_signs[idx]})
-
-        return signed_ig
-
-    def effective_graph(self, bound="mean", threshold=None):
+    def effective_graph(self, bound="mean", threshold=None, signed=False):
         """Computes and returns the effective graph of the network.
         In practice, it asks each :class:`~cana.boolean_node.BooleanNode` for their :func:`~cana.boolean_node.BooleanNode.edge_effectiveness`.
         None thresholded effective graph is cached after the first computation. Thresholded effective graphs are computed from the cached
@@ -541,6 +607,9 @@ class BooleanNetwork:
                 Defaults to "mean".
             threshold (float) : Only return edges above a certain effective connectivity threshold.
                 This is usefull when computing graph measures at diffent levels.
+            signed (bool) : Attach interaction ``sign`` frozensets on edges.
+                Defaults to ``False``.  The effectiveness cache is always built
+                unsigned; ``signed=True`` copies and fills signs.
 
         Returns:
             (networkx.DiGraph) : directed graph
@@ -552,6 +621,7 @@ class BooleanNetwork:
             self._eg = nx.DiGraph(
                 name="Effective Graph: " + self.name + "(Threshold: None)"
             )
+            self._eg.graph["signs_computed"] = False
 
             # Add Nodes
             for i, node in enumerate(self.nodes, start=0):
@@ -562,7 +632,14 @@ class BooleanNetwork:
                 e_is = node.edge_effectiveness(bound=bound)
 
                 for inputs, e_i in zip(self.nodes[i].inputs, e_is):
-                    self._eg.add_edge(inputs, i, **{"weight": e_i})
+                    self._eg.add_edge(
+                        inputs, i, **{"weight": e_i, "sign": None}
+                    )
+
+        base = self._eg
+        if signed:
+            base = copy.deepcopy(self._eg)
+            self._fill_wiring_signs(base)
 
         if threshold is not None:
             # make a copy of the effective graph
@@ -571,18 +648,25 @@ class BooleanNetwork:
                      + self.name
                      + "(Threshold: {threshold:.2f})".format(threshold=threshold)
             )
-            thresholded_eg.add_nodes_from(self._eg.nodes(data=True))
+            thresholded_eg.graph["signs_computed"] = base.graph.get(
+                "signs_computed", False
+            )
+            thresholded_eg.add_nodes_from(base.nodes(data=True))
             # add edges
-            for i, j, d in self._eg.edges(data=True):
+            for i, j, d in base.edges(data=True):
                 if d["weight"] > threshold:
-                    thresholded_eg.add_edge(i, j, **{"weight": d["weight"]})
+                    thresholded_eg.add_edge(
+                        i,
+                        j,
+                        **{"weight": d["weight"], "sign": d.get("sign")},
+                    )
 
             return thresholded_eg
         else:
-            return self._eg
+            return base
 
     def conditional_effective_graph(
-        self, conditioned_nodes={}, bound="mean", threshold=None
+        self, conditioned_nodes={}, bound="mean", threshold=None, signed=False
     ):
         """Computes and returns the BN effective graph conditioned on some known states.
 
@@ -594,6 +678,8 @@ class BooleanNetwork:
                 Defaults to "mean".
             threshold (float) : Only return edges above a certain effective connectivity threshold.
                 This is usefull when computing graph measures at diffent levels.
+            signed (bool) : Attach interaction ``sign`` frozensets on remaining
+                edges from the conditioned LUTs. Defaults to ``False``.
 
         Returns:
             (networkx.DiGraph) : directed graph
@@ -603,7 +689,7 @@ class BooleanNetwork:
         """
 
         conditional_eg = copy.deepcopy(
-            self.effective_graph(bound=bound, threshold=None)
+            self.effective_graph(bound=bound, threshold=None, signed=False)
         )
         conditioned_subgraph = set([])
 
@@ -733,6 +819,25 @@ class BooleanNetwork:
             conditional_eg, values=dict_all_conditioned_nodes, name="conditioned_state"
         )
 
+        if signed:
+            from cana.function_properties.unate import input_signs as lut_input_signs
+
+            for target, logic in enumerate(conditioned_logic):
+                if target not in conditional_eg:
+                    continue
+                inputs = logic["inputs"]
+                if not inputs:
+                    continue
+                signs = lut_input_signs(logic["outputs"].get_bit_lut())
+                for idx, source in enumerate(inputs):
+                    if conditional_eg.has_edge(source, target):
+                        conditional_eg[source][target]["sign"] = signs[idx]
+            conditional_eg.graph["signs_computed"] = True
+        else:
+            for _u, _v, data in conditional_eg.edges(data=True):
+                data["sign"] = None
+            conditional_eg.graph["signs_computed"] = False
+
         return conditional_eg
 
     def effective_indegrees(self):
@@ -742,7 +847,7 @@ class BooleanNetwork:
             (list)
 
         See also:
-            :func:`effective_outdegrees`, :func:`structural_indegrees`, :func:`structural_outdegrees`
+            :func:`effective_outdegrees`, :func:`interaction_indegrees`, :func:`interaction_outdegrees`
         """
         self._check_compute_variables(eg=True)
         return sorted([d for n, d in self._eg.in_degree(weight="weight")], reverse=True)
@@ -754,7 +859,7 @@ class BooleanNetwork:
             (list)
 
         See also:
-            :func:`effective_indegrees`, :func:`structural_indegrees`, :func:`structural_outdegrees`
+            :func:`effective_indegrees`, :func:`interaction_indegrees`, :func:`interaction_outdegrees`
         """
         self._check_compute_variables(eg=True)
         return sorted(
@@ -1417,12 +1522,45 @@ class BooleanNetwork:
         """Produce nodes in a depth-first-search pre-ordering starting from source."""
         return [n for n in nx.dfs_preorder_nodes(G, source)]
 
+    def _control_digraph(self, graph, *args, **kwargs):
+        """Resolve a digraph for structure-based control helpers.
+
+        ``graph`` is ``"interaction"`` or ``"effective"``.  ``"structural"`` is
+        accepted as a deprecated alias for ``"interaction"``.  Signs are not
+        used by MDS/FVS/SC; interaction graphs are built with ``signed=False``
+        unless the caller overrides.
+        """
+        if graph == "structural":
+            warnings.warn(
+                "graph='structural' is deprecated; use graph='interaction'.",
+                DeprecationWarning,
+                stacklevel=3,
+            )
+            graph = "interaction"
+        if graph == "interaction":
+            kwargs = dict(kwargs)
+            kwargs.setdefault("signed", False)
+            return self.interaction_graph(*args, **kwargs)
+        if graph == "effective":
+            eg_kwargs = {
+                k: kwargs[k]
+                for k in ("bound", "threshold", "signed")
+                if k in kwargs
+            }
+            eg_kwargs.setdefault("bound", "mean")
+            eg_kwargs.setdefault("signed", False)
+            return self.effective_graph(**eg_kwargs)
+        raise AttributeError(
+            "The graph type '%s' is not accepted. Try 'interaction' or 'effective'."
+            % graph
+        )
+
     #
     # Feedback Vertex Set (FVS)
     #
     def feedback_vertex_set_driver_nodes(
         self,
-        graph="structural",
+        graph="interaction",
         method="grasp",
         max_iter=1,
         max_search=11,
@@ -1434,6 +1572,8 @@ class BooleanNetwork:
 
         Args:
             graph (string) : Which graph to perform computation
+                (``"interaction"`` or ``"effective"``; ``"structural"`` is a
+                deprecated alias for ``"interaction"``).
             method (string) : FVS method. ``bruteforce`` or ``grasp`` (default).
             max_iter (int) : The maximum number of iterations used by the grasp method.
             max_search (int) : The maximum number of searched used by the bruteforce method.
@@ -1443,23 +1583,12 @@ class BooleanNetwork:
             (list) : A list-of-lists with FVS solution nodes.
 
         Note:
-            When computing FVS on the structural graph, you might want to use ``remove_constants=True``
+            When computing FVS on the interaction graph, you might want to use ``remove_constants=True``
             to make sure the resulting set is minimal – since constants are not controlabled by definition.
             Also, when computing on the effective graph, you can define the desired ``threshold`` level.
         """
-        self._check_compute_variables(sg=True)
-
-        if graph == "structural":
-            dg = self.structural_graph(*args, **kwargs)
-        elif graph == "effective":
-            dg = self.effective_graph(
-                mode="input", bound="mean", threshold=None, *args, **kwargs
-            )
-        else:
-            raise AttributeError(
-                "The graph type '%s' is not accepted. Try 'structural' or 'effective'."
-                % graph
-            )
+        self._check_compute_variables(ig=True)
+        dg = self._control_digraph(graph, *args, **kwargs)
         #
         if method == "grasp":
             fvssets = fvs.fvs_grasp(
@@ -1483,31 +1612,21 @@ class BooleanNetwork:
     # Minimum Dominating Set
     #
     def minimum_dominating_set_driver_nodes(
-        self, graph="structural", max_search=5, keep_self_loops=True, *args, **kwargs
+        self, graph="interaction", max_search=5, keep_self_loops=True, *args, **kwargs
     ):
         """The minimun set of necessary driver nodes to control the network based on Minimum Dominating Set (MDS) theory.
 
         Args:
+            graph (string) : ``"interaction"`` or ``"effective"``
+                (``"structural"`` is a deprecated alias for ``"interaction"``).
             max_search (int) : Maximum search of additional variables. Defaults to 5.
             keep_self_loops (bool) : If self-loops are used in the computation.
 
         Returns:
             (list) : A list-of-lists with MDS solution nodes.
         """
-        self._check_compute_variables(sg=True)
-        #
-        if graph == "structural":
-            dg = self.structural_graph(*args, **kwargs)
-        elif graph == "effective":
-            dg = self.effective_graph(
-                mode="input", bound="mean", threshold=None, *args, **kwargs
-            )
-        else:
-            raise AttributeError(
-                "The graph type '%s' is not accepted. Try 'structural' or 'effective'."
-                % graph
-            )
-        #
+        self._check_compute_variables(ig=True)
+        dg = self._control_digraph(graph, *args, **kwargs)
 
         mdssets = mds.mds(dg, max_search=max_search, keep_self_loops=keep_self_loops)
         return mdssets  # [ [self.nodes[i].name for i in mdsset] for mdsset in mdssets]
@@ -1515,29 +1634,20 @@ class BooleanNetwork:
     # Structural Controllability
     #
     def structural_controllability_driver_nodes(
-        self, graph="structural", keep_self_loops=True, *args, **kwargs
+        self, graph="interaction", keep_self_loops=True, *args, **kwargs
     ):
         """The minimum set of necessary driver nodes to control the network based on Structural Controlability (SC) theory.
 
         Args:
+            graph (string) : ``"interaction"`` or ``"effective"``
+                (``"structural"`` is a deprecated alias for ``"interaction"``).
             keep_self_loops (bool) : If self-loops are used in the computation.
 
         Returns:
             (list) : A list-of-lists with SC solution nodes.
         """
-        self._check_compute_variables(sg=True)
-
-        if graph == "structural":
-            dg = self.structural_graph(*args, **kwargs)
-        elif graph == "effective":
-            dg = self.effective_graph(
-                mode="input", bound="mean", threshold=None, *args, **kwargs
-            )
-        else:
-            raise AttributeError(
-                "The graph type '%s' is not accepted. Try 'structural' or 'effective'."
-                % graph
-            )
+        self._check_compute_variables(ig=True)
+        dg = self._control_digraph(graph, *args, **kwargs)
         #
         scsets = [
             set(scset).union(set(self.input_nodes))
@@ -1607,9 +1717,9 @@ class BooleanNetwork:
         if target_set is None:
             target_set = range(self.Nnodes)
 
-        Gstr = self.structural_graph()
+        Gstr = self.interaction_graph(signed=False)
 
-        Geff = self.effective_graph(bound=bound, threshold=threshold)
+        Geff = self.effective_graph(bound=bound, threshold=threshold, signed=False)
 
         # the maximum path with length given by product of weights is the same as minimal path of negative log weight
         def eff_weight_func(u, v, e):
@@ -1624,7 +1734,7 @@ class BooleanNetwork:
         )  # if we can't reach the node, then the paths cant be longer than the number of nodes in the graph
         # note that by default: impact_matrix[1, :, :] = 0 the minimum path for nodes we cant reach in the effective graph
 
-        # in the structural graph, calcluate the dijkstra shortest paths from the source to all targets that are shorter than the cufoff
+        # in the interaction graph, calcluate the dijkstra shortest paths from the source to all targets that are shorter than the cufoff
         Gstr_shortest_dist, Gstr_shortest_paths = nx.single_source_dijkstra(
             Gstr, source, target=None, cutoff=n_steps
         )
@@ -1640,7 +1750,7 @@ class BooleanNetwork:
             # we dont need to worry about a path to iteself (source==target)
             # and if the target doesnt appear in the shortest path dict, then no path exists that is less than the cutoff
             if target != source and not Gstr_shortest_dist.get(target, None) is None:
-                # the light cone is at least as big as the number of edges in the structural shorest path
+                # the light cone is at least as big as the number of edges in the interaction shortest path
                 impact_matrix[
                     0, list(range(Gstr_shortest_dist[target], n_steps + 1)), itar
                 ] = Gstr_shortest_dist[target]
@@ -1656,11 +1766,11 @@ class BooleanNetwork:
 
                 # start by checking if the number of timesteps is less than the maximum allowable number of steps
                 if eff_path_steps <= n_steps:
-                    # now check if the most likely effective path is longer (in terms of # of timesteps) than the structural shortest path
+                    # now check if the most likely effective path is longer (in terms of # of timesteps) than the interaction shortest path
                     if eff_path_steps > Gstr_shortest_dist[target]:
                         # if it is, then we need to find another effective path constrained by the light-cone
                         # for all time steps where the most likely effective path is longer (in terms of # of timesteps)
-                        # than the structural shortest path
+                        # than the interaction shortest path
                         for istep in range(Gstr_shortest_dist[target], eff_path_steps):
                             # bc the effective graph has fully redundant edges, there may actually not be a path
                             try:
@@ -1762,9 +1872,9 @@ class BooleanNetwork:
         """Recursevely check if the requested control variables are instantiated/computed.
         Otherwise computes them in order.
         """
-        if "sg" in kwargs:
-            if self._sg is None:
-                self._sg = self.structural_graph()
+        if "ig" in kwargs or "sg" in kwargs:
+            if self._ig is None:
+                self._ig = self.interaction_graph()
 
         elif "eg" in kwargs:
             if self._eg is None:
@@ -1772,7 +1882,7 @@ class BooleanNetwork:
 
         elif "stg" in kwargs:
             if self._stg is None:
-                self._check_compute_variables(sg=True)
+                self._check_compute_variables(ig=True)
                 self._stg = self.state_transition_graph()
 
         elif "attractors" in kwargs:

@@ -7,6 +7,10 @@ from cana.datasets.bools import AND, OR, XOR
 from cana.function_outputs.ast import expression_to_ast
 from cana.function_outputs.bit_lut import BitLut
 from cana.function_properties import (
+    SIGN_BINATE,
+    SIGN_IRRELEVANT,
+    SIGN_NEGATIVE,
+    SIGN_POSITIVE,
     check_syntactic_rof,
     check_syntactic_unate,
     check_syntactic_unate_ast,
@@ -28,15 +32,15 @@ def test_and_or_monotone_increasing_and_unate():
     assert is_function_monotone_increasing(or_lut)
     assert is_function_unate(and_lut)
     assert is_function_unate(or_lut)
-    assert input_signs(and_lut) == [1, 1]
-    assert input_signs(or_lut) == [1, 1]
+    assert input_signs(and_lut) == [SIGN_POSITIVE, SIGN_POSITIVE]
+    assert input_signs(or_lut) == [SIGN_POSITIVE, SIGN_POSITIVE]
 
 
 def test_xor_not_unate():
     xor = BitLut.from_sequence([0, 1, 1, 0])
     assert not is_function_monotone_increasing(xor)
     assert not is_function_unate(xor)
-    assert input_signs(xor) == [0, 0]
+    assert input_signs(xor) == [SIGN_BINATE, SIGN_BINATE]
 
 
 def test_inhibiting_input():
@@ -45,9 +49,9 @@ def test_inhibiting_input():
     assert not is_input_positive_unate(lut, 0)
     assert is_input_negative_unate(lut, 0)
     assert is_input_positive_unate(lut, 1)
-    assert input_sign(lut, 0) == -1
-    assert input_sign(lut, 1) == 1
-    assert input_signs(lut) == [-1, 1]
+    assert input_sign(lut, 0) == SIGN_NEGATIVE
+    assert input_sign(lut, 1) == SIGN_POSITIVE
+    assert input_signs(lut) == [SIGN_NEGATIVE, SIGN_POSITIVE]
     assert is_function_unate(lut)
     assert not is_function_monotone_increasing(lut)
 
@@ -56,22 +60,22 @@ def test_not_gate_negative_unate():
     not_lut = BitLut.from_sequence([1, 0])
     assert not is_input_positive_unate(not_lut, 0)
     assert is_input_negative_unate(not_lut, 0)
-    assert input_signs(not_lut) == [-1]
+    assert input_signs(not_lut) == [SIGN_NEGATIVE]
     assert is_function_unate(not_lut)
     assert not is_function_monotone_increasing(not_lut)
 
 
-def test_constant_prefers_positive_sign():
+def test_constant_inputs_are_irrelevant():
     lut = BitLut.from_sequence([0, 0, 0, 0])
-    assert input_signs(lut) == [1, 1]
+    assert input_signs(lut) == [SIGN_IRRELEVANT, SIGN_IRRELEVANT]
     assert is_function_monotone_increasing(lut)
-    assert is_function_unate(lut)
+    assert not is_function_unate(lut)
 
 
 def test_boolean_node_input_signs():
-    assert AND().input_signs() == [1, 1]
-    assert OR().input_signs() == [1, 1]
-    assert XOR().input_signs() == [0, 0]
+    assert AND().input_signs() == [SIGN_POSITIVE, SIGN_POSITIVE]
+    assert OR().input_signs() == [SIGN_POSITIVE, SIGN_POSITIVE]
+    assert XOR().input_signs() == [SIGN_BINATE, SIGN_BINATE]
 
 
 def test_deprecated_utils_aliases():
@@ -234,10 +238,16 @@ def test_check_syntactic_unate_ast_agrees_when_unate():
 
 
 def test_syntactic_input_signs():
-    assert syntactic_input_signs("x0 and not x1", ["x0", "x1"]) == [1, -1]
+    assert syntactic_input_signs("x0 and not x1", ["x0", "x1"]) == [
+        SIGN_POSITIVE,
+        SIGN_NEGATIVE,
+    ]
     assert syntactic_input_signs("x0 | !x0", ["x0"]) is None
-    # Absent input prefers +1.
-    assert syntactic_input_signs("x0", ["x0", "x1"]) == [1, 1]
+    # Absent input is irrelevant.
+    assert syntactic_input_signs("x0", ["x0", "x1"]) == [
+        SIGN_POSITIVE,
+        SIGN_IRRELEVANT,
+    ]
 
 
 def test_boolean_node_input_signs_syntactic_fastpath():
@@ -245,7 +255,7 @@ def test_boolean_node_input_signs_syntactic_fastpath():
         "x0 and not x1", k=2, name="Y", inputs=[0, 1]
     )
     assert node.outputs.bit_lut is None
-    assert node.input_signs() == [1, -1]
+    assert node.input_signs() == [SIGN_POSITIVE, SIGN_NEGATIVE]
     assert node.outputs.bit_lut is None
 
 
@@ -253,6 +263,6 @@ def test_boolean_node_input_signs_falls_through_when_binate():
     node = BooleanNode.from_positional_expression(
         "x0 or not x0", k=1, name="Y", inputs=[0]
     )
-    # Syntactic binate → LUT path; constant-True is vacuously positive unate.
-    assert node.input_signs() == [1]
+    # Syntactic binate → LUT path; constant-True → irrelevant input.
+    assert node.input_signs() == [SIGN_IRRELEVANT]
     assert node.outputs.bit_lut is not None
