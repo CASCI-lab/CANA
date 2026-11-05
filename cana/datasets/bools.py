@@ -11,7 +11,7 @@ Commonly used boolean node functions.
 #   Rion Brattig Correia <rionbr@gmail.com>
 #   All rights reserved.
 #   MIT license.
-from ..boolean_network import BooleanNode
+from ..boolean_node import BooleanNode
 
 
 def AND():
