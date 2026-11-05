@@ -7,6 +7,7 @@ from cana.function_properties import (
     SIGN_NEGATIVE,
     SIGN_POSITIVE,
 )
+from cana.graphs.activity_graph import build_activity_graph
 
 # THALIANA loads schemata-only nodes from cnet; canalization soft-warns when
 # one_symbol_is_prime_implicant / two_symbol_is_canonical are unset.
@@ -101,6 +102,27 @@ def test_interaction_graph_signs():
     assert eg_s[0][1]["sign"] == SIGN_NEGATIVE
     # Cache stays unsigned.
     assert network._eg.graph["signs_computed"] is False
+
+    ag = network.activity_graph(signed=False)
+    assert ag.graph["signs_computed"] is False
+    assert ag.graph["threshold"] is None
+    assert all(d["sign"] is None for _, _, d in ag.edges(data=True))
+    ag_s = network.activity_graph(signed=True)
+    assert ag_s.graph["signs_computed"] is True
+    assert ag_s[0][1]["sign"] == SIGN_NEGATIVE
+    # Cache stays unsigned / unthresholded.
+    assert network._ag.graph["signs_computed"] is False
+    assert network._ag.graph["threshold"] is None
+
+    ag_t = network.activity_graph(threshold=0.5)
+    assert ag_t.graph["threshold"] == 0.5
+    assert set(ag_t.edges()).issubset(set(network._ag.edges()))
+    with pytest.raises(ValueError, match="unthresholded base_ag"):
+        build_activity_graph(
+            network.nodes,
+            threshold=0.1,
+            base_ag=ag_t,
+        )
 
 
 def test_structural_graph_deprecated_alias():
