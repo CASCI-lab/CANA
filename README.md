@@ -102,7 +102,7 @@ Changelog
 ---------
 
 Master
-- `FunctionOutputs`: store and convert among `bit_lut`, one-/two-symbol schemata, and positional expressions; build `BooleanNode` from any of them
+- `BooleanFunction`: store and convert among `bit_lut`, one-/two-symbol schemata, and positional expressions; build `BooleanNode` from any of them
 - High-`k` support: dense-LUT / coverage guardrails; sampled redundancy, activities, sensitivity, and bias
 - Expression → primes (Quine–McCluskey, PySAT Primer-B / unate shortcuts)
 - Fixed canalizing map (CM/DCM): LUT roundtrip, canonical builder with simplification, topology-based evaluation, and visualization

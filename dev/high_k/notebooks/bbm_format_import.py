@@ -10,7 +10,7 @@
 #
 # - **dense LUT** — ``2**k`` rows per node (default ``to_cnet()`` / ``to_string``)
 # - **one-symbol schemata** — wildcard ``-`` covers after
-#   ``fill_function_outputs("one_symbol_schemata")``
+#   ``fill_function_representation("one_symbol_schemata")``
 #
 # and round-trip each mode back through the expression formats.
 #
@@ -82,7 +82,7 @@ for fmt in FORMATS:
 #
 # Each network stores a dense ``list[BooleanNode]`` with invariant
 # ``nodes[i].id == i``.  Each node has ``name``, ``inputs`` (node ids), and
-# ``outputs`` (:class:`FunctionOutputs`, usually with a dense ``bit_lut`` of
+# ``function`` (:class:`BooleanFunction`, usually with a dense ``bit_lut`` of
 # length ``2**k``).  Formats may permute node ids; equivalence is checked by
 # **node name**.
 
@@ -96,7 +96,7 @@ log.info(
     f"  nodes[{i0}] = BooleanNode("
     f"id={node.id}, name={node.name!r}, "
     f"inputs={node.inputs}, "
-    f"outputs={node.outputs})"
+    f"function={node.function})"
 )
 log.info(
     "  (inputs are node ids; LUT row s uses inputs[0] as MSB — "
@@ -204,7 +204,7 @@ for src in FORMATS:
 log.info("cnet one-symbol schemata: src → fill → cnet → network (~= ref):")
 cnet_schema_texts: Dict[str, str] = {}
 for src in FORMATS:
-    networks[src].fill_function_outputs("one_symbol_schemata")
+    networks[src].fill_function_representation("one_symbol_schemata")
     cnet = networks[src].to_cnet(one_symbol_schemata=True)
     cnet_schema_texts[src] = cnet
     N2 = BooleanNetwork.from_string(cnet, type="cnet")

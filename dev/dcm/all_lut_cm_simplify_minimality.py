@@ -364,7 +364,7 @@ def evaluate_function(
             trials,
         )
 
-    simp_fail = roundtrip_fail_reason(node.outputs, rt)
+    simp_fail = roundtrip_fail_reason(node.function, rt)
     simplify_exact = simp_fail is None
 
     thr_ids = [nid for nid in full.nodes if is_threshold_like(full, nid)]
@@ -381,7 +381,7 @@ def evaluate_function(
                 k=k,
                 func_id=func_id,
                 node_name=name,
-                outputs=list(node.outputs),
+                outputs=list(node.function),
                 inputs=list(node.inputs),
             )
         )

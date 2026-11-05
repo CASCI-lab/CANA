@@ -337,7 +337,7 @@ def roundtrip_node(
                         node.name,
                         node.id,
                         list(node.inputs),
-                        list(node.outputs),
+                        list(node.function),
                         builder,
                     ),
                     timeout_cm_s,
@@ -376,7 +376,7 @@ def roundtrip_node(
 
         out.conflict = bool(result.has_conflict)
         out.incomplete = bool(result.is_incomplete)
-        out.exact = is_exact_roundtrip(node.outputs, result)
+        out.exact = is_exact_roundtrip(node.function, result)
         if not out.exact:
             if out.conflict:
                 out.fail_reason = "conflict"

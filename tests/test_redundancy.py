@@ -61,7 +61,7 @@ def _k_input_or_node(k: int) -> BooleanNode:
 
 
 def test_pi_covers_and_covering_primes_and2():
-    schemata = AND().outputs.get_one_symbol_schemata()
+    schemata = AND().function.get_one_symbol_schemata()
     # AND k=2: primes {0: {02,20}, 1: {11}}
     assert pi_covers("02", "00")
     assert pi_covers("02", "01")
@@ -73,7 +73,7 @@ def test_pi_covers_and_covering_primes_and2():
 
 
 def test_sample_pi_coverage_outputs_and2():
-    schemata = AND().outputs.get_one_symbol_schemata()
+    schemata = AND().function.get_one_symbol_schemata()
     sampled = sample_pi_coverage(schemata, 4, k=2)
     assert sampled.n_samples == 4
     assert set(sampled.outputs) == set(sampled.coverage)
@@ -147,7 +147,7 @@ def test_primes_to_one_symbol_and():
 def test_full_enum_matches_boolean_node_input(k, schemata_fn, node_fn):
     schemata = schemata_fn(k)
     node = node_fn(k)
-    node.outputs.get_one_symbol_schemata()
+    node.function.get_one_symbol_schemata()
     exact = node.input_redundancy(operator=mean, norm=True)
     est = input_redundancy(
         schemata,
@@ -168,7 +168,7 @@ def test_full_enum_matches_boolean_node_input(k, schemata_fn, node_fn):
 def test_full_enum_matches_boolean_node_edge(k, schemata_fn, node_fn):
     schemata = schemata_fn(k)
     node = node_fn(k)
-    node.outputs.get_one_symbol_schemata()
+    node.function.get_one_symbol_schemata()
     for bound in ("mean", "lower", "upper"):
         exact = node.edge_redundancy(bound=bound)
         est = edge_redundancy(
@@ -229,7 +229,7 @@ def _random_schemata_node(k: int, seed: int = 0):
         lut[0] = 1 - lut[0]
     node = BooleanNode.from_bit_lut(lut, name=f"RND_k{k}")
     schemata = {
-        p: set(s) for p, s in node.outputs.get_one_symbol_schemata().items()
+        p: set(s) for p, s in node.function.get_one_symbol_schemata().items()
     }
     return schemata, node
 

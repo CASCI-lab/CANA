@@ -10,7 +10,7 @@ from cana.boolean_node import BooleanNode
 from cana.function_outputs.bit_lut import BitLut
 from cana.function_outputs.expression import (
     bit_lut_to_expression,
-    function_outputs_to_named_expression,
+    boolean_function_to_named_expression,
 )
 from cana.nodes_builder import input_names, update_rules_to_nodes
 
@@ -400,8 +400,8 @@ def nodes_to_sbml(
         )
         math = ET.SubElement(ft, "{%s}math" % MATH)
         math.set("xmlns", MATH)
-        expr = function_outputs_to_named_expression(
-            node.outputs,
+        expr = boolean_function_to_named_expression(
+            node.function,
             src_names,
             style="python",
             node_label=name,

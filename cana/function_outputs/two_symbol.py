@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-"""Two-symbol schemata helpers for :class:`FunctionOutputs`.
+"""Two-symbol schemata helpers for :class:`BooleanFunction`.
 
 Two-symbol entries are ``[schema_str, perm_groups, same_groups]``.  Expansion
 to one-symbol and compact expression export use **perm_groups only**;

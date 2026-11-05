@@ -1,11 +1,11 @@
 # -*- coding: utf-8 -*-
-"""Tests for expression cascade and FunctionOutputs prime priority."""
+"""Tests for expression cascade and BooleanFunction prime priority."""
 from __future__ import annotations
 
 import pytest
 
 from cana.function_outputs.bit_lut import BitLut, MAX_DENSE_LUT_K
-from cana.function_outputs import FunctionOutputs
+from cana.function_outputs import BooleanFunction
 from cana.primes.cascade import on_off_primes_from_expression
 from cana.primes.util import MAX_PRIMES
 
@@ -72,7 +72,7 @@ def test_cascade_warns_when_primer_raises_import_error(monkeypatch):
 
 
 def test_fo_rof_stores_schemata_without_lut():
-    fo = FunctionOutputs(positional_expression="x0 and not x1", k=2)
+    fo = BooleanFunction(positional_expression="x0 and not x1", k=2)
     assert fo.bit_lut is None
     schemata = fo.get_one_symbol_schemata()
     assert fo.bit_lut is None
@@ -84,11 +84,11 @@ def test_fo_rof_stores_schemata_without_lut():
 
 def test_fo_cascade_miss_existing_bit_lut_uses_qm():
     # LUT-only FO skips the expression cascade and uses QM.
-    src = FunctionOutputs(
+    src = BooleanFunction(
         positional_expression="(x0 and x1) or ((not x0) and x2)", k=3
     )
     lut = BitLut.from_sequence(src.get_bit_lut())
-    fo = FunctionOutputs(bit_lut=lut)
+    fo = BooleanFunction(bit_lut=lut)
     assert fo.positional_expression is None
     schemata = fo.get_one_symbol_schemata()
     assert fo.one_symbol_is_prime_implicant is True
@@ -105,7 +105,7 @@ def test_fo_cascade_miss_builds_lut_when_k_small(monkeypatch):
         "cana.primes.cascade.on_off_primes_from_expression", _fail
     )
 
-    fo = FunctionOutputs(
+    fo = BooleanFunction(
         positional_expression="(x0 and x1) or ((not x0) and x2)", k=3
     )
     assert fo.bit_lut is None
@@ -127,7 +127,7 @@ def test_fo_refuses_huge_k_after_cascade_miss(monkeypatch):
 
     k = MAX_DENSE_LUT_K + 1
     names = " and ".join(f"x{i}" for i in range(k))
-    fo = FunctionOutputs(positional_expression=names, k=k)
+    fo = BooleanFunction(positional_expression=names, k=k)
     with pytest.raises(ValueError, match="MAX_DENSE_LUT_K"):
         fo.get_one_symbol_schemata()
     assert fo.bit_lut is None

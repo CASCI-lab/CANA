@@ -44,7 +44,7 @@ Mitosis_Inhibitor,  (p53 | p21) & !Anaphase_Promoting_Complex
 def _qm_pi_counts(expr: str) -> tuple[int, int]:
     """ON/OFF prime counts via CANA Quine–McCluskey one-symbol schemata."""
     rule = named_expression_to_detached_rule("Y", expr)
-    fo = rule.outputs
+    fo = rule.function
     fo.build_bit_lut_from_positional_expression()
     schemata = fo.compute_one_symbol_schemata_from_bit_lut()
     return len(schemata.get(1, ())), len(schemata.get(0, ()))

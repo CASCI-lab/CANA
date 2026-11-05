@@ -7,7 +7,7 @@ from typing import Dict, List, Optional, Sequence, Tuple
 from cana.boolean_node import BooleanNode
 from cana.function_outputs.expression import (
     expression_identifiers,
-    function_outputs_to_named_expression,
+    boolean_function_to_named_expression,
     normalize_operators,
 )
 from cana.nodes_builder import input_names, update_rules_to_nodes
@@ -64,8 +64,8 @@ def nodes_to_bnet(
     lines = ["targets,factors"]
     for i, node in enumerate(nodes):
         names = input_names(nodes, i)
-        expr = function_outputs_to_named_expression(
-            node.outputs,
+        expr = boolean_function_to_named_expression(
+            node.function,
             names,
             style="symbolic",
             node_label=node.name,

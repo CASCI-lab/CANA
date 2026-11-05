@@ -15,7 +15,7 @@ import networkx as nx
 
 from cana.boolean_node import BooleanNode
 from cana.cutils import binstate_to_statenum, statenum_to_binstate
-from cana.function_outputs import FunctionOutputs
+from cana.function_outputs import BooleanFunction
 from cana.function_outputs.bit_lut import BitLut
 from cana.graphs.interaction_graph import fill_wiring_signs
 
@@ -144,7 +144,7 @@ def build_conditional_effective_graph(
     conditioned_logic = [
         {
             "inputs": list(node.inputs),
-            "outputs": copy.deepcopy(node.outputs),
+            "function": copy.deepcopy(node.function),
         }
         for node in nodes
     ]
@@ -177,7 +177,7 @@ def build_conditional_effective_graph(
             )
             newk = len(new_successor_inputs)
 
-            n_lut = conditioned_logic[n]["outputs"].get_bit_lut()
+            n_lut = conditioned_logic[n]["function"].get_bit_lut()
             if newk == 0:
                 new_successor_outputs = [
                     n_lut[binstate_to_statenum(conditioned_value)]
@@ -207,7 +207,7 @@ def build_conditional_effective_graph(
                 ] = new_edge_effectiveness[i]
 
             conditioned_logic[n]["inputs"] = new_successor_inputs
-            conditioned_logic[n]["outputs"] = FunctionOutputs(
+            conditioned_logic[n]["function"] = BooleanFunction(
                 bit_lut=BitLut.from_sequence(new_successor_outputs)
             )
 
@@ -259,7 +259,7 @@ def build_conditional_effective_graph(
             inputs = logic["inputs"]
             if not inputs:
                 continue
-            signs = lut_input_signs(logic["outputs"].get_bit_lut())
+            signs = lut_input_signs(logic["function"].get_bit_lut())
             for idx, source in enumerate(inputs):
                 if conditional_eg.has_edge(source, target):
                     conditional_eg[source][target]["sign"] = signs[idx]

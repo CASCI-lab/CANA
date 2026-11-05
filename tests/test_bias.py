@@ -36,11 +36,11 @@ def _and_schemata(k: int):
 )
 def test_bias_lut_and_schemata_agree(node_fn, expected):
     node = node_fn()
-    lut_bias = bias_from_bit_lut(node.outputs.get_bit_lut())
+    lut_bias = bias_from_bit_lut(node.function.get_bit_lut())
     assert lut_bias == pytest.approx(expected, abs=1e-12)
     assert node.bias_from_bit_lut() == pytest.approx(expected, abs=1e-12)
 
-    schemata = node.outputs.get_one_symbol_schemata()
+    schemata = node.function.get_one_symbol_schemata()
     assert bias_from_schemata(schemata, k=node.k) == pytest.approx(
         expected, abs=1e-12
     )
@@ -73,7 +73,7 @@ def test_bootstrap_bias_from_sampled_pi_coverage():
     node = BooleanNode.from_bit_lut(lut, name="RND_k8")
     exact = node.bias_from_bit_lut()
     schemata = {
-        p: set(s) for p, s in node.outputs.get_one_symbol_schemata().items()
+        p: set(s) for p, s in node.function.get_one_symbol_schemata().items()
     }
     sampled = sample_pi_coverage(
         schemata, 2**7, rng=np.random.default_rng(6), k=k
@@ -93,10 +93,10 @@ def test_high_k_constant_one_bias_via_sampling():
     k = MAX_DENSE_LUT_K + 1
     n = BooleanNode.from_one_symbol_schemata({1: {"2" * k}}, k=k)
     # Known PI cover; verify_one_symbol_schemata would need a dense LUT.
-    n.outputs.one_symbol_is_prime_implicant = True
-    assert n.outputs.bit_lut is None
+    n.function.one_symbol_is_prime_implicant = True
+    assert n.function.bit_lut is None
     with pytest.raises(ValueError, match="MAX_DENSE_LUT_K"):
-        n.outputs.get_bit_lut()
+        n.function.get_bit_lut()
 
     b = n.bias(exact_k_max=-1, n_samples=64, rng=np.random.default_rng(0))
     assert b == pytest.approx(1.0, abs=1e-12)

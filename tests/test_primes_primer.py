@@ -24,7 +24,7 @@ def _match(a, b) -> bool:
 
 def _qm_on_off(expr: str):
     rule = named_expression_to_detached_rule("Y", expr)
-    fo = rule.outputs
+    fo = rule.function
     fo.build_bit_lut_from_positional_expression()
     schemata = fo.compute_one_symbol_schemata_from_bit_lut()
     return one_symbol_to_primes(schemata, rule.input_names)

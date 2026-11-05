@@ -10,7 +10,7 @@ from matplotlib.text import Text
 def plot_schemata(n, plotTS=True):
     # Init values from BooleanNode
     k = n.k if n.k >= 1 else 1
-    outputs = np.array(n.outputs)
+    outputs = np.array(n.function)
     if np.all(outputs[0] == outputs):
         return False
     inputs = n.inputs if not n.constant else [n.name]
@@ -18,9 +18,9 @@ def plot_schemata(n, plotTS=True):
         n.network.get_node_name(i)[0] if n.network is not None else i for i in inputs
     ]
     if not plotTS:
-        n.outputs.get_one_symbol_schemata()
+        n.function.get_one_symbol_schemata()
     else:
-        n.outputs.get_two_symbol_schemata()
+        n.function.get_two_symbol_schemata()
         ts0s = n._two_symbols[0]
         ts1s = n._two_symbols[1]
         n_ts = sum(len(tss) for tss in [ts0s, ts1s])

@@ -108,7 +108,7 @@ def test_bootstrap_sensitivity_ci_shrinks_with_more_samples():
         lut[0] = 1 - lut[0]
     node = BooleanNode.from_bit_lut(lut, name="RND_k8")
     schemata = {
-        p: set(s) for p, s in node.outputs.get_one_symbol_schemata().items()
+        p: set(s) for p, s in node.function.get_one_symbol_schemata().items()
     }
     mt_large = sample_binstates(k, 2**7, rng=np.random.default_rng(2))
     mt_small = mt_large[: 2**6]

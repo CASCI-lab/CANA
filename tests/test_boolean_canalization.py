@@ -276,11 +276,11 @@ def test_prime_implicants_random():
 
     # generate list of random functions
     nodes_tmp = [randNode(k) for k in range(1, 10) for i in range(500)]
-    nodes = {"".join(map(str, n.outputs)): n for n in nodes_tmp}
+    nodes = {"".join(map(str, n.function)): n for n in nodes_tmp}
     # compute prime implicants
     pis = dict()
     for f, n in nodes.items():
-        n.outputs.get_one_symbol_schemata()
+        n.function.get_one_symbol_schemata()
         if 0 in n._prime_implicants:
             zeros = n._prime_implicants[0]
         else:

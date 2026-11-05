@@ -5,6 +5,9 @@ Boolean Node
 
 Main class for Boolean node objects.
 
+Naming for inputs, ``function`` / :class:`~cana.function_outputs.BooleanFunction`,
+and related terms follows the glossary in :mod:`cana.nodes_builder`.
+
 """
 #   Copyright (C) 2021 by
 #   Rion Brattig Correia <rionbr@gmail.com>
@@ -36,7 +39,7 @@ from cana.cutils import (
     statenum_to_binstate,
 )
 from cana.function_properties.sampling import EXACT_K_MAX_DEFAULT
-from cana.function_outputs import FunctionOutputs
+from cana.function_outputs import BooleanFunction
 from cana.function_outputs.bit_lut import MAX_DENSE_LUT_K
 from cana.function_outputs.expression import positional_names
 from cana.function_properties import input_signs as lut_input_signs
@@ -54,7 +57,12 @@ def _refuse_coverage_k(k, *, kind):
 
 
 class BooleanNode(object):
-    """ """
+    """One variable in a Boolean network hub.
+
+    Stores wiring (``inputs``, arity ``k``) and the update rule on
+    ``function`` (:class:`~cana.function_outputs.BooleanFunction`).
+    See the glossary in :mod:`cana.nodes_builder`.
+    """
 
     # --- Construction ---
 
@@ -63,7 +71,7 @@ class BooleanNode(object):
         id=0,
         name="x",
         k=1,
-        inputs=[1],
+        inputs=None,
         state=False,
         outputs=[0, 1],
         constant=False,
@@ -75,15 +83,19 @@ class BooleanNode(object):
         self.id = id  # the id of the node
         self.name = name  # the name of the node
         self.k = k  # k is the number of inputs
+        # Default wiring matches factories: placeholder ids ``1..k`` (legacy).
+        if inputs is None:
+            inputs = [(x + 1) for x in range(k)] if k != 0 else []
         self.inputs = list(map(int, inputs))  # the ids of the input nodes
         self.state = str(
             int(state)
         )  # the initial state of the node. internally this is treated as a string.
-        # Multi-representation outputs (dense BitLut; one-/two-symbol on demand).
-        if isinstance(outputs, FunctionOutputs):
-            self.outputs = outputs
+        # Multi-representation Boolean function (dense BitLut; peers on demand).
+        # ``outputs=`` ctor sugar: bit column or an existing BooleanFunction.
+        if isinstance(outputs, BooleanFunction):
+            self.function = outputs
         else:
-            self.outputs = FunctionOutputs.from_sequence(outputs)
+            self.function = BooleanFunction.from_sequence(outputs)
         self.network = network  # the BooleanNetwork object this nodes belongs to
         self.verbose = verbose  # verbose mode
 
@@ -93,48 +105,62 @@ class BooleanNode(object):
         else:
             self.mask = []
 
-        # Consistency (use outputs.k so schemata-only nodes need no dense LUT)
-        if (k != 0) and (k != self.outputs.k):
+        # Consistency (use function.k so schemata-only nodes need no dense LUT)
+        if (k != 0) and (k != len(self.inputs)):
             raise ValueError(
-                "Number of k (inputs) do not match the number of output transitions"
+                "Number of k (inputs) do not match len(inputs)"
+            )
+        if (k != 0) and (k != self.function.k):
+            raise ValueError(
+                "Number of k (inputs) do not match the number of outputs"
             )
 
         # If all outputs are either positive or negative, the node is treated as a constant.
         # Schemata-only nodes skip dense LUT constant detection (is_constant → None).
-        const_val = self.outputs.is_constant()
+        const_val = self.function.is_constant()
         if (const_val is not None) or (constant):
             self.set_constant(
                 constant=True,
-                state=const_val if const_val is not None else self.outputs[0],
+                state=const_val if const_val is not None else self.function[0],
             )
         else:
             self.set_constant(constant=False)
 
-    # Coverage caches live on ``outputs`` and clear when one-/two-symbol
+
+    # Silent compatibility alias: ``outputs`` was the multi-rep container.
+    @property
+    def outputs(self):
+        return self.function
+
+    @outputs.setter
+    def outputs(self, value):
+        self.function = value
+
+    # Coverage caches live on ``function`` and clear when one-/two-symbol
     # schemata are replaced with a different value.
     @property
     def _pi_coverage(self):
-        return self.outputs._pi_coverage
+        return self.function._pi_coverage
 
     @_pi_coverage.setter
     def _pi_coverage(self, value):
-        self.outputs._pi_coverage = value
+        self.function._pi_coverage = value
 
     @property
     def _ts_coverage(self):
-        return self.outputs._ts_coverage
+        return self.function._ts_coverage
 
     @_ts_coverage.setter
     def _ts_coverage(self, value):
-        self.outputs._ts_coverage = value
+        self.function._ts_coverage = value
 
     @property
     def _sampled_pi_coverage(self):
-        return self.outputs._sampled_pi_coverage
+        return self.function._sampled_pi_coverage
 
     @_sampled_pi_coverage.setter
     def _sampled_pi_coverage(self, value):
-        self.outputs._sampled_pi_coverage = value
+        self.function._sampled_pi_coverage = value
 
     @staticmethod
     def _factory_common_kwargs(k, kwargs):
@@ -154,7 +180,7 @@ class BooleanNode(object):
         """Instantiate a Boolean Node from a dense LUT (sequence or ``BitLut``).
 
         Args:
-            lut : Transition outputs of length :math:`2^k`, or a
+            lut : Outputs of length :math:`2^k`, or a
                 :class:`~cana.function_outputs.bit_lut.BitLut`.  (Also accepted as the legacy
                 keyword ``outputs=``.)
 
@@ -177,8 +203,8 @@ class BooleanNode(object):
 
         if isinstance(lut, BitLut):
             k = lut.k
-            outputs = FunctionOutputs(bit_lut=lut)
-        elif isinstance(lut, FunctionOutputs):
+            outputs = BooleanFunction(bit_lut=lut)
+        elif isinstance(lut, BooleanFunction):
             k = lut.k
             outputs = lut
         else:
@@ -190,7 +216,7 @@ class BooleanNode(object):
                     )
                 )
             k = n.bit_length() - 1
-            outputs = FunctionOutputs.from_sequence(lut)
+            outputs = BooleanFunction.from_sequence(lut)
 
         node_id, name, inputs, state = cls._factory_common_kwargs(k, kwargs)
         return cls(
@@ -210,7 +236,7 @@ class BooleanNode(object):
 
         Args:
             expression (str) : Positional IR stored on
-                :class:`~cana.function_outputs.FunctionOutputs`.
+                :class:`~cana.function_outputs.BooleanFunction`.
             k (int) : Number of inputs (required keyword-only).
 
         Example:
@@ -231,7 +257,7 @@ class BooleanNode(object):
             k=k,
             inputs=inputs,
             state=state,
-            outputs=FunctionOutputs(positional_expression=expression, k=k),
+            outputs=BooleanFunction(positional_expression=expression, k=k),
             *args,
             **kwargs
         )
@@ -249,7 +275,7 @@ class BooleanNode(object):
             >>> BooleanNode.from_one_symbol_schemata({1: {"11"}}, k=2, name="AND")
         """
         k = kwargs.pop("k") if "k" in kwargs else None
-        fo = FunctionOutputs(one_symbol_schemata=schemata, k=k)
+        fo = BooleanFunction(one_symbol_schemata=schemata, k=k)
         k = fo.k
         node_id, name, inputs, state = cls._factory_common_kwargs(k, kwargs)
         return cls(
@@ -273,7 +299,7 @@ class BooleanNode(object):
                 omitted.
         """
         k = kwargs.pop("k") if "k" in kwargs else None
-        fo = FunctionOutputs(two_symbol_schemata=schemata, k=k)
+        fo = BooleanFunction(two_symbol_schemata=schemata, k=k)
         k = fo.k
         node_id, name, inputs, state = cls._factory_common_kwargs(k, kwargs)
         return cls(
@@ -290,18 +316,18 @@ class BooleanNode(object):
     # --- Representation ---
 
     def __str__(self):
-        if self.outputs.bit_lut is not None:
-            if len(self.outputs) > 10:
+        if self.function.bit_lut is not None:
+            if len(self.function) > 10:
                 outputs = (
                     "["
-                    + ",".join(map(str, self.outputs[:4]))
+                    + ",".join(map(str, self.function[:4]))
                     + "..."
-                    + ",".join(map(str, self.outputs[-4:]))
+                    + ",".join(map(str, self.function[-4:]))
                     + "]"
                 )
             else:
-                outputs = "[" + ",".join(map(str, self.outputs)) + "]"
-        elif self.outputs.positional_expression is not None:
+                outputs = "[" + ",".join(map(str, self.function)) + "]"
+        elif self.function.positional_expression is not None:
             if self.network is not None:
                 try:
                     outputs = "named_expression={0!r}".format(
@@ -309,16 +335,16 @@ class BooleanNode(object):
                     )
                 except ValueError:
                     outputs = "positional_expression={0!r}".format(
-                        self.outputs.positional_expression
+                        self.function.positional_expression
                     )
             else:
                 outputs = "positional_expression={0!r}".format(
-                    self.outputs.positional_expression
+                    self.function.positional_expression
                 )
-        elif self.outputs.one_symbol_schemata is not None:
+        elif self.function.one_symbol_schemata is not None:
             outputs = "one_symbol_schemata"
         else:
-            outputs = "k={0}".format(self.outputs.k)
+            outputs = "k={0}".format(self.function.k)
         inputs = "[" + ",".join(map(str, self.inputs)) + "]"
         return "<BNode(id={id}, name='{name}', k={k}, inputs={inputs:s}, state='{state}', outputs={outputs} constant={constant})>".format(
             id=self.id,
@@ -331,7 +357,7 @@ class BooleanNode(object):
         )
 
     def input_names(self):
-        """Return regulator names in LUT / expression bit order.
+        """Return input names in LUT / expression bit order.
 
         Requires this node to be attached to a :class:`BooleanNetwork`.
         """
@@ -344,7 +370,7 @@ class BooleanNode(object):
     def named_expression(self, style="python", warn=True):
         """Return a named boolean expression for this node's update rule.
 
-        Uses :func:`~cana.function_outputs.expression.function_outputs_to_named_expression`:
+        Uses :func:`~cana.function_outputs.expression.boolean_function_to_named_expression`:
         stored positional expression, else two-symbol, else one-symbol ON
         cover, else dense LUT DNF. Soft-warns when verification flags are not
         ``True`` for the chosen non-LUT source (never blocks).
@@ -354,28 +380,28 @@ class BooleanNode(object):
             warn (bool) : If False, suppress verification soft-warnings.
         """
         from cana.function_outputs.expression import (
-            function_outputs_to_named_expression,
+            boolean_function_to_named_expression,
         )
 
-        return function_outputs_to_named_expression(
-            self.outputs,
+        return boolean_function_to_named_expression(
+            self.function,
             self.input_names(),
             style=style,
             node_label=self.name,
             warn=warn,
         )
 
-    def fill_function_outputs(self, representation):
-        """Fill a missing ``FunctionOutputs`` representation slot from another.
+    def fill_function_representation(self, representation):
+        """Fill a missing ``BooleanFunction`` representation slot from another.
 
         Args:
             representation (str) : ``"bit_lut"``, ``"one_symbol_schemata"``,
                 ``"two_symbol_schemata"``, or ``"positional_expression"``.
 
         Returns:
-            (FunctionOutputs) : This node's ``outputs`` (mutated in place).
+            (BooleanFunction) : This node's ``function`` (mutated in place).
         """
-        outs = self.outputs
+        outs = self.function
         if representation == "bit_lut":
             if outs.bit_lut is None:
                 outs.get_bit_lut()
@@ -394,7 +420,7 @@ class BooleanNode(object):
                 "'one_symbol_schemata', 'two_symbol_schemata', or "
                 "'positional_expression'".format(representation)
             )
-        return self.outputs
+        return self.function
 
     # --- Dynamics ---
 
@@ -420,15 +446,15 @@ class BooleanNode(object):
         return self.state
 
     def dynamic_step(self, input_state):
-        """Returns the output of the node based on a specific input.
+        """Update and return this node's ``state`` for a specific input state.
 
         Args:
-            input (str) : an input to the node (e.g.: '0111' -> 7).
+            input_state (str) : an input to the node (e.g.: '0111' -> 7).
 
         Returns:
-            output (bool) : the output value.
+            (str) : the new ``state`` (``'0'`` or ``'1'``).
         """
-        self.state = str(self.outputs[binstate_to_statenum(input_state)])
+        self.state = str(self.function[binstate_to_statenum(input_state)])
         return self.state
 
     def input_mask(self, binstate):
@@ -464,7 +490,7 @@ class BooleanNode(object):
         else:
             k = self.k
 
-        for statenum, output in zip(range(2**k), self.outputs):
+        for statenum, output in zip(range(2**k), self.function):
             # Binary State, Transition
             d.append((statenum_to_binstate(statenum, base=self.k), int(output)))
 
@@ -500,7 +526,7 @@ class BooleanNode(object):
         r = []
         # Prime Implicant LUT
         if type == "pi":
-            self.outputs.get_one_symbol_schemata()
+            self.function.get_one_symbol_schemata()
 
             pi0s = self._prime_implicants.get(0, [])
             pi1s = self._prime_implicants.get(1, [])
@@ -512,7 +538,7 @@ class BooleanNode(object):
 
         # Two Symbol LUT
         elif type == "ts":
-            self.outputs.get_two_symbol_schemata()
+            self.function.get_two_symbol_schemata()
 
             ts0s, ts1s = self._two_symbols
 
@@ -569,12 +595,12 @@ class BooleanNode(object):
         Soft-warns when the stored cover is not known to be prime implicants
         (same policy as :meth:`outputs.get_one_symbol_schemata`).
         """
-        self.outputs._warn_if_one_symbol_unverified()
-        return self.outputs.one_symbol_schemata
+        self.function._warn_if_one_symbol_unverified()
+        return self.function.one_symbol_schemata
 
     @_prime_implicants.setter
     def _prime_implicants(self, value):
-        self.outputs.one_symbol_schemata = value
+        self.function.one_symbol_schemata = value
 
     @property
     def _two_symbols(self):
@@ -583,12 +609,12 @@ class BooleanNode(object):
         Soft-warns when the stored two-symbol is not known to be canonical
         (same policy as :meth:`outputs.get_two_symbol_schemata`).
         """
-        self.outputs._warn_if_two_symbol_unverified()
-        return self.outputs.two_symbol_schemata
+        self.function._warn_if_two_symbol_unverified()
+        return self.function.two_symbol_schemata
 
     @_two_symbols.setter
     def _two_symbols(self, value):
-        self.outputs.two_symbol_schemata = value
+        self.function.two_symbol_schemata = value
 
     def pi_coverage(self):
         """Return the :math:`F'` (Prime Implicants) binary state coverage.
@@ -599,7 +625,7 @@ class BooleanNode(object):
             :meth:`sampled_pi_coverage`, :meth:`ts_coverage`
         """
         _refuse_coverage_k(self.k, kind="pi_coverage")
-        self.outputs.get_one_symbol_schemata()
+        self.function.get_one_symbol_schemata()
         if self._pi_coverage is None:
             self._pi_coverage = dict()
             for output, piset in self._prime_implicants.items():
@@ -639,7 +665,7 @@ class BooleanNode(object):
         ):
             return self._sampled_pi_coverage
 
-        schemata = self.outputs.get_one_symbol_schemata()
+        schemata = self.function.get_one_symbol_schemata()
         sampled = sampling.sample_pi_coverage(
             schemata, n, rng=rng, k=self.k
         )
@@ -655,10 +681,10 @@ class BooleanNode(object):
             :meth:`pi_coverage`, :meth:`sampled_pi_coverage`
         """
         _refuse_coverage_k(self.k, kind="ts_coverage")
-        self.outputs.get_two_symbol_schemata()
+        self.function.get_two_symbol_schemata()
         if self._ts_coverage is None:
             self._ts_coverage = BCanalization.computes_ts_coverage(
-                self.k, self.outputs, self._two_symbols
+                self.k, self.function, self._two_symbols
             )
         return self._ts_coverage
 
@@ -666,37 +692,39 @@ class BooleanNode(object):
         """Deprecated kwargs dispatcher for canalization lazy-compute.
 
         .. deprecated::
-            Use :meth:`outputs.get_one_symbol_schemata`,
-            :meth:`outputs.get_two_symbol_schemata`, :meth:`pi_coverage`,
+            Use :meth:`function.get_one_symbol_schemata`,
+            :meth:`function.get_two_symbol_schemata`, :meth:`pi_coverage`,
             or :meth:`ts_coverage` instead.
         """
         warnings.warn(
             "_check_compute_canalization_variables is deprecated; "
-            "use outputs.get_one_symbol_schemata / "
-            "outputs.get_two_symbol_schemata / "
+            "use function.get_one_symbol_schemata / "
+            "function.get_two_symbol_schemata / "
             "pi_coverage / ts_coverage.",
             DeprecationWarning,
             stacklevel=2,
         )
         if "prime_implicants" in kwargs:
-            self.outputs.get_one_symbol_schemata()
+            self.function.get_one_symbol_schemata()
         elif "pi_coverage" in kwargs:
             self.pi_coverage()
         elif "two_symbols" in kwargs:
-            self.outputs.get_two_symbol_schemata()
+            self.function.get_two_symbol_schemata()
         elif "ts_coverage" in kwargs:
             self.ts_coverage()
         else:
             raise Exception("Canalization variable name not found. %s" % kwargs)
         return True
 
-    def canalizing_map(self, output=None, builder="legacy"):
+    def canalizing_map(self, polarity=None, builder="legacy", output=None):
         """Computes the node Canalizing Map (CM).
 
         Args:
-            output (int) : The output CM to return. Default is ``None``, retuning both [0,1].
+            polarity (int) : Function-value polarity to return. Default is
+                ``None``, returning both ``[0, 1]``.
             builder (str or callable) : CM construction method. Default is ``'legacy'``.
                 See :func:`cana.canalization.canalizing_map.build_canalizing_map`.
+            output (int) : Silent alias of ``polarity``.
 
         Returns:
             CM (networkx.DiGraph) : a directed graph representation of the CM.
@@ -704,7 +732,9 @@ class BooleanNode(object):
         See Also:
             :func:`boolean_network.dynamics_canalization_map` for the DCM and :func:`drawing.draw_canalizing_map_graphviz` for plotting.
         """
-        self.outputs.get_two_symbol_schemata()
+        if polarity is None and output is not None:
+            polarity = output
+        self.function.get_two_symbol_schemata()
 
         input_labels = {}
         for in_id in self.inputs:
@@ -719,7 +749,7 @@ class BooleanNode(object):
             inputs=self.inputs,
             name=self.name,
             constant=self.constant,
-            output=output,
+            polarity=polarity,
             input_labels=input_labels,
             k=self.k,
             builder=builder,
@@ -1053,7 +1083,7 @@ class BooleanNode(object):
         See also:
             :func:`cana.function_properties.symmetry.distinct_symmetry`
         """
-        return symmetry.distinct_symmetry(self.outputs, self.k)
+        return symmetry.distinct_symmetry(self.function, self.k)
 
     def raw_symmetry(self):
         """Compute the raw symmetry of the node LUT.
@@ -1068,7 +1098,7 @@ class BooleanNode(object):
         See also:
             :func:`cana.function_properties.symmetry.raw_symmetry`
         """
-        return symmetry.raw_symmetry(self.outputs, self.k)
+        return symmetry.raw_symmetry(self.function, self.k)
 
     # --- Sensitivity ---
 
@@ -1078,7 +1108,7 @@ class BooleanNode(object):
         Returns:
             (list of floats)
         """
-        return sensitivity.activities_from_bit_lut(self.outputs.get_bit_lut())
+        return sensitivity.activities_from_bit_lut(self.function.get_bit_lut())
 
     def sensitivity_from_bit_lut(self, norm=False):
         """Average sensitivity from the dense LUT via
@@ -1091,7 +1121,7 @@ class BooleanNode(object):
             (float)
         """
         return sensitivity.sensitivity_from_bit_lut(
-            self.outputs.get_bit_lut(), norm=norm
+            self.function.get_bit_lut(), norm=norm
         )
 
     def activities_from_schemata(
@@ -1278,7 +1308,7 @@ class BooleanNode(object):
         Returns:
             (float)
         """
-        return bias.bias_from_bit_lut(self.outputs.get_bit_lut())
+        return bias.bias_from_bit_lut(self.function.get_bit_lut())
 
     def bias_from_schemata(
         self,
@@ -1303,7 +1333,7 @@ class BooleanNode(object):
             (float) or ``(float, str)`` when ``return_mode`` is True.
         """
         return bias.bias_from_schemata(
-            self.outputs.get_one_symbol_schemata(),
+            self.function.get_one_symbol_schemata(),
             k=self.k,
             exact_k_max=exact_k_max,
             n_samples=n_samples,
@@ -1319,7 +1349,7 @@ class BooleanNode(object):
         rng=None,
         return_mode=False,
     ):
-        r"""The node bias. The sum of the boolean output transitions divided by the number of entries (:math:`2^k`) in the LUT.
+        r"""The node bias. The sum of the boolean outputs divided by the number of entries (:math:`2^k`) in the LUT.
 
         .. math::
 
@@ -1380,9 +1410,9 @@ class BooleanNode(object):
         Returns:
             (list) : The list of input signs (``list[frozenset]``).
         """
-        expr = self.outputs.positional_expression
+        expr = self.function.positional_expression
         if expr is not None:
             signs = syntactic_input_signs(expr, positional_names(self.k))
             if signs is not None:
                 return signs
-        return lut_input_signs(self.outputs.get_bit_lut())
+        return lut_input_signs(self.function.get_bit_lut())

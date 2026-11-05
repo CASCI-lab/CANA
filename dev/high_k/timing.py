@@ -13,7 +13,7 @@ from high_k.paths import ensure_cana_on_path
 
 ensure_cana_on_path()
 
-from cana.function_outputs import FunctionOutputs
+from cana.function_outputs import BooleanFunction
 from cana.io import import_detached_rule
 from cana.nodes_builder import DetachedRule
 
@@ -22,7 +22,7 @@ __all__ = [
     "fmt_s",
     "call_with_timeout",
     "call_in_subprocess",
-    "import_detached_outputs",
+    "import_detached_function",
     "time_expr_lut_one_symbol",
     "time_import_and_rof",
     "time_import_and_unate",
@@ -184,18 +184,18 @@ def call_in_subprocess(
     raise RuntimeError(str(payload))
 
 
-def import_detached_outputs(
+def import_detached_function(
     bnet_text: str, target: str
-) -> FunctionOutputs:
-    """Parse a one-rule bnet snippet → detached positional ``FunctionOutputs``.
+) -> BooleanFunction:
+    """Parse a one-rule bnet snippet → detached positional ``BooleanFunction``.
 
     Uses :func:`~cana.io.import_detached_rule` (no free-input siblings).
     """
     rule = import_detached_rule(bnet_text, fmt="bnet", target=target)
-    fo = rule.outputs
+    fo = rule.function
     if fo.positional_expression is None:
         raise RuntimeError("expected positional_expression on DetachedRule")
-    return FunctionOutputs(
+    return BooleanFunction(
         positional_expression=fo.positional_expression, k=fo.k
     )
 
@@ -209,19 +209,19 @@ def time_expr_lut_one_symbol(
 ) -> Dict[str, object]:
     """Median times for import → LUT → one-symbol on *target*.
 
-    Each stage starts from a fresh :func:`import_detached_outputs` so peer
+    Each stage starts from a fresh :func:`import_detached_function` so peer
     caches are not shared across stages.
     """
 
     def _import():
-        return import_detached_outputs(bnet_text, target)
+        return import_detached_function(bnet_text, target)
 
     t_import, fo0 = median_time(_import, repeats=repeats)
-    assert isinstance(fo0, FunctionOutputs)
+    assert isinstance(fo0, BooleanFunction)
     k = fo0.k
 
     def _lut():
-        fo = import_detached_outputs(bnet_text, target)
+        fo = import_detached_function(bnet_text, target)
         return fo.build_bit_lut_from_positional_expression()
 
     t_lut, lut = median_time(_lut, repeats=repeats)
@@ -231,7 +231,7 @@ def time_expr_lut_one_symbol(
     if do_one_symbol:
 
         def _one():
-            fo = import_detached_outputs(bnet_text, target)
+            fo = import_detached_function(bnet_text, target)
             fo.build_bit_lut_from_positional_expression()
             return fo.compute_one_symbol_schemata_from_bit_lut()
 

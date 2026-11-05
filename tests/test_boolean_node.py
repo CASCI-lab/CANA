@@ -564,7 +564,7 @@ def test_sensitivity_lut_matches_schemata():
             s_sch = n.sensitivity_from_schemata(norm=norm)
             assert s_lut == s_sch, (
                 f"sensitivity(norm={norm}) for k={n.k} outputs="
-                f"{''.join(map(str, n.outputs))}: lut {s_lut!r} != schemata {s_sch!r}"
+                f"{''.join(map(str, n.function))}: lut {s_lut!r} != schemata {s_sch!r}"
             )
             assert n.sensitivity(norm=norm) == s_lut
         assert abs(n.sensitivity(norm=True) - n.c_sensitivity(1)) < 1e-12
@@ -602,7 +602,7 @@ def test_activities_lut_matches_schemata():
         a_lut = n.activities_from_bit_lut()
         a_sch = n.activities_from_schemata()
         assert a_lut == a_sch, (
-            f"activities for k={n.k} outputs={''.join(map(str, n.outputs))}: "
+            f"activities for k={n.k} outputs={''.join(map(str, n.function))}: "
             f"lut {a_lut!r} != schemata {a_sch!r}"
         )
         assert n.activities() == a_lut
@@ -611,7 +611,7 @@ def test_activities_lut_matches_schemata():
 def test_activities_sensitivity_auto_fallback_paths():
     """default methods prefer cached coverage, else LUT when k <= exact_k_max"""
     lut_node = BooleanNode.from_bit_lut([0, 0, 0, 1], name="AND")
-    assert lut_node.outputs.bit_lut is not None
+    assert lut_node.function.bit_lut is not None
     assert lut_node.activities() == lut_node.activities_from_bit_lut()
     assert lut_node.sensitivity() == lut_node.sensitivity_from_bit_lut()
     assert lut_node.bias() == lut_node.bias_from_bit_lut()
@@ -620,7 +620,7 @@ def test_activities_sensitivity_auto_fallback_paths():
     fresh = BooleanNode.from_one_symbol_schemata(
         {0: {"02", "20"}, 1: {"11"}}, k=2, name="AND"
     )
-    assert fresh.outputs.bit_lut is None
+    assert fresh.function.bit_lut is None
     assert fresh._pi_coverage is None and fresh._sampled_pi_coverage is None
     assert fresh.activities() == fresh.activities_from_bit_lut()
     assert fresh.sensitivity() == fresh.sensitivity_from_bit_lut()
@@ -633,7 +633,7 @@ def test_activities_sensitivity_auto_fallback_paths():
     covered = BooleanNode.from_one_symbol_schemata(
         {0: {"02", "20"}, 1: {"11"}}, k=2, name="AND"
     )
-    assert covered.outputs.verify_one_symbol_schemata() is True
+    assert covered.function.verify_one_symbol_schemata() is True
     _ = covered.pi_coverage()
     assert covered._pi_coverage is not None
     assert covered.activities() == covered.activities_from_schemata()
@@ -651,10 +651,10 @@ def test_activities_sensitivity_high_k_schemata_sampling():
     # constant-1 on all inputs: every input is fictitious → activity 0
     n = BooleanNode.from_one_symbol_schemata({1: {"2" * k}}, k=k)
     # Known PI cover; verify_one_symbol_schemata would need a dense LUT.
-    n.outputs.one_symbol_is_prime_implicant = True
-    assert n.outputs.bit_lut is None
+    n.function.one_symbol_is_prime_implicant = True
+    assert n.function.bit_lut is None
     with pytest.raises(ValueError, match="MAX_DENSE_LUT_K"):
-        n.outputs.get_bit_lut()
+        n.function.get_bit_lut()
 
     rng = np.random.default_rng(0)
     a = n.activities(exact_k_max=-1, n_samples=64, rng=rng)
@@ -679,7 +679,7 @@ def test_from_bit_lut_returns_subclass():
 
     n = MyNode.from_bit_lut([0, 1, 1, 0], name="xor")
     assert type(n) is MyNode
-    assert (n.k, n.name, n.outputs) == (2, "xor", list("0110"))
+    assert (n.k, n.name, n.function) == (2, "xor", list("0110"))
     assert n.input_redundancy(norm=False) == XOR().input_redundancy(norm=False)
 
 def test_schemata_look_up_table_ts_hides_same_symbol_groups():
@@ -711,8 +711,8 @@ def test_schema_table_out_stays_int_after_concat_fillna():
 
 def test_from_positional_expression_factory():
     n = BooleanNode.from_positional_expression("x0 and x1", k=2, name="AND", inputs=[0, 1])
-    assert n.outputs.positional_expression == "x0 and x1"
-    assert list(n.outputs.get_bit_lut()) == [0, 0, 0, 1]
+    assert n.function.positional_expression == "x0 and x1"
+    assert list(n.function.get_bit_lut()) == [0, 0, 0, 1]
 
 def test_from_one_symbol_schemata_factory():
     # Complete AND cover (both polarities) so get_bit_lut can expand.
@@ -720,19 +720,19 @@ def test_from_one_symbol_schemata_factory():
     n = BooleanNode.from_one_symbol_schemata(
         schemata, k=2, name="AND", inputs=[0, 1]
     )
-    assert n.outputs.one_symbol_schemata == schemata
-    assert list(n.outputs.get_bit_lut()) == [0, 0, 0, 1]
+    assert n.function.one_symbol_schemata == schemata
+    assert list(n.function.get_bit_lut()) == [0, 0, 0, 1]
 
 def test_from_two_symbol_schemata_factory():
     # OR as two-symbol: one wild entry covering both singleton ON minterms.
-    # Use a concrete two-symbol obtained from a known LUT via FunctionOutputs.
-    from cana.function_outputs import FunctionOutputs
+    # Use a concrete two-symbol obtained from a known LUT via BooleanFunction.
+    from cana.function_outputs import BooleanFunction
 
-    fo = FunctionOutputs.from_sequence([0, 1, 1, 1])
+    fo = BooleanFunction.from_sequence([0, 1, 1, 1])
     ts = fo.get_two_symbol_schemata()
     n = BooleanNode.from_two_symbol_schemata(ts, k=2, name="OR", inputs=[0, 1])
-    assert n.outputs.two_symbol_schemata is not None
-    assert list(n.outputs.get_bit_lut()) == [0, 1, 1, 1]
+    assert n.function.two_symbol_schemata is not None
+    assert list(n.function.get_bit_lut()) == [0, 1, 1, 1]
 
 def test_coverage_refuses_huge_k():
     """pi_coverage / ts_coverage refuse Θ(2^k) expansion above MAX_DENSE_LUT_K."""
@@ -761,26 +761,26 @@ def test_coverage_clears_when_schemata_replaced():
 
     # Equal reassignment keeps caches.
     same_one = {
-        0: set(n.outputs.one_symbol_schemata[0]),
-        1: set(n.outputs.one_symbol_schemata[1]),
+        0: set(n.function.one_symbol_schemata[0]),
+        1: set(n.function.one_symbol_schemata[1]),
     }
-    n.outputs.one_symbol_schemata = same_one
+    n.function.one_symbol_schemata = same_one
     assert n._pi_coverage is not None
-    n.outputs.two_symbol_schemata = (
-        list(n.outputs.two_symbol_schemata[0]),
-        list(n.outputs.two_symbol_schemata[1]),
+    n.function.two_symbol_schemata = (
+        list(n.function.two_symbol_schemata[0]),
+        list(n.function.two_symbol_schemata[1]),
     )
     assert n._ts_coverage is not None
 
     # Different one-symbol clears PI caches only.
-    n.outputs.one_symbol_schemata = {0: {"00", "01", "10"}, 1: {"11"}}
+    n.function.one_symbol_schemata = {0: {"00", "01", "10"}, 1: {"11"}}
     assert n._pi_coverage is None
     assert n._ts_coverage is not None
 
     _ = n.pi_coverage()
     _ = n.ts_coverage()
     # Different two-symbol clears TS cache only.
-    n.outputs.two_symbol_schemata = (
+    n.function.two_symbol_schemata = (
         [["000", [], []]],  # wrong shape / content vs AND
         [["11", [], []]],
     )

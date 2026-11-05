@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-"""Positional Boolean expression helpers for :class:`FunctionOutputs`.
+"""Positional Boolean expression helpers for :class:`BooleanFunction`.
 
 In-memory peer IR uses python ``and``/``or``/``not`` over ``x0``…``x{k-1}``
 (MSB = ``x0`` = ``inputs[0]``).  Named source strings are translated at the
@@ -7,7 +7,7 @@ I/O / :class:`~cana.boolean_node.BooleanNode` boundary.
 
 Naming:
 - ``*_positional*`` / ``named_to_positional`` / ``positional_to_named`` —
-  fixed IR kind (positional ``x_i`` or named regulators).
+  fixed IR kind (positional ``x_i`` or named inputs).
 - ``positional_expression_to_bit_lut`` / ``named_expression_to_bit_lut`` —
   evaluate IR to a dense LUT.
 - ``bit_lut_to_expression`` — emit whatever names are in ``input_names``
@@ -28,7 +28,7 @@ __all__ = [
     "IDENTIFIER_RE",
     "normalize_operators",
     "expression_identifiers",
-    "regulator_names_in_expression",
+    "input_names_in_expression",
     "positional_names",
     "named_to_positional",
     "positional_to_named",
@@ -36,7 +36,7 @@ __all__ = [
     "positional_expression_to_bit_lut",
     "named_expression_to_bit_lut",
     "bit_lut_to_expression",
-    "function_outputs_to_named_expression",
+    "boolean_function_to_named_expression",
 ]
 
 BOOL_KEYWORDS = frozenset({"and", "or", "not", "true", "false", "xor"})
@@ -90,12 +90,12 @@ def expression_identifiers(expr: str) -> List[str]:
     ]
 
 
-def regulator_names_in_expression(
+def input_names_in_expression(
     expr: str, known_names: Sequence[str]
 ) -> List[str]:
     """Select known node names that appear as tokens in a named expression.
 
-    ``known_names`` order is preserved.  Intended for named (regulator)
+    ``known_names`` order is preserved.  Intended for named (input)
     expressions, not positional ``x_i`` IR.
     """
     padded = "*" + expr + "*"
@@ -257,7 +257,7 @@ def bit_lut_to_expression(
     """Build a DNF expression for a :class:`BitLut` using ``input_names``.
 
     Positional vs named is chosen by ``input_names``: pass
-    :func:`positional_names` ``(k)`` for positional IR, or regulator names for
+    :func:`positional_names` ``(k)`` for positional IR, or input names for
     a named expression.  Callers with a plain 0/1 sequence should convert via
     :meth:`BitLut.from_sequence` first.
 
@@ -306,7 +306,7 @@ def bit_lut_to_expression(
     return or_op.join(terms)
 
 
-def function_outputs_to_named_expression(
+def boolean_function_to_named_expression(
     outputs: Any,
     input_names: Sequence[str],
     style: str = "python",
@@ -314,7 +314,7 @@ def function_outputs_to_named_expression(
     node_label: Optional[str] = None,
     warn: bool = True,
 ) -> str:
-    """Build a named expression from ``FunctionOutputs`` peers.
+    """Build a named expression from ``BooleanFunction`` peers.
 
     Priority: stored positional expression → two-symbol → one-symbol → LUT.
 
@@ -328,8 +328,8 @@ def function_outputs_to_named_expression(
     (``None`` is silent — common after lazy LUT fill).
 
     Args:
-        outputs: A :class:`~cana.function_outputs.FunctionOutputs` (duck-typed).
-        input_names: Regulator names in LUT / expression bit order.
+        outputs: A :class:`~cana.function_outputs.BooleanFunction` (duck-typed).
+        input_names: Input names in LUT / expression bit order.
         style: ``"python"`` or ``"symbolic"``.
         node_label: Optional node name for warning text.
         warn: If False, suppress verification soft-warnings.

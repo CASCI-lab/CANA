@@ -19,7 +19,7 @@ def getTss(outputs):
     """
     k = int(math.log(len(outputs)) / math.log(2))
     node = BooleanNode(k=k, inputs=range(k), outputs=list(outputs))
-    node.outputs.get_two_symbol_schemata()
+    node.function.get_two_symbol_schemata()
     ts0, ts1 = node._two_symbols
 
     return {0: ts0, 1: ts1}
@@ -33,7 +33,7 @@ def test_cc():
     fails = []
     log = []
     for node in nodes:
-        f = node.outputs
+        f = node.function
         ts = getTss(f)
         pi = helper.getPis(f)
         for y in [0, 1]:
@@ -45,7 +45,7 @@ def test_cc():
                         [
                             node.network.name,
                             node.name,
-                            "".join(str(i) for i in node.outputs),
+                            "".join(str(i) for i in node.function),
                             str(y),
                             str(node.k),
                             str(pi),

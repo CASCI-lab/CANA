@@ -254,9 +254,9 @@ def test_boolean_node_input_signs_syntactic_fastpath():
     node = BooleanNode.from_positional_expression(
         "x0 and not x1", k=2, name="Y", inputs=[0, 1]
     )
-    assert node.outputs.bit_lut is None
+    assert node.function.bit_lut is None
     assert node.input_signs() == [SIGN_POSITIVE, SIGN_NEGATIVE]
-    assert node.outputs.bit_lut is None
+    assert node.function.bit_lut is None
 
 
 def test_boolean_node_input_signs_falls_through_when_binate():
@@ -265,4 +265,4 @@ def test_boolean_node_input_signs_falls_through_when_binate():
     )
     # Syntactic binate → LUT path; constant-True → irrelevant input.
     assert node.input_signs() == [SIGN_IRRELEVANT]
-    assert node.outputs.bit_lut is not None
+    assert node.function.bit_lut is not None

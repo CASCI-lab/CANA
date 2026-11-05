@@ -10,7 +10,7 @@
 # For each Boolean rule (as a one-rule ``.bnet`` string):
 #
 # 1. **import** — ``import_detached_rule`` only (expression → positional
-#    ``FunctionOutputs``; no LUT / one-symbol; timed)
+#    ``BooleanFunction``; no LUT / one-symbol; timed)
 # 2. **syntactic ROF check** — single-occurrence test above
 #    (timed; result stored as ``is_rof``)
 #

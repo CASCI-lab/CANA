@@ -107,7 +107,7 @@ def _schemata_to_primes(
 
 def _qm_on_off_primes_inprocess(expr: str) -> OnOffPrimes:
     """Build dense LUT and run Cython QM → ``(on_primes, off_primes)``."""
-    from high_k.timing import import_detached_outputs
+    from high_k.timing import import_detached_function
 
     const = _constant_on_off(expr)
     if const is not None:
@@ -116,7 +116,7 @@ def _qm_on_off_primes_inprocess(expr: str) -> OnOffPrimes:
     refuse_extreme_nesting(expr)
     cana_expr = _for_cana_eval(expr)
     names = unique_regulators(cana_expr)
-    fo = import_detached_outputs(as_bnet(cana_expr), "Y")
+    fo = import_detached_function(as_bnet(cana_expr), "Y")
     fo.build_bit_lut_from_positional_expression()
     schemata = fo.compute_one_symbol_schemata_from_bit_lut()
     return (

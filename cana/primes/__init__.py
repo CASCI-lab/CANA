@@ -2,7 +2,7 @@
 """Expression → prime implicants: syntactic ROF, Primer-B, and cascade.
 
 LUT / Quine–McCluskey remain on
-:class:`~cana.function_outputs.FunctionOutputs` and are tried *after* the
+:class:`~cana.function_outputs.BooleanFunction` and are tried *after* the
 expression cascade when deriving one-symbol schemata.
 
 Wall-clock timeouts are not part of this package; see ``dev/high_k.timing``.

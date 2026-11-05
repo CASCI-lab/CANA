@@ -146,7 +146,7 @@ def test_conditional_effective_graph_empty_conditioning():
 def test_conditional_effective_graph_cascade():
     network = _cascade()
     orig_inputs = [list(node.inputs) for node in network.nodes]
-    orig_outputs = [list(node.outputs) for node in network.nodes]
+    orig_outputs = [list(node.function) for node in network.nodes]
 
     ceg = build_conditional_effective_graph(
         network.nodes, conditioned_nodes={0: 0}, name=network.name
@@ -154,7 +154,7 @@ def test_conditional_effective_graph_cascade():
 
     # Original nodes unchanged.
     assert [list(node.inputs) for node in network.nodes] == orig_inputs
-    assert [list(node.outputs) for node in network.nodes] == orig_outputs
+    assert [list(node.function) for node in network.nodes] == orig_outputs
 
     # A=0 forces B=0 then C=0; D remains free.
     assert ceg.nodes[0]["conditioned_state"] == 0

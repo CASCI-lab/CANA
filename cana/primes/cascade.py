@@ -2,7 +2,7 @@
 """Expression-only prime cascade: syntactic ROF, then PySAT Primer-B.
 
 Does **not** build a dense LUT or run Quine–McCluskey; callers that need a
-LUT/QM fallback (e.g. :meth:`~cana.function_outputs.FunctionOutputs.get_one_symbol_schemata`)
+LUT/QM fallback (e.g. :meth:`~cana.function_outputs.BooleanFunction.get_one_symbol_schemata`)
 handle that separately after an unsuccessful cascade.
 
 When the Primer-B path is reached but ``pysat`` (``python-sat``) is missing,

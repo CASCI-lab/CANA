@@ -5,6 +5,10 @@ Boolean Network
 
 Main class for Boolean network objects.
 
+Naming for inputs, ``function`` / :class:`~cana.function_outputs.BooleanFunction`,
+``source_nodes``, and related terms follows the glossary in
+:mod:`cana.nodes_builder`.
+
 """
 #   Copyright (C) 2021 by
 #   Rion Brattig Correia <rionbr@gmail.com>
@@ -55,7 +59,7 @@ class BooleanNetwork:
     Every import format is converted into a ``list[BooleanNode]``; every
     export format is produced from it.  Each
     :class:`~cana.boolean_node.BooleanNode` stores wiring (``inputs``) plus
-    :class:`~cana.function_outputs.FunctionOutputs` (usually a dense LUT).
+    :class:`~cana.function_outputs.BooleanFunction` (usually a dense LUT).
 
     Hub invariant
         ``self.nodes`` is dense with indices ``0 .. Nnodes-1``.  For all ``i``,
@@ -74,9 +78,9 @@ class BooleanNetwork:
 
             [
                 BooleanNode(id=0, name="A", k=1, inputs=[0],
-                    outputs=FunctionOutputs(bit_lut=BitLut.from_sequence([0, 1]))),
+                    outputs=BooleanFunction(bit_lut=BitLut.from_sequence([0, 1]))),
                 BooleanNode(id=1, name="B", k=2, inputs=[0, 1],
-                    outputs=FunctionOutputs(bit_lut=BitLut.from_sequence([0, 0, 0, 1]))),
+                    outputs=BooleanFunction(bit_lut=BitLut.from_sequence([0, 0, 0, 1]))),
             ]
 
     Constants
@@ -160,7 +164,7 @@ class BooleanNetwork:
             1 for i, node in enumerate(self.nodes) if i in node.inputs
         )
 
-        self.input_nodes = [
+        self.source_nodes = [
             i
             for i in range(Nnodes)
             if (
@@ -172,6 +176,15 @@ class BooleanNetwork:
         self.bin2num = bin2num  # Helper function. Converts binstate to statenum. It gets updated by `_update_trans_func`
         self.num2bin = num2bin  # Helper function. Converts statenum to binstate. It gets updated by `_update_trans_func`
         self._update_trans_func()  # Updates helper functions and other variables
+
+    @property
+    def input_nodes(self):
+        """Silent alias of :attr:`source_nodes`."""
+        return self.source_nodes
+
+    @input_nodes.setter
+    def input_nodes(self, value):
+        self.source_nodes = value
 
     @property
     def _sg(self):
@@ -387,8 +400,8 @@ class BooleanNetwork:
             outfile.write(text)
         return text
 
-    def fill_function_outputs(self, representation):
-        """Fill a missing ``FunctionOutputs`` slot on every node.
+    def fill_function_representation(self, representation):
+        """Fill a missing ``BooleanFunction`` slot on every node.
 
         Args:
             representation (str) : ``"bit_lut"``, ``"one_symbol_schemata"``,
@@ -398,7 +411,7 @@ class BooleanNetwork:
             (BooleanNetwork) : ``self``.
         """
         for node in self.nodes:
-            node.fill_function_outputs(representation)
+            node.fill_function_representation(representation)
         return self
 
     def to_cnet(
@@ -415,7 +428,7 @@ class BooleanNetwork:
             one_symbol_schemata (bool) : If True, export one-symbol (wildcard)
                 covers; if False (default), export dense ``2**k`` LUT rows.
                 Does not fill missing slots — call
-                :meth:`fill_function_outputs` first if needed.
+                :meth:`fill_function_representation` first if needed.
 
         Returns:
             (string) : The ``.cnet`` format string.
@@ -1413,7 +1426,7 @@ class BooleanNetwork:
                 % method
             )
 
-        fvssets = [fvc.union(set(self.input_nodes)) for fvc in fvssets]
+        fvssets = [fvc.union(set(self.source_nodes)) for fvc in fvssets]
 
         return fvssets  # [ [self.nodes[i].name for i in fvsset] for fvsset in fvssets]
 
@@ -1459,7 +1472,7 @@ class BooleanNetwork:
         dg = self._control_digraph(graph, *args, **kwargs)
         #
         scsets = [
-            set(scset).union(set(self.input_nodes))
+            set(scset).union(set(self.source_nodes))
             for scset in sc.sc(dg, keep_self_loops=keep_self_loops)
         ]
         return scsets  # [ [self.nodes[i].name for i in scset] for scset in scsets]

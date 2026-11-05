@@ -5,7 +5,7 @@ Schemata are thin ``dict`` maps polarity ``0``/``1`` → sets of length-``k``
 strings over ``{0,1,2}`` (``2`` = don't-care).  No wrapper class.
 
 This is the public representation of prime covers for
-:class:`~cana.function_outputs.FunctionOutputs`.  Named ``PrimeDict`` cubes
+:class:`~cana.function_outputs.BooleanFunction`.  Named ``PrimeDict`` cubes
 remain algorithm-internal inside :mod:`cana.primes`; convert at the boundary
 with :func:`primes_to_one_symbol` /
 :func:`one_symbol_to_primes`.
@@ -252,7 +252,7 @@ def one_symbol_to_expression(
 
     Positional vs named is chosen by ``input_names``: pass
     :func:`~cana.function_outputs.expression.positional_names` ``(k)`` for
-    positional IR, or regulator names for a named expression.
+    positional IR, or input names for a named expression.
 
     Args:
         input_names: Variable names in schema bit order (MSB first).

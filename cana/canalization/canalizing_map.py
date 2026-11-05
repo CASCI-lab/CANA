@@ -549,10 +549,11 @@ def build_canalizing_map(
     inputs: Sequence[int],
     name: str,
     constant: bool = False,
-    output: Optional[int] = None,
+    polarity: Optional[int] = None,
     input_labels: Optional[Mapping[int, str]] = None,
     k: Optional[int] = None,
     builder: Union[str, BuilderFn] = "legacy",
+    output: Optional[int] = None,
 ) -> nx.DiGraph:
     """Build a canalizing map using a named or callable builder.
 
@@ -594,13 +595,15 @@ def build_canalizing_map(
             "builder must be a str or callable, got {!r}".format(type(builder))
         )
 
+    if polarity is None and output is not None:
+        polarity = output
     return build_fn(
         two_symbols,
         node_id=node_id,
         inputs=inputs,
         name=name,
         constant=constant,
-        output=output,
+        output=polarity,
         input_labels=input_labels,
         k=k,
     )

@@ -246,7 +246,7 @@ def try_draw_cm(name: str, graph: nx.DiGraph, out_dir: Path) -> None:
 # %%
 N, node = node_from_bnet(BNET, TARGET)
 input_labels = [N.nodes[i].name for i in node.inputs]
-lut = lut_key(node.outputs)
+lut = lut_key(node.function)
 
 print(f"target     : {node.name}")
 print(f"inputs     : {list(zip(node.inputs, input_labels))}")
@@ -257,7 +257,7 @@ print(f"LUT        : {lut}")
 cms: dict[str, dict[str, nx.DiGraph]] = {}
 cms[lut] = build_cms(node)
 
-node.outputs.get_two_symbol_schemata()
+node.function.get_two_symbol_schemata()
 print("Two-symbol schemata (out=0):")
 for row in node._two_symbols[0]:
     print(" ", row)
@@ -267,7 +267,7 @@ for row in node._two_symbols[1]:
 
 for builder, cm in cms[lut].items():
     result = lut_from_canalizing_map(cm, input_order=node.inputs)
-    exact = summarize_roundtrip(f"{node.name}/{builder}", node.outputs, result)
+    exact = summarize_roundtrip(f"{node.name}/{builder}", node.function, result)
     assert exact, f"Expected {builder} roundtrip of {node.name} to succeed"
 
 # Draw under figures/<lut>/; also record the source bnet.
