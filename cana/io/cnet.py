@@ -11,8 +11,8 @@ from cana.function_outputs import FunctionOutputs, OneSymbolSchemata
 
 
 def _logic_line_has_wildcard(bits: str) -> bool:
-    """True if an input pattern uses don't-care ``2`` or ``-``."""
-    return "2" in bits or "-" in bits
+    """True if an input pattern uses don't-care ``-`` (or legacy ``2``)."""
+    return "-" in bits or "2" in bits
 
 
 def _collect_logic_lines(
@@ -66,10 +66,10 @@ def parse_cnet(text: str) -> List[BooleanNode]:
         .v <N>
         .l <id> <name>
         .n <id> <k> <in1> ... <ink>
-        <binstate> <out>   # may use ``2`` don't-care bits (``-`` also accepted)
+        <binstate> <out>   # don't-care bits are ``-`` (legacy ``2`` also accepted)
         .e
 
-    Per-node heuristic: if any logic line uses don't-care ``2``/``-``, store
+    Per-node heuristic: if any logic line uses don't-care ``-``/``2``, store
     that node's cover as ``one_symbol_schemata`` only; otherwise import as a
     dense ``bit_lut`` (including ON-only minterm listings with implied 0s).
 
@@ -193,10 +193,10 @@ def _append_dense_lut_lines(
 def _append_schemata_lines(
     parts: List[str], schemata: OneSymbolSchemata
 ) -> None:
-    """Append one-symbol schema lines (``2`` don't-cares) to ``parts``."""
+    """Append one-symbol schema lines (``-`` don't-cares) to ``parts``."""
     for polarity in sorted(schemata):
         for schema in sorted(schemata[polarity]):
-            parts.append("{0} {1}".format(schema, polarity))
+            parts.append("{0} {1}".format(schema.replace("2", "-"), polarity))
 
 
 def _node_label(i: int, name: str) -> str:

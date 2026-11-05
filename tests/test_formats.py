@@ -170,8 +170,8 @@ MIXED_CNET = """\
 
 .n 2 2 1 2
 01 1
-12 0
-20 0
+1- 0
+-0 0
 """
 
 
@@ -216,7 +216,7 @@ def test_cnet_export_materializes_requested_representation():
 
     # Schemata export materializes one-symbol from dense peers.
     schemata_text = nodes_to_cnet(nd, one_symbol_schemata=True)
-    assert "2" in schemata_text
+    assert "-" in schemata_text
     assert equivalent_networks(nd, parse_cnet(schemata_text))
 
     # Truly empty FO still cannot export.
@@ -238,7 +238,7 @@ def test_boolean_network_cnet_schemata_and_fill():
     assert list(N.nodes[1].outputs.bit_lut) == [0, 1, 0, 0]
     N.fill_function_outputs("one_symbol_schemata")
     cnet = N.to_cnet(one_symbol_schemata=True)
-    assert "2" in cnet
+    assert "-" in cnet
     N2 = BooleanNetwork.from_string(cnet, type="cnet")
     N2.fill_function_outputs("bit_lut")
     assert N.equivalent_to(N2)

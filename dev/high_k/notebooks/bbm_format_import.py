@@ -9,7 +9,7 @@
 # Also export to ``.cnet`` (BNS / BLIF-like) in both representations:
 #
 # - **dense LUT** — ``2**k`` rows per node (default ``to_cnet()`` / ``to_string``)
-# - **one-symbol schemata** — wildcard ``2`` covers after
+# - **one-symbol schemata** — wildcard ``-`` covers after
 #   ``fill_function_outputs("one_symbol_schemata")``
 #
 # and round-trip each mode back through the expression formats.
@@ -195,7 +195,7 @@ for src in FORMATS:
 # ## ``.cnet`` one-symbol-schemata export and round-trips
 #
 # Fill ``one_symbol_schemata`` on each loaded network, export with
-# ``one_symbol_schemata=True`` (wildcard ``2`` covers), re-import, and
+# ``one_symbol_schemata=True`` (wildcard ``-`` covers), re-import, and
 # round-trip ``src → cnet(schemata) → src``. Expression exporters resolve
 # LUTs via ``get_bit_lut()``, so schemata-only re-imports still convert.
 
@@ -210,7 +210,7 @@ for src in FORMATS:
     N2 = BooleanNetwork.from_string(cnet, type="cnet")
     ok = ref.equivalent_to(N2)
     has_wildcard = any(
-        "2" in line.split()[0]
+        "-" in line.split()[0]
         for line in cnet.splitlines()
         if line and line[0] not in ".#" and " " in line
     )
