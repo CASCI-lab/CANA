@@ -1,9 +1,9 @@
 # -*- coding: utf-8 -*-
-"""Tests for :class:`cana.function_outputs.FunctionOutputs`."""
+"""Tests for :class:`cana.function_outputs.BooleanFunction`."""
 from cana.function_outputs.bit_lut import BitLut, MAX_DENSE_LUT_K
 from cana.boolean_network import BooleanNetwork
 from cana.boolean_node import BooleanNode
-from cana.function_outputs import FunctionOutputs
+from cana.function_outputs import BooleanFunction
 from cana.function_outputs import one_symbol as one_symbol_mod
 from cana.function_outputs import two_symbol as two_symbol_mod
 import warnings
@@ -13,7 +13,7 @@ import pytest
 from cana.function_outputs.expression import (
     positional_expression_to_bit_lut,
     positional_to_named,
-    function_outputs_to_named_expression,
+    boolean_function_to_named_expression,
     named_to_positional,
 )
 from cana.function_outputs.one_symbol import (
@@ -29,8 +29,20 @@ from cana.function_outputs.two_symbol import (
 )
 
 
+
+def test_naming_aliases():
+    """Remaining silent aliases from the I/O vocabulary unification."""
+    n = BooleanNode.from_bit_lut([0, 0, 0, 1], name="AND")
+    assert n.outputs is n.function
+    N = BooleanNetwork.from_nodes([
+        BooleanNode(id=0, name="Src", k=1, inputs=[0], outputs=[0, 1]),
+    ])
+    assert N.input_nodes == N.source_nodes
+    assert 0 in N.source_nodes
+
+
 def test_from_sequence_and_eval():
-    fo = FunctionOutputs.from_sequence([0, 0, 0, 1])
+    fo = BooleanFunction.from_sequence([0, 0, 0, 1])
     assert isinstance(fo.bit_lut, BitLut)
     assert fo.k == 2
     assert list(fo) == [0, 0, 0, 1]
@@ -40,12 +52,12 @@ def test_from_sequence_and_eval():
 
 def test_wraps_bit_lut_same_object():
     bit = BitLut.from_sequence([0, 1])
-    fo = FunctionOutputs.from_sequence(bit)
+    fo = BooleanFunction.from_sequence(bit)
     assert fo.bit_lut is bit
 
 
 def test_expression_only_sequence_materializes():
-    fo = FunctionOutputs(positional_expression="x0 and x1", k=2)
+    fo = BooleanFunction(positional_expression="x0 and x1", k=2)
     assert fo.bit_lut is None
     assert fo.k == 2
     assert len(fo) == 4
@@ -85,7 +97,7 @@ def test_one_symbol_to_expression_concise():
 def test_function_outputs_to_named_expression_ladder():
     names = ["A", "B"]
     # Expression wins over schemata / LUT.
-    fo = FunctionOutputs(
+    fo = BooleanFunction(
         bit_lut=BitLut.from_sequence([0, 0, 0, 1]),
         one_symbol_schemata={1: {"11"}},
         positional_expression="x0 or x1",
@@ -94,11 +106,11 @@ def test_function_outputs_to_named_expression_ladder():
     fo.representations_consistent = True
     fo.one_symbol_is_prime_implicant = True
     assert (
-        function_outputs_to_named_expression(fo, names, warn=False) == "A or B"
+        boolean_function_to_named_expression(fo, names, warn=False) == "A or B"
     )
 
     # Two-symbol wins over one-symbol / LUT when no expression.
-    fo2 = FunctionOutputs(
+    fo2 = BooleanFunction(
         bit_lut=BitLut.from_sequence([0, 0, 0, 1]),  # AND LUT
         one_symbol_schemata={1: {"12"}},  # would say A
         two_symbol_schemata=(
@@ -110,68 +122,68 @@ def test_function_outputs_to_named_expression_ladder():
     fo2.one_symbol_is_prime_implicant = True
     fo2.representations_consistent = True
     assert (
-        function_outputs_to_named_expression(fo2, names, warn=False) == "(A or B)"
+        boolean_function_to_named_expression(fo2, names, warn=False) == "(A or B)"
     )
 
     # One-symbol wins over LUT when no expression / two-symbol.
-    fo2b = FunctionOutputs(
+    fo2b = BooleanFunction(
         bit_lut=BitLut.from_sequence([0, 1, 1, 1]),  # OR LUT
         one_symbol_schemata={1: {"12"}},  # would say A
         k=2,
     )
     fo2b.one_symbol_is_prime_implicant = True
     fo2b.representations_consistent = True
-    assert function_outputs_to_named_expression(fo2b, names, warn=False) == "A"
+    assert boolean_function_to_named_expression(fo2b, names, warn=False) == "A"
 
     # LUT fallback.
-    fo3 = FunctionOutputs.from_sequence([0, 0, 0, 1])
+    fo3 = BooleanFunction.from_sequence([0, 0, 0, 1])
     assert (
-        function_outputs_to_named_expression(fo3, names, warn=False)
+        boolean_function_to_named_expression(fo3, names, warn=False)
         == "(A and B)"
     )
 
 
 def test_function_outputs_to_named_expression_warnings():
     names = ["A", "B"]
-    schemata_only = FunctionOutputs(
+    schemata_only = BooleanFunction(
         one_symbol_schemata={1: {"12"}}, k=2
     )
     assert schemata_only.one_symbol_is_prime_implicant is None
     with pytest.warns(UserWarning, match="one_symbol_schemata"):
         assert (
-            function_outputs_to_named_expression(
+            boolean_function_to_named_expression(
                 schemata_only, names, node_label="X"
             )
             == "A"
         )
     with warnings.catch_warnings(record=True) as caught:
         warnings.simplefilter("always")
-        function_outputs_to_named_expression(schemata_only, names, warn=False)
+        boolean_function_to_named_expression(schemata_only, names, warn=False)
         assert caught == []
 
     # Expression-only: no consistency warn (single slot).
-    expr_only = FunctionOutputs(positional_expression="x0 and x1", k=2)
+    expr_only = BooleanFunction(positional_expression="x0 and x1", k=2)
     with warnings.catch_warnings(record=True) as caught:
         warnings.simplefilter("always")
-        function_outputs_to_named_expression(
+        boolean_function_to_named_expression(
             expr_only, names, node_label="B", warn=True
         )
         assert caught == []
 
     # Multi-slot expression with known mismatch → warn.
-    multi = FunctionOutputs(
+    multi = BooleanFunction(
         bit_lut=BitLut.from_sequence([0, 0, 0, 1]),
         positional_expression="x0 and x1",
         k=2,
     )
     multi.representations_consistent = False
     with pytest.warns(UserWarning, match="representations_consistent"):
-        function_outputs_to_named_expression(multi, names, node_label="B")
+        boolean_function_to_named_expression(multi, names, node_label="B")
     # Unchecked (None) multi-slot does not warn on expression path.
     multi.representations_consistent = None
     with warnings.catch_warnings(record=True) as caught:
         warnings.simplefilter("always")
-        function_outputs_to_named_expression(multi, names, node_label="B")
+        boolean_function_to_named_expression(multi, names, node_label="B")
         assert caught == []
 
 
@@ -181,7 +193,7 @@ def test_boolean_node_expression_from_schemata():
         name="AND",
         k=2,
         inputs=[1, 2],
-        outputs=FunctionOutputs(one_symbol_schemata={1: {"11"}}, k=2),
+        outputs=BooleanFunction(one_symbol_schemata={1: {"11"}}, k=2),
     )
     # Attach a tiny network so input_names() works.
     class _Net(object):
@@ -201,7 +213,7 @@ def test_boolean_node_expression_from_schemata():
 def test_positional_expression_to_bit_lut_and_get_bit_lut():
     lut = positional_expression_to_bit_lut("x0 and x1", 2)
     assert list(lut) == [0, 0, 0, 1]
-    fo = FunctionOutputs(positional_expression="x0 or x1", k=2)
+    fo = BooleanFunction(positional_expression="x0 or x1", k=2)
     assert fo.bit_lut is None
     built = fo.get_bit_lut()
     assert list(built) == [0, 1, 1, 1]
@@ -211,7 +223,7 @@ def test_positional_expression_to_bit_lut_and_get_bit_lut():
 def test_get_bit_lut_refuses_huge_k_from_expression():
     k = MAX_DENSE_LUT_K + 1
     expr = " and ".join("x{0:d}".format(i) for i in range(k))
-    fo = FunctionOutputs(positional_expression=expr, k=k)
+    fo = BooleanFunction(positional_expression=expr, k=k)
     with pytest.raises(ValueError, match="MAX_DENSE_LUT_K"):
         fo.get_bit_lut()
     assert fo.bit_lut is None
@@ -219,7 +231,7 @@ def test_get_bit_lut_refuses_huge_k_from_expression():
 
 def test_get_bit_lut_refuses_huge_k_from_one_symbol():
     k = MAX_DENSE_LUT_K + 1
-    fo = FunctionOutputs(
+    fo = BooleanFunction(
         one_symbol_schemata={1: {"2" * k}},
         k=k,
     )
@@ -229,7 +241,7 @@ def test_get_bit_lut_refuses_huge_k_from_one_symbol():
 
 
 def test_function_outputs_reorder_expression():
-    fo = FunctionOutputs(positional_expression="x0 and not x1", k=2)
+    fo = BooleanFunction(positional_expression="x0 and not x1", k=2)
     fo.get_bit_lut()
     expected_lut = list(fo.bit_lut.reorder(["A", "B"], ["B", "A"]))
     out = fo.reorder(["A", "B"], ["B", "A"])
@@ -239,7 +251,7 @@ def test_function_outputs_reorder_expression():
 
 
 def test_equality_with_list():
-    fo = FunctionOutputs.from_sequence([0, 1, 1, 0])
+    fo = BooleanFunction.from_sequence([0, 1, 1, 0])
     assert fo == [0, 1, 1, 0]
     assert fo == ["0", "1", "1", "0"]
     assert fo != [0, 0, 0, 0]
@@ -247,9 +259,9 @@ def test_equality_with_list():
 
 def test_boolean_node_uses_function_outputs():
     n = BooleanNode.from_bit_lut([0, 0, 0, 1], name="AND")
-    assert isinstance(n.outputs, FunctionOutputs)
-    assert isinstance(n.outputs.bit_lut, BitLut)
-    assert list(n.outputs) == [0, 0, 0, 1]
+    assert isinstance(n.function, BooleanFunction)
+    assert isinstance(n.function.bit_lut, BitLut)
+    assert list(n.function) == [0, 0, 0, 1]
 
 
 def test_network_shares_function_outputs():
@@ -263,15 +275,15 @@ def test_network_shares_function_outputs():
     for i, node in enumerate(network.nodes):
         assert node is network.nodes[i]
         assert node.id == i
-        assert isinstance(node.outputs, FunctionOutputs)
+        assert isinstance(node.function, BooleanFunction)
         # Expression formats store positional IR; LUT is lazy.
-        assert node.outputs.positional_expression is not None
-        assert node.outputs.bit_lut is None
-        assert isinstance(node.outputs.get_bit_lut(), BitLut)
+        assert node.function.positional_expression is not None
+        assert node.function.bit_lut is None
+        assert isinstance(node.function.get_bit_lut(), BitLut)
 
 
 def test_get_one_symbol_schemata_lazy():
-    fo = FunctionOutputs.from_sequence([0, 0, 0, 1])  # AND
+    fo = BooleanFunction.from_sequence([0, 0, 0, 1])  # AND
     assert fo.one_symbol_schemata is None
     first = fo.get_one_symbol_schemata()
     assert fo.one_symbol_schemata is first
@@ -282,7 +294,7 @@ def test_get_one_symbol_schemata_lazy():
 
 
 def test_empty_function_outputs_getters_raise():
-    fo = FunctionOutputs(k=2)
+    fo = BooleanFunction(k=2)
     with pytest.raises(ValueError, match=r"Cannot get bit_lut"):
         fo.get_bit_lut()
     with pytest.raises(ValueError, match=r"Cannot get one_symbol_schemata"):
@@ -296,7 +308,7 @@ def test_empty_function_outputs_getters_raise():
 
 def test_get_one_symbol_schemata_from_positional_expression_via_cascade():
     # Syntactic ROF: cascade stores schemata without building a dense LUT.
-    fo = FunctionOutputs(positional_expression="x0 and x1", k=2)
+    fo = BooleanFunction(positional_expression="x0 and x1", k=2)
     assert fo.bit_lut is None
     schemata = fo.get_one_symbol_schemata()
     assert schemata[1] == {"11"}
@@ -314,7 +326,7 @@ def test_positional_expression_to_one_symbol_rof():
 
 
 def test_get_two_symbol_schemata_from_positional_expression():
-    fo = FunctionOutputs(positional_expression="x0 or x1", k=2)
+    fo = BooleanFunction(positional_expression="x0 or x1", k=2)
     assert fo.two_symbol_schemata is None
     assert fo.bit_lut is None
     ts = fo.get_two_symbol_schemata()
@@ -328,7 +340,7 @@ def test_get_two_symbol_schemata_from_positional_expression():
 
 def test_get_positional_expression_caches_from_peers():
     # From bit_lut.
-    fo_lut = FunctionOutputs.from_sequence([0, 0, 0, 1])  # AND
+    fo_lut = BooleanFunction.from_sequence([0, 0, 0, 1])  # AND
     assert fo_lut.positional_expression is None
     expr_lut = fo_lut.get_positional_expression()
     assert fo_lut.positional_expression is expr_lut
@@ -337,7 +349,7 @@ def test_get_positional_expression_caches_from_peers():
 
     # From one-symbol.
     schemata = {0: {"02", "20"}, 1: {"11"}}
-    fo_one = FunctionOutputs(one_symbol_schemata=schemata, k=2)
+    fo_one = BooleanFunction(one_symbol_schemata=schemata, k=2)
     expr_one = fo_one.get_positional_expression()
     assert fo_one.positional_expression == expr_one
     assert expr_one == one_symbol_to_expression(["x0", "x1"], schemata)
@@ -347,7 +359,7 @@ def test_get_positional_expression_caches_from_peers():
         [["00", [], []]],
         [["12", [[0, 1]], []]],
     )
-    fo_two = FunctionOutputs(two_symbol_schemata=ts, k=2)
+    fo_two = BooleanFunction(two_symbol_schemata=ts, k=2)
     expr_two = fo_two.get_positional_expression()
     assert fo_two.positional_expression == expr_two
     assert expr_two == "(x0 or x1)"
@@ -355,9 +367,9 @@ def test_get_positional_expression_caches_from_peers():
 
 def test_build_bit_lut_from_one_symbol_schemata():
     original = [0, 0, 0, 1]
-    fo = FunctionOutputs.from_sequence(original)
+    fo = BooleanFunction.from_sequence(original)
     schemata = fo.get_one_symbol_schemata()
-    rebuilt = FunctionOutputs(one_symbol_schemata=schemata, k=2)
+    rebuilt = BooleanFunction(one_symbol_schemata=schemata, k=2)
     assert rebuilt.bit_lut is None
     lut = rebuilt.build_bit_lut_from_one_symbol_schemata()
     assert list(lut) == original
@@ -366,7 +378,7 @@ def test_build_bit_lut_from_one_symbol_schemata():
 
 def test_eval_from_one_symbol_only():
     schemata = {0: {"02", "20"}, 1: {"11"}}  # AND cover with wildcards as '2'
-    fo = FunctionOutputs(one_symbol_schemata=schemata, k=2)
+    fo = BooleanFunction(one_symbol_schemata=schemata, k=2)
     assert fo.bit_lut is None
     assert fo.eval(0) == 0
     assert fo.eval(3) == 1
@@ -375,33 +387,33 @@ def test_eval_from_one_symbol_only():
 
 
 def test_compute_one_symbol_sets_prime_tag():
-    fo = FunctionOutputs.from_sequence([0, 0, 0, 1])  # AND
+    fo = BooleanFunction.from_sequence([0, 0, 0, 1])  # AND
     assert fo.one_symbol_is_prime_implicant is None
     fo.get_one_symbol_schemata()
     assert fo.one_symbol_is_prime_implicant is True
 
 
 def test_verify_one_symbol_schemata_from_qm():
-    fo = FunctionOutputs.from_sequence([0, 1, 1, 0])  # XOR
+    fo = BooleanFunction.from_sequence([0, 1, 1, 0])  # XOR
     schemata = fo.get_one_symbol_schemata()
     assert fo.one_symbol_is_prime_implicant is True
     assert fo.verify_one_symbol_schemata() is True
     assert fo.one_symbol_is_prime_implicant is True
     # Schemata-only copy of the same PI cover.
-    only = FunctionOutputs(one_symbol_schemata=schemata, k=2)
+    only = BooleanFunction(one_symbol_schemata=schemata, k=2)
     assert only.bit_lut is None
     assert only.verify_one_symbol_schemata() is True
     assert only.one_symbol_is_prime_implicant is True
 
 
 def test_verify_one_symbol_incomplete_and_conflict():
-    incomplete = FunctionOutputs(
+    incomplete = BooleanFunction(
         one_symbol_schemata={1: {"11"}}, k=2
     )
     assert incomplete.verify_one_symbol_schemata() is False
     assert incomplete.one_symbol_is_prime_implicant is False
 
-    conflict = FunctionOutputs(
+    conflict = BooleanFunction(
         one_symbol_schemata={0: {"11"}, 1: {"11"}}, k=2
     )
     assert conflict.verify_one_symbol_schemata() is False
@@ -411,13 +423,13 @@ def test_verify_one_symbol_incomplete_and_conflict():
 def test_verify_one_symbol_non_prime_complete_cover():
     # Complete AND cover as minterms (not the QM prime-implicant set).
     schemata = {0: {"00", "01", "10"}, 1: {"11"}}
-    fo = FunctionOutputs(one_symbol_schemata=schemata, k=2)
+    fo = BooleanFunction(one_symbol_schemata=schemata, k=2)
     assert fo.verify_one_symbol_schemata() is False
     assert fo.one_symbol_is_prime_implicant is False
 
 
 def test_verify_two_symbol_schemata_from_qm_path():
-    fo = FunctionOutputs.from_sequence([0, 0, 0, 1])  # AND
+    fo = BooleanFunction.from_sequence([0, 0, 0, 1])  # AND
     assert fo.two_symbol_is_canonical is None
     ts = fo.get_two_symbol_schemata()
     assert fo.one_symbol_is_prime_implicant is True
@@ -426,7 +438,7 @@ def test_verify_two_symbol_schemata_from_qm_path():
     assert fo.two_symbol_is_canonical is True
 
     # Two-only copy of the same canonical cover.
-    only = FunctionOutputs(two_symbol_schemata=ts, k=2)
+    only = BooleanFunction(two_symbol_schemata=ts, k=2)
     assert only.one_symbol_schemata is None
     assert only.verify_two_symbol_schemata() is True
     assert only.two_symbol_is_canonical is True
@@ -436,7 +448,7 @@ def test_verify_two_symbol_quick_false_mismatched_verified_one():
     # Canonical AND two-symbol, but verified one-symbol is OR.
     and_ts = ([["02", [[0, 1]], []]], [["11", [], [[0, 1]]]])
     or_one = {0: {"00"}, 1: {"12", "21"}}
-    fo = FunctionOutputs(
+    fo = BooleanFunction(
         one_symbol_schemata=or_one,
         two_symbol_schemata=and_ts,
         k=2,
@@ -452,7 +464,7 @@ def test_verify_two_symbol_non_prime_expanded_cover():
         [["00", [], []], ["01", [], []], ["10", [], []]],
         [["11", [], []]],
     )
-    fo = FunctionOutputs(two_symbol_schemata=ts, k=2)
+    fo = BooleanFunction(two_symbol_schemata=ts, k=2)
     assert fo.verify_two_symbol_schemata() is False
     assert fo.two_symbol_is_canonical is False
 
@@ -460,7 +472,7 @@ def test_verify_two_symbol_non_prime_expanded_cover():
 def test_verify_two_symbol_non_canonical_same_groups():
     # Expands to the same AND cover, but missing ON same_groups vs finder.
     ts = ([["02", [[0, 1]], []]], [["11", [], []]])
-    fo = FunctionOutputs(two_symbol_schemata=ts, k=2)
+    fo = BooleanFunction(two_symbol_schemata=ts, k=2)
     assert two_symbol_to_one_symbol(ts) == {0: {"02", "20"}, 1: {"11"}}
     assert fo.verify_two_symbol_schemata() is False
     assert fo.two_symbol_is_canonical is False
@@ -469,13 +481,13 @@ def test_verify_two_symbol_non_canonical_same_groups():
 def test_verify_two_symbol_non_canonical_representative():
     # Same AND function; OFF representative '20' instead of canonical '02'.
     ts = ([["20", [[0, 1]], []]], [["11", [], [[0, 1]]]])
-    fo = FunctionOutputs(two_symbol_schemata=ts, k=2)
+    fo = BooleanFunction(two_symbol_schemata=ts, k=2)
     assert fo.verify_two_symbol_schemata() is False
     assert fo.two_symbol_is_canonical is False
 
 
 def test_verify_representations_consistent():
-    fo = FunctionOutputs.from_sequence([0, 0, 0, 1])
+    fo = BooleanFunction.from_sequence([0, 0, 0, 1])
     assert fo.representations_consistent is None
     assert fo.verify_representations_consistent() is True  # vacuous: only bit_lut
     assert fo.representations_consistent is True
@@ -484,7 +496,7 @@ def test_verify_representations_consistent():
     assert fo.verify_representations_consistent() is True
     assert fo.representations_consistent is True
 
-    mismatched = FunctionOutputs.from_sequence([0, 0, 0, 1])
+    mismatched = BooleanFunction.from_sequence([0, 0, 0, 1])
     mismatched.one_symbol_schemata = {0: {"00"}, 1: {"01", "10", "11"}}  # OR
     assert mismatched.verify_representations_consistent() is False
     assert mismatched.representations_consistent is False
@@ -492,16 +504,16 @@ def test_verify_representations_consistent():
 
 def test_node_stores_one_symbol_on_outputs():
     n = BooleanNode.from_bit_lut([0, 0, 0, 1], name="AND")
-    assert n.outputs.one_symbol_schemata is None
-    n.outputs.get_one_symbol_schemata()
-    assert n.outputs.one_symbol_schemata is not None
-    assert n._prime_implicants is n.outputs.one_symbol_schemata
-    cached = n.outputs.one_symbol_schemata
-    n.outputs.get_one_symbol_schemata()
-    assert n.outputs.one_symbol_schemata is cached
-    n.outputs.get_two_symbol_schemata()
-    assert n.outputs.two_symbol_schemata is not None
-    assert n._two_symbols is n.outputs.two_symbol_schemata
+    assert n.function.one_symbol_schemata is None
+    n.function.get_one_symbol_schemata()
+    assert n.function.one_symbol_schemata is not None
+    assert n._prime_implicants is n.function.one_symbol_schemata
+    cached = n.function.one_symbol_schemata
+    n.function.get_one_symbol_schemata()
+    assert n.function.one_symbol_schemata is cached
+    n.function.get_two_symbol_schemata()
+    assert n.function.two_symbol_schemata is not None
+    assert n._two_symbols is n.function.two_symbol_schemata
 
 
 def test_canalization_uses_stored_one_symbol_with_soft_warn():
@@ -512,36 +524,36 @@ def test_canalization_uses_stored_one_symbol_with_soft_warn():
         name="AND",
         k=2,
         inputs=[0, 1],
-        outputs=FunctionOutputs(one_symbol_schemata=schemata, k=2),
+        outputs=BooleanFunction(one_symbol_schemata=schemata, k=2),
     )
-    assert n.outputs.one_symbol_is_prime_implicant is None
-    assert n.outputs.bit_lut is None
+    assert n.function.one_symbol_is_prime_implicant is None
+    assert n.function.bit_lut is None
 
     with pytest.warns(UserWarning, match="one_symbol_is_prime_implicant"):
-        n.outputs.get_one_symbol_schemata()
+        n.function.get_one_symbol_schemata()
 
     # Stored cover kept; no LUT / QM forced.
-    assert n.outputs.one_symbol_schemata is schemata
-    assert n.outputs.bit_lut is None
-    assert n.outputs.one_symbol_is_prime_implicant is None
+    assert n.function.one_symbol_schemata is schemata
+    assert n.function.bit_lut is None
+    assert n.function.one_symbol_is_prime_implicant is None
 
     with pytest.warns(UserWarning, match="one_symbol_is_prime_implicant"):
         assert n._prime_implicants is schemata
 
     with pytest.warns(UserWarning, match="two_symbol_is_canonical"):
-        n.outputs.get_two_symbol_schemata()
-    assert n.outputs.two_symbol_schemata is not None
-    assert n.outputs.two_symbol_is_canonical is None
-    assert n.outputs.bit_lut is None
-    assert n.outputs.one_symbol_schemata is schemata
+        n.function.get_two_symbol_schemata()
+    assert n.function.two_symbol_schemata is not None
+    assert n.function.two_symbol_is_canonical is None
+    assert n.function.bit_lut is None
+    assert n.function.one_symbol_schemata is schemata
 
     with pytest.warns(UserWarning, match="two_symbol_is_canonical"):
-        assert n._two_symbols is n.outputs.two_symbol_schemata
+        assert n._two_symbols is n.function.two_symbol_schemata
 
 
 def test_get_two_symbol_does_not_double_warn_on_stored_one():
     schemata = {0: {"00", "01", "10"}, 1: {"11"}}
-    fo = FunctionOutputs(one_symbol_schemata=schemata, k=2)
+    fo = BooleanFunction(one_symbol_schemata=schemata, k=2)
     with warnings.catch_warnings(record=True) as caught:
         warnings.simplefilter("always")
         fo.get_two_symbol_schemata()
@@ -566,7 +578,7 @@ def test_get_two_symbol_warns_on_stored_unverified():
         [["00", [], []], ["01", [], []], ["10", [], []]],
         [["11", [], []]],
     )
-    fo = FunctionOutputs(two_symbol_schemata=ts, k=2)
+    fo = BooleanFunction(two_symbol_schemata=ts, k=2)
     assert fo.two_symbol_is_canonical is None
     with pytest.warns(UserWarning, match="two_symbol_is_canonical"):
         assert fo.get_two_symbol_schemata() is ts
@@ -579,29 +591,29 @@ def test_get_two_symbol_warns_on_stored_unverified():
 
 def test_canalization_skips_warn_when_one_symbol_verified():
     schemata = {0: {"02", "20"}, 1: {"11"}}
-    fo = FunctionOutputs(one_symbol_schemata=schemata, k=2)
+    fo = BooleanFunction(one_symbol_schemata=schemata, k=2)
     assert fo.verify_one_symbol_schemata() is True
     n = BooleanNode(
         id=0, name="AND", k=2, inputs=[0, 1], outputs=fo
     )
     with warnings.catch_warnings(record=True) as caught:
         warnings.simplefilter("always")
-        n.outputs.get_one_symbol_schemata()
-        n.outputs.get_two_symbol_schemata()
+        n.function.get_one_symbol_schemata()
+        n.function.get_two_symbol_schemata()
     assert not [w for w in caught if issubclass(w.category, UserWarning)]
-    assert n.outputs.one_symbol_schemata is schemata
-    assert n.outputs.two_symbol_is_canonical is True
-    assert n.outputs.bit_lut is None
+    assert n.function.one_symbol_schemata is schemata
+    assert n.function.two_symbol_is_canonical is True
+    assert n.function.bit_lut is None
 
 
 def test_check_compute_canalization_variables_deprecated():
     n = BooleanNode.from_bit_lut([0, 0, 0, 1], name="AND")
     with pytest.warns(DeprecationWarning, match="_check_compute_canalization_variables"):
         n._check_compute_canalization_variables(prime_implicants=True)
-    assert n.outputs.one_symbol_schemata is not None
+    assert n.function.one_symbol_schemata is not None
     with pytest.warns(DeprecationWarning, match="_check_compute_canalization_variables"):
         n._check_compute_canalization_variables(two_symbols=True)
-    assert n.outputs.two_symbol_schemata is not None
+    assert n.function.two_symbol_schemata is not None
     with pytest.warns(DeprecationWarning, match="_check_compute_canalization_variables"):
         n._check_compute_canalization_variables(pi_coverage=True)
     assert n._pi_coverage is not None
@@ -610,21 +622,21 @@ def test_check_compute_canalization_variables_deprecated():
     assert n._ts_coverage is not None
 
 
-def test_fill_function_outputs_node_and_network():
+def test_fill_function_representation_node_and_network():
     schemata = {0: {"02", "20"}, 1: {"11"}}
     n = BooleanNode(
-        id=0, name="AND", k=2, inputs=[0, 1], outputs=FunctionOutputs(
+        id=0, name="AND", k=2, inputs=[0, 1], outputs=BooleanFunction(
             one_symbol_schemata=schemata, k=2
         )
     )
-    assert n.outputs.bit_lut is None
-    n.fill_function_outputs("bit_lut")
-    assert list(n.outputs.bit_lut) == [0, 0, 0, 1]
+    assert n.function.bit_lut is None
+    n.fill_function_representation("bit_lut")
+    assert list(n.function.bit_lut) == [0, 0, 0, 1]
 
     n2 = BooleanNode.from_bit_lut([0, 1, 1, 0], name="XOR")
-    assert n2.outputs.one_symbol_schemata is None
-    n2.fill_function_outputs("one_symbol_schemata")
-    assert n2.outputs.one_symbol_schemata is not None
+    assert n2.function.one_symbol_schemata is None
+    n2.fill_function_representation("one_symbol_schemata")
+    assert n2.function.one_symbol_schemata is not None
 
     network = BooleanNetwork.from_nodes(
         [
@@ -634,27 +646,27 @@ def test_fill_function_outputs_node_and_network():
                 name="B",
                 k=2,
                 inputs=[0, 1],
-                outputs=FunctionOutputs(
+                outputs=BooleanFunction(
                     one_symbol_schemata={0: {"02", "20"}, 1: {"11"}}, k=2
                 ),
             ),
         ]
     )
-    assert network.nodes[1].outputs.bit_lut is None
-    network.fill_function_outputs("bit_lut")
-    assert list(network.nodes[1].outputs.bit_lut) == [0, 0, 0, 1]
-    # Hub is the node list itself — fill mutates node.outputs in place.
-    assert network.nodes[1].outputs.bit_lut is not None
-    network.fill_function_outputs("one_symbol_schemata")
-    assert network.nodes[0].outputs.one_symbol_schemata is not None
+    assert network.nodes[1].function.bit_lut is None
+    network.fill_function_representation("bit_lut")
+    assert list(network.nodes[1].function.bit_lut) == [0, 0, 0, 1]
+    # Hub is the node list itself — fill mutates node.function in place.
+    assert network.nodes[1].function.bit_lut is not None
+    network.fill_function_representation("one_symbol_schemata")
+    assert network.nodes[0].function.one_symbol_schemata is not None
 
     n3 = BooleanNode.from_bit_lut([0, 1, 1, 1], name="OR")
-    assert n3.outputs.two_symbol_schemata is None
-    n3.fill_function_outputs("two_symbol_schemata")
-    assert n3.outputs.two_symbol_schemata is not None
-    assert n3.outputs.positional_expression is None
-    n3.fill_function_outputs("positional_expression")
-    assert n3.outputs.positional_expression is not None
+    assert n3.function.two_symbol_schemata is None
+    n3.fill_function_representation("two_symbol_schemata")
+    assert n3.function.two_symbol_schemata is not None
+    assert n3.function.positional_expression is None
+    n3.fill_function_representation("positional_expression")
+    assert n3.function.positional_expression is not None
 
 
 def test_one_symbol_reorder_identity_returns_same():
@@ -671,14 +683,14 @@ def test_one_symbol_reorder_swaps_and_implies():
     assert list(one_symbol_to_bit_lut(swapped_and, 2)) == [0, 0, 0, 1]
 
     # Implies A->B on (A, B): [1,1,0,1]; after swap to (B, A): [1,0,1,1].
-    implies = FunctionOutputs.from_sequence([1, 1, 0, 1])
+    implies = BooleanFunction.from_sequence([1, 1, 0, 1])
     schemata = implies.get_one_symbol_schemata()
     swapped = reorder_one_symbol(schemata, ["A", "B"], ["B", "A"])
     assert list(one_symbol_to_bit_lut(swapped, 2)) == [1, 0, 1, 1]
 
 
 def test_function_outputs_reorder_both_peers():
-    fo = FunctionOutputs.from_sequence([1, 1, 0, 1])  # A->B
+    fo = BooleanFunction.from_sequence([1, 1, 0, 1])  # A->B
     fo.get_one_symbol_schemata()
     fo.get_two_symbol_schemata()
     assert fo.one_symbol_is_prime_implicant is True
@@ -700,7 +712,7 @@ def test_function_outputs_reorder_both_peers():
 
 
 def test_function_outputs_reorder_identity_returns_self():
-    fo = FunctionOutputs.from_sequence([0, 0, 0, 1])
+    fo = BooleanFunction.from_sequence([0, 0, 0, 1])
     assert fo.reorder(["A", "B"], ["A", "B"]) is fo
 
 
@@ -760,7 +772,7 @@ def test_two_symbol_reorder_swaps_or_and_same_groups():
     ],
 )
 def test_two_symbol_one_symbol_lut_roundtrip(lut):
-    fo = FunctionOutputs.from_sequence(lut)
+    fo = BooleanFunction.from_sequence(lut)
     original = list(fo.bit_lut)
     pre_one = {
         p: set(s) for p, s in fo.get_one_symbol_schemata().items()
@@ -768,7 +780,7 @@ def test_two_symbol_one_symbol_lut_roundtrip(lut):
     ts = fo.get_two_symbol_schemata()
 
     # Drop dense / one-symbol; rebuild from two-symbol only.
-    rebuilt = FunctionOutputs(two_symbol_schemata=ts, k=fo.k)
+    rebuilt = BooleanFunction(two_symbol_schemata=ts, k=fo.k)
     assert rebuilt.bit_lut is None
     assert rebuilt.one_symbol_schemata is None
 
@@ -788,7 +800,7 @@ def test_get_bit_lut_from_two_symbol_is_two_step():
         [["00", [], [[0, 1]]]],
         [["12", [[0, 1]], []]],
     )
-    fo = FunctionOutputs(two_symbol_schemata=ts, k=2)
+    fo = BooleanFunction(two_symbol_schemata=ts, k=2)
     assert fo.one_symbol_schemata is None
     assert fo.bit_lut is None
     lut = fo.get_bit_lut()
@@ -831,32 +843,32 @@ def test_function_outputs_to_named_expression_from_two_symbol_only():
         [["00", [], []]],
         [["12", [[0, 1]], []]],
     )
-    fo = FunctionOutputs(two_symbol_schemata=ts, k=2)
+    fo = BooleanFunction(two_symbol_schemata=ts, k=2)
     assert (
-        function_outputs_to_named_expression(fo, ["A", "B"], warn=False)
+        boolean_function_to_named_expression(fo, ["A", "B"], warn=False)
         == "(A or B)"
     )
     # Two-symbol alone: warn when not known canonical.
     with pytest.warns(UserWarning, match="two_symbol_is_canonical"):
         assert (
-            function_outputs_to_named_expression(fo, ["A", "B"], warn=True)
+            boolean_function_to_named_expression(fo, ["A", "B"], warn=True)
             == "(A or B)"
         )
     fo.two_symbol_is_canonical = True
     with warnings.catch_warnings(record=True) as caught:
         warnings.simplefilter("always")
-        function_outputs_to_named_expression(fo, ["A", "B"], warn=True)
+        boolean_function_to_named_expression(fo, ["A", "B"], warn=True)
         assert caught == []
 
     # Two-symbol + one-symbol: still keyed on two_symbol_is_canonical.
-    fo_both = FunctionOutputs(
+    fo_both = BooleanFunction(
         one_symbol_schemata={1: {"12", "21"}},
         two_symbol_schemata=ts,
         k=2,
     )
     with pytest.warns(UserWarning, match="two_symbol_is_canonical"):
         assert (
-            function_outputs_to_named_expression(
+            boolean_function_to_named_expression(
                 fo_both, ["A", "B"], node_label="X"
             )
             == "(A or B)"
@@ -864,18 +876,18 @@ def test_function_outputs_to_named_expression_from_two_symbol_only():
     fo_both.two_symbol_is_canonical = True
     with warnings.catch_warnings(record=True) as caught:
         warnings.simplefilter("always")
-        function_outputs_to_named_expression(fo_both, ["A", "B"], warn=True)
+        boolean_function_to_named_expression(fo_both, ["A", "B"], warn=True)
         assert caught == []
 
 
 def test_verify_representations_consistent_with_two_symbol():
-    fo = FunctionOutputs.from_sequence([0, 1, 1, 1])
+    fo = BooleanFunction.from_sequence([0, 1, 1, 1])
     fo.get_two_symbol_schemata()
     assert fo.verify_representations_consistent() is True
 
     # Agreeing LUT + two-symbol only (no stored one-symbol).
     ts = fo.two_symbol_schemata
-    fo2 = FunctionOutputs(
+    fo2 = BooleanFunction(
         bit_lut=BitLut.from_sequence([0, 1, 1, 1]),
         two_symbol_schemata=ts,
         k=2,
@@ -883,7 +895,7 @@ def test_verify_representations_consistent_with_two_symbol():
     assert fo2.verify_representations_consistent() is True
 
     # Mismatch.
-    fo3 = FunctionOutputs(
+    fo3 = BooleanFunction(
         bit_lut=BitLut.from_sequence([0, 0, 0, 1]),
         two_symbol_schemata=ts,
         k=2,

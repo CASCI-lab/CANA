@@ -87,3 +87,8 @@ include = ["cana*"]
 [tool.pytest.ini_options]
 testpaths = ["tests"]
 pythonpath = [".", "tests/", "tests/helpers/"]
+
+[tool.coverage.run]
+omit = [
+    "tests/*"
+]

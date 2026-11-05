@@ -9,8 +9,8 @@
 # Also export to ``.cnet`` (BNS / BLIF-like) in both representations:
 #
 # - **dense LUT** — ``2**k`` rows per node (default ``to_cnet()`` / ``to_string``)
-# - **one-symbol schemata** — wildcard ``2`` covers after
-#   ``fill_function_outputs("one_symbol_schemata")``
+# - **one-symbol schemata** — wildcard ``-`` covers after
+#   ``fill_function_representation("one_symbol_schemata")``
 #
 # and round-trip each mode back through the expression formats.
 #
@@ -82,7 +82,7 @@ for fmt in FORMATS:
 #
 # Each network stores a dense ``list[BooleanNode]`` with invariant
 # ``nodes[i].id == i``.  Each node has ``name``, ``inputs`` (node ids), and
-# ``outputs`` (:class:`FunctionOutputs`, usually with a dense ``bit_lut`` of
+# ``function`` (:class:`BooleanFunction`, usually with a dense ``bit_lut`` of
 # length ``2**k``).  Formats may permute node ids; equivalence is checked by
 # **node name**.
 
@@ -96,7 +96,7 @@ log.info(
     f"  nodes[{i0}] = BooleanNode("
     f"id={node.id}, name={node.name!r}, "
     f"inputs={node.inputs}, "
-    f"outputs={node.outputs})"
+    f"function={node.function})"
 )
 log.info(
     "  (inputs are node ids; LUT row s uses inputs[0] as MSB — "
@@ -195,7 +195,7 @@ for src in FORMATS:
 # ## ``.cnet`` one-symbol-schemata export and round-trips
 #
 # Fill ``one_symbol_schemata`` on each loaded network, export with
-# ``one_symbol_schemata=True`` (wildcard ``2`` covers), re-import, and
+# ``one_symbol_schemata=True`` (wildcard ``-`` covers), re-import, and
 # round-trip ``src → cnet(schemata) → src``. Expression exporters resolve
 # LUTs via ``get_bit_lut()``, so schemata-only re-imports still convert.
 
@@ -204,13 +204,13 @@ for src in FORMATS:
 log.info("cnet one-symbol schemata: src → fill → cnet → network (~= ref):")
 cnet_schema_texts: Dict[str, str] = {}
 for src in FORMATS:
-    networks[src].fill_function_outputs("one_symbol_schemata")
+    networks[src].fill_function_representation("one_symbol_schemata")
     cnet = networks[src].to_cnet(one_symbol_schemata=True)
     cnet_schema_texts[src] = cnet
     N2 = BooleanNetwork.from_string(cnet, type="cnet")
     ok = ref.equivalent_to(N2)
     has_wildcard = any(
-        "2" in line.split()[0]
+        "-" in line.split()[0]
         for line in cnet.splitlines()
         if line and line[0] not in ".#" and " " in line
     )

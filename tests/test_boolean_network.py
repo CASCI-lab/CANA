@@ -1,7 +1,8 @@
 from cana.boolean_network import BooleanNetwork
-import networkx as nx
 import pytest
 from cana.datasets.bio import THALIANA, LEUKEMIA
+from cana.function_properties import SIGN_POSITIVE
+from cana.graphs.effective_graph import build_effective_graph
 
 # THALIANA loads schemata-only nodes from cnet; canalization soft-warns when
 # one_symbol_is_prime_implicant / two_symbol_is_canonical are unset.
@@ -46,12 +47,12 @@ def test_from_string_booleannet():
     ])
     network = BooleanNetwork.from_string_booleannet(rules, keep_constants=True)
     assert network.Nnodes == 3
-    # A = copy of B: output transitions [0, 1]
-    assert list(network.nodes[0].outputs) == [0, 1]
-    # B = A AND C: output transitions [0, 0, 0, 1]
-    assert list(network.nodes[1].outputs) == [0, 0, 0, 1]
-    # C = A OR B: output transitions [0, 1, 1, 1]
-    assert list(network.nodes[2].outputs) == [0, 1, 1, 1]
+    # A = copy of B: outputs [0, 1]
+    assert list(network.nodes[0].function) == [0, 1]
+    # B = A AND C: outputs [0, 0, 0, 1]
+    assert list(network.nodes[1].function) == [0, 0, 0, 1]
+    # C = A OR B: outputs [0, 1, 1, 1]
+    assert list(network.nodes[2].function) == [0, 1, 1, 1]
 
 
 def test_load_booleannet_LEUKEMIA():
@@ -60,4 +61,70 @@ def test_load_booleannet_LEUKEMIA():
     assert network.Nnodes == 60
     # Spot-check first rule: CTLA4* = TCR (identity)
     assert network.nodes[0].name == 'CTLA4'
-    assert list(network.nodes[0].outputs) == [0, 1]
+    assert list(network.nodes[0].function) == [0, 1]
+
+
+def test_graph_wrappers_cache_unsigned():
+    """BN graph methods cache unsigned unthresholded EG/AG; views do not mutate them."""
+    rules = "\n".join(
+        [
+            "A *= A",
+            "B *= not A",
+            "C *= (A and not B) or (not A and B)",
+        ]
+    )
+    network = BooleanNetwork.from_string_booleannet(rules, keep_constants=True)
+
+    ig = network.interaction_graph(signed=True)
+    assert ig.graph["signs_computed"] is True
+    assert ig.name.startswith("Interaction Graph:")
+
+    eg = network.effective_graph(signed=False)
+    assert eg.graph["signs_computed"] is False
+    eg_s = network.effective_graph(signed=True)
+    assert eg_s.graph["signs_computed"] is True
+    assert network._eg.graph["signs_computed"] is False
+
+    ag = network.activity_graph(signed=False)
+    assert ag.graph["threshold"] is None
+    ag_s = network.activity_graph(signed=True)
+    assert ag_s.graph["signs_computed"] is True
+    ag_t = network.activity_graph(threshold=0.5)
+    assert ag_t.graph["threshold"] == 0.5
+    assert network._ag.graph["signs_computed"] is False
+    assert network._ag.graph["threshold"] is None
+
+
+def test_effective_graph_bound_uses_first_cached_eg():
+    """Later bound= changes are ignored once ``_eg`` is cached (current behavior)."""
+    rules = "\n".join(
+        [
+            "A *= A",
+            "B *= B",
+            "C *= A and B",
+        ]
+    )
+    network = BooleanNetwork.from_string_booleannet(rules, keep_constants=True)
+
+    mean = network.effective_graph(bound="mean")
+    # Same object path via cache: upper request still returns mean weights.
+    again = network.effective_graph(bound="upper")
+    assert again[0][2]["weight"] == mean[0][2]["weight"]
+    assert again[0][2]["weight"] == build_effective_graph(
+        network.nodes, bound="mean"
+    )[0][2]["weight"]
+    assert again[0][2]["weight"] != build_effective_graph(
+        network.nodes, bound="upper"
+    )[0][2]["weight"]
+
+
+def test_structural_graph_deprecated_alias():
+    rules = "A *= A\nB *= A"
+    network = BooleanNetwork.from_string_booleannet(rules, keep_constants=True)
+    with pytest.warns(DeprecationWarning, match="structural_graph"):
+        sg = network.structural_graph()
+    assert sg.graph["signs_computed"] is False
+    with pytest.warns(DeprecationWarning, match="signed_interaction_graph"):
+        sig = network.signed_interaction_graph()
+    assert sig.graph["signs_computed"] is True
+    assert sig[0][1]["sign"] == SIGN_POSITIVE

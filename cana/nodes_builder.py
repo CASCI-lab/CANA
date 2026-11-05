@@ -3,19 +3,53 @@
 
 Invariant: for all ``i``, ``nodes[i].id == i``, and every ``inputs`` entry
 is an index into that list.  Node sets are dense ``0 .. N-1``; CANA does
-not delete BN nodes after construction.
+not delete BN nodes after construction.  Arity satisfies
+``k == len(inputs) == function.k`` (with ``k == 0`` and empty ``inputs``
+for constants without wired inputs).
 
 Glossary
 --------
+inputs / input_names
+    Wired predecessors of a node (integer hub ids) and their names in
+    LUT / expression bit order (``inputs[0]`` is MSB).
+k
+    Function arity; equals ``len(inputs)`` and ``function.k``.
+function / BooleanFunction
+    Multi-representation update rule on
+    :attr:`~cana.boolean_node.BooleanNode.function`.  Peer slots:
+    ``bit_lut``, ``positional_expression``, ``one_symbol_schemata``,
+    ``two_symbol_schemata``.
+bit_lut
+    Dense :class:`~cana.function_outputs.bit_lut.BitLut` truth table.
+outputs (bits)
+    Values ``f(0) … f(2^k - 1)``.  Constructor sugar ``outputs=[…]``
+    builds a ``BooleanFunction`` from that column; do not call a node
+    an “output.”
 positional expression
-    ``FunctionOutputs`` peer IR over ``x0``…``x{k-1}``.
+    ``BooleanFunction`` peer IR over ``x0``…``x{k-1}``.
 named expression
     Gene-named formula string at the I/O boundary.
+free inputs
+    Names that appear only as inputs on import; receive identity
+    ``f(x) = x``.
+source_nodes
+    Network-level constants ∪ self-loop identity nodes (control-like
+    set).  Distinct from ``node.inputs``.  Alias: ``input_nodes``.
+source → target
+    Digraph edge endpoints; an edge exists when ``source`` is an input
+    of ``target``.
+state
+    A node's current binary value (dynamics), not the update rule.
+polarity
+    Canalizing-map function-value polarity ``0``/``1``.
 update rule
     ``(name, named_expression)`` from a format line (often a ``dict``).
 detached rule
-    :class:`DetachedRule` — name + ``input_names`` + positional FO, not
-    hub-wired (no free-input siblings).
+    :class:`DetachedRule` — name + ``input_names`` + positional
+    ``BooleanFunction``, not hub-wired (no free-input siblings).
+
+See also the Hub invariant on
+:class:`~cana.boolean_network.BooleanNetwork`.
 """
 from __future__ import annotations
 
@@ -24,12 +58,12 @@ from typing import Any, Dict, Iterable, List, Mapping, Optional, Sequence, Tuple
 
 from cana.function_outputs.bit_lut import BitLut
 from cana.boolean_node import BooleanNode
-from cana.function_outputs import FunctionOutputs
+from cana.function_outputs import BooleanFunction
 from cana.function_outputs.expression import (
     expression_identifiers,
     positional_to_named,
     normalize_operators,
-    regulator_names_in_expression,
+    input_names_in_expression,
     named_to_positional,
 )
 
@@ -48,24 +82,24 @@ __all__ = [
 class DetachedRule:
     """One update rule, detached from any network hub.
 
-    ``outputs`` holds a positional expression peer.  ``input_names[i]`` is
-    the regulator for positional ``xi`` (MSB = ``input_names[0]``).
+    ``function`` holds a positional expression peer.  ``input_names[i]`` is
+    the input for positional ``xi`` (MSB = ``input_names[0]``).
     Network ``id`` / integer ``inputs`` are not set.
     """
 
     name: str
     input_names: Tuple[str, ...]
-    outputs: FunctionOutputs
+    function: BooleanFunction
 
     @property
     def k(self) -> int:
-        return int(self.outputs.k)
+        return int(self.function.k)
 
     def to_named_expression(self, style: str = "symbolic") -> str:
         """Reconstruct a named expression from positional IR + input names."""
-        expr = self.outputs.positional_expression
+        expr = self.function.positional_expression
         if expr is None:
-            raise ValueError("DetachedRule.outputs has no positional_expression")
+            raise ValueError("DetachedRule.function has no positional_expression")
         named = positional_to_named(expr, self.input_names)
         if style == "python":
             return named
@@ -84,23 +118,23 @@ def named_expression_to_detached_rule(
 ) -> DetachedRule:
     """Bind a named expression to a :class:`DetachedRule`.
 
-    If *input_names* is ``None``, regulators are unique identifiers in
+    If *input_names* is ``None``, inputs are unique identifiers in
     first-appearance order (single-rule / synthetic import).  Otherwise the
     caller supplies order (full-model link uses the global name list via
-    :func:`regulator_names_in_expression`).
+    :func:`input_names_in_expression`).
     """
     expr = normalize_operators(named_expression, "python")
     if expr in ("True", "true", "1"):
         return DetachedRule(
             name=name,
             input_names=(),
-            outputs=FunctionOutputs(positional_expression="True", k=0),
+            function=BooleanFunction(positional_expression="True", k=0),
         )
     if expr in ("False", "false", "0"):
         return DetachedRule(
             name=name,
             input_names=(),
-            outputs=FunctionOutputs(positional_expression="False", k=0),
+            function=BooleanFunction(positional_expression="False", k=0),
         )
 
     if input_names is None:
@@ -123,7 +157,7 @@ def named_expression_to_detached_rule(
     return DetachedRule(
         name=name,
         input_names=tuple(regs),
-        outputs=FunctionOutputs(
+        function=BooleanFunction(
             positional_expression=positional, k=len(regs)
         ),
     )
@@ -133,9 +167,9 @@ def detached_rule_to_node(
     rule: DetachedRule, *, id: int, inputs: Sequence[int]
 ) -> BooleanNode:
     """Wire a :class:`DetachedRule` into a hub :class:`BooleanNode`."""
-    expr = rule.outputs.positional_expression
+    expr = rule.function.positional_expression
     if expr is None:
-        raise ValueError("DetachedRule.outputs has no positional_expression")
+        raise ValueError("DetachedRule.function has no positional_expression")
     return BooleanNode.from_positional_expression(
         expr,
         k=rule.k,
@@ -155,7 +189,7 @@ def update_rules_to_nodes(
     update ``f(x) = x``, matching BBM's booleannet representation of inputs.
     Literal constants use empty ``inputs`` and positional ``True``/``False``.
 
-    Each node's ``outputs`` stores a **positional** expression without
+    Each node's ``function`` stores a **positional** expression without
     building a dense LUT at import time.
     """
     # Preserve insertion order of targets; append free inputs alphabetically.
@@ -184,12 +218,12 @@ def update_rules_to_nodes(
     nodes: List[BooleanNode] = []
     for i, name in enumerate(ordered):
         named = completed[name]
-        # Global regulator order (stable across the hub name list).
+        # Global input order (stable across the hub name list).
         norm = normalize_operators(named, "python")
         if norm in ("True", "true", "1", "False", "false", "0"):
             regs = []
         else:
-            regs = regulator_names_in_expression(norm, ordered)
+            regs = input_names_in_expression(norm, ordered)
             if norm.strip() == name and name not in regs:
                 regs = [name]
         rule = named_expression_to_detached_rule(
@@ -228,13 +262,13 @@ def name_keyed_luts(
     for node in nodes:
         input_name_list = [nodes[j].name for j in node.inputs]
         sorted_names = tuple(sorted(input_name_list))
-        outputs = node.outputs
-        if isinstance(outputs, FunctionOutputs):
-            lut = outputs.get_bit_lut()
-        elif isinstance(outputs, BitLut):
-            lut = outputs
+        fn = node.function
+        if isinstance(fn, BooleanFunction):
+            lut = fn.get_bit_lut()
+        elif isinstance(fn, BitLut):
+            lut = fn
         else:
-            lut = BitLut.from_sequence(outputs)
+            lut = BitLut.from_sequence(fn)
         lut = lut.reorder(input_name_list, list(sorted_names))
         result[node.name] = (sorted_names, tuple(int(v) for v in lut))
     return result

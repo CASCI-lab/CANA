@@ -7,12 +7,12 @@ from typing import Any, Dict, List, Sequence, Tuple
 from cana.function_outputs.bit_lut import BitLut, refuse_dense_lut_k
 from cana.boolean_node import BooleanNode
 from cana.cutils import binstate_to_statenum, expand_logic_line, statenum_to_binstate
-from cana.function_outputs import FunctionOutputs, OneSymbolSchemata
+from cana.function_outputs import BooleanFunction, OneSymbolSchemata
 
 
 def _logic_line_has_wildcard(bits: str) -> bool:
-    """True if an input pattern uses don't-care ``2`` or ``-``."""
-    return "2" in bits or "-" in bits
+    """True if an input pattern uses don't-care ``-`` (or legacy ``2``)."""
+    return "-" in bits or "2" in bits
 
 
 def _collect_logic_lines(
@@ -66,15 +66,15 @@ def parse_cnet(text: str) -> List[BooleanNode]:
         .v <N>
         .l <id> <name>
         .n <id> <k> <in1> ... <ink>
-        <binstate> <out>   # may use ``2`` don't-care bits (``-`` also accepted)
+        <binstate> <out>   # don't-care bits are ``-`` (legacy ``2`` also accepted)
         .e
 
-    Per-node heuristic: if any logic line uses don't-care ``2``/``-``, store
+    Per-node heuristic: if any logic line uses don't-care ``-``/``2``, store
     that node's cover as ``one_symbol_schemata`` only; otherwise import as a
     dense ``bit_lut`` (including ON-only minterm listings with implied 0s).
 
     Import is faithful: missing peer representations are not filled. Call
-    ``BooleanNetwork.fill_function_outputs(...)`` (or the node helper) when
+    ``BooleanNetwork.fill_function_representation(...)`` (or the node helper) when
     you need the other slot.
     """
     # Scratch during parse; materialize via BooleanNode factories at the end.
@@ -193,10 +193,10 @@ def _append_dense_lut_lines(
 def _append_schemata_lines(
     parts: List[str], schemata: OneSymbolSchemata
 ) -> None:
-    """Append one-symbol schema lines (``2`` don't-cares) to ``parts``."""
+    """Append one-symbol schema lines (``-`` don't-cares) to ``parts``."""
     for polarity in sorted(schemata):
         for schema in sorted(schemata[polarity]):
-            parts.append("{0} {1}".format(schema, polarity))
+            parts.append("{0} {1}".format(schema.replace("2", "-"), polarity))
 
 
 def _node_label(i: int, name: str) -> str:
@@ -208,10 +208,10 @@ def _require_representation(
     *,
     representation: str,
 ) -> None:
-    """Raise if any node lacks the requested ``FunctionOutputs`` slot."""
+    """Raise if any node lacks the requested ``BooleanFunction`` slot."""
     missing = []
     for i, node in enumerate(nodes):
-        outputs = node.outputs
+        outputs = node.function
         if representation == "bit_lut":
             if outputs.bit_lut is None:
                 try:
@@ -231,8 +231,8 @@ def _require_representation(
     if missing:
         raise ValueError(
             "Cannot export cnet as {0}: missing on node(s) {1}. "
-            "Run network.fill_function_outputs({0!r}) "
-            "(or node.fill_function_outputs({0!r})) first.".format(
+            "Run network.fill_function_representation({0!r}) "
+            "(or node.fill_function_representation({0!r})) first.".format(
                 representation, ", ".join(missing)
             )
         )
@@ -253,28 +253,28 @@ def nodes_to_cnet(
         one_symbol_schemata: If True, export one-symbol (wildcard) covers;
             if False (default), export dense ``2**k`` LUT rows.
 
-    Dense export materializes ``bit_lut`` via :meth:`FunctionOutputs.get_bit_lut`
+    Dense export materializes ``bit_lut`` via :meth:`BooleanFunction.get_bit_lut`
     when only expression/schemata are present. Schemata export materializes
     ``one_symbol_schemata`` similarly. If a representation cannot be derived,
     raises ``ValueError``.
     """
     # Working copies so adjust_no_input does not mutate the caller's nodes.
     local_inputs: List[List[int]] = [list(n.inputs) for n in nodes]
-    local_outputs: List[FunctionOutputs] = []
+    local_outputs: List[BooleanFunction] = []
     for node in nodes:
-        outputs = node.outputs
-        if not isinstance(outputs, FunctionOutputs):
+        outputs = node.function
+        if not isinstance(outputs, BooleanFunction):
             if isinstance(outputs, BitLut):
-                outputs = FunctionOutputs(bit_lut=outputs)
+                outputs = BooleanFunction(bit_lut=outputs)
             else:
-                outputs = FunctionOutputs.from_sequence(outputs)
+                outputs = BooleanFunction.from_sequence(outputs)
         local_outputs.append(outputs)
 
     if adjust_no_input:
         for i in range(len(nodes)):
             if len(local_inputs[i]) == 0:
                 local_inputs[i] = [i]
-                local_outputs[i] = FunctionOutputs(
+                local_outputs[i] = BooleanFunction(
                     bit_lut=BitLut.from_sequence([0, 1])
                 )
 
@@ -311,14 +311,14 @@ def nodes_to_cnet(
                 " ".join(str(v + 1) for v in node.inputs),
             ).rstrip()
         )
-        outputs = node.outputs
+        outputs = node.function
         if one_symbol_schemata:
             if k == 0:
                 # Constant cnet line is a single bit (not a schema pair).
                 if outputs.bit_lut is not None:
                     parts.append(str(outputs.bit_lut[0]))
                 else:
-                    lut = FunctionOutputs.one_symbol_to_bit_lut(
+                    lut = BooleanFunction.one_symbol_to_bit_lut(
                         outputs.one_symbol_schemata, 0
                     )
                     parts.append(str(lut[0]))

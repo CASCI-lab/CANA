@@ -406,7 +406,7 @@ def main() -> Path:
                         k=k,
                         func_id=func_id,
                         node_name=node.name,
-                        outputs=list(node.outputs),
+                        outputs=list(node.function),
                         inputs=list(node.inputs),
                     )
 

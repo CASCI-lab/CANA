@@ -376,8 +376,8 @@ for i, fn in enumerate(exact_funcs, start=1):
     )
     node = make_node(bnet, target)
     # Attach expression-derived schemata so sample path uses same primes.
-    node.outputs.one_symbol_schemata = schemata
-    node.outputs.one_symbol_is_prime_implicant = True
+    node.function.one_symbol_schemata = schemata
+    node.function.one_symbol_is_prime_implicant = True
 
     t0 = time.perf_counter()
     try:

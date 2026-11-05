@@ -6,7 +6,8 @@
 **positive unate** when flipping it from ``0`` to ``1`` never decreases the
 output, and **negative unate** when that flip never increases the output.
 A function is **monotone increasing** when every input is positive unate,
-and **unate** when every input has a nonzero sign.
+and **unate** when every input is purely positive or purely negative
+(sign ``frozenset({1})`` or ``frozenset({-1})``).
 
 **Syntactic** unate means every identifier appears only positively or only
 negatively after negation is pushed to the leaves (NNF).  A variable that
@@ -30,6 +31,13 @@ Naming (semantic):
 - ``is_input_*`` / ``input_sign`` — one variable (input index) of the LUT.
 - ``input_signs`` — one sign per input (not a single whole-function flag).
 - ``is_function_*`` — a property of the whole LUT / Boolean function.
+
+Interaction-sign vocabulary (``frozenset[int]``; PyBoolNet-shaped):
+- ``SIGN_POSITIVE`` = ``frozenset({1})`` — pure activating
+- ``SIGN_NEGATIVE`` = ``frozenset({-1})`` — pure inhibiting
+- ``SIGN_BINATE`` = ``frozenset({1, -1})`` — dual-sign / non-unate
+- ``SIGN_IRRELEVANT`` = ``frozenset()`` — no influence (both-unate / unused)
+- On graphs only, ``None`` means signs were not computed
 """
 from __future__ import annotations
 
@@ -43,6 +51,10 @@ from cana.function_outputs.expression import (
 )
 
 __all__ = [
+    "SIGN_POSITIVE",
+    "SIGN_NEGATIVE",
+    "SIGN_BINATE",
+    "SIGN_IRRELEVANT",
     "is_input_positive_unate",
     "is_input_negative_unate",
     "input_sign",
@@ -57,6 +69,11 @@ __all__ = [
 ]
 
 UnateInfo = Dict[str, Union[bool, int, List[str]]]
+
+SIGN_POSITIVE: frozenset = frozenset({1})
+SIGN_NEGATIVE: frozenset = frozenset({-1})
+SIGN_BINATE: frozenset = frozenset({1, -1})
+SIGN_IRRELEVANT: frozenset = frozenset()
 
 
 # --- semantic (BitLut) -------------------------------------------------------
@@ -99,19 +116,26 @@ def is_input_negative_unate(lut: BitLut, idx: int) -> bool:
     return True
 
 
-def input_sign(lut: BitLut, idx: int) -> int:
-    """Return ``+1`` (activating), ``-1`` (inhibiting), or ``0`` (neither).
+def input_sign(lut: BitLut, idx: int) -> frozenset:
+    """Return the interaction sign of input ``idx`` as a ``frozenset``.
 
-    Prefers positive unateness when both hold (e.g. irrelevant inputs).
+    - ``SIGN_POSITIVE`` (``{1}``): positive unate only
+    - ``SIGN_NEGATIVE`` (``{-1}``): negative unate only
+    - ``SIGN_BINATE`` (``{1, -1}``): neither pure direction (dual-sign)
+    - ``SIGN_IRRELEVANT`` (``frozenset()``): both unate (no influence)
     """
-    if is_input_positive_unate(lut, idx):
-        return 1
-    if is_input_negative_unate(lut, idx):
-        return -1
-    return 0
+    pos = is_input_positive_unate(lut, idx)
+    neg = is_input_negative_unate(lut, idx)
+    if pos and neg:
+        return SIGN_IRRELEVANT
+    if pos:
+        return SIGN_POSITIVE
+    if neg:
+        return SIGN_NEGATIVE
+    return SIGN_BINATE
 
 
-def input_signs(lut: BitLut) -> List[int]:
+def input_signs(lut: BitLut) -> List[frozenset]:
     """Return the sign of each input of ``lut`` (length ``lut.k``)."""
     return [input_sign(lut, idx) for idx in range(lut.k)]
 
@@ -127,9 +151,13 @@ def is_function_monotone_increasing(lut: BitLut) -> bool:
 def is_function_unate(lut: BitLut) -> bool:
     """Return whether the whole function is unate.
 
-    True when every input has a nonzero sign (``+1`` or ``-1``).
+    True when every input is purely positive or purely negative
+    (``SIGN_POSITIVE`` or ``SIGN_NEGATIVE``).  Irrelevant and binate
+    inputs make the function not unate.
     """
-    return all(sign != 0 for sign in input_signs(lut))
+    return all(
+        sign in (SIGN_POSITIVE, SIGN_NEGATIVE) for sign in input_signs(lut)
+    )
 
 
 # --- syntactic (NNF scan / optional AST) -------------------------------------
@@ -325,27 +353,26 @@ def require_syntactic_unate_ast(node: Optional[LogicNode]) -> None:
 
 def syntactic_input_signs(
     expr: str, input_names: Sequence[str]
-) -> Optional[List[int]]:
+) -> Optional[List[frozenset]]:
     """Return per-input signs if *expr* is syntactically unate; else ``None``.
 
-    Uses the NNF string scan.  ``+1`` / ``-1`` come from the ``positive`` /
-    ``negative`` sets keyed by *input_names*; inputs absent from the
-    expression get ``+1`` (same preference as semantic irrelevant inputs).
-    Returns ``None`` when not syntactically unate so callers can fall
-    through to a LUT-based check (syntactic binate does not imply
-    semantic binate).
+    Uses the NNF string scan.  ``SIGN_POSITIVE`` / ``SIGN_NEGATIVE`` come from
+    the ``positive`` / ``negative`` sets keyed by *input_names*; inputs absent
+    from the expression get ``SIGN_IRRELEVANT``.  Returns ``None`` when not
+    syntactically unate so callers can fall through to a LUT-based check
+    (syntactic binate does not imply semantic binate).
     """
     info = check_syntactic_unate(expr)
     if not info["is_unate"]:
         return None
     pos = set(info["positive"])  # type: ignore[arg-type]
     neg = set(info["negative"])  # type: ignore[arg-type]
-    signs: List[int] = []
+    signs: List[frozenset] = []
     for name in input_names:
         if name in pos:
-            signs.append(1)
+            signs.append(SIGN_POSITIVE)
         elif name in neg:
-            signs.append(-1)
+            signs.append(SIGN_NEGATIVE)
         else:
-            signs.append(1)
+            signs.append(SIGN_IRRELEVANT)
     return signs

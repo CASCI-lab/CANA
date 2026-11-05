@@ -5,7 +5,7 @@ Import / export Boolean networks via a ``list[BooleanNode]`` hub.
 File formats (booleannet, bnet, aeon, sbml, cnet) convert to/from a dense
 list of :class:`~cana.boolean_node.BooleanNode` (invariant: ``nodes[i].id == i``).
 Expression formats store a positional expression peer on
-:class:`~cana.function_outputs.FunctionOutputs` at import; exporters may
+:class:`~cana.function_outputs.BooleanFunction` at import; exporters may
 materialize dense LUTs. Name-keyed LUT equivalence is the round-trip
 authority across formats. Single-rule import without hub wiring uses
 :func:`import_detached_rule`.
@@ -120,7 +120,7 @@ def import_detached_rule(
 ):
     """Parse a one-rule (or multi-rule) snippet into a :class:`~cana.nodes_builder.DetachedRule`.
 
-    Uses first-appearance regulator order and does **not** invent free-input
+    Uses first-appearance input order and does **not** invent free-input
     identity siblings.  When *text* has multiple update rules, *target*
     selects which one (required if more than one rule is present).
     """

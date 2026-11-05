@@ -75,7 +75,7 @@ def print_logic_table(outputs):
         Use :meth:`cana.function_outputs.bit_lut.BitLut.lut_as_str` instead.
 
     Args:
-        outputs (list) : The transition outputs of the function.
+        outputs (list) : The outputs of the function.
 
     Example:
         >>> print_logic_table([0,0,1,1])

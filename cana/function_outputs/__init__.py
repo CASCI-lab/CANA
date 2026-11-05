@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
-"""Multi-representation Boolean function outputs for a node.
+"""Multi-representation Boolean functions for a node.
 
-``FunctionOutputs`` is what :attr:`cana.boolean_node.BooleanNode.outputs`
+``BooleanFunction`` is what :attr:`cana.boolean_node.BooleanNode.function`
 stores.  Peer representation slots may hold a dense
 :class:`~cana.function_outputs.bit_lut.BitLut`, one-symbol (prime-implicant) schemata,
 two-symbol schemata, and/or a positional expression.  Multiple representations may
@@ -15,6 +15,7 @@ Dense Sequence access (``len``, ``[i]``, iterate) and :meth:`eval` prefer
 ``bit_lut`` and materialize it from one-symbol schemata, two-symbol
 schemata (via one-symbol), or a positional expression via
 :meth:`get_bit_lut` when needed.
+
 """
 from __future__ import annotations
 
@@ -50,7 +51,7 @@ __all__ = [
     "BitLut",
     "MAX_DENSE_LUT_K",
     "refuse_dense_lut_k",
-    "FunctionOutputs",
+    "BooleanFunction",
     "OneSymbolSchemata",
     "TwoSymbolSchemata",
     "two_symbol_to_one_symbol",
@@ -61,8 +62,8 @@ __all__ = [
 TwoSymbolSchemata = Tuple[list, list]
 
 
-class FunctionOutputs(object):
-    """Container for one or more representations of a Boolean update rule.
+class BooleanFunction(object):
+    """One Boolean update rule under one or more peer representations.
 
     Attributes
     ----------
@@ -158,9 +159,9 @@ class FunctionOutputs(object):
             self._k = 0
 
     @classmethod
-    def from_sequence(cls, seq: Sequence[object]) -> "FunctionOutputs":
+    def from_sequence(cls, seq: Sequence[object]) -> "BooleanFunction":
         """Build from a dense 0/1 sequence (packs into a :class:`BitLut`)."""
-        if isinstance(seq, FunctionOutputs):
+        if isinstance(seq, BooleanFunction):
             return seq
         if isinstance(seq, BitLut):
             return cls(bit_lut=seq)
@@ -395,7 +396,7 @@ class FunctionOutputs(object):
         Raises ``ValueError`` if no peer can produce an expression.
 
         Named / styled export stays in
-        :func:`~cana.function_outputs.expression.function_outputs_to_named_expression`.
+        :func:`~cana.function_outputs.expression.boolean_function_to_named_expression`.
         """
         if self.positional_expression is not None:
             return self.positional_expression
@@ -629,7 +630,7 @@ class FunctionOutputs(object):
 
     def reorder(
         self, old_labels: Sequence[object], new_labels: Sequence[object]
-    ) -> "FunctionOutputs":
+    ) -> "BooleanFunction":
         """Return a copy with input order remapped across filled peer reps.
 
         Remaps ``bit_lut``, ``one_symbol_schemata``, ``two_symbol_schemata``,
@@ -665,7 +666,7 @@ class FunctionOutputs(object):
             except (ValueError, KeyError):
                 new_expression = None
 
-        out = FunctionOutputs(
+        out = BooleanFunction(
             bit_lut=new_bit_lut,
             one_symbol_schemata=new_one_symbol,
             two_symbol_schemata=new_two_symbol,
@@ -691,7 +692,7 @@ class FunctionOutputs(object):
         return iter(self.get_bit_lut())
 
     def __eq__(self, other: object) -> bool:
-        if isinstance(other, FunctionOutputs):
+        if isinstance(other, BooleanFunction):
             if self.bit_lut is not None and other.bit_lut is not None:
                 return self.bit_lut == other.bit_lut
             return (
@@ -734,4 +735,4 @@ class FunctionOutputs(object):
                     self.representations_consistent
                 )
             )
-        return "FunctionOutputs({0})".format(", ".join(parts) or "k={0}".format(self._k))
+        return "BooleanFunction({0})".format(", ".join(parts) or "k={0}".format(self._k))

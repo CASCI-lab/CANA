@@ -12,7 +12,7 @@ import pytest
 
 from cana.function_properties.unate import check_syntactic_unate
 from high_k.bbm_rules import as_bnet, unique_regulators
-from high_k.timing import call_in_subprocess, import_detached_outputs
+from high_k.timing import call_in_subprocess, import_detached_function
 from high_k.unate import on_off_primes, primes
 
 
@@ -27,7 +27,7 @@ def _freeze(prime_list) -> frozenset:
 def _qm_on_off_primes(expr: str):
     """ON/OFF primes as PrimeDicts via CANA Quine–McCluskey schemata."""
     names = unique_regulators(expr)
-    fo = import_detached_outputs(as_bnet(expr), "Y")
+    fo = import_detached_function(as_bnet(expr), "Y")
     fo.build_bit_lut_from_positional_expression()
     schemata = fo.compute_one_symbol_schemata_from_bit_lut()
 

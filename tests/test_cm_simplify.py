@@ -36,7 +36,7 @@ def _assert_exact_roundtrip_simplified(
     result = lut_from_canalizing_map(cm, input_order=node.inputs)
     assert not result.has_conflict
     assert not result.is_incomplete
-    expected = [int(x) for x in node.outputs]
+    expected = [int(x) for x in node.function]
     assert result.outputs == expected
 
 

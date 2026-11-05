@@ -71,6 +71,9 @@ instance/
 
 # Sphinx documentation
 docs/_build/
+docs/build/
+# Package-scanned API RST from ``make apidoc`` / ``make html``
+docs/source/reference/api/
 
 # PyBuilder
 target/

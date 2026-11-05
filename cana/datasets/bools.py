@@ -11,7 +11,7 @@ Commonly used boolean node functions.
 #   Rion Brattig Correia <rionbr@gmail.com>
 #   All rights reserved.
 #   MIT license.
-from ..boolean_network import BooleanNode
+from ..boolean_node import BooleanNode
 
 
 def AND():
@@ -25,7 +25,7 @@ def AND():
         11 : 1
 
     """
-    return BooleanNode.from_bit_lut(outputs=[0, 0, 0, 1], name="AND")
+    return BooleanNode.from_bit_lut(lut=[0, 0, 0, 1], name="AND")
 
 
 def OR():
@@ -39,7 +39,7 @@ def OR():
         11 : 1
 
     """
-    return BooleanNode.from_bit_lut(outputs=[0, 1, 1, 1], name="OR")
+    return BooleanNode.from_bit_lut(lut=[0, 1, 1, 1], name="OR")
 
 
 def XOR():
@@ -53,7 +53,7 @@ def XOR():
         11 : 0
 
     """
-    return BooleanNode.from_bit_lut(outputs=[0, 1, 1, 0], name="XOR")
+    return BooleanNode.from_bit_lut(lut=[0, 1, 1, 0], name="XOR")
 
 
 def COPYx1():
@@ -67,7 +67,7 @@ def COPYx1():
         11 : 1
 
     """
-    return BooleanNode.from_bit_lut(outputs=[0, 0, 1, 1], name="COPY x_1")
+    return BooleanNode.from_bit_lut(lut=[0, 0, 1, 1], name="COPY x_1")
 
 
 def CONTRADICTION():
@@ -81,7 +81,7 @@ def CONTRADICTION():
         11 : 0
 
     """
-    return BooleanNode.from_bit_lut(outputs=[0, 0, 0, 0], name="CONTRADICTION")
+    return BooleanNode.from_bit_lut(lut=[0, 0, 0, 0], name="CONTRADICTION")
 
 
 def RULE90():
@@ -100,7 +100,7 @@ def RULE90():
 
     """
     return BooleanNode.from_bit_lut(
-        outputs=[0, 1, 0, 1, 1, 0, 1, 0], name="RULE 90"
+        lut=[0, 1, 0, 1, 1, 0, 1, 0], name="RULE 90"
     )
 
 
@@ -120,5 +120,5 @@ def RULE110():
 
     """
     return BooleanNode.from_bit_lut(
-        outputs=[0, 1, 1, 1, 0, 1, 1, 0], name="RULE 110"
+        lut=[0, 1, 1, 1, 0, 1, 1, 0], name="RULE 110"
     )

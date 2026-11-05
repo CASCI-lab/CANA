@@ -5,7 +5,7 @@
 # form (``target, expr`` with ``&`` / ``|`` / ``!``):
 #
 # 1. **import** — ``import_detached_rule`` → positional
-#    ``FunctionOutputs.positional_expression`` (no dense LUT; no free-input
+#    ``BooleanFunction.positional_expression`` (no dense LUT; no free-input
 #    siblings)
 # 2. **build LUT** — ``build_bit_lut_from_positional_expression()`` (``2**k`` evals)
 # 3. **one-symbol** — Quine–McCluskey prime implicants via

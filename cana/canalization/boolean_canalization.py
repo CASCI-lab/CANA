@@ -164,7 +164,7 @@ def computes_pi_coverage(k, outputs, prime_implicants):
 
     Args:
         k (int): the number of inputs.
-        outpus (list): the list of transition outputs.
+        outpus (list): the list of outputs.
         prime_implicants (tuple): a tuple containing a list negative and positive prime implicants. This is returned by `find_implicants_qm`.
 
     Returns:
@@ -504,7 +504,7 @@ def computes_ts_coverage(k, outputs, two_symbols):
 
     Args:
         k (int): the number of inputs.
-        outpus (list): the list of transition outputs.
+        outpus (list): the list of outputs.
         two_symbols (list): The final list of Two Symbol permutable schematas. This is returned by `find_two_symbols`.
 
     Returns:

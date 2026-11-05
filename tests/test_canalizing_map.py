@@ -48,7 +48,7 @@ def _assert_exact_roundtrip(node: BooleanNode, builder: str = "legacy") -> None:
     result = lut_from_canalizing_map(cm, input_order=node.inputs)
     assert not result.has_conflict
     assert not result.is_incomplete
-    assert result.outputs == [int(x) for x in node.outputs]
+    assert result.outputs == [int(x) for x in node.function]
 
 
 def _threshold_roles(cm: nx.DiGraph):
@@ -73,7 +73,7 @@ class TestParity:
         node = BooleanNode.from_bit_lut(
             outputs, name=name, inputs=inputs, id=nid
         )
-        node.outputs.get_two_symbol_schemata()
+        node.function.get_two_symbol_schemata()
         input_labels = {i: str(i) for i in node.inputs}
 
         via_node = node.canalizing_map()
@@ -184,7 +184,7 @@ class TestCanonicalParity:
         node = BooleanNode.from_bit_lut(
             outputs, name=name, inputs=inputs, id=nid
         )
-        node.outputs.get_two_symbol_schemata()
+        node.function.get_two_symbol_schemata()
         input_labels = {i: str(i) for i in node.inputs}
 
         via_node = node.canalizing_map(builder="canonical")
@@ -241,7 +241,7 @@ class TestCanonicalRoundtrip:
     def test_f_xy_abc(self):
         N = BooleanNetwork.from_string_booleannet(F_BNET)
         fn = next(n for n in N.nodes if n.name == "F")
-        assert "".join(str(x) for x in fn.outputs) == F_LUT
+        assert "".join(str(x) for x in fn.function) == F_LUT
         _assert_exact_roundtrip(fn, builder="canonical")
 
 
@@ -329,7 +329,7 @@ def _assert_exact_roundtrip_simplified(
     result = lut_from_canalizing_map(cm, input_order=node.inputs)
     assert not result.has_conflict
     assert not result.is_incomplete
-    assert result.outputs == [int(x) for x in node.outputs]
+    assert result.outputs == [int(x) for x in node.function]
 
 
 def _graphs_equal_ignore_name(a: nx.DiGraph, b: nx.DiGraph) -> bool:
@@ -397,8 +397,8 @@ class TestDynamicsCanalizationMap:
         orphan = "orphan_isolate_test"
         orig = N.nodes[0].canalizing_map
 
-        def with_orphan(output=None, builder="legacy"):
-            g = orig(output=output, builder=builder)
+        def with_orphan(polarity=None, builder="legacy", output=None):
+            g = orig(polarity=polarity, builder=builder, output=output)
             g.add_node(orphan, type="variable", mode="input", value=0)
             return g
 

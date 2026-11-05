@@ -5,7 +5,7 @@ import pytest
 
 from cana.boolean_network import BooleanNetwork
 from cana.boolean_node import BooleanNode
-from cana.function_outputs import FunctionOutputs
+from cana.function_outputs import BooleanFunction
 from cana.io import (
     convert,
     export_string,
@@ -88,14 +88,14 @@ def test_import_stores_positional_expression_only():
     # C* = C -> inputs [C], expression x0
     by_name = {n.name: n for n in nodes}
     for node in by_name.values():
-        assert node.outputs.bit_lut is None
-        assert node.outputs.positional_expression is not None
-    assert by_name["A"].outputs.positional_expression == "x0"
-    assert by_name["B"].outputs.positional_expression == "x0 and x1"
-    assert by_name["C"].outputs.positional_expression == "x0"
+        assert node.function.bit_lut is None
+        assert node.function.positional_expression is not None
+    assert by_name["A"].function.positional_expression == "x0"
+    assert by_name["B"].function.positional_expression == "x0 and x1"
+    assert by_name["C"].function.positional_expression == "x0"
     # Symbolic operators normalize to python positional IR
     aeon = parse_aeon(TINY_AEON)
-    assert {n.name: n.outputs.positional_expression for n in aeon}["B"] == "x0 and x1"
+    assert {n.name: n.function.positional_expression for n in aeon}["B"] == "x0 and x1"
 
 
 def test_boolean_node_named_expression():
@@ -170,20 +170,20 @@ MIXED_CNET = """\
 
 .n 2 2 1 2
 01 1
-12 0
-20 0
+1- 0
+-0 0
 """
 
 
 def test_parse_cnet_wildcard_as_one_symbol_schemata():
     nd = parse_cnet(MIXED_CNET)
-    cyc_e = nd[1].outputs
+    cyc_e = nd[1].function
     assert cyc_e.bit_lut is None
     assert cyc_e.one_symbol_schemata is not None
     assert cyc_e.one_symbol_schemata[1] == {"01"}
     assert cyc_e.one_symbol_schemata[0] == {"12", "20"}
     # Dense sibling stays LUT-only (no auto-fill).
-    cyc_d = nd[0].outputs
+    cyc_d = nd[0].function
     assert cyc_d.bit_lut is not None
     assert cyc_d.one_symbol_schemata is None
     assert list(cyc_d.bit_lut) == [0, 1]
@@ -201,7 +201,7 @@ def test_parse_cnet_dense_minterms_not_schemata():
 11 1
 """
     nd = parse_cnet(dense)
-    fo = nd[0].outputs
+    fo = nd[0].function
     assert fo.bit_lut is not None
     assert fo.one_symbol_schemata is None
     assert list(fo.bit_lut) == [0, 0, 0, 1]
@@ -216,31 +216,31 @@ def test_cnet_export_materializes_requested_representation():
 
     # Schemata export materializes one-symbol from dense peers.
     schemata_text = nodes_to_cnet(nd, one_symbol_schemata=True)
-    assert "2" in schemata_text
+    assert "-" in schemata_text
     assert equivalent_networks(nd, parse_cnet(schemata_text))
 
     # Truly empty FO still cannot export.
     empty = [
         BooleanNode(
-            id=0, name="A", k=1, inputs=[0], outputs=FunctionOutputs(k=1)
+            id=0, name="A", k=1, inputs=[0], outputs=BooleanFunction(k=1)
         )
     ]
-    with pytest.raises(ValueError, match=r"fill_function_outputs\('bit_lut'\)"):
+    with pytest.raises(ValueError, match=r"fill_function_representation\('bit_lut'\)"):
         nodes_to_cnet(empty)
 
 
 def test_boolean_network_cnet_schemata_and_fill():
     N = BooleanNetwork.from_string(MIXED_CNET, type="cnet")
-    assert N.nodes[1].outputs.bit_lut is None
-    assert N.nodes[1].outputs.one_symbol_schemata is not None
-    N.fill_function_outputs("bit_lut")
-    assert N.nodes[1].outputs.bit_lut is not None
-    assert list(N.nodes[1].outputs.bit_lut) == [0, 1, 0, 0]
-    N.fill_function_outputs("one_symbol_schemata")
+    assert N.nodes[1].function.bit_lut is None
+    assert N.nodes[1].function.one_symbol_schemata is not None
+    N.fill_function_representation("bit_lut")
+    assert N.nodes[1].function.bit_lut is not None
+    assert list(N.nodes[1].function.bit_lut) == [0, 1, 0, 0]
+    N.fill_function_representation("one_symbol_schemata")
     cnet = N.to_cnet(one_symbol_schemata=True)
-    assert "2" in cnet
+    assert "-" in cnet
     N2 = BooleanNetwork.from_string(cnet, type="cnet")
-    N2.fill_function_outputs("bit_lut")
+    N2.fill_function_representation("bit_lut")
     assert N.equivalent_to(N2)
 
 
@@ -329,14 +329,14 @@ def test_empty_inputs_implies_constant_not_converse():
     assert N2_unpin.Nconstants == 1
     assert N2_unpin.Nstates == 4  # full 2**N when not pinning
 
-    # Self-loop identity => not constant, in input_nodes
+    # Self-loop identity => not constant, in source_nodes
     N3 = BooleanNetwork.from_nodes(
         [
             BooleanNode(id=0, name="Src", k=1, inputs=[0], outputs=[0, 1]),
         ]
     )
     assert N3.nodes[0].constant is False
-    assert 0 in N3.input_nodes
+    assert 0 in N3.source_nodes
     assert N3.constants == {}
     assert N3.Nconstants == 0
 
@@ -387,7 +387,7 @@ def test_detached_rule_no_free_input_siblings():
     assert rule.name == "Y"
     assert rule.input_names == ("a0", "a1", "a2")
     assert rule.k == 3
-    assert rule.outputs.positional_expression == "x0 and x1 and x2"
+    assert rule.function.positional_expression == "x0 and x1 and x2"
     assert rule.to_named_expression(style="symbolic") == "a0 & a1 & a2"
     assert rule.as_update_rule(style="python") == ("Y", "a0 and a1 and a2")
 

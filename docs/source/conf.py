@@ -53,6 +53,16 @@ templates_path = ['_templates']
 # This pattern also affects html_static_path and html_extra_path.
 exclude_patterns = []
 
+# Autodoc / autosummary: package-scanned API pages under api/ (see Makefile).
+autosummary_generate = True
+autodoc_default_options = {
+    "members": True,
+    "undoc-members": True,
+    "show-inheritance": True,
+}
+autodoc_member_order = "bysource"
+autodoc_typehints = "description"
+
 
 # -- Options for HTML output -------------------------------------------------
 

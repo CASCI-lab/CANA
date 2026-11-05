@@ -323,19 +323,19 @@ def _prepare_node(bnet_text: str, target: str, stage: str):
     if stage == "lut":
         return node
     if stage == "qm":
-        node.outputs.build_bit_lut_from_positional_expression()
+        node.function.build_bit_lut_from_positional_expression()
         return node
     if stage in ("legacy_bias", "legacy_activities"):
-        node.outputs.build_bit_lut_from_positional_expression()
+        node.function.build_bit_lut_from_positional_expression()
         return node
     if stage == "legacy_edge_redundancy":
-        node.outputs.build_bit_lut_from_positional_expression()
-        node.outputs.compute_one_symbol_schemata_from_bit_lut()
+        node.function.build_bit_lut_from_positional_expression()
+        node.function.compute_one_symbol_schemata_from_bit_lut()
         return node
     if stage == "pi":
         return node
     if stage in ("new_bias", "new_activities", "new_edge_redundancy"):
-        node.outputs.get_one_symbol_schemata()
+        node.function.get_one_symbol_schemata()
         return node
     raise ValueError(f"unknown stage {stage!r}")
 
@@ -355,10 +355,10 @@ def _run_stage_body(bnet_text: str, target: str, stage: str) -> Dict[str, Any]:
     node = _prepare_node(bnet_text, target, stage)
     t0 = time.perf_counter()
     if stage == "lut":
-        lut = node.outputs.build_bit_lut_from_positional_expression()
+        lut = node.function.build_bit_lut_from_positional_expression()
         value: Any = {"k": int(lut.k), "n": len(lut)}
     elif stage == "qm":
-        sch = node.outputs.compute_one_symbol_schemata_from_bit_lut()
+        sch = node.function.compute_one_symbol_schemata_from_bit_lut()
         value = {
             0: len(sch.get(0, ()) or ()),
             1: len(sch.get(1, ()) or ()),
@@ -370,7 +370,7 @@ def _run_stage_body(bnet_text: str, target: str, stage: str) -> Dict[str, Any]:
     elif stage == "legacy_edge_redundancy":
         value = _summarize(node.edge_redundancy(exact_k_max=node.k))
     elif stage == "pi":
-        sch = node.outputs.get_one_symbol_schemata()
+        sch = node.function.get_one_symbol_schemata()
         value = {
             0: len(sch.get(0, ()) or ()),
             1: len(sch.get(1, ()) or ()),

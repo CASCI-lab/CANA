@@ -228,9 +228,9 @@ print()
 
 rt_before = lut_from_canalizing_map(cm_before, input_order=node.inputs)
 rt_after = lut_from_canalizing_map(cm_after, input_order=node.inputs)
-ok_before = summarize_roundtrip(f"{BUILDER}/simplify=False", node.outputs, rt_before)
+ok_before = summarize_roundtrip(f"{BUILDER}/simplify=False", node.function, rt_before)
 print()
-ok_after = summarize_roundtrip(f"{BUILDER}/simplify=True", node.outputs, rt_after)
+ok_after = summarize_roundtrip(f"{BUILDER}/simplify=True", node.function, rt_after)
 print()
 print(f"before exact={ok_before}  after exact={ok_after}  (log reason={pick.reason})")
 

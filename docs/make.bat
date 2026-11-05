@@ -3,9 +3,14 @@
 REM Command file for Sphinx documentation
 
 if "%SPHINXBUILD%" == "" (
-	set SPHINXBUILD=sphinx-apidoc
+	set SPHINXBUILD=sphinx-build
+)
+if "%SPHINXAPIDOC%" == "" (
+	set SPHINXAPIDOC=sphinx-apidoc
 )
 set BUILDDIR=build
+set APIDIR=source\reference\api
+set PACKAGEDIR=..\cana
 set ALLSPHINXOPTS=-d %BUILDDIR%/doctrees %SPHINXOPTS% source
 set I18NSPHINXOPTS=%SPHINXOPTS% source
 if NOT "%PAPER%" == "" (
@@ -19,6 +24,7 @@ if "%1" == "help" (
 	:help
 	echo.Please use `make ^<target^>` where ^<target^> is one of
 	echo.  html       to make standalone HTML files
+	echo.  apidoc     to regenerate package-scanned API RST under %APIDIR%
 	echo.  dirhtml    to make HTML files named index.html in directories
 	echo.  singlehtml to make a single large HTML file
 	echo.  pickle     to make pickle files
@@ -44,6 +50,15 @@ if "%1" == "help" (
 if "%1" == "clean" (
 	for /d %%i in (%BUILDDIR%\*) do rmdir /q /s %%i
 	del /q /s %BUILDDIR%\*
+	if exist %APIDIR% rmdir /q /s %APIDIR%
+	goto end
+)
+
+if "%1" == "apidoc" (
+	if exist %APIDIR% rmdir /q /s %APIDIR%
+	mkdir %APIDIR%
+	%SPHINXAPIDOC% -o %APIDIR% -f -e -M -T %PACKAGEDIR%
+	echo.API RST written to %APIDIR%\
 	goto end
 )
 
@@ -73,6 +88,10 @@ if errorlevel 9009 (
 
 
 if "%1" == "html" (
+	if exist %APIDIR% rmdir /q /s %APIDIR%
+	mkdir %APIDIR%
+	%SPHINXAPIDOC% -o %APIDIR% -f -e -M -T %PACKAGEDIR%
+	if errorlevel 1 exit /b 1
 	%SPHINXBUILD% -b html %ALLSPHINXOPTS% %BUILDDIR%/html
 	if errorlevel 1 exit /b 1
 	echo.

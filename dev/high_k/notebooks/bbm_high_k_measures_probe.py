@@ -276,7 +276,7 @@ def _run_probe_body(bnet_text: str, target: str, probe: str) -> Dict[str, Any]:
     node = make_node(bnet_text, target)
     t0 = time.perf_counter()
     if probe == "one_symbol":
-        sch = node.outputs.get_one_symbol_schemata()
+        sch = node.function.get_one_symbol_schemata()
         value: Any = {
             0: len(sch.get(0, ()) or ()),
             1: len(sch.get(1, ()) or ()),
@@ -284,7 +284,7 @@ def _run_probe_body(bnet_text: str, target: str, probe: str) -> Dict[str, Any]:
     elif probe == "two_symbol":
         # Schemata only — does not expand Θ(2**k) ts_coverage (that is
         # input_symmetry).  Same TIMEOUT_S kill as every other probe.
-        ts = node.outputs.get_two_symbol_schemata()
+        ts = node.function.get_two_symbol_schemata()
         ts0, ts1 = ts
         value = {
             0: len(ts0 or ()),
@@ -298,7 +298,7 @@ def _run_probe_body(bnet_text: str, target: str, probe: str) -> Dict[str, Any]:
         # would otherwise sample for k > 14).
         value = float(node.input_redundancy(exact_k_max=node.k))
     elif probe == "input_redundancy_sample":
-        schemata = node.outputs.get_one_symbol_schemata()
+        schemata = node.function.get_one_symbol_schemata()
         rng = np.random.default_rng(SEED)
         value = float(
             input_redundancy(
@@ -312,7 +312,7 @@ def _run_probe_body(bnet_text: str, target: str, probe: str) -> Dict[str, Any]:
     elif probe == "edge_redundancy":
         value = _summarize(node.edge_redundancy(exact_k_max=node.k))
     elif probe == "edge_redundancy_sample":
-        schemata = node.outputs.get_one_symbol_schemata()
+        schemata = node.function.get_one_symbol_schemata()
         rng = np.random.default_rng(SEED)
         value = _summarize(
             edge_redundancy(

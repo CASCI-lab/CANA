@@ -56,7 +56,7 @@ from cana.function_generation import (
     SYNTHETIC_BUILDERS,
     builder_accepts_k,
 )
-from high_k.timing import fmt_s, import_detached_outputs, median_time
+from high_k.timing import fmt_s, import_detached_function, median_time
 
 # ---------------------------------------------------------------------------
 # Config
@@ -104,7 +104,7 @@ def rof_primes_to_schemata(
 
 def run_qm(expr: str, target: str = "Y") -> Dict[int, Set[str]]:
     """Import → LUT → QM one-symbol; return ON/OFF schema sets."""
-    fo = import_detached_outputs(as_bnet(expr, target=target), target)
+    fo = import_detached_function(as_bnet(expr, target=target), target)
     fo.build_bit_lut_from_positional_expression()
     schemata = fo.compute_one_symbol_schemata_from_bit_lut()
     return {
